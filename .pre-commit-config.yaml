@@ -65,3 +65,16 @@ repos:
     rev: v1.11.2
     hooks:
       - id: mypy
+        additional_dependencies:
+          - fastapi>=0.109 # Match pyproject.toml
+          - fhaviary
+          - httpx
+          - litellm>=1.40.9,<=1.40.12 # Match pyproject.toml
+          - numpy
+          - pydantic~=2.0 # Match pyproject.toml
+          - tenacity
+          - torch
+          - types-aiofiles
+          - types-tqdm
+          - usearch>=2.13 # Match pyproject.toml
+          - wandb

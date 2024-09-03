@@ -15,12 +15,42 @@ classifiers = [
     "Programming Language :: Python",
 ]
 dependencies = [
+    "aiofiles",
+    "dm-tree",
+    "fhaviary",
+    "httpx",
+    "litellm",
+    "networkx[default]~=3.0",  # Pin just to keep recent
+    "numpy",
+    "openai>=1",
+    "pydantic~=2.0",
+    "tenacity",
+    "tiktoken",
+    "torch",
+    "tqdm",
+    "transformers",
+    "usearch>=2.13",  # For py.typed
 ]
 description = "Agent framework for constructing language model agents and training on constructive tasks."
 dynamic = ["version"]
 name = "ldp"
 readme = "README.md"
 requires-python = ">=3.11"
+
+[project.optional-dependencies]
+monitor = [
+    "wandb",
+]
+server = [
+    "fastapi>=0.109",  # For Python 3.12 support
+]
+typing = [
+    "types-aiofiles",
+    "types-tqdm",
+]
+visualization = [
+    "pydot~=2.0",  # Pin to match version pinned by networkx "extra"
+]
 
 [project.urls]
 issues = "https://github.com/Future-House/ldp/issues"
@@ -97,6 +127,18 @@ warn_unreachable = true
 warn_unused_configs = true
 # Warns about unneeded `# type: ignore` comments.
 warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+# Suppresses error messages about imports that cannot be resolved.
+ignore_missing_imports = true
+# Per-module configuration options
+module = [
+    "litellm",  # SEE: https://github.com/BerriAI/litellm/issues/825
+    "networkx",  # SEE: https://github.com/networkx/networkx/issues/3988
+    "pydot",
+    "transformers.*",  # SEE: https://github.com/huggingface/transformers/pull/18485
+    "tree",  # SEE: https://github.com/google-deepmind/tree/issues/84
+]
 
 [tool.pylint]
 
@@ -351,20 +393,22 @@ trailing_comma_inline_array = true
 
 [tool.uv]
 dev-dependencies = [
-    "SQLAlchemy[aiosqlite]~=2.0",  # Match aviary dependencies
     "build",  # TODO: remove after https://github.com/astral-sh/uv/issues/6278
     "codeflash",
+    "fhaviary[xml]",
     "ipython>=8",  # Pin to keep recent
+    "ldp[monitor,server,typing,visualization]",
+    "litellm>=1.40.9,<=1.40.12",  # Pin lower for get_supported_openai_params not requiring custom LLM, upper for https://github.com/BerriAI/litellm/issues/4032
     "mypy>=1.8",  # Pin for mutable-override
-    "pre-commit~=3.4",
+    "pre-commit~=3.4",  # Pin to keep recent
     "pylint-pydantic",
-    "pylint>=3.2",
+    "pylint>=3.2",  # Pin to keep recent
     "pytest-asyncio",
+    "pytest-rerunfailures",
     "pytest-subtests",
     "pytest-sugar",
     "pytest-timer[colorama]",
     "pytest-xdist",
     "pytest>=8",  # Pin to keep recent
     "refurb>=2",  # Pin to keep recent
-    "typeguard",
 ]
