@@ -306,10 +306,9 @@ class OpCtx(BaseModel):
     @classmethod
     def get_or_create(cls, op_name: str) -> OpCtx:
         """Return an OpCtx corresponding to the Op with the given name."""
-        try:
+        if op_name in cls._CTX_REGISTRY:
             return cls._CTX_REGISTRY[op_name]  # Get
-        except KeyError:
-            return cls(op_name=op_name)  # Create
+        return cls(op_name=op_name)  # Create
 
     def get(self, call_id: CallID, key: str, default: Any = NOT_FOUND) -> Any:
         """Get an attribute with an optional default, emulating dict.get."""
