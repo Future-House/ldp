@@ -101,18 +101,6 @@ wheels = [
 ]
 
 [[package]]
-name = "aiosqlite"
-version = "0.20.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/0d/3a/22ff5415bf4d296c1e92b07fd746ad42c96781f13295a074d58e77747848/aiosqlite-0.20.0.tar.gz", hash = "sha256:6d35c8c256637f4672f843c31021464090805bf925385ac39473fb16eaaca3d7", size = 21691 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/00/c4/c93eb22025a2de6b83263dfe3d7df2e19138e345bca6f18dba7394120930/aiosqlite-0.20.0-py3-none-any.whl", hash = "sha256:36a1deaca0cac40ebe32aac9977a6e2bbc7f5189f23f4a54d5908986729e5bd6", size = 15564 },
-]
-
-[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -957,7 +945,7 @@ wheels = [
 
 [[package]]
 name = "ldp"
-version = "0.1.dev6+g4bc481a.d20240904"
+version = "0.1.1.dev1+gc93431d"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -969,7 +957,6 @@ dependencies = [
     { name = "numpy" },
     { name = "openai" },
     { name = "pydantic" },
-    { name = "sqlalchemy" },
     { name = "tenacity" },
     { name = "tiktoken" },
     { name = "torch" },
@@ -1014,7 +1001,6 @@ dev = [
     { name = "pytest-timer", extra = ["colorama"] },
     { name = "pytest-xdist" },
     { name = "refurb" },
-    { name = "sqlalchemy", extra = ["aiosqlite"] },
     { name = "types-aiofiles" },
     { name = "types-tqdm" },
     { name = "wandb" },
@@ -1033,7 +1019,6 @@ requires-dist = [
     { name = "openai", specifier = ">=1" },
     { name = "pydantic", specifier = "~=2.0" },
     { name = "pydot", marker = "extra == 'visualization'", specifier = "~=2.0" },
-    { name = "sqlalchemy", specifier = "~=2.0" },
     { name = "tenacity" },
     { name = "tiktoken" },
     { name = "torch" },
@@ -1065,7 +1050,6 @@ dev = [
     { name = "pytest-timer", extras = ["colorama"] },
     { name = "pytest-xdist" },
     { name = "refurb", specifier = ">=2" },
-    { name = "sqlalchemy", extras = ["aiosqlite"], specifier = "~=2.0" },
 ]
 
 [[package]]
@@ -2389,13 +2373,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/44/fb/98fee23d5ffed1af441bdf7b58e57f20a9e2b40bf3b7600bdd3a8870aae4/SQLAlchemy-2.0.33-cp312-cp312-win32.whl", hash = "sha256:c633e2d2f8a7b88c06e276bbe16cb7e62fed815fcbeb69cd9752cea166ecb8e8", size = 2059540 },
     { url = "https://files.pythonhosted.org/packages/ca/a4/4956be070ee79f30dbffcd0cc83693c2fb67d8b299585401044d17261e81/SQLAlchemy-2.0.33-cp312-cp312-win_amd64.whl", hash = "sha256:77eaf8fdf305266b806a91ae4633edbf86ad37e13bd92ac85e305e7f654c19a5", size = 2085269 },
     { url = "https://files.pythonhosted.org/packages/54/ba/71b82a3e4172773fc417b81ea9e798bd85d643a0ddc95b6cfb586ce18c84/SQLAlchemy-2.0.33-py3-none-any.whl", hash = "sha256:ae294808afde1b14a1a69aa86a69cadfe391848bbb233a5332a8065e4081cabc", size = 1880669 },
-]
-
-[package.optional-dependencies]
-aiosqlite = [
-    { name = "aiosqlite" },
-    { name = "greenlet" },
-    { name = "typing-extensions" },
 ]
 
 [[package]]
