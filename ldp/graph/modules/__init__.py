@@ -13,13 +13,8 @@ from .react import (
 )
 from .reflect import ReflectModule, ReflectModuleConfig
 from .thought import ThoughtModule
-from .value_function import DQNOp, DQNPolicyModule, EmbeddingDQNOp, EpsilonGreedyOp
 
 __all__ = [
-    "DQNOp",
-    "DQNPolicyModule",
-    "EmbeddingDQNOp",
-    "EpsilonGreedyOp",
     "MalformedMessageError",
     "ParsedLLMCallModule",
     "ReActModule",

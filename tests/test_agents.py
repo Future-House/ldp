@@ -17,7 +17,6 @@ from pydantic import BaseModel, Field
 from ldp.agent import (
     Agent,
     AgentConfig,
-    DQNAgent,
     HTTPAgentClient,
     MemoryAgent,
     ReActAgent,
@@ -90,7 +89,7 @@ def many_edge_cases(
 class TestAgentState:
     @pytest.mark.parametrize(
         "agent",
-        [SimpleAgent(), MemoryAgent(), ReActAgent(), DQNAgent()],
+        [SimpleAgent(), MemoryAgent(), ReActAgent()],
     )
     @pytest.mark.asyncio
     async def test_no_state_mutation(self, dummy_env: DummyEnv, agent: Agent) -> None:
@@ -632,31 +631,3 @@ class TestHTTPAgentClient:
             with patch("httpx.AsyncClient.post", async_client.post), eval_mode():
                 # Check we can make a second sequential Agent decision without crashing
                 await agent_client.get_asv(agent_state_1, obs)
-
-
-class TestDQNAgent:
-    @pytest.mark.parametrize(
-        "model_name", ["gpt-4-turbo", CILLMModelNames.ANTHROPIC.value]
-    )
-    @pytest.mark.asyncio
-    @pytest.mark.flaky(  # Rerun if LLM call does not return expected result
-        reruns=3, only_on=[AssertionError]
-    )
-    async def test_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
-        obs, tools = await dummy_env.reset()
-        agent = DQNAgent(llm_strategy_model={"model": model_name, "temperature": 1.0})
-        agent_state = await agent.init_state(tools)
-        action, agent_state, _ = await agent.get_asv(agent_state, obs)
-        obs, reward, done, truncated = await dummy_env.step(action.value)
-        assert (
-            reward > 0
-        ), "Reward should be positive, indicating agent called print_story tool"
-        assert done
-
-
-@pytest.mark.parametrize("agent_cls", [SimpleAgent, DQNAgent, MemoryAgent, ReActAgent])
-def test_agent_config(agent_cls: type[Agent]):
-    config = AgentConfig(agent_type=agent_cls.__name__)
-    assert isinstance(hash(config), int), "AgentConfig should be hashable"
-    agent = config.construct_agent()
-    assert isinstance(agent, agent_cls)
