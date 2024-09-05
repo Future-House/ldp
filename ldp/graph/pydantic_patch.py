@@ -1,5 +1,14 @@
 import sys
-from typing import Generic, override
+
+if sys.version_info >= (3, 12):
+    from typing import Generic, override
+else:
+    from typing import Generic
+
+    # python <= 3.11 does not provide typing.override
+    def override(func):
+        return func
+
 
 from pydantic import BaseModel
 
