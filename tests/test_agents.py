@@ -631,3 +631,11 @@ class TestHTTPAgentClient:
             with patch("httpx.AsyncClient.post", async_client.post), eval_mode():
                 # Check we can make a second sequential Agent decision without crashing
                 await agent_client.get_asv(agent_state_1, obs)
+
+
+@pytest.mark.parametrize("agent_cls", [SimpleAgent, MemoryAgent, ReActAgent])
+def test_agent_config(agent_cls: type[Agent]):
+    config = AgentConfig(agent_type=agent_cls.__name__)
+    assert isinstance(hash(config), int), "AgentConfig should be hashable"
+    agent = config.construct_agent()
+    assert isinstance(agent, agent_cls)
