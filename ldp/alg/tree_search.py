@@ -114,9 +114,7 @@ class TreeSearchRollout(RolloutManager):
             ])
 
             # The original branch plus one step
-            extended_branch = Trajectory(
-                timestep=timestep + 1, traj_id=traj_id, steps=[*branch.steps, step]
-            )
+            extended_branch = Trajectory(traj_id=traj_id, steps=[*branch.steps, step])
 
             if (
                 step.done  # Trajectory is over
