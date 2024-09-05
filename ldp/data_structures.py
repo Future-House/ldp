@@ -77,6 +77,8 @@ class Transition(BaseModel):
 
 
 class Trajectory(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     traj_id: str | None = None
     steps: list[Transition] = Field(default_factory=list)
 
