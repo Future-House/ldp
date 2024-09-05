@@ -1,5 +1,10 @@
 import sys
-from typing import Generic, override
+from typing import Generic
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
 
 from pydantic import BaseModel
 
