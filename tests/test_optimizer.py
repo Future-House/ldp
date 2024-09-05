@@ -1,21 +1,17 @@
 from typing import Any
 
-import litellm
 import pytest
 import tenacity
 import tree
 from aviary.env import DummyEnv
-from litellm.caching import Cache
-from torch import nn
 
-from ldp.agent import Agent, DQNAgent, MemoryAgent, ReActAgent
+from ldp.agent import Agent, MemoryAgent, ReActAgent
 from ldp.alg.optimizer import (
     MemoryOpt,
     Optimizer,
     default_optimizer_factory,
 )
 from ldp.alg.optimizer.ape import APEOpt, APEScoreFn, Example
-from ldp.alg.optimizer.dqn import DQNOptimizer, DQNOptimizerConfig, DQNTarget
 from ldp.alg.optimizer.openai_sft_optimizer import OpenAISFTOpt, OpenAISFTOptConfig
 from ldp.alg.rollout import RolloutManager
 from ldp.data_structures import Trajectory, Transition
@@ -27,7 +23,6 @@ from ldp.graph.gradient_estimators import (
     straight_through_estimator as ste,
 )
 from ldp.graph.memory import Memory
-from ldp.graph.modules import EmbeddingDQNOp
 from ldp.graph.op_utils import CallID, compute_graph, eval_mode
 from ldp.graph.ops import GradInType, Op, OpCtx, OpResult
 from ldp.llms import LLMModel, append_to_sys
@@ -39,7 +34,6 @@ from .conftest import IN_GITHUB_ACTIONS
 @pytest.mark.parametrize(
     ("agent_cls", "optimizer_cls", "optimizer_kwargs"),
     [
-        (DQNAgent, DQNOptimizer, {}),
         (MemoryAgent, MemoryOpt, {}),
         (ReActAgent, APEOpt, {"score_fn": APEScoreFn.GRADIENT}),
     ],
@@ -50,155 +44,6 @@ def test_optimizer_factory(
     agent = agent_cls()
     opt = default_optimizer_factory(agent, optimizer_cls, **optimizer_kwargs)
     assert isinstance(opt, optimizer_cls)
-
-
-class TestDQNOptimizer:
-    @pytest.mark.asyncio
-    async def test_update(self) -> None:
-        dqn = EmbeddingDQNOp(num_layers=1)
-        assert isinstance(dqn.network, nn.Linear)
-        for net in (dqn.network, dqn.target_network):
-            net.weight.data.fill_(0.0)
-            net.weight.requires_grad = False
-            net.bias.data.fill_(0.0)
-
-        with eval_mode():
-            assert (await dqn("hello")).value == 0.0
-
-        agent = DQNAgent(num_actions_to_sample=2, dqn=dqn)
-
-        tau = 0.5
-        opt = DQNOptimizer.from_agent(
-            agent,
-            config=DQNOptimizerConfig(
-                lr=0.1,
-                batch_size=4,
-                train_buffer_size=18,
-                val_buffer_size=2,
-                soft_update_tau=tau,
-            ),
-        )
-
-        # Make sure the network is getting swapped out
-        with dqn.use_target_network():
-            assert dqn.async_network.module is dqn.target_network
-
-        # See if the update propagates correctly
-        dqn.network.bias.data.fill_(1.0)
-        opt._update_target_network()
-        assert (dqn.target_network.bias == 0.5).all()
-
-        # Make sure we are getting the updated target network in the forward pass
-        with dqn.use_target_network(), eval_mode():
-            assert (await dqn("hello")).value == 0.5
-
-        # Make sure the policy network didn't change in the update
-        with eval_mode():
-            assert (await dqn("hello")).value == 1.0
-
-        # Reset our Qs
-        dqn.network.bias.data.fill_(0.0)
-        dqn.target_network.bias.data.fill_(0.0)
-
-        # Ok, now let's run a full training iteration and confirm that things move in the
-        # right direction
-        rollout = RolloutManager(agent)
-
-        while True:  # Do-while on failed trajectory
-            traj, *_ = (
-                await rollout.sample_trajectories(
-                    environment_factory=lambda: DummyEnv(end_immediately=False),
-                    max_steps=2,
-                )
-            )[0]  # batch size defaults to 1
-            if not traj.failed:
-                # Sometimes the agent will crash DummyEnv, so check it didn't fail.
-                # TODO: don't use RolloutManager for this simple test; just manually
-                # construct a dummy trajectory
-                break
-
-        assert len(traj.steps) == 2
-        traj.steps[0].reward = 0.0
-        traj.steps[1].reward = 1.0
-        traj.steps[1].truncated = False
-        traj.steps[1].done = True
-
-        for step in traj.steps:
-            assert step.action
-            step.action.compute_grads()
-
-        # add a lot of data to the training buffer
-        opt.aggregate([traj] * 10)
-        # Here's what should happen:
-        # - Q^target should always return 0, so:
-        #    - in the terminal state, target = r=1
-        #    - in the other state, target = r+gamma*Q^target=0
-        # - The policy network bias should go towards 0.5 (avg of 0, 1).
-        #   The weight should stay at 0 (no grad).
-        # - _update_target_network() runs after the optimizer updates, so the target network
-        #   should be at tau*policy + (1-tau)*target = 0.5
-        await opt.update()
-
-        bias = dqn.network.bias.item()
-        assert bias == pytest.approx(0.5, abs=0.25)
-        assert (dqn.network.weight == 0.0).all()
-        assert dqn.target_network.bias.item() == pytest.approx(tau * bias, abs=0.001)
-        assert (dqn.target_network.weight == 0.0).all()
-
-    @pytest.mark.parametrize(
-        "dqn_target", [DQNTarget.Q, DQNTarget.SARSA, DQNTarget.MC_SARSA]
-    )
-    @pytest.mark.asyncio
-    @pytest.mark.usefixtures("seed_zero")
-    async def test_convergence(self, dqn_target: DQNTarget) -> None:
-        # going to make a lot of embedding calls, so create a cache
-        litellm.cache = Cache()
-
-        agent = DQNAgent(num_actions_to_sample=2)
-        opt = DQNOptimizer.from_agent(
-            agent,
-            config=DQNOptimizerConfig(
-                lr=0.01,
-                batch_size=8,
-                train_buffer_size=18,
-                val_buffer_size=2,
-                soft_update_tau=1.0,
-                target=dqn_target,
-            ),
-        )
-
-        rollout = RolloutManager(agent)
-
-        results: list[tuple[Trajectory, Any]] = await rollout.sample_trajectories(
-            environment_factory=lambda: DummyEnv(end_immediately=False),
-            max_steps=2,
-            batch_size=6,
-        )
-
-        for traj, _ in results:
-            if traj.failed:
-                continue
-
-            assert len(traj.steps) == 2
-            traj.steps[0].reward = 0.0
-            traj.steps[1].reward = 1.0
-            traj.steps[1].truncated = False
-            traj.steps[1].done = True
-
-            for step in traj.steps:
-                assert step.action
-                step.action.compute_grads()
-
-            # Add extra data to ensure convergence
-            opt.aggregate([traj] * 4)
-            await opt.update()
-
-        obs, tools = await DummyEnv(end_immediately=False).reset()
-        agent_state = await agent.init_state(tools)
-        with eval_mode():
-            _, _, q = await agent.get_asv(agent_state, obs)
-
-        assert abs(q - 1) < 0.2, "Expected Q-value to be close to 1 after training"
 
 
 class SquaredErrorLoss(Op[int]):

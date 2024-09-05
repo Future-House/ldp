@@ -2,9 +2,8 @@ from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ldp.agent import Agent, DQNAgent, MemoryAgent, ReActAgent
+from ldp.agent import Agent, MemoryAgent, ReActAgent
 from ldp.alg.optimizer.ape import APEOpt, APEScoreFn
-from ldp.alg.optimizer.dqn import DQNOptimizer, DQNOptimizerConfig
 from ldp.alg.optimizer.memory import MemoryOpt, PositiveMemoryOpt
 from ldp.alg.optimizer.opt import _OPTIMIZER_REGISTRY, ChainedOptimizer, Optimizer
 
@@ -22,7 +21,6 @@ class OptimizerConfig(BaseModel):
 
 _DEFAULT_OPTIMIZER_MAP: dict[type[Agent], type[Optimizer]] = {
     MemoryAgent: MemoryOpt,
-    DQNAgent: DQNOptimizer,
     ReActAgent: APEOpt,
 }
 
@@ -63,14 +61,6 @@ def default_optimizer_factory(
                 )
             )
         return MemoryOpt.from_agent(agent, **optimizer_kwargs)
-    if isinstance(agent, DQNAgent):
-        if optimizer_cls != DQNOptimizer:
-            raise NotImplementedError(
-                _DEFAULT_OPTIMIZER_ERROR_MSG.format(
-                    opt_type=optimizer_cls.__name__, agent_type=DQNAgent.__name__
-                )
-            )
-        return DQNOptimizer.from_agent(agent, **optimizer_kwargs)
     if isinstance(agent, ReActAgent):
         if optimizer_cls != APEOpt:
             raise NotImplementedError(
@@ -86,8 +76,6 @@ __all__ = [
     "APEOpt",
     "APEScoreFn",
     "ChainedOptimizer",
-    "DQNOptimizer",
-    "DQNOptimizerConfig",
     "MemoryOpt",
     "Optimizer",
     "OptimizerConfig",
