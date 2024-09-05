@@ -10,9 +10,7 @@ from uuid import UUID, uuid4
 
 import torch
 from torch import nn
-from torch.nn.functional import pad
 from torch.utils.data import default_collate
-from transformers.generation.utils import GenerateDecoderOnlyOutput
 
 _TORCH_LOCK = asyncio.Lock()
 
@@ -168,55 +166,3 @@ class AsyncTorchModule:
             request_ids = [x[1] for x in batch]
             results = self.decollate_fn(batched_results)
             self._result_buffer.update(zip(request_ids, results, strict=True))
-
-    @staticmethod
-    def collate_fn_transformers_model(
-        samples: list[dict[str, torch.Tensor]], agg_keys: set[str] | None = None
-    ) -> dict[str, torch.Tensor]:
-        """Collates and pads a batch of samples for input into a huggingface transformer model."""
-        if agg_keys is None:
-            agg_keys = {"input_ids", "attention_mask"}
-        seq_lens = [inp["input_ids"].shape[1] for inp in samples]
-        max_seq_len = max(seq_lens)
-        n_pads = [max_seq_len - seq_len for seq_len in seq_lens]
-
-        batch = {
-            key: torch.cat(
-                [
-                    pad(inp[key], (0, n_pad), value=0)
-                    for inp, n_pad in zip(samples, n_pads, strict=True)
-                ],
-                dim=0,
-            )
-            for key in agg_keys
-        }
-
-        # Treating other keys as constant kwargs params for the model
-        other_keys = set(samples[0].keys()) - agg_keys
-        for key in other_keys:
-            for sample in samples:
-                if key not in sample:
-                    raise ValueError(f"Missing key {key} in sample.")
-                if key in batch and batch[key] != sample[key]:
-                    raise ValueError(
-                        f"Constant kwarg key {key} has different values within batch."
-                    )
-                batch[key] = sample[key]
-
-        return batch
-
-    @staticmethod
-    def decollate_fn_transformers_decoder(
-        batched_output: GenerateDecoderOnlyOutput,
-    ) -> list[GenerateDecoderOnlyOutput]:
-        """Decollates a batched output from a huggingface transformer decoder."""
-        batch_size = batched_output.sequences.size(0)
-
-        return [
-            GenerateDecoderOnlyOutput({
-                "sequences": batched_output.sequences[i][None],
-                "scores": [v[i][None] for v in batched_output.scores],
-                # Ignore other keys for now
-            })
-            for i in range(batch_size)
-        ]
