@@ -2,8 +2,14 @@ import inspect
 from collections.abc import Mapping, Sequence
 from typing import Any, ClassVar
 
-import torch
-from torch import nn
+try:
+    import torch
+    from torch import nn
+except ImportError:
+    raise ImportError(
+        "ldp.graph.torch_ops requires PyTorch as a dependency. "
+        "Please run `pip install ldp[nn]`."
+    ) from None
 
 from ldp.graph.async_torch import async_protect_torch_call
 from ldp.graph.op_utils import CallID, get_call_id, get_training_mode

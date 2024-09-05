@@ -945,7 +945,7 @@ wheels = [
 
 [[package]]
 name = "ldp"
-version = "0.1.1.dev3+g3967e98.d20240905"
+version = "0.1.1.dev4+ga301aab.d20240905"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -959,7 +959,6 @@ dependencies = [
     { name = "pydantic" },
     { name = "tenacity" },
     { name = "tiktoken" },
-    { name = "torch" },
     { name = "tqdm" },
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
     { name = "usearch" },
@@ -968,6 +967,9 @@ dependencies = [
 [package.optional-dependencies]
 monitor = [
     { name = "wandb" },
+]
+nn = [
+    { name = "torch" },
 ]
 server = [
     { name = "fastapi" },
@@ -1001,6 +1003,7 @@ dev = [
     { name = "pytest-timer", extra = ["colorama"] },
     { name = "pytest-xdist" },
     { name = "refurb" },
+    { name = "torch" },
     { name = "types-aiofiles" },
     { name = "types-tqdm" },
     { name = "wandb" },
@@ -1021,7 +1024,7 @@ requires-dist = [
     { name = "pydot", marker = "extra == 'visualization'", specifier = "~=2.0" },
     { name = "tenacity" },
     { name = "tiktoken" },
-    { name = "torch" },
+    { name = "torch", marker = "extra == 'nn'", specifier = ">=2.2" },
     { name = "tqdm" },
     { name = "types-aiofiles", marker = "extra == 'typing'" },
     { name = "types-tqdm", marker = "extra == 'typing'" },
@@ -1036,7 +1039,7 @@ dev = [
     { name = "codeflash" },
     { name = "fhaviary", extras = ["xml"] },
     { name = "ipython", specifier = ">=8" },
-    { name = "ldp", extras = ["monitor", "server", "typing", "visualization"] },
+    { name = "ldp", extras = ["monitor", "nn", "server", "typing", "visualization"] },
     { name = "litellm", specifier = ">=1.40.9,<=1.40.12" },
     { name = "mypy", specifier = ">=1.8" },
     { name = "pre-commit", specifier = "~=3.4" },

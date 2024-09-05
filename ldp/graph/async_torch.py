@@ -8,9 +8,15 @@ from contextlib import nullcontext
 from typing import Any
 from uuid import UUID, uuid4
 
-import torch
-from torch import nn
-from torch.utils.data import default_collate
+try:
+    import torch
+    from torch import nn
+    from torch.utils.data import default_collate
+except ImportError:
+    raise ImportError(
+        "ldp.graph.async_torch requires PyTorch as a dependency. "
+        "Please run `pip install ldp[nn]`."
+    ) from None
 
 _TORCH_LOCK = asyncio.Lock()
 
