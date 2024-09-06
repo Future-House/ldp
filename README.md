@@ -82,7 +82,7 @@ class MyAgent(Agent[MyComplexState]):
 ## Complete Example
 
 ```py
-from ldp.agents import SimpleAgent
+from ldp.agent import SimpleAgent
 from aviary.env import DummyEnv
 
 env = DummyEnv()
