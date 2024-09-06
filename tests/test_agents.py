@@ -454,13 +454,13 @@ class TestReActAgent:
                     " And despite that there is a multiline argument"
                     ' description.","title":"Y","type":"null"},"union":{"anyOf":[{"type":"integer"},{"type":"null"}],"description":"I'
                     " am a union and the current year is"
-                    ' {current_year}.","title":"Union"},"pydantic_model":{"allOf":[{"$ref":"#/$defs/StubState"}],"description":"I'
+                    ' {current_year}.","title":"Union"},"pydantic_model":{"$ref":"#/$defs/StubState","description":"I'
                     " am a Pydantic"
                     ' model."},"basic_dict":{"additionalProperties":{"type":"integer"},"description":"I'
                     ' am a dictionary with primitive values.","title":"Basic'
                     ' Dict","type":"object"},"complex_dict":{"additionalProperties":{"maxItems":2,"minItems":2,"prefixItems":[{"type":"string"},{"type":"integer"}],"type":"array"},"description":"I'
                     ' am a dictionary with complex values.","title":"Complex'
-                    ' Dict","type":"object"},"enum":{"allOf":[{"$ref":"#/$defs/StubEnum"}],"description":"I'
+                    ' Dict","type":"object"},"enum":{"$ref":"#/$defs/StubEnum","description":"I'
                     " am an"
                     ' enum."},"defaulted_str":{"default":"default","description":"I'
                     ' have a string default value.","title":"Defaulted'
@@ -500,16 +500,14 @@ class TestReActAgent:
                     " am null. And despite that there is a multiline argument"
                     " description.</description><title>Y</title><type>null</type></y><union><anyOf><item><type>integer</type></item><item><type>null</type></item></anyOf><description>I"
                     " am a union and the current year is"
-                    " {current_year}.</description><title>Union</title></union><pydantic_model><allOf><item><key"
-                    ' name="$ref">#/$defs/StubState</key></item></allOf><description>I'
-                    " am a Pydantic"
+                    " {current_year}.</description><title>Union</title></union><pydantic_model><key"
+                    ' name="$ref">#/$defs/StubState</key><description>I am a Pydantic'
                     " model.</description></pydantic_model><basic_dict><additionalProperties><type>integer</type></additionalProperties><description>I"
                     " am a dictionary with primitive values.</description><title>Basic"
                     " Dict</title><type>object</type></basic_dict><complex_dict><additionalProperties><maxItems>2</maxItems><minItems>2</minItems><prefixItems><item><type>string</type></item><item><type>integer</type></item></prefixItems><type>array</type></additionalProperties><description>I"
                     " am a dictionary with complex values.</description><title>Complex"
-                    " Dict</title><type>object</type></complex_dict><enum><allOf><item><key"
-                    ' name="$ref">#/$defs/StubEnum</key></item></allOf><description>I'
-                    " am an"
+                    " Dict</title><type>object</type></complex_dict><enum><key"
+                    ' name="$ref">#/$defs/StubEnum</key><description>I am an'
                     " enum.</description></enum><defaulted_str><default>default</default><description>I"
                     " have a string default value.</description><title>Defaulted"
                     " Str</title><type>string</type></defaulted_str><defaulted_float><default>1.0</default><description>I"
