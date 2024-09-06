@@ -13,7 +13,7 @@ from uuid import UUID
 
 import networkx as nx
 import tree
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from ldp.graph.op_utils import (
     CallID,
@@ -22,7 +22,6 @@ from ldp.graph.op_utils import (
     get_training_mode,
     op_call,
 )
-from ldp.graph.pydantic_patch import PatchGenericPickle
 
 logger = logging.getLogger(__name__)
 
@@ -36,21 +35,25 @@ BackwardsType: TypeAlias = Callable[
 TOutput = TypeVar("TOutput")
 
 
-class OpResult(BaseModel, Generic[TOutput], PatchGenericPickle):
+class OpResult(Generic[TOutput]):
     """Result of a forward pass, used in the compute graph."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    def __init__(
+        self, call_id: CallID, op_name: str, op_class_name: str, value: TOutput
+    ):
+        """
+        Initialize an OpResult instance.
 
-    call_id: CallID
-    op_name: str = Field(
-        description="Name of the Op instance (i.e. op.name) that produced this OpResult."
-    )
-    op_class_name: str = Field(
-        description="Fully qualified name of the class "
-        "of the Op that produced this OpResult."
-    )
-
-    value: TOutput
+        Args:
+            call_id: The unique identifier for the call.
+            op_name: Name of the Op instance (i.e. op.name) that produced this OpResult.
+            op_class_name: Fully qualified name of the class of the Op that produced this OpResult.
+            value: The output of the call.
+        """
+        self.call_id = call_id
+        self.op_name = op_name
+        self.op_class_name = op_class_name
+        self.value = value
 
     def __hash__(self) -> int:
         return hash(self.call_id)
