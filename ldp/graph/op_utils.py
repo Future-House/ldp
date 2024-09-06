@@ -29,7 +29,7 @@ class CallID(BaseModel):
         return str(value)
 
     def __init__(self, run_id: str | UUID, fwd_id: str | UUID):
-        # Convenience method so we can write CallID(run_id, fwd_id)
+        # Convenience so we can use positional arguments
         super().__init__(run_id=run_id, fwd_id=fwd_id)
 
 
