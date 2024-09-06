@@ -1,18 +1,36 @@
 import contextvars
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import NamedTuple
 from uuid import UUID, uuid4
 
 from aviary.utils import is_coroutine_callable
+from pydantic import BaseModel, field_serializer, field_validator
 
 
-class CallID(NamedTuple):
+class CallID(BaseModel):
     run_id: UUID
     fwd_id: UUID
 
     def __repr__(self) -> str:
         return f"{self.run_id}:{self.fwd_id}"
+
+    def __hash__(self) -> int:
+        return hash((self.run_id, self.fwd_id))
+
+    @field_validator("run_id", "fwd_id", mode="before")
+    @classmethod
+    def validate_uuid(cls, value: UUID | str) -> UUID:
+        if isinstance(value, str):
+            return UUID(value)
+        return value
+
+    @field_serializer("run_id", "fwd_id")
+    def serialize_uuid(self, value: UUID) -> str:
+        return str(value)
+
+    def __init__(self, run_id: str | UUID, fwd_id: str | UUID):
+        # Convenience so we can use positional arguments
+        super().__init__(run_id=run_id, fwd_id=fwd_id)
 
 
 _RUN_ID = contextvars.ContextVar[UUID]("run_id")
