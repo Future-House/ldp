@@ -300,7 +300,14 @@ class OfflineTrainer:
                 i_batch_start : i_batch_start + self.config.batch_size
             ]
 
-            self.optimizer.aggregate(batch)
+            batch_with_pbar = tqdm(
+                batch,
+                desc="Aggregating trajectories",
+                ncols=0,
+                # Only show the progress bar if we are doing full-batch optimization
+                disable=len(self.train_trajectories) > self.config.batch_size,
+            )
+            self.optimizer.aggregate(batch_with_pbar)
 
             if (training_step + 1) % self.config.update_every == 0:
                 await self.optimizer.update()
