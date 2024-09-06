@@ -39,7 +39,7 @@ class OpResult(Generic[TOutput]):
     """Result of a forward pass, used in the compute graph."""
 
     def __init__(
-        self, call_id: CallID, op_name: str, op_class_name: str, value: TOutput
+        self, call_id: CallID | Any, op_name: str, op_class_name: str, value: TOutput
     ):
         """
         Initialize an OpResult instance.
@@ -50,10 +50,32 @@ class OpResult(Generic[TOutput]):
             op_class_name: Fully qualified name of the class of the Op that produced this OpResult.
             value: The output of the call.
         """
-        self.call_id = call_id
+        self.call_id = CallID.model_validate(call_id)
         self.op_name = op_name
         self.op_class_name = op_class_name
         self.value = value
+
+    def to_dict(self) -> dict[str, Any]:
+        value_dump = (
+            self.value.model_dump() if isinstance(self.value, BaseModel) else self.value
+        )
+
+        return {
+            "call_id": self.call_id.model_dump(),
+            "op_name": self.op_name,
+            "op_class_name": self.op_class_name,
+            "value": value_dump,
+        }
+
+    @classmethod
+    def from_dict(
+        cls, t_output: type[TOutput], dump: dict[str, Any]
+    ) -> OpResult[TOutput]:
+        value = dump.pop("value")
+        if issubclass(t_output, BaseModel):
+            value = t_output.model_validate(value)
+
+        return cls[t_output](**dump, value=value)  # type: ignore[index]
 
     def __hash__(self) -> int:
         return hash(self.call_id)

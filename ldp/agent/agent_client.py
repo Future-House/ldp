@@ -54,7 +54,7 @@ class HTTPAgentClient(Agent[TSerializableAgentState]):
             response.raise_for_status()
             response_data = response.json()
             return (
-                OpResult[ToolRequestMessage](**response_data[0]),
+                OpResult.from_dict(ToolRequestMessage, response_data[0]),
                 self._agent_state_type(**response_data[1]),
                 response_data[2],
             )
@@ -131,11 +131,11 @@ def make_simple_agent_server(
         obs: Messages,
         _: Annotated[HTTPAuthorizationCredentials, Depends(validate_token)],
         training: Annotated[bool, Body()] = True,
-    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+    ) -> tuple[dict, SimpleAgentState, float]:
         if training:
             raise NotImplementedError("Training is not yet supported.")
         action, agent_state, vhat = await agent.get_asv(agent_state, obs)
-        return action, agent_state, vhat
+        return action.to_dict(), agent_state, vhat
 
     @asgi_app.post("/init_state")
     async def init_state(

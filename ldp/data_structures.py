@@ -7,7 +7,7 @@ from typing import Any, ClassVar, Self
 
 from aviary.message import Message
 from aviary.tools import ToolRequestMessage, ToolResponseMessage
-from pydantic import BaseModel, ConfigDict, Field, JsonValue
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
 
 from ldp.alg.algorithms import discounted_returns
 from ldp.graph.ops import OpResult
@@ -41,8 +41,7 @@ class Transition(BaseModel):
         description="Environment.step output. This is o_t+1 in RL terms."
     )
 
-    # Non-ToolRequestMessage OpResult is here to allow for testing hacks
-    action: OpResult[ToolRequestMessage] | OpResult | None = Field(
+    action: OpResult[ToolRequestMessage] | None = Field(
         default=None, description="Agent.get_asv output. This is a_t in RL terms."
     )
 
@@ -66,6 +65,15 @@ class Transition(BaseModel):
     # JsonValue so we can serialize
     metadata: dict[str, JsonValue] = Field(default_factory=dict)
 
+    @field_validator("action", mode="before")
+    @classmethod
+    def construct_action(
+        cls, action: OpResult[ToolRequestMessage] | dict | None
+    ) -> OpResult[ToolRequestMessage] | None:
+        if isinstance(action, dict):
+            return OpResult.from_dict(ToolRequestMessage, action)
+        return action
+
     @property
     def failed(self) -> bool:
         """Get if an exception was encountered during rollout, for convenience.
@@ -74,6 +82,14 @@ class Transition(BaseModel):
         Failed transitions are for debugging purposes.
         """
         return bool(self.metadata.get("exception"))
+
+    def model_dump_json(self, *, indent: int | None = None, **kwargs) -> str:
+        # The kwargs for model_dump are the same as super().model_dump_json,
+        # with the exception of indent.
+        dump = self.model_dump(**kwargs)
+        if self.action is not None:
+            dump["action"] = self.action.to_dict()
+        return json.dumps(dump, indent=indent)
 
 
 class Trajectory(BaseModel):

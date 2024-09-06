@@ -98,7 +98,8 @@ async def test_opresult_typing(op_return: tuple[T, type[T]], training: bool) -> 
         op_result = await op()
 
     # Confirm that the OpResult's type matches the value's type
-    assert isinstance(op_result, OpResult[op_return_type])  # type: ignore[valid-type,misc]
+    assert isinstance(op_result, OpResult)
+    assert isinstance(op_result.value, op_return_type)
 
 
 class TestLLMCallOp:
@@ -137,11 +138,8 @@ class TestLLMCallOp:
 
         # Perform one step
         async with compute_graph():
-            op_result = cast(
-                OpResult[ToolRequestMessage],
-                await llm_op(config, msgs=obs, tools=tools),
-            )
-        await env.exec_tool_calls(op_result.value)
+            op_result = await llm_op(config, msgs=obs, tools=tools)
+        await env.exec_tool_calls(cast(ToolRequestMessage, op_result.value))
 
         # LLMCallOp track cost using run context
         result = llm_op.ctx.get(op_result.call_id, "result")
@@ -243,7 +241,7 @@ async def test_nested_op():
     inner_op_a = FxnOp(lambda x: x + 1)
     inner_op_b = FxnOp(lambda x: x + 1)
 
-    async def nested_op(x: ResultOrValue[float]) -> OpResult[float]:
+    async def nested_op(x: ResultOrValue) -> OpResult:
         async with compute_graph():
             x = await inner_op_a(x)
             return await inner_op_b(x)
