@@ -267,7 +267,7 @@ class OpResult(Generic[TOutput]):
         return self.call_id.run_id
 
     @staticmethod
-    def unwrap_value(result: ResultOrValue) -> Any:
+    def unwrap_value(result: ResultOrValue[TOutput]) -> TOutput:
         if isinstance(result, OpResult):
             return result.value
         return result

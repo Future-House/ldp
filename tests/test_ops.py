@@ -241,7 +241,7 @@ async def test_nested_op():
     inner_op_a = FxnOp(lambda x: x + 1)
     inner_op_b = FxnOp(lambda x: x + 1)
 
-    async def nested_op(x: ResultOrValue) -> OpResult:
+    async def nested_op(x: ResultOrValue[int]) -> OpResult[int]:
         async with compute_graph():
             x = await inner_op_a(x)
             return await inner_op_b(x)
