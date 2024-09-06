@@ -32,6 +32,7 @@ dependencies = [
 ]
 description = "Agent framework for constructing language model agents and training on constructive tasks."
 dynamic = ["version"]
+license = {file = "LICENSE"}
 name = "ldp"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -402,6 +403,7 @@ dev-dependencies = [
     "litellm>=1.40.9,<=1.40.12",  # Pin lower for get_supported_openai_params not requiring custom LLM, upper for https://github.com/BerriAI/litellm/issues/4032
     "mypy>=1.8",  # Pin for mutable-override
     "pre-commit~=3.4",  # Pin to keep recent
+    "pydantic~=2.9",  # Pydantic 2.9 changed JSON schema exports 'allOf', so ensure tests match
     "pylint-pydantic",
     "pylint>=3.2",  # Pin to keep recent
     "pytest-asyncio",
