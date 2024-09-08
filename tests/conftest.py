@@ -6,12 +6,19 @@ import pytest
 import torch
 from aviary.env import DummyEnv
 
+from ldp.utils import configure_log_levels
+
 IN_GITHUB_ACTIONS: bool = os.getenv("GITHUB_ACTIONS") == "true"
 
 
 @pytest.fixture(name="dummy_env")
 def fixture_dummy_env() -> DummyEnv:
     return DummyEnv()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _fixture_set_up_environment() -> None:
+    configure_log_levels()
 
 
 def set_seed(seed: int | None) -> None:
