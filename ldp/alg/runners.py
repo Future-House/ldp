@@ -302,7 +302,7 @@ class OfflineTrainer:
 
             # Only show the progress bar if we are doing full-batch optimization
             self.optimizer.aggregate(
-                batch, progress=len(self.train_trajectories) <= self.config.batch_size
+                batch, show_pbar=len(self.train_trajectories) <= self.config.batch_size
             )
 
             if (training_step + 1) % self.config.update_every == 0:
