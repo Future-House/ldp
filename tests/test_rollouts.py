@@ -1,3 +1,4 @@
+import itertools
 import random
 import tempfile
 from copy import deepcopy
@@ -14,7 +15,7 @@ from ldp.alg.beam_search import BeamSearchRollout
 from ldp.alg.callbacks import Callback
 from ldp.alg.rollout import RolloutManager
 from ldp.alg.tree_search import TreeSearchRollout
-from ldp.data_structures import Trajectory, Transition
+from ldp.data_structures import Trajectory, Transition, TransitionTree
 from ldp.graph.common_ops import FxnOp
 from ldp.graph.op_utils import compute_graph, set_training_mode
 from ldp.graph.ops import OpResult
@@ -240,8 +241,15 @@ async def test_tree_search():
         concurrency_limit=1,
         callbacks=[callback],
     )
-    trajs = await rollout_manager.sample_tree(env, max_depth=3)
+    tree = await rollout_manager.sample_tree(env, max_depth=3)
+    trajs = tree.get_trajectories()
     assert len(trajs) == 8
+
+    traj_ids_wo_root = {
+        cast(str, traj.traj_id).replace(tree.root_id, "").lstrip(":") for traj in trajs
+    }
+    # IDs should be 0:0:0, 0:0:1, ... 1:1:1 (order doesn't matter)
+    assert traj_ids_wo_root == {":".join(x) for x in itertools.product("01", repeat=3)}
 
     observations = {}  # type: ignore[var-annotated]
     for traj in trajs:
@@ -266,3 +274,46 @@ async def test_tree_search():
     # - branching factor = 2, depth = 3
     # - root node isn't sampled, so no i=0 term in sum
     assert all(v == 14 for v in callback.fn_invocations.values())
+
+
+def test_tree_mc_value():
+    root_id = "dummy"
+    tree = TransitionTree(root_id=root_id)
+
+    kw = {
+        "agent_state": None,
+        "next_agent_state": None,
+        "observation": Transition.NO_OBSERVATION,
+        "next_observation": Transition.NO_OBSERVATION,
+        "action": None,
+    }
+
+    # Construct a tree with some rewards scattered about
+    tree.add_transition(f"{root_id}:0", Transition(timestep=0, reward=0.0, **kw))
+
+    tree.add_transition(f"{root_id}:0:0", Transition(timestep=1, reward=1.0, **kw))
+    for i in range(3):
+        tree.add_transition(
+            f"{root_id}:0:0:{i}",
+            Transition(timestep=2, reward=float(i), done=True, **kw),
+        )
+
+    tree.add_transition(
+        f"{root_id}:0:1", Transition(timestep=1, reward=-1.0, done=True, **kw)
+    )
+
+    tree.assign_mc_value_estimates(discount_factor=0.9)
+
+    # Now make sure the value estimates are as expected
+    # First, check the terminal nodes: Q==reward
+    for i in range(3):
+        assert tree.get_transition(f"{root_id}:0:0:{i}").value == float(i)
+    assert tree.get_transition(f"{root_id}:0:1").value == -1.0
+
+    # Then go up the tree
+    assert tree.get_transition(f"{root_id}:0:0").value == pytest.approx(
+        1.9, rel=0.001
+    )  # 1 + 0.9 * avg(0, 1, 2)
+    assert tree.get_transition(f"{root_id}:0").value == pytest.approx(
+        0.405, rel=0.001
+    )  # 0 + 0.9 * avg(1.9, -1)
