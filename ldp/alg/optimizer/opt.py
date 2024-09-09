@@ -4,6 +4,8 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 
+from tqdm import tqdm
+
 from ldp.data_structures import Trajectory
 
 logger = logging.getLogger(__name__)
@@ -21,9 +23,18 @@ class Optimizer(ABC):
         _OPTIMIZER_REGISTRY[cls.__name__] = cls
         return super().__init_subclass__()
 
-    def aggregate(self, trajectories: Iterable[Trajectory]) -> None:
+    def aggregate(
+        self, trajectories: Iterable[Trajectory], show_pbar: bool = False
+    ) -> None:
         """Aggregate trajectories to construct training samples."""
-        for trajectory in trajectories:
+        trajectories_with_pbar = tqdm(
+            trajectories,
+            desc="Aggregating trajectories",
+            ncols=0,
+            mininterval=1,
+            disable=not show_pbar,
+        )
+        for trajectory in trajectories_with_pbar:
             self.aggregate_trajectory(trajectory)
 
     @abstractmethod
@@ -41,9 +52,11 @@ class ChainedOptimizer(Optimizer):
     def __init__(self, *optimizers: Optimizer):
         self.optimizers = optimizers
 
-    def aggregate(self, trajectories: Iterable[Trajectory]) -> None:
+    def aggregate(
+        self, trajectories: Iterable[Trajectory], show_pbar: bool = False
+    ) -> None:
         for optimizer in self.optimizers:
-            optimizer.aggregate(trajectories)
+            optimizer.aggregate(trajectories, show_pbar=show_pbar)
 
     async def update(self) -> None:
         for optimizer in self.optimizers:

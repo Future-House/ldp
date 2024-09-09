@@ -338,21 +338,13 @@ class OpCtx(BaseModel):
 
     def get(self, call_id: CallID, key: str, default: Any = NOT_FOUND) -> Any:
         """Get an attribute with an optional default, emulating dict.get."""
-        value = self.data[call_id.run_id].get((call_id.fwd_id, key), default)
+        value = self.data.get(call_id.run_id, {}).get((call_id.fwd_id, key), default)
         if value is NOT_FOUND:
             raise KeyError(f"call_id={call_id}, key='{key}' not found in context")
         return value
 
     def update(self, call_id: CallID, key: str, value: Any):
         self.data[call_id.run_id][(call_id.fwd_id, key)] = value
-
-    @property
-    def call_ids(self) -> set[CallID]:
-        return {
-            CallID(run_id, fwd_id)
-            for run_id, calls in self.data.items()
-            for fwd_id, _ in calls
-        }
 
     def get_input_grads(self, call_id: CallID) -> GradInType:
         # TODO: this function name is confusing. Let's deprecate it. We only use it
@@ -463,12 +455,13 @@ class Op(ABC, Generic[TOutput]):
         """
 
     def get_call_ids(self, run_ids: Collection[UUID] | None = None) -> set[CallID]:
-        call_ids = self.ctx.call_ids
-        return (
-            call_ids
-            if run_ids is None
-            else {c for c in call_ids if c.run_id in run_ids}
-        )
+        ctx = self.ctx
+        if run_ids is None:
+            run_ids = ctx.data.keys()
+
+        # de-duplicate before constructing CallIDs
+        ids = {(run_id, fwd_id) for run_id in run_ids for fwd_id, _ in ctx.data[run_id]}
+        return set(itertools.starmap(CallID, ids))
 
     # This compute_graph() decoration will do nothing if we are already inside a compute graph.
     # We add it here in case we are calling a bare op(), in which case we want a graph
