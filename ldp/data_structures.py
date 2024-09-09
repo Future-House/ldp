@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from typing import Any, ClassVar, Self, cast
+from uuid import UUID
 
 import networkx as nx
 from aviary.message import Message
@@ -132,7 +133,7 @@ class Trajectory(BaseModel):
 
 
 class TransitionTree:
-    def __init__(self, root_id: str):
+    def __init__(self, root_id: str | UUID):
         """A tree of transitions.
 
         If A->B is an edge in this tree, then A and B are consecutive
@@ -144,18 +145,18 @@ class TransitionTree:
                 All IDs of transitions added to this tree must begin with
                 the same root_id.
         """
-        self.root_id = root_id
+        self.root_id = str(root_id)
 
         self.tree = nx.DiGraph()  # the actual tree
         self.rev_tree = nx.DiGraph()  # the same as self.tree, but with reversed edges
 
-        self._add_node(root_id, transition=None)
+        self._add_node(self.root_id, transition=None)
 
-    def _add_node(self, step_id: str, transition: Transition | None):
+    def _add_node(self, step_id: str, transition: Transition | None) -> None:
         self.tree.add_node(step_id, transition=transition)
         self.rev_tree.add_node(step_id)
 
-    def _add_edge(self, parent_step_id: str, child_step_id: str):
+    def _add_edge(self, parent_step_id: str, child_step_id: str) -> None:
         self.tree.add_edge(parent_step_id, child_step_id)
         self.rev_tree.add_edge(child_step_id, parent_step_id)
 
@@ -165,7 +166,7 @@ class TransitionTree:
 
         return cast(Transition, self.tree.nodes[step_id]["transition"])
 
-    def add_transition(self, step_id: str, step: Transition):
+    def add_transition(self, step_id: str, step: Transition) -> None:
         """Add a transition to the tree.
 
         Args:
@@ -243,7 +244,7 @@ class TransitionTree:
 
         return trajs
 
-    def assign_mc_value_estimates(self, discount_factor: float = 1.0):
+    def assign_mc_value_estimates(self, discount_factor: float = 1.0) -> None:
         """Assign Monte Carlo state-action value estimates to each transition (in-place).
 
         Args:
