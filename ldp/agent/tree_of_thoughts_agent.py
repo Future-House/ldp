@@ -139,4 +139,4 @@ class TreeofThoughtsAgent(BaseModel, Agent[SimpleAgentState]):
                 op_class_name=type(self).__name__,
                 value=result,
             )
-        return op_result, new_state, 0.0
+        return op_result, new_state, self.NOT_ESTIMATING_VALUE

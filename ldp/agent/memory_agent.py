@@ -97,4 +97,4 @@ class MemoryAgent(SimpleAgent):
             ),
         )
         next_state.messages = [*next_state.messages, result.value]
-        return result, next_state, 0.0
+        return result, next_state, self.NOT_ESTIMATING_VALUE

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Iterable, Mapping, Sequence
-from typing import Any, Generic, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar
 
 import numpy as np
 from aviary.message import Message
@@ -45,6 +45,10 @@ class Agent(ABC, Generic[TAgentState]):
         # Register the Agent subclass.
         _AGENT_REGISTRY[cls.__name__] = cls
 
+    # This is a placeholder value to notate that value is not actually being
+    # estimated, the agent doesn't care about value
+    NOT_ESTIMATING_VALUE: ClassVar[float] = 0.0
+
     @abstractmethod
     async def get_asv(
         self, agent_state: TAgentState, obs: list[Message]
@@ -68,8 +72,8 @@ class Agent(ABC, Generic[TAgentState]):
                 without affecting the original. The estimated value is the agent's
                 estimate of the future rewards given the input state and observations,
                 and is used for RL training.  If estimated value doesn't matter, just
-                return 0. The value could also come from a Q-value evaluated at the
-                action chosen by the agent.
+                return 0 (by using the class variable NOT_ESTIMATING_VALUE). The value
+                could also come from a Q-value evaluated at the agent's chosen action.
         """
 
     @abstractmethod

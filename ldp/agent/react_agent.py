@@ -137,4 +137,4 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
             messages=next_state.messages, tools=next_state.tools
         )
         next_state.messages = [*next_state.messages, react_message]
-        return final_result, next_state, 0.0
+        return final_result, next_state, self.NOT_ESTIMATING_VALUE
