@@ -312,8 +312,8 @@ def test_tree_mc_value():
 
     # Then go up the tree
     assert tree.get_transition(f"{root_id}:0:0").value == pytest.approx(
-        1.9, rel=0.001
-    )  # 1 + 0.9 * avg(0, 1, 2)
+        1 + 0.9 * ((0 + 1 + 2) / 3), rel=0.001
+    )
     assert tree.get_transition(f"{root_id}:0").value == pytest.approx(
-        0.405, rel=0.001
-    )  # 0 + 0.9 * avg(1.9, -1)
+        0.0 + 0.9 * ((1.9 - 1) / 2), rel=0.001
+    )
