@@ -294,8 +294,7 @@ class TestTreeSearch:
             callbacks=[callback],
             target_reward=0.5,
         )
-        tree = await rollout_manager.sample_tree(env, max_depth=3)
-        trajs = tree.get_trajectories()
+        trajs = (await rollout_manager.sample_tree(env, max_depth=3)).get_trajectories()
         assert len(trajs) < 8  # should have exited early
         for traj in trajs:
             # should have hit target reward immediately
