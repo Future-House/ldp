@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import Any, ClassVar, Self
+from typing import Any, ClassVar, Self, cast
+from uuid import UUID
 
+import networkx as nx
 from aviary.message import Message
 from aviary.tools import ToolRequestMessage, ToolResponseMessage
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
@@ -128,3 +130,142 @@ class Trajectory(BaseModel):
             terminated=[step.truncated for step in self.steps],
             discount=discount,
         )
+
+
+class TransitionTree:
+    def __init__(self, root_id: str | UUID):
+        """A tree of transitions.
+
+        If A->B is an edge in this tree, then A and B are consecutive
+        transitions in an LDP. Any path from the root node to a terminal
+        node constitutes a complete LDP.
+
+        Args:
+            root_id: A unique identifier for the root node of the tree.
+                All IDs of transitions added to this tree must begin with
+                the same root_id.
+        """
+        self.root_id = str(root_id)
+
+        self.tree = nx.DiGraph()  # the actual tree
+        self.rev_tree = nx.DiGraph()  # the same as self.tree, but with reversed edges
+
+        self._add_node(self.root_id, transition=None)
+
+    def _add_node(self, step_id: str, transition: Transition | None) -> None:
+        self.tree.add_node(step_id, transition=transition)
+        self.rev_tree.add_node(step_id)
+
+    def _add_edge(self, parent_step_id: str, child_step_id: str) -> None:
+        self.tree.add_edge(parent_step_id, child_step_id)
+        self.rev_tree.add_edge(child_step_id, parent_step_id)
+
+    def get_transition(self, step_id: str) -> Transition:
+        if step_id == self.root_id:
+            raise ValueError("Root node has no transition.")
+
+        return cast(Transition, self.tree.nodes[step_id]["transition"])
+
+    def add_transition(self, step_id: str, step: Transition) -> None:
+        """Add a transition to the tree.
+
+        Args:
+            step_id: A unique identifier for the root node of the tree.
+                The expected form of the step ID is "{parent step ID}:{step index}".
+            step: The transition to add.
+        """
+        root_id, *step_ids = step_id.split(":")
+        assert (
+            root_id == self.root_id
+        ), f"Step ID {step_id} does not start with root ID {self.root_id}"
+        assert step_ids, "Step ID cannot be the same as the root ID."
+        # TODO: maybe this should be warning?
+        assert (
+            step_id not in self.tree
+        ), f"Step ID {step_id} already exists in the tree."
+
+        self._add_node(step_id, transition=step)
+
+        parent_id = ":".join([root_id, *step_ids[:-1]])
+        if parent_id in self.tree:
+            self._add_edge(parent_id, step_id)
+
+    def get_trajectories(self) -> list[Trajectory]:
+        """Return a list of trajectories.
+
+        Since each path from the root node to a terminal node defines
+        a unique trajectory, N(terminal node) trajectories will be returned.
+        The trajectory ID will be set to the ID of the terminal step.
+
+        Note that we include failed and truncated trajectories; it is up to the
+        caller to decide what to do them.
+
+        Returns:
+            All trajectories in this tree.
+        """
+        trajs = []
+        step: Transition | None
+
+        for step_id, step in self.tree.nodes(data="transition"):
+            if not step:
+                # root node
+                continue
+
+            is_terminal = (
+                # check terminal conditions in increasing order of expense
+                step.done
+                or step.truncated
+                or step.failed
+                or self.tree.out_degree(step_id) == 0
+            )
+
+            if not is_terminal:
+                continue
+
+            # set the ID to the terminal node, which uniquely identifies the path
+            traj = Trajectory(traj_id=step_id)
+            # Build the trajectory up from a terminal node
+            current_step: Transition | None = step
+            current_step_id = step_id
+
+            # Walk backwards towards the root (current_step=None)
+            while current_step:
+                traj.steps.append(current_step)
+
+                parent_step_id, *extra = list(self.rev_tree.successors(current_step_id))
+                assert not extra, f"Expected a single parent, but got {len(extra) + 1}"
+
+                current_step_id = parent_step_id
+                current_step = self.tree.nodes[parent_step_id]["transition"]
+
+            # would've added things in reverse order, so fix that here
+            traj.steps.sort(key=lambda x: x.timestep)
+            trajs.append(traj)
+
+        return trajs
+
+    def assign_mc_value_estimates(self, discount_factor: float = 1.0) -> None:
+        """Assign Monte Carlo state-action value estimates to each transition (in-place).
+
+        Args:
+            discount_factor: The discount factor to use when computing cumulative
+                future rewards.
+        """
+        for step_id in nx.topological_sort(self.rev_tree):
+            step: Transition | None = self.tree.nodes[step_id]["transition"]
+            if step is None:
+                continue
+
+            if children := list(self.tree.successors(step_id)):
+                # V_{t+1}(s') = sum_{a'} p(a'|s') * Q_{t+1}(s', a')
+                # Here we assume p(a'|s') is uniform.
+                # TODO: don't make that assumption where a logprob is available
+                v_tp1 = sum(
+                    self.get_transition(child_id).value for child_id in children
+                ) / len(children)
+            else:
+                v_tp1 = 0.0
+
+            # Q_t(s_t, a_t) = r_{t+1} + gamma * V_{t+1}(s_{t+1})
+            # (we are assuming the environment is deterministic)
+            step.value = step.reward + discount_factor * v_tp1

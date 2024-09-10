@@ -1,9 +1,8 @@
 import asyncio
-import itertools
 import logging
 import uuid
 from collections.abc import Awaitable, Callable, Sequence
-from typing import Any, cast
+from typing import Any
 
 from aviary.message import Message
 from aviary.utils import is_coroutine_callable
@@ -18,7 +17,7 @@ from ldp.alg.rollout import (
     TEnv,
     reraise_exc_as,
 )
-from ldp.data_structures import Trajectory
+from ldp.data_structures import TransitionTree
 
 logger = logging.getLogger(__name__)
 
@@ -55,13 +54,14 @@ class TreeSearchRollout(RolloutManager):
         self,
         environments: Sequence[TEnv],
         max_depth: int | None = None,
-    ) -> list[list[Trajectory]]:
+    ) -> list[TransitionTree]:
         return await asyncio.gather(*[
             self.sample_tree(env, max_depth) for env in environments
         ])
 
-    async def sample_tree(self, env: TEnv, max_depth: int | None) -> list[Trajectory]:
+    async def sample_tree(self, env: TEnv, max_depth: int | None) -> TransitionTree:
         max_depth_f = max_depth if max_depth is not None else float("inf")
+        tree = TransitionTree(root_id=str(uuid.uuid4()))
 
         try:
             with reraise_exc_as(EnvError, enabled=self.catch_env_failures):
@@ -69,79 +69,90 @@ class TreeSearchRollout(RolloutManager):
 
             with reraise_exc_as(AgentError, enabled=self.catch_agent_failures):
                 agent_state = await self.agent.init_state(tools)
-
-            root_traj = Trajectory(traj_id=str(uuid.uuid4()))
-            return await self._descend(root_traj, env, agent_state, obs, max_depth_f)
-
         except CaughtError:
-            return []
+            return tree
+
+        await self._descend(
+            tree=tree,
+            prev_step_id=tree.root_id,
+            env=env,
+            agent_state=agent_state,
+            obs=obs,
+            prev_timestep=-1,
+            prev_cumulative_reward=0.0,
+            max_depth=max_depth_f,
+        )
+
+        return tree
 
     async def _descend(
         self,
-        branch: Trajectory,
+        tree: TransitionTree,
+        prev_step_id: str,
         env: TEnv,
         agent_state: Any,
         obs: list[Message],
+        prev_timestep: int,
+        prev_cumulative_reward: float,
         max_depth: float,
-    ) -> list[Trajectory]:
+    ) -> None:
         # Descend one level in the tree, by adding branching_factor children to the branch
         # Then, recurse on each child
-        root_traj_id = cast(str, branch.traj_id).split(":")[0]
-        if root_traj_id in self.target_reward_hit:
-            return [branch]
 
-        timestep = len(branch.steps)
+        if tree.root_id in self.target_reward_hit:
+            # If at least one branch hit the target reward, stop descending
+            return
 
-        async def inner_descend(idx: int) -> list[Trajectory]:
+        timestep = prev_timestep + 1
+
+        async def inner_descend(idx: int) -> None:
             if is_coroutine_callable(self.env_clone_fn):
                 cloned_env = await self.env_clone_fn(env)  # type: ignore[arg-type, misc]
             else:
                 cloned_env = self.env_clone_fn(env)  # type: ignore[arg-type]
 
             # Descend one step
-            traj_id = f"{branch.traj_id}:{idx}"
+            step_id = f"{prev_step_id}:{idx}"
             try:
                 step = await self._take_step(
-                    timestep, traj_id, cloned_env, agent_state, obs
+                    timestep, step_id, cloned_env, agent_state, obs
                 )
             except CaughtError:
-                # If we failed, do not extend the branch - just return an empty list
-                return []
+                # If we failed, do not extend the branch - just give up on this path
+                return
 
             await asyncio.gather(*[
-                callback.after_transition(traj_id, self.agent, cloned_env, step)
+                callback.after_transition(step_id, self.agent, cloned_env, step)
                 for callback in self.callbacks
             ])
 
-            # The original branch plus one step
-            extended_branch = Trajectory(traj_id=traj_id, steps=[*branch.steps, step])
+            tree.add_transition(step_id, step)
 
-            if (
-                step.done  # Trajectory is over
-                or len(extended_branch.steps) >= max_depth  # Hit max depth
-            ):
-                return [extended_branch]
+            if step.done:
+                return
 
-            if (
-                sum(step_.reward for step_ in extended_branch.steps)
-                >= self.target_reward
-            ):
+            if timestep + 1 >= max_depth:
+                step.truncated = True
+                return
+
+            cumulative_reward = prev_cumulative_reward + step.reward
+            if cumulative_reward >= self.target_reward:
                 # signal other descents to stop too
-                self.target_reward_hit.add(root_traj_id)
-                return [extended_branch]
+                self.target_reward_hit.add(tree.root_id)
 
             # Recurse
-            return await self._descend(
-                extended_branch,
-                cloned_env,
-                step.next_agent_state,
-                step.next_observation,
-                max_depth,
+            await self._descend(
+                tree=tree,
+                prev_step_id=step_id,
+                env=cloned_env,
+                agent_state=step.next_agent_state,
+                obs=step.next_observation,
+                prev_timestep=timestep,
+                prev_cumulative_reward=cumulative_reward,
+                max_depth=max_depth,
             )
 
-        # Add branching_factory children
-        branches = await asyncio.gather(*[
+        # Add branching_factor children
+        await asyncio.gather(*[
             inner_descend(idx) for idx in range(self.branching_factor)
         ])
-
-        return list(itertools.chain.from_iterable(branches))
