@@ -224,56 +224,81 @@ class NoisyCountingEnv(CountingEnv):
         self, action: ToolRequestMessage
     ) -> tuple[list[Message], float, bool, bool]:
         self.state += 1 + random.uniform(-0.01, 0.01)
-        return [Message(content=str(self.state))], 0.0, self.state >= 3, False
+        return [Message(content=str(self.state))], 1.0, self.state >= 3, False
 
 
-@pytest.mark.asyncio
-async def test_tree_search():
-    agent = CountingAgent()
-    # Use a slightly stochastic env so we can distinguish branches
-    env = NoisyCountingEnv()
+class TestTreeSearch:
+    @pytest.mark.asyncio
+    async def test_tree_search(self):
+        agent = CountingAgent()
+        # Use a slightly stochastic env so we can distinguish branches
+        env = NoisyCountingEnv()
 
-    callback = DummyCallback()
-    rollout_manager = TreeSearchRollout(
-        agent,
-        branching_factor=2,
-        env_clone_fn=deepcopy,
-        concurrency_limit=1,
-        callbacks=[callback],
-    )
-    tree = await rollout_manager.sample_tree(env, max_depth=3)
-    trajs = tree.get_trajectories()
-    assert len(trajs) == 8
+        callback = DummyCallback()
+        rollout_manager = TreeSearchRollout(
+            agent,
+            branching_factor=2,
+            env_clone_fn=deepcopy,
+            concurrency_limit=1,
+            callbacks=[callback],
+        )
+        tree = await rollout_manager.sample_tree(env, max_depth=3)
+        trajs = tree.get_trajectories()
+        assert len(trajs) == 8
 
-    traj_ids_wo_root = {
-        cast(str, traj.traj_id).replace(tree.root_id, "").lstrip(":") for traj in trajs
-    }
-    # IDs should be 0:0:0, 0:0:1, ... 1:1:1 (order doesn't matter)
-    assert traj_ids_wo_root == {":".join(x) for x in itertools.product("01", repeat=3)}
+        traj_ids_wo_root = {
+            cast(str, traj.traj_id).replace(tree.root_id, "").lstrip(":")
+            for traj in trajs
+        }
+        # IDs should be 0:0:0, 0:0:1, ... 1:1:1 (order doesn't matter)
+        assert traj_ids_wo_root == {
+            ":".join(x) for x in itertools.product("01", repeat=3)
+        }
 
-    observations = {}  # type: ignore[var-annotated]
-    for traj in trajs:
-        branch_path = tuple(cast(str, traj.traj_id).split(":")[1:])
+        observations = {}  # type: ignore[var-annotated]
+        for traj in trajs:
+            branch_path = tuple(cast(str, traj.traj_id).split(":")[1:])
 
-        prev_step: Transition | None = None
-        for i_step, step in enumerate(traj.steps):
-            if prev_step is not None:
-                # Check that the child node started at the state emitted at the parent node
-                assert prev_step.next_agent_state == step.agent_state
+            prev_step: Transition | None = None
+            for i_step, step in enumerate(traj.steps):
+                if prev_step is not None:
+                    # Check that the child node started at the state emitted at the parent node
+                    assert prev_step.next_agent_state == step.agent_state
 
-            # Steps that started at the same node in the tree should have the same observation
-            node_id = branch_path[: i_step + 1]
-            if node_id in observations:
-                assert observations[node_id] == step.observation[0].content
-            else:
-                observations[node_id] = step.observation[0].content
+                # Steps that started at the same node in the tree should have the same observation
+                node_id = branch_path[: i_step + 1]
+                if node_id in observations:
+                    assert observations[node_id] == step.observation[0].content
+                else:
+                    observations[node_id] = step.observation[0].content
 
-            prev_step = step
+                prev_step = step
 
-    # We expect sum_{i=1}^3 2^i = 2^4 - 2 = 14 transitions:
-    # - branching factor = 2, depth = 3
-    # - root node isn't sampled, so no i=0 term in sum
-    assert all(v == 14 for v in callback.fn_invocations.values())
+        # We expect sum_{i=1}^3 2^i = 2^4 - 2 = 14 transitions:
+        # - branching factor = 2, depth = 3
+        # - root node isn't sampled, so no i=0 term in sum
+        assert all(v == 14 for v in callback.fn_invocations.values())
+
+    @pytest.mark.asyncio
+    async def test_early_stopping(self):
+        agent = CountingAgent()
+        # Use a slightly stochastic env so we can distinguish branches
+        env = NoisyCountingEnv()
+
+        callback = DummyCallback()
+        rollout_manager = TreeSearchRollout(
+            agent,
+            branching_factor=2,
+            env_clone_fn=deepcopy,
+            concurrency_limit=1,
+            callbacks=[callback],
+            target_reward=0.5,
+        )
+        trajs = (await rollout_manager.sample_tree(env, max_depth=3)).get_trajectories()
+        assert len(trajs) < 8  # should have exited early
+        for traj in trajs:
+            # should have hit target reward immediately
+            assert len(traj.steps) == 1
 
 
 def test_tree_mc_value():

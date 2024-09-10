@@ -128,17 +128,18 @@ class TreeSearchRollout(RolloutManager):
 
             tree.add_transition(step_id, step)
 
+            cumulative_reward = prev_cumulative_reward + step.reward
+            if cumulative_reward >= self.target_reward:
+                # signal other descents to stop too
+                self.target_reward_hit.add(tree.root_id)
+                return
+
             if step.done:
                 return
 
             if timestep + 1 >= max_depth:
                 step.truncated = True
                 return
-
-            cumulative_reward = prev_cumulative_reward + step.reward
-            if cumulative_reward >= self.target_reward:
-                # signal other descents to stop too
-                self.target_reward_hit.add(tree.root_id)
 
             # Recurse
             await self._descend(
