@@ -19,6 +19,7 @@ from . import CILLMModelNames
 
 
 @pytest.mark.asyncio
+@pytest.mark.vcr
 async def test_reflect_module() -> None:
     config = ReflectModuleConfig(
         llm_model={"model": CILLMModelNames.ANTHROPIC.value, "temperature": 0}

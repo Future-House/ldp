@@ -79,6 +79,7 @@ class ParallelizedDummyEnv(DummyEnv):
 
 class TestParallelism:
     @pytest.mark.asyncio
+    @pytest.mark.vcr
     async def test_SimpleAgent_can_parallel_call(self) -> None:
         env = ParallelizedDummyEnv()
         obs, tools = await env.reset()

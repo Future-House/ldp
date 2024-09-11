@@ -1,0 +1,117 @@
+interactions:
+  - request:
+      body:
+        '{"messages": [{"role": "user", "content": "You are the president of the
+        United States of America. Please move both hands at the same time, and then
+        smile and wave."}], "model": "gpt-4o-2024-08-06", "temperature": 0.1, "tool_choice":
+        "required", "tools": [{"type": "function", "function": {"name": "move_left_hand",
+        "description": "Move your left hand forward or backward.", "parameters": {"type":
+        "object", "properties": {"distance": {"description": "Integer distance to move
+        (mm), where forward is positive.", "title": "Distance", "type": "integer"}},
+        "required": ["distance"]}}}, {"type": "function", "function": {"name": "move_right_hand",
+        "description": "Move your right hand forward or backward.", "parameters": {"type":
+        "object", "properties": {"distance": {"description": "Integer distance to move
+        (mm), where forward is positive.", "title": "Distance", "type": "integer"}},
+        "required": ["distance"]}}}, {"type": "function", "function": {"name": "smile_and_wave",
+        "description": "Smile and wave.", "parameters": {"type": "object", "properties":
+        {}, "required": []}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "1075"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.44.1
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 1.44.1
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.5
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAA7RTy26bQBTd8xWjuzYVxpQQdmlVWUqlPuSmjdpEaBguj3pemRn8qOV/rwDHEK+y
+          CQs03MM5557L5eARAk0BKQFWU8eE5v5N/E38WqxuK9bmH4vlenn/+SZZ76PlTr3/DbOOofK/yNwz
+          6x1TQnN0jZIDzAxSh53q/CqMg+swWsQ9IFSBvKNV2vmR8sMgjPwg8YP4RKxVw9BCSv54hBBy6O9d
+          i7LAHaQkmD1XBFpLK4T0/BIhYBTvKkCtbayj0sFsBJmSDmXXtWw5nwBOKZ4xyvloPFyHyXmcE+U8
+          235q75J8U16p9c+8etrG3/P6dsO/TPwG6b3uGypbyc7zmeDnenphRghIKnquUBvMOJYuq6ksLhQI
+          AWqqVqB0XfdweICij87woZt/EBzhBeE4eTrOXhV239bsDv/hrtzGH1b3T1/d6ofYxsGbhTVNVb9B
+          2vP5cfLxDZatpfy0Fd7FYICrShuV24utgbKRja0zg9T2gcA6pQfvzqd3gPbFhoI2SmiXObVG2QnO
+          o3DQg/EHGtEoOoFOOconrCT2Th2C3VuHIisbWaHRpum3G0qdzaNFnifRdcjAO3r/AQAA//8DALMf
+          x7zmAwAA
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 8c1af8420ad4ce34-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Wed, 11 Sep 2024 22:07:17 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=CDVprdEjDku6eW5.oHwxi34qNPUf0Z_Eg_JuiJbDLtk-1726092437-1.0.1.1-1nqiNifcK_hRnyxsIjyxVSNiqxzrvlIRLAtBU7nG0XC7x3MPzeKOHw40ez8MY6MD7xZqIYJAV8ZhGEHacRZDRA;
+            path=/; expires=Wed, 11-Sep-24 22:37:17 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=ir88uyXDCyNVW34YUDv_88AguuE7avD_4h5x1Ioe_04-1726092437874-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        access-control-expose-headers:
+          - X-Request-ID
+        alt-svc:
+          - h3=":443"; ma=86400
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "900"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=15552000; includeSubDomains; preload
+        x-ratelimit-limit-requests:
+          - "10000"
+        x-ratelimit-limit-tokens:
+          - "30000000"
+        x-ratelimit-remaining-requests:
+          - "9999"
+        x-ratelimit-remaining-tokens:
+          - "29999953"
+        x-ratelimit-reset-requests:
+          - 6ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_e5e1609cebb3838c268b3b12cb0dd98d
+      status:
+        code: 200
+        message: OK
+version: 1

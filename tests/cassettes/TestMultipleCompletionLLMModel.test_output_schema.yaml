@@ -1,0 +1,102 @@
+interactions:
+  - request:
+      body:
+        '{"messages": [{"role": "system", "content": "Respond following this JSON
+        schema:\n\n{\n  \"properties\": {\n    \"name\": {\n      \"title\": \"Name\",\n      \"type\":
+        \"string\"\n    },\n    \"age\": {\n      \"title\": \"Age\",\n      \"type\":
+        \"integer\"\n    }\n  },\n  \"required\": [\n    \"name\",\n    \"age\"\n  ],\n  \"title\":
+        \"DummyOutputSchema\",\n  \"type\": \"object\"\n}"}, {"role": "user", "content":
+        "My name is Claude and I am 1 year old. What is my name and age?"}], "model":
+        "gpt-3.5-turbo", "n": 2, "response_format": {"type": "json_object"}}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "567"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.44.1
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 1.44.1
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.5
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAA9ySzU7DMBCE73kKa88JalraJrlFcEBwAHFBgqDKdTapwbEte8OPqr47cpr+IN6A
+          iw/zedYztrcRYyBrKBiIDSfRWZWUi4fls13cNHmW3Tflx5NIy+s7uqXHMv+EODjM+g0FHVwXwnRW
+          IUmj91g45IRharqcLiZZnuXLAXSmRhVsraVkdjFPqHdrk0zS6Xx0bowU6KFgLxFjjG2HNWTUNX5B
+          wSbxQenQe94iFMdNjIEzKijAvZeeuCaIT1AYTaiH2NtKM1aB5h1WULAKrhTva6wg3gPeDnpa6d35
+          BIdN73looHulRn13jKRMa51Z+5Ef9UZq6Tcrh9wbHY73ZCxEZ+Y/PdP/1jNi7HV44v5XG7DOdJZW
+          ZN5Rh4Fpmu3nwelXnejscoRkiKsz13wajQnBf3vCbtVI3aKzTg43MfTYRT8AAAD//wMAt0bHfvAC
+          AAA=
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 8c1aba40e9e2ce5c-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Wed, 11 Sep 2024 21:24:57 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        access-control-expose-headers:
+          - X-Request-ID
+        alt-svc:
+          - h3=":443"; ma=86400
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "342"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=15552000; includeSubDomains; preload
+        x-ratelimit-limit-requests:
+          - "12000"
+        x-ratelimit-limit-tokens:
+          - "1000000"
+        x-ratelimit-remaining-requests:
+          - "11999"
+        x-ratelimit-remaining-tokens:
+          - "999877"
+        x-ratelimit-reset-requests:
+          - 5ms
+        x-ratelimit-reset-tokens:
+          - 7ms
+        x-request-id:
+          - req_134069e4a1883fe754d46858e6824763
+      status:
+        code: 200
+        message: OK
+version: 1
