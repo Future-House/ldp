@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Self, cast
 
-from aviary.message import Message
+from aviary.message import MalformedMessageError, Message
 from aviary.tools import Tool, ToolRequestMessage, ToolResponseMessage
 from pydantic import BaseModel, ConfigDict, Field
 from tenacity import (
@@ -16,7 +16,6 @@ from tenacity import (
 from ldp.graph.modules.react import (
     ACT_DEFAULT_PROMPT_TEMPLATE,
     REACT_DEFAULT_PROMPT_TEMPLATE,
-    MalformedMessageError,
     ReActModule,
     ToolDescriptionMethods,
 )

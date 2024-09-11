@@ -1,12 +1,11 @@
 import ast
-import logging
 import re
 import textwrap
 from collections.abc import Iterable
 from enum import StrEnum
 from typing import Any
 
-from aviary.message import Message
+from aviary.message import EMPTY_CONTENT_BASE_MSG, MalformedMessageError, Message
 from aviary.tools import Tool, ToolCall, ToolRequestMessage
 
 from ldp.graph.common_ops import FxnOp, PromptOp
@@ -57,25 +56,6 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
         "\nObservation: The 7 day forecast for New York is [...]"
     ),
 )
-
-
-class MalformedMessageError(ValueError):
-    """Error to throw if some aspect of a ToolRequestMessage is malformed."""
-
-    @classmethod
-    def react_parser_log_filter(cls, record: logging.LogRecord) -> bool:
-        """
-        Filter out common parsing failures not worth looking into from logs.
-
-        Returns:
-            False if the LogRecord should be filtered out, otherwise True to keep it.
-        """
-        # NOTE: match both this Exception type's name and its content, to be robust
-        return not all(x in record.msg for x in (cls.__name__, EMPTY_CONTENT_BASE_MSG))
-
-
-# Define separately so we can filter out this message type
-EMPTY_CONTENT_BASE_MSG = "No content in message"
 
 
 def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:  # noqa: C901
