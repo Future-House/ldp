@@ -3,7 +3,6 @@ from typing import Any
 import pytest
 import tenacity
 import tree
-from aviary.env import DummyEnv
 
 from ldp.agent import Agent, MemoryAgent, ReActAgent
 from ldp.alg.optimizer import (
@@ -12,7 +11,6 @@ from ldp.alg.optimizer import (
     default_optimizer_factory,
 )
 from ldp.alg.optimizer.ape import APEOpt, APEScoreFn, Example
-from ldp.alg.rollout import RolloutManager
 from ldp.data_structures import Trajectory, Transition
 from ldp.graph.common_ops import FxnOp, LLMCallOp, MemoryOp, PromptOp
 from ldp.graph.gradient_estimators import (
