@@ -3,11 +3,12 @@ from __future__ import annotations
 import json
 import logging
 import os
+from collections.abc import Callable
 from typing import Any, ClassVar, Self, cast
 from uuid import UUID
 
 import networkx as nx
-from aviary.message import Message
+from aviary.message import Message, join
 from aviary.tools import ToolRequestMessage, ToolResponseMessage
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
 
@@ -269,3 +270,50 @@ class TransitionTree:
             # Q_t(s_t, a_t) = r_{t+1} + gamma * V_{t+1}(s_{t+1})
             # (we are assuming the environment is deterministic)
             step.value = step.reward + discount_factor * v_tp1
+
+    def merge_identical_nodes(
+        self, agent_state_hash_fn: Callable[[Any], int]
+    ) -> TransitionTree:
+        """Merge nodes with identical (state, observation, action)s. Returns a new tree.
+
+        Args:
+            agent_state_hash_fn: A function that hashes the agent state of a transition.
+        """
+        new_tree = TransitionTree(self.root_id)
+
+        # step hash -> step ID
+        seen_nodes: dict[int, str] = {}
+        # old step ID -> new step ID
+        node_remap: dict[str, str] = {self.root_id: self.root_id}
+
+        for step_id in nx.topological_sort(self.tree):
+            step: Transition | None = self.tree.nodes[step_id]["transition"]
+            if step is None:
+                continue
+
+            state_hash = agent_state_hash_fn(step.agent_state)
+
+            if step.action is not None:
+                action = step.action.value
+                # Note that the tool call ID is not included in the hash, which we'd get if we did str(action)
+                # Two actions that have different IDs but are otherwise identical should be considered identical.
+                action_str = (action.content or "") + " ".join(
+                    str(tc) for tc in action.tool_calls
+                )
+            else:
+                action_str = ""
+
+            step_hash = hash((state_hash, join(step.observation), action_str))
+
+            if step_hash in seen_nodes:
+                node_remap[step_id] = seen_nodes[step_hash]
+            else:
+                node_remap[step_id] = seen_nodes[step_hash] = step_id
+                parent_id = node_remap[":".join(step_id.split(":")[:-1])]
+
+                # manually add transitions, since the step_id substring relationship
+                # will be broken
+                new_tree._add_node(step_id, transition=step)
+                new_tree._add_edge(parent_id, step_id)
+
+        return new_tree
