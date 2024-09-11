@@ -321,7 +321,8 @@ class TestLLMModel(TestMultipleCompletionLLMModel):
 
         model = LLMModel(name=CILLMModelNames.ANTHROPIC.value)
         with pytest.raises(
-            litellm.APIError, match="anthropic does not support parameters"
+            litellm.UnsupportedParamsError,
+            match="anthropic does not support parameters",
         ):
             await model.call(
                 [Message(content="What are three things I should do today?")],
