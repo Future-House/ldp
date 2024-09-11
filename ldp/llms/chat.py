@@ -154,7 +154,7 @@ class MultipleCompletionLLMModel(BaseModel):
         self, messages: Iterable[Message], **kwargs
     ) -> litellm.ModelResponse:
         return await litellm.acompletion(
-            messages=[m.model_dump(exclude_none=True, by_alias=True) for m in messages],
+            messages=[m.model_dump(by_alias=True) for m in messages],
             **(process_llm_config(self.config) | kwargs),
         )
 
@@ -162,9 +162,7 @@ class MultipleCompletionLLMModel(BaseModel):
         return cast(
             AsyncGenerator,
             await litellm.acompletion(
-                messages=[
-                    m.model_dump(exclude_none=True, by_alias=True) for m in messages
-                ],
+                messages=[m.model_dump(by_alias=True) for m in messages],
                 **(process_llm_config(self.config) | kwargs),
                 stream=True,
                 stream_options={
