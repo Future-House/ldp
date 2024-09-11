@@ -59,24 +59,6 @@ class LLMResult(BaseModel):
         return litellm.get_supported_openai_params(self.model)
 
 
-def process_llm_config(llm_config: dict) -> dict:
-    """Remove model_type and try to set max_tokens."""
-    result = llm_config.copy()
-    result.pop("model_type", None)
-
-    if result.get("max_tokens", -1) == -1:  # Either max_tokens is missing or it's -1
-        model = llm_config["model"]
-        # these are estimates - should probably do something better in the future.
-        if model.startswith("gpt-4") or (
-            model.startswith("gpt-3.5") and "0125" in model
-        ):
-            result["max_tokens"] = 4000
-        elif "rrr" not in model:
-            result["max_tokens"] = 2500
-
-    return result
-
-
 def sum_logprobs(choice: litellm.utils.Choices) -> float | None:
     """Calculate the sum of the log probabilities of an LLM completion (a Choices object).
 
@@ -155,7 +137,7 @@ class MultipleCompletionLLMModel(BaseModel):
     ) -> litellm.ModelResponse:
         return await litellm.acompletion(
             messages=[m.model_dump(by_alias=True) for m in messages],
-            **(process_llm_config(self.config) | kwargs),
+            **(self.config | kwargs),
         )
 
     async def achat_iter(self, messages: Iterable[Message], **kwargs) -> AsyncGenerator:
@@ -163,11 +145,11 @@ class MultipleCompletionLLMModel(BaseModel):
             AsyncGenerator,
             await litellm.acompletion(
                 messages=[m.model_dump(by_alias=True) for m in messages],
-                **(process_llm_config(self.config) | kwargs),
                 stream=True,
                 stream_options={
                     "include_usage": True,  # Included to get prompt token counts
                 },
+                **(self.config | kwargs),
             ),
         )
 
@@ -223,7 +205,7 @@ class MultipleCompletionLLMModel(BaseModel):
             chat_kwargs["response_format"] = {"type": "json_object"}
 
         # add static configuration to kwargs
-        chat_kwargs = process_llm_config(self.config) | chat_kwargs
+        chat_kwargs = self.config | chat_kwargs
         n = chat_kwargs.get("n", 1)  # number of completions
         if n < 1:
             raise ValueError("Number of completions (n) must be >= 1.")
