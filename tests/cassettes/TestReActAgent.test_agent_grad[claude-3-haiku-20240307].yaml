@@ -1,0 +1,75 @@
+interactions:
+  - request:
+      body:
+        '{"messages": [{"role": "user", "content": [{"type": "text", "text": "Write
+        a 5 word story via print_story"}]}], "temperature": 0.1, "stop_sequences": ["Observation:"],
+        "system": [{"type": "text", "text": "Answer the following questions as best
+        you can. You have access to the following tools:\n\nNAME: print_story\n\nSYNOPSIS:\n    print_story(string
+        story)\n\nDESCRIPTION:\n    Print a story.\n\nPARAMETERS:\n    story (string):
+        Story to print.\n\nNAME: cast_float\n\nSYNOPSIS:\n    cast_float(string x)\n\nDESCRIPTION:\n    Cast
+        the input argument x to a float.\n\nPARAMETERS:\n    x (string): No description
+        provided.\n\nNAME: cast_int\n\nSYNOPSIS:\n    cast_int(number x)\n\nDESCRIPTION:\n    Cast
+        the input argument x to an integer.\n\nPARAMETERS:\n    x (number): No description
+        provided.\n\nUse the following format:\n\nThought: you should always think about
+        what to do\nAction: the action to take, should be one of [print_story, cast_float,
+        cast_int]\nAction Input: comma separated list of inputs to action as python
+        tuple\nObservation: the result of the action\n... (this Thought/Action/Action
+        Input/Observation can repeat N times)\n\nExample:\n\nThought: I need to use
+        the get_weather tool\nAction: get_weather\nAction Input: \"New York\", 7\nObservation:
+        The 7 day forecast for New York is [...]"}], "max_tokens": 4096, "model": "claude-3-haiku-20240307"}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "1366"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.44.24
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAA1SQT2sCMRDFv8owpxaibLUq5NbSP9gevBRa6MoSN8NuWJ2kyUQr4ncvu8WDp+H9
+          mHmPNyd0FjXuUlMVd6/71D3z4/y9frIhbj7Dy9sXz1ChHAP1W5SSaQgVRr/tgUnJJTEsqHDnLW1R
+          Y7012dJoOmqN6/JoUkzui2mxQIW1ZyEW1N+ni6PQb387DI0frc9NKxqWwEQWxMMhOiEwMIODjxaS
+          +Hgcl/xQi/OsIUTHUg30AmHJIYuGmxJXXBPk4BkMiNuRAmkJiO24xNuS8bxWmMSHKpJJnlH/q0Q/
+          mbjue15rjatNorg3QzgqzMM79Aldn1mJ74gT6mmxUOizXLH5+fwHAAD//wMANd2UgG0BAAA=
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 8c1aba247cd324df-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Wed, 11 Sep 2024 21:24:53 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Robots-Tag:
+          - none
+        request-id:
+          - req_01AP39pgvBs5GinrCu265JDv
+        via:
+          - 1.1 google
+        x-cloud-trace-context:
+          - 137e17d4feda2dee4ed60d2340ac0f00
+      status:
+        code: 200
+        message: OK
+version: 1

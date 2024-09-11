@@ -1,5 +1,6 @@
 import os
 import random
+from typing import Any
 
 import numpy as np
 import pytest
@@ -7,6 +8,8 @@ import torch
 from aviary.env import DummyEnv
 
 from ldp.utils import configure_log_levels
+
+from . import CASSETTES_DIR
 
 IN_GITHUB_ACTIONS: bool = os.getenv("GITHUB_ACTIONS") == "true"
 
@@ -35,3 +38,18 @@ def set_seed(seed: int | None) -> None:
 def fixture_seed_zero() -> None:
     """Set a 0 seed to minimize the chances of test flakiness."""
     set_seed(0)
+
+
+OPENAI_API_KEY_HEADER = "authorization"
+ANTHROPIC_API_KEY_HEADER = "x-api-key"
+
+
+@pytest.fixture(scope="session", name="vcr_config")
+def fixture_vcr_config() -> dict[str, Any]:
+    return {
+        "filter_headers": [OPENAI_API_KEY_HEADER, ANTHROPIC_API_KEY_HEADER, "cookie"],
+        "record_mode": "once",
+        "match_on": ["method", "host", "path", "query"],
+        "allow_playback_repeats": True,
+        "cassette_library_dir": str(CASSETTES_DIR),
+    }

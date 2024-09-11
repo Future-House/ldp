@@ -71,6 +71,7 @@ async def test_achat(model_name: str) -> None:
 @pytest.mark.parametrize(
     "model_name", [CILLMModelNames.OPENAI.value, CILLMModelNames.ANTHROPIC.value]
 )
+@pytest.mark.flaky(reruns=3, only_on=[litellm.exceptions.APIConnectionError])
 @pytest.mark.asyncio
 async def test_tools(dummy_env: DummyEnv, model_name: str) -> None:
     model = LLMModel(name=model_name)
@@ -232,7 +233,7 @@ class TestMultipleCompletionLLMModel:
             assert result.messages[0].tool_calls[0].function.arguments["move"] is None
 
     @pytest.mark.asyncio
-    @pytest.mark.flaky(reruns=3, only_on=[AssertionError])
+    @pytest.mark.vcr
     async def test_output_schema(self) -> None:
         model = self.MODEL_CLS(name="gpt-3.5-turbo", config=self.DEFAULT_CONFIG)
         messages = [
@@ -252,7 +253,7 @@ class TestMultipleCompletionLLMModel:
 
     @pytest.mark.parametrize("model_name", [CILLMModelNames.OPENAI.value])
     @pytest.mark.asyncio
-    @pytest.mark.flaky(reruns=3, only_on=[AssertionError])
+    @pytest.mark.vcr
     async def test_text_image_message(self, model_name: str) -> None:
         model = self.MODEL_CLS(name=model_name, config=self.DEFAULT_CONFIG)
 
@@ -292,6 +293,7 @@ class TestLLMModel(TestMultipleCompletionLLMModel):
         "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-3.5-turbo"]
     )
     @pytest.mark.asyncio
+    @pytest.mark.vcr
     async def test_model(self, model_name: str) -> None:
         await super().test_model(model_name)
 
@@ -319,9 +321,10 @@ class TestLLMModel(TestMultipleCompletionLLMModel):
         class InstructionList(BaseModel):
             instructions: list[str] = Field(description="list of instructions")
 
-        model = LLMModel(name=CILLMModelNames.ANTHROPIC.value)
+        model = self.MODEL_CLS(name=CILLMModelNames.ANTHROPIC.value)
         with pytest.raises(
-            litellm.APIError, match="anthropic does not support parameters"
+            litellm.UnsupportedParamsError,
+            match="anthropic does not support parameters",
         ):
             await model.call(
                 [Message(content="What are three things I should do today?")],
@@ -333,6 +336,6 @@ class TestLLMModel(TestMultipleCompletionLLMModel):
         [CILLMModelNames.ANTHROPIC.value, "gpt-4-turbo", CILLMModelNames.OPENAI.value],
     )
     @pytest.mark.asyncio
-    @pytest.mark.flaky(reruns=3, only_on=[AssertionError])
+    @pytest.mark.vcr
     async def test_text_image_message(self, model_name: str) -> None:
         await super().test_text_image_message(model_name)

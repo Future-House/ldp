@@ -36,6 +36,7 @@ repos:
         args:
           - --word-list=.secrets.allowlist
           - --exclude-files=.secrets.baseline$
+        exclude: tests/cassettes
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
     rev: 3.0.0
     hooks:
@@ -62,7 +63,7 @@ repos:
         additional_dependencies:
           - "validate-pyproject-schema-store[all]>=2024.08.19" # For Ruff renaming RUF025 to C420
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.4.6
+    rev: 0.4.9
     hooks:
       - id: uv-lock
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -73,7 +74,7 @@ repos:
           - fastapi>=0.109 # Match pyproject.toml
           - fhaviary>=0.6 # Match pyproject.toml
           - httpx
-          - litellm>=1.40.9,<=1.40.12 # Match pyproject.toml
+          - litellm>=1.42.1 # Match pyproject.toml
           - numpy
           - pydantic~=2.0 # Match pyproject.toml
           - tenacity

@@ -121,9 +121,7 @@ class TestSimpleAgent:
         "model_name", [CILLMModelNames.ANTHROPIC.value, CILLMModelNames.OPENAI.value]
     )
     @pytest.mark.asyncio
-    @pytest.mark.flaky(  # Rerun if LLM call does not return expected result
-        reruns=3, only_on=[AssertionError]
-    )
+    @pytest.mark.vcr
     async def test_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
 
@@ -157,9 +155,7 @@ class TestSimpleAgent:
         "model_name", [CILLMModelNames.ANTHROPIC.value, CILLMModelNames.OPENAI.value]
     )
     @pytest.mark.asyncio
-    @pytest.mark.flaky(  # Rerun if LLM call does not return expected result
-        reruns=3, only_on=[AssertionError]
-    )
+    @pytest.mark.vcr
     async def test_agent_grad(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
 
@@ -210,9 +206,7 @@ class TestMemoryAgent:
     # # On 5/14/2024, claude 3 opus would not follow its past memories
     @pytest.mark.parametrize("model_name", [CILLMModelNames.OPENAI.value])
     @pytest.mark.asyncio
-    @pytest.mark.flaky(  # Rerun if LLM call does not return expected result
-        reruns=3, only_on=[AssertionError]
-    )
+    @pytest.mark.vcr
     async def test_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
 
@@ -256,9 +250,7 @@ class TestMemoryAgent:
             raise RuntimeError("Could not find LLMCallOp in compute graph")
 
     @pytest.mark.asyncio
-    @pytest.mark.flaky(  # Rerun if LLM call does not return expected result
-        reruns=3, only_on=[AssertionError]
-    )
+    @pytest.mark.vcr
     async def test_agent_grad(self, dummy_env: DummyEnv) -> None:
         obs, tools = await dummy_env.reset()
 
@@ -306,9 +298,7 @@ class TestReActAgent:
         "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-4-turbo"]
     )
     @pytest.mark.asyncio
-    @pytest.mark.flaky(  # Rerun if LLM call does not return expected result
-        reruns=3, only_on=[AssertionError]
-    )
+    @pytest.mark.vcr
     async def test_react_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
         agent = ReActAgent(llm_model={"model": model_name, "temperature": 0.1})
@@ -377,9 +367,7 @@ class TestReActAgent:
         "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-4-turbo"]
     )
     @pytest.mark.asyncio
-    @pytest.mark.flaky(  # Rerun if LLM call does not return expected result
-        reruns=3, only_on=[AssertionError]
-    )
+    @pytest.mark.vcr
     async def test_agent_grad(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
 
@@ -568,9 +556,7 @@ class TestReActAgent:
 class TestHTTPAgentClient:
     @patch.dict("os.environ", {"AUTH_TOKEN": "stub"})
     @pytest.mark.asyncio
-    @pytest.mark.flaky(  # Rerun if LLM call does not return expected result
-        reruns=3, only_on=[AssertionError]
-    )
+    @pytest.mark.vcr
     async def test_lifecycle(self, dummy_env: DummyEnv) -> None:
         obs, tools = await dummy_env.reset()
         # Let's turn the prompt to require multiple steps

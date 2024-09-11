@@ -79,6 +79,7 @@ class ParallelizedDummyEnv(DummyEnv):
 
 class TestParallelism:
     @pytest.mark.asyncio
+    @pytest.mark.vcr
     async def test_SimpleAgent_can_parallel_call(self) -> None:
         env = ParallelizedDummyEnv()
         obs, tools = await env.reset()
@@ -127,13 +128,7 @@ class TestParallelism:
 
         # 2. Well, it looks like both Anthropic and OpenAI don't like DIY-style
         #    (using a bare Message) because they expect a tool call ID and tool name
-        # APIConnectionError is for a LiteLLM bug: https://github.com/BerriAI/litellm/issues/4348
-        # TODO: remove litellm.APIConnectionError catch after release of
-        # https://github.com/BerriAI/litellm/commit/5e893ed13e87bc1ff5cfa198bae6faec3ad4af05
-        # (will happen when litellm>1.40.22)
-        with pytest.raises(
-            (litellm.BadRequestError, litellm.APIConnectionError), match="400"
-        ):
+        with pytest.raises(litellm.BadRequestError, match="invalid"):
             await agent.get_asv(agent_state, obs)
 
         # 3. Alright, let's check the agent doesn't blow up if we use a

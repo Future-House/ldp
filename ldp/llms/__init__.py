@@ -3,7 +3,6 @@ from .chat import (
     LLMModel,
     LLMResult,
     MultipleCompletionLLMModel,
-    process_llm_config,
     sum_logprobs,
     validate_json_completion,
 )
@@ -35,7 +34,6 @@ __all__ = [
     "append_to_sys",
     "prepend_sys",
     "prepend_sys_and_append_sys",
-    "process_llm_config",
     "sum_logprobs",
     "validate_json_completion",
 ]
