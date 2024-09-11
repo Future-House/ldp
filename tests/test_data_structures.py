@@ -1,3 +1,4 @@
+import networkx as nx
 import pytest
 
 from ldp.data_structures import Transition, TransitionTree
@@ -79,3 +80,9 @@ def test_tree_node_merging():
 
     assert len(tree.tree.nodes) == 5
     assert len(merged_tree.tree.nodes) == 3
+
+    node_weights = [
+        merged_tree.get_weight(step_id)
+        for step_id in nx.topological_sort(merged_tree.tree)
+    ]
+    assert node_weights == [1, 2, 2]  # 1 for the root, 2 for the others
