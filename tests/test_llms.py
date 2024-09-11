@@ -319,7 +319,7 @@ class TestLLMModel(TestMultipleCompletionLLMModel):
         class InstructionList(BaseModel):
             instructions: list[str] = Field(description="list of instructions")
 
-        model = LLMModel(name=CILLMModelNames.ANTHROPIC.value)
+        model = self.MODEL_CLS(name=CILLMModelNames.ANTHROPIC.value)
         with pytest.raises(
             litellm.UnsupportedParamsError,
             match="anthropic does not support parameters",
