@@ -2,10 +2,11 @@ import asyncio
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, ClassVar, Generic, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar, cast
 from uuid import UUID
 
 import numpy as np
+import numpy.typing as npt
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -134,7 +135,10 @@ class UIndexMemoryModel(MemoryModel[Index]):
 
     async def _add_to_index(self, embedding: np.ndarray) -> int:
         async with self.safe_access_index() as index:
-            return int(index.add(len(self.memories), embedding))
+            added_value = cast(
+                npt.NDArray[np.int_], index.add(len(self.memories), embedding)
+            )
+            return added_value.item()
 
     async def _search_index(
         self, embedding: np.ndarray, matches: int = MemoryModel.DEFAULT_MEMORY_MATCHES
