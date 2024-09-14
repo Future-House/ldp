@@ -3,9 +3,9 @@ __all__ = ["AsyncTorchModule", "async_protect_torch_call"]
 import asyncio
 import operator
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable, Iterable
 from contextlib import nullcontext
-from typing import Any
+from typing import Any, TypeVar
 from uuid import UUID, uuid4
 
 try:
@@ -51,12 +51,54 @@ def async_protect_torch_call(
     return wrapped_call
 
 
+TReturn = TypeVar("TReturn")
+
+
+class ModuleHandler:
+    """Base class for an object that holds a PyTorch model.
+
+    Subclasses can intercept calls to the method for specific use-cases, such as
+    batching async calls, remote execution, etc.
+    """
+
+    def __init__(self, module: nn.Module):
+        self.module = module
+
+        # A container for objects that are local to the current process.
+        # Can be used for something like an optimizer, if self.module is
+        # sharded. The handler has to own these objects because they may
+        # be created remotely (e.g. w/ Dask) and cannot be pickled.
+        self.process_local_objects: dict[str, Any] = {}
+
+    def parameters(self) -> Iterable[nn.Parameter]:
+        return self.module.parameters()
+
+    async def acall_method(
+        self,
+        method: Callable[..., Awaitable[TReturn]],
+        *args,
+        **kwargs,
+    ) -> TReturn:
+        """Dispatch a coroutine.
+
+        By default, the method is called by the handler.
+        """
+        return await method(self, *args, **kwargs)
+
+    def call_method(self, method: Callable[..., TReturn], *args, **kwargs) -> TReturn:
+        """Dispatch a method.
+
+        By default, the method is called by the handler.
+        """
+        return method(self, *args, **kwargs)
+
+
 # TODO: make max_wait_interval adaptive. We can use a heuristic like
 # half the average time for a single call. If it's not provided, enable
 # adaptive mode.
 
 
-class AsyncTorchModule:
+class AsyncTorchModule(ModuleHandler):
     def __init__(
         self,
         module: nn.Module,
@@ -96,7 +138,7 @@ class AsyncTorchModule:
                  the batched output and return an ordered list of outputs. Defaults to list.
             module_call_fn: Function that allows for customizing the call to the module.
         """
-        self.module = module
+        super().__init__(module)
         self.batch_size = batch_size
         self.timeout = max_wait_interval
         self.collate_fn = collate_fn
