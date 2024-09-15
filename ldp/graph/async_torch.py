@@ -79,14 +79,14 @@ class ModuleHandler:
         *args,
         **kwargs,
     ) -> TReturn:
-        """Dispatch a coroutine.
+        """Executes a coroutine.
 
         By default, the method is called by the handler.
         """
         return await method(self, *args, **kwargs)
 
     def call_method(self, method: Callable[..., TReturn], *args, **kwargs) -> TReturn:
-        """Dispatch a method.
+        """Executes a method.
 
         By default, the method is called by the handler.
         """
