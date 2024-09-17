@@ -6,10 +6,12 @@ import logging
 from functools import partial
 from typing import Any
 
+import torch
 import tree
 
 from ldp.graph.op_utils import CallID
 from ldp.graph.ops import GradInType, OpCtx, OpResult, ResultOrValue
+from ldp.graph.torch_ops import TorchOp
 
 logger = logging.getLogger(__name__)
 
@@ -142,3 +144,67 @@ def assign_default_grads(
 
     tree.assert_same_structure(input_grads, input_args_kwargs)
     return input_grads
+
+
+class TorchParamBackwardEstimator:
+    def __init__(self, module: torch.nn.Module):
+        self.module = module
+        self.params = dict(module.named_parameters())
+
+    def backward(
+        self,
+        ctx: OpCtx,
+        input_args: list[ResultOrValue],
+        input_kwargs: dict[str, ResultOrValue],
+        grad_output: tree.Structure,
+        call_id: CallID,
+    ) -> GradInType:
+        if ctx.op_name != "TorchOp":
+            raise ValueError(
+                f"Attempted to use TorchParamBackwardEstimator with non-TorchOp operation {ctx.op_name}"
+            )
+
+        tensor_args, tensor_kwargs = ctx.get(call_id, TorchOp.CTX_TENSOR_INPUT_KEY)
+        n_pos_args = len(tensor_args)
+        n_pos_kwargs = len(tensor_kwargs)
+        output = ctx.get(call_id, "output").value
+
+        if not isinstance(grad_output, torch.Tensor):
+            grad_output = torch.tensor(
+                grad_output, dtype=output.dtype, device=output.device
+            )
+
+        while grad_output.ndim < output.ndim:
+            # Assume we can broadcast, so expand dims
+            # e.g. if output.shape = (2, 1, 1) and grad_output is a scalar
+            # then we want to expand to (1, 1, 1) and then broadcast
+            grad_output = grad_output.unsqueeze(-1)
+
+        gradients = torch.autograd.grad(
+            output,
+            [*tensor_args, *tensor_kwargs.values(), *list(self.params.values())],
+            grad_outputs=grad_output,
+        )
+
+        grad_args = [
+            grad.detach().cpu().float() if grad is not None else None  # type: ignore[redundant-expr]
+            for grad in gradients[:n_pos_args]
+        ]
+        grad_kwargs = {
+            k: grad.detach().cpu().float()
+            if grad is not None  # type: ignore[redundant-expr]
+            else None
+            for k, grad in zip(
+                tensor_kwargs.keys(), gradients[n_pos_args:n_pos_kwargs], strict=True
+            )
+        }
+        grads_params = {
+            name: grad.detach().cpu().float()
+            for name, grad in zip(
+                self.params.keys(), gradients[n_pos_kwargs:], strict=True
+            )
+        }
+
+        ctx.update(call_id=call_id, key="grads_params", value=grads_params)
+
+        return grad_args, grad_kwargs

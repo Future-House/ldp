@@ -72,6 +72,8 @@ class TorchOp(Op[torch.Tensor]):
         n_pos_args = len(tensor_args)
         output = ctx.get(call_id, "output").value
 
+        import ipdb; ipdb.set_trace()
+
         if not isinstance(grad_output, torch.Tensor):
             grad_output = torch.tensor(
                 grad_output, dtype=output.dtype, device=output.device
