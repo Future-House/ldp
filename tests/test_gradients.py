@@ -382,9 +382,10 @@ async def test_serial_ops_diff_run_id():
         await op2(result1)
 
 
+@pytest.mark.parametrize("output_nodes", [4])
 @pytest.mark.asyncio
-async def test_torch_param_backward_estimator():
-    torch_module = torch.nn.Linear(4, 1)
+async def test_torch_param_backward_estimator(output_nodes: int):
+    torch_module = torch.nn.Linear(4, output_nodes)
     torch_op = TorchOp(torch_module)
     estimator = TorchParamBackwardEstimator(torch_module)
 
