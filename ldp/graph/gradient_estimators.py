@@ -211,7 +211,7 @@ class TorchParamBackwardEstimator:
 
         gradients = torch.autograd.grad(
             output,
-            [*tensor_args, *tensor_kwargs.values(), *list(self.params.values())],
+            [*tensor_args, *tensor_kwargs.values(), *self.params.values()],
             grad_outputs=grad_output,
         )
 
