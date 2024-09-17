@@ -385,7 +385,6 @@ async def test_serial_ops_diff_run_id():
 @pytest.mark.parametrize("hidden_nodes", [1, 4])
 @pytest.mark.asyncio
 async def test_torch_param_backward_estimator(hidden_nodes: int):
-    
     torch_module = torch.nn.Sequential(
         torch.nn.Linear(4, hidden_nodes),
         torch.nn.Linear(hidden_nodes, 1),
@@ -402,7 +401,7 @@ async def test_torch_param_backward_estimator(hidden_nodes: int):
     # Check that the gradients are computed and have the correct shape
     call_ids = torch_op.get_call_ids({result.call_id.run_id})
     grad_params = torch_op.ctx.get(next(iter(call_ids)), "grads_params")
-    
+
     for named_param, grad_param in torch_module.named_parameters():
         assert named_param in grad_params
         assert grad_param.shape == grad_params[named_param].shape
