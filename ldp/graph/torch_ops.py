@@ -77,11 +77,9 @@ class TorchOp(Op[torch.Tensor]):
                 grad_output, dtype=output.dtype, device=output.device
             )
 
-        while grad_output.ndim < output.ndim:
-            # Assume we can broadcast, so expand dims
-            # e.g. if output.shape = (2, 1, 1) and grad_output is a scalar
-            # then we want to expand to (1, 1, 1) and then broadcast
-            grad_output = grad_output.unsqueeze(-1)
+        if output.shape != grad_output.shape:
+            # Should only occur if end of graph is not a scalar, where a sentinel [0] is used
+            grad_output = torch.zeros_like(output)
 
         gradients = torch.autograd.grad(
             output,
