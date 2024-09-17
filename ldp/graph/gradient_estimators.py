@@ -147,8 +147,32 @@ def assign_default_grads(
 
 
 class TorchParamBackwardEstimator:
+    """
+    Gradient estimator for `TorchOp` internal parameters.
+
+    This estimator computes gradients with respect to the internal parameters of a
+    `torch.nn.Module` by calling the `backward` method of the estimator instead of the default
+    `backward` method of `TorchOp`. Computed gradients are stored in the context of the operation
+    under the key `"grads_params"`.
+
+    Args:
+        module (torch.nn.Module): The module whose parameters we want to estimate gradients for.
+
+    Examples:
+        >>> torch_module = torch.nn.Sequential(
+        ...     torch.nn.Linear(4, 4),
+        ...     torch.nn.Linear(4, 1),
+        ... )
+        >>> torch_op = TorchOp(torch_module)
+        >>> estimator = TorchParamBackwardEstimator(torch_module)
+        >>> result = await torch_op(torch.randn(4, requires_grad=True))
+        >>> result.compute_grads(backward_fns={"TorchOp": estimator.backward})
+
+    Note:
+        This estimator is only compatible with `TorchOp` operations.
+    """
+
     def __init__(self, module: torch.nn.Module):
-        self.module = module
         self.params = dict(module.named_parameters())
 
     def backward(
@@ -160,7 +184,7 @@ class TorchParamBackwardEstimator:
         call_id: CallID,
     ) -> GradInType:
         if ctx.op_name != "TorchOp":
-            raise ValueError(
+            raise RuntimeError(
                 f"Attempted to use TorchParamBackwardEstimator with non-TorchOp operation {ctx.op_name}"
             )
 
@@ -174,9 +198,16 @@ class TorchParamBackwardEstimator:
                 grad_output, dtype=output.dtype, device=output.device
             )
 
+        while grad_output.ndim < output.ndim:
+            # Assume we can broadcast, so expand dims
+            # e.g. if output.shape = (2, 1, 1) and grad_output is a scalar
+            # then we want to expand to (1, 1, 1) and then broadcast
+            grad_output = grad_output.unsqueeze(-1)
+
         if output.shape != grad_output.shape:
-            # Should only occur if end of graph is not a scalar, where a sentinel [0] is used
-            grad_output = torch.zeros_like(output)
+            raise RuntimeError(
+                f"Output shape {output.shape} does not match grad_output shape {grad_output.shape}"
+            )
 
         gradients = torch.autograd.grad(
             output,
