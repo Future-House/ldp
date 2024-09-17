@@ -7,15 +7,18 @@ from typing import Any, cast
 
 import numpy as np
 import pytest
+import torch
 import tree
 
 from ldp.graph.common_ops import ConfigOp, FxnOp
 from ldp.graph.gradient_estimators import (
+    TorchParamBackwardEstimator,
     assign_constant_grads,
     assign_default_grads,
 )
 from ldp.graph.op_utils import CallID, compute_graph
 from ldp.graph.ops import GradInType, Op, OpCtx, OpResult, ResultOrValue
+from ldp.graph.torch_ops import TorchOp
 
 
 class PoissonSamplerOp(Op):
@@ -377,3 +380,23 @@ async def test_serial_ops_diff_run_id():
 
     with pytest.raises(RuntimeError, match="args and kwargs must have the same run_id"):
         await op2(result1)
+
+
+@pytest.mark.asyncio
+async def test_torch_param_backward_estimator():
+    torch_module = torch.nn.Linear(4, 1)
+    torch_op = TorchOp(torch_module)
+    estimator = TorchParamBackwardEstimator(torch_module)
+
+    # Forward pass
+    result = await torch_op(torch.randn(4, requires_grad=True))
+
+    # Backward pass
+    result.compute_grads(backward_fns={"TorchOp": estimator.backward})
+
+    # Check that the gradients are computed and have the correct shape
+    call_ids = torch_op.get_call_ids({result.call_id.run_id})
+    grad_params = torch_op.ctx.get(next(iter(call_ids)), "grads_params")
+    for named_param, grad_param in torch_module.named_parameters():
+        assert named_param in grad_params
+        assert grad_param.shape == grad_params[named_param].shape
