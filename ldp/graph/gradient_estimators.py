@@ -185,7 +185,7 @@ class TorchParamBackwardEstimator:
     ) -> GradInType:
         if ctx.op_name != "TorchOp":
             raise RuntimeError(
-                f"Attempted to use TorchParamBackwardEstimator with non-TorchOp operation {ctx.op_name}"
+                f"Attempted to use TorchParamBackwardEstimator with non-TorchOp operation {ctx.op_name}."
             )
 
         tensor_args, tensor_kwargs = ctx.get(call_id, TorchOp.CTX_TENSOR_INPUT_KEY)
