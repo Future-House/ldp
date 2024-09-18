@@ -153,10 +153,7 @@ class TorchParamBackwardEstimator:
     This estimator computes gradients with respect to the internal parameters of a
     `torch.nn.Module` by calling the `backward` method of the estimator instead of the default
     `backward` method of `TorchOp`. Computed gradients are stored in the context of the operation
-    under the key `"grads_params"`.
-
-    Args:
-        module (torch.nn.Module): The module whose parameters we want to estimate gradients for.
+    under the key `"grad_params"`.
 
     Examples:
         >>> torch_module = torch.nn.Sequential(
@@ -215,25 +212,20 @@ class TorchParamBackwardEstimator:
             grad_outputs=grad_output,
         )
 
-        grad_args = [
-            grad.detach().cpu().float() if grad is not None else None  # type: ignore[redundant-expr]
-            for grad in gradients[:n_pos_args]
-        ]
+        grad_args = [grad.detach().cpu().float() for grad in gradients[:n_pos_args]]
         grad_kwargs = {
             k: grad.detach().cpu().float()
-            if grad is not None  # type: ignore[redundant-expr]
-            else None
             for k, grad in zip(
                 tensor_kwargs.keys(), gradients[n_pos_args:n_pos_kwargs], strict=True
             )
         }
-        grads_params = {
+        grad_params = {
             name: grad.detach().cpu().float()
             for name, grad in zip(
                 self.params.keys(), gradients[n_pos_kwargs:], strict=True
             )
         }
 
-        ctx.update(call_id=call_id, key="grads_params", value=grads_params)
+        ctx.update(call_id=call_id, key="grad_params", value=grad_params)
 
         return grad_args, grad_kwargs

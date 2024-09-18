@@ -400,7 +400,7 @@ async def test_torch_param_backward_estimator(hidden_nodes: int):
 
     # Check that the gradients are computed and have the correct shape
     call_ids = torch_op.get_call_ids({result.call_id.run_id})
-    grad_params = torch_op.ctx.get(next(iter(call_ids)), "grads_params")
+    grad_params = torch_op.ctx.get(next(iter(call_ids)), "grad_params")
 
     for named_param, grad_param in torch_module.named_parameters():
         assert named_param in grad_params

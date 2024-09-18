@@ -96,14 +96,9 @@ class TorchOp(Op[torch.Tensor]):
             retain_graph=True,
         )
 
-        grad_args = [
-            grad.detach().cpu().float() if grad is not None else None  # type: ignore[redundant-expr]
-            for grad in gradients[:n_pos_args]
-        ]
+        grad_args = [grad.detach().cpu().float() for grad in gradients[:n_pos_args]]
         grad_kwargs = {
             k: grad.detach().cpu().float()
-            if grad is not None  # type: ignore[redundant-expr]
-            else None
             for k, grad in zip(
                 tensor_kwargs.keys(), gradients[n_pos_args:], strict=True
             )
