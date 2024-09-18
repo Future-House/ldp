@@ -83,6 +83,11 @@ class TorchOp(Op[torch.Tensor]):
             # then we want to expand to (1, 1, 1) and then broadcast
             grad_output = grad_output.unsqueeze(-1)
 
+        if output.shape != grad_output.shape:
+            raise RuntimeError(
+                f"Output shape {output.shape} does not match grad_output shape {grad_output.shape}"
+            )
+
         gradients = torch.autograd.grad(
             output,
             [*tensor_args, *tensor_kwargs.values()],
@@ -91,14 +96,9 @@ class TorchOp(Op[torch.Tensor]):
             retain_graph=True,
         )
 
-        grad_args = [
-            grad.detach().cpu().float() if grad is not None else None  # type: ignore[redundant-expr]
-            for grad in gradients[:n_pos_args]
-        ]
+        grad_args = [grad.detach().cpu().float() for grad in gradients[:n_pos_args]]
         grad_kwargs = {
             k: grad.detach().cpu().float()
-            if grad is not None  # type: ignore[redundant-expr]
-            else None
             for k, grad in zip(
                 tensor_kwargs.keys(), gradients[n_pos_args:], strict=True
             )
