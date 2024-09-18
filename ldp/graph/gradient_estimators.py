@@ -180,7 +180,7 @@ class TorchParamBackwardEstimator:
         grad_output: tree.Structure,
         call_id: CallID,
     ) -> GradInType:
-        if ctx.op_name != "TorchOp":
+        if ctx.op_name != TorchOp.__name__:
             raise RuntimeError(
                 f"Attempted to use TorchParamBackwardEstimator with non-TorchOp operation {ctx.op_name}."
             )
