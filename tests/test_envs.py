@@ -1,3 +1,4 @@
+from importlib.metadata import version
 from typing import ClassVar
 
 import litellm
@@ -128,7 +129,12 @@ class TestParallelism:
 
         # 2. Well, it looks like both Anthropic and OpenAI don't like DIY-style
         #    (using a bare Message) because they expect a tool call ID and tool name
-        with pytest.raises(litellm.BadRequestError, match="invalid"):
+        with pytest.raises(
+            litellm.BadRequestError,
+            match=(
+                "invalid" if version(litellm.__name__) < "1.45.0" else "tool_call_id"
+            ),
+        ):
             await agent.get_asv(agent_state, obs)
 
         # 3. Alright, let's check the agent doesn't blow up if we use a
