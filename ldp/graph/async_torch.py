@@ -20,11 +20,14 @@ except ImportError:
 
 _TORCH_LOCK = asyncio.Lock()
 
+# Supported devices here: https://pytorch.org/docs/stable/amp.html#torch.autocast
+_AUTOCAST_DEVICES = {"cpu", "cuda", "hpu", "xpu"}
+
 
 def _get_autocast_context(dtype: torch.dtype | None, device_type: str):
     return (
         nullcontext()
-        if dtype is None and device_type not in {"cpu", "cuda"}
+        if dtype is None and device_type not in _AUTOCAST_DEVICES
         else torch.autocast(dtype=dtype, device_type=device_type)
     )
 
