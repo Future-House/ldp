@@ -77,6 +77,7 @@ class EvaluatorConfig(BaseModel):
     max_rollout_steps: int | None = None
     catch_agent_failures: bool = True
     catch_env_failures: bool = True
+    clear_ctx_at_each_iter: bool = True
 
     def make_rollout_manager(
         self, agent: Agent, callbacks: Sequence[Callback]
@@ -96,13 +97,12 @@ class Evaluator:
         agent: Agent,
         dataset: TaskDataset,
         callbacks: Sequence[Callback] | None = None,
-        clear_ctx_at_each_iter: bool = True,
     ):
         self.config = config
         self.agent = agent
         self.dataset = dataset
         self.callbacks = callbacks or []
-        if clear_ctx_at_each_iter:
+        if self.config.clear_ctx_at_each_iter:
             clear_cb = ClearContextCallback()
             self.callbacks = [*self.callbacks, clear_cb] if callbacks else [clear_cb]
         self.rollout_manager = self.config.make_rollout_manager(agent, self.callbacks)
@@ -152,6 +152,7 @@ class OnlineTrainerConfig(EvaluatorConfig):
         True,  # noqa: FBT003
         description="If True (default), run an evaluation loop before training.",
     )
+    clear_ctx_at_each_iter: bool = True
 
 
 class OnlineTrainer:
@@ -163,7 +164,6 @@ class OnlineTrainer:
         train_dataset: TaskDataset,
         eval_dataset: TaskDataset | None = None,
         callbacks: Sequence[Callback] | None = None,
-        clear_ctx_at_each_iter: bool = True,
     ):
         if config.eval_every is not None and eval_dataset is None:
             raise ValueError("Must specify eval_dataset if eval_every is set")
@@ -174,7 +174,7 @@ class OnlineTrainer:
         self.eval_dataset = eval_dataset
         self.optimizer = optimizer
         self.callbacks = callbacks or []
-        if clear_ctx_at_each_iter:
+        if self.config.clear_ctx_at_each_iter:
             clear_cb = ClearContextCallback()
             self.callbacks = [*self.callbacks, clear_cb] if callbacks else [clear_cb]
         self.rollout_manager = self.config.make_rollout_manager(
@@ -273,6 +273,7 @@ class OfflineTrainerConfig(BaseModel):
         1,
         description="Number of training iterations to run before updating the model.",
     )
+    clear_ctx_at_each_iter: bool = True
     # TODO: add some concept of eval loops
 
 
@@ -284,7 +285,6 @@ class OfflineTrainer:
         optimizer: Optimizer,
         train_trajectories: list[Trajectory],
         callbacks: Sequence[Callback] | None = None,
-        clear_ctx_at_each_iter: bool = True,
     ):
         self.config = config
         self.agent = agent
@@ -292,7 +292,7 @@ class OfflineTrainer:
         # copy so we can shuffle
         self.train_trajectories = train_trajectories.copy()
         self.callbacks = callbacks or []
-        if clear_ctx_at_each_iter:
+        if self.config.clear_ctx_at_each_iter:
             clear_cb = ClearContextCallback()
             self.callbacks = [*self.callbacks, clear_cb] if callbacks else [clear_cb]
 

@@ -19,6 +19,7 @@ from ldp.alg.runners import (
     OnlineTrainerConfig,
 )
 from ldp.data_structures import Trajectory
+from ldp.graph.ops import OpCtx
 
 
 @pytest.mark.asyncio
@@ -49,6 +50,9 @@ async def test_online_trainer():
         # eval is run 3 times: before training, during training, after training
         assert v == (3 if "eval" in k else 1)
 
+    for ctx_data in OpCtx._CTX_REGISTRY.values():
+        assert not ctx_data.data
+
 
 @pytest.mark.asyncio
 async def test_evaluator() -> None:
@@ -72,6 +76,9 @@ async def test_evaluator() -> None:
 
     for k, v in count_callback.fn_invocations.items():
         assert v == (1 if "eval" in k else 0)
+
+    for ctx_data in OpCtx._CTX_REGISTRY.values():
+        assert not ctx_data.data
 
 
 @pytest.mark.asyncio
@@ -109,6 +116,9 @@ async def test_offline_trainer():
         "after_eval_loop": 0,
         "after_update": 1,
     }
+
+    for ctx_data in OpCtx._CTX_REGISTRY.values():
+        assert not ctx_data.data
 
 
 class StoreTrajectoriesCallback(Callback):

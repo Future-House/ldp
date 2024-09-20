@@ -7,7 +7,7 @@ import itertools
 import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterable, Iterator, Mapping, Sequence
 from typing import Any, ClassVar, Generic, TypeAlias, TypeVar
 from uuid import UUID
 

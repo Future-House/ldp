@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -378,8 +378,11 @@ class WandBLoggingCallback(TrajectoryMetricsCallback):
 
 
 class ClearContextCallback(Callback):
+    def __init__(self, op_names: Iterable[str] | None = None):
+        self._op_names = op_names
+
     async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
-        OpCtx.clear_data()
+        OpCtx.clear_data(self._op_names)
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
-        OpCtx.clear_data()
+        OpCtx.clear_data(self._op_names)
