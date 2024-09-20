@@ -348,12 +348,13 @@ async def test_clear_contexts():
         await op2(await op1(1))
         assert len(op1.ctx.data) == len(op2.ctx.data) == 1
         OpCtx.clear_registry()
-        assert len(op1.ctx.data) == len(op2.ctx.data) == 0
+        assert not op1.ctx.data
+        assert not op2.ctx.data
 
         # Test global clear by op name
         await op2(await op1(1))
         OpCtx.clear_registry(op_names=["op1"])
-        assert len(op1.ctx.data) == 0
+        assert not op1.ctx.data
         assert len(op2.ctx.data) == 1
 
         # Test instance clear
