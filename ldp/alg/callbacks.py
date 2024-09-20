@@ -382,7 +382,7 @@ class ClearContextCallback(Callback):
         self._op_names = op_names
 
     async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
-        OpCtx.clear_data(self._op_names)
+        OpCtx.clear_contexts(self._op_names)
 
-    async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
-        OpCtx.clear_data(self._op_names)
+    async def after_update(self) -> None:
+        OpCtx.clear_contexts(self._op_names)
