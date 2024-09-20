@@ -334,3 +334,29 @@ async def test_branching_compute_graph():
 
     # and 2x gradient should be passed back to the input
     assert op_a.get_input_grads(a.call_id)[1]["x"] == loss_grad * 2
+
+
+@pytest.mark.asyncio
+async def test_clear_contexts():
+    """Test that we can clear the contexts of Ops."""
+    op1 = FxnOp(lambda x: x)
+    op1.set_name("op1")
+    op2 = FxnOp(lambda x: x)
+    op2.set_name("op2")
+    async with compute_graph():
+        # Test global clear
+        await op2(await op1(1))
+        assert len(op1.ctx.data) == len(op2.ctx.data) == 1
+        OpCtx.clear_contexts()
+        assert not op1.ctx.data
+        assert not op2.ctx.data
+
+        # Test global clear by op name
+        await op2(await op1(1))
+        OpCtx.clear_contexts(op_names=["op1"])
+        assert not op1.ctx.data
+        assert len(op2.ctx.data) == 1
+
+        # Test instance clear
+        op2.clear_ctx()
+        assert not op2.ctx.data

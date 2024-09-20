@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -15,7 +15,7 @@ from aviary.tools import MessagesAdapter, ToolRequestMessage
 
 from ldp.agent import Agent
 from ldp.data_structures import Trajectory, Transition
-from ldp.graph.ops import OpResult
+from ldp.graph.ops import OpCtx, OpResult
 
 try:
     import wandb
@@ -375,3 +375,14 @@ class WandBLoggingCallback(TrajectoryMetricsCallback):
             f"eval/{key}_mean": sum(vals) / len(vals)
             for key, vals in flattened_metrics.items()
         })
+
+
+class ClearContextCallback(Callback):
+    def __init__(self, op_names: Iterable[str] | None = None):
+        self._op_names = op_names
+
+    async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
+        OpCtx.clear_contexts(self._op_names)
+
+    async def after_update(self) -> None:
+        OpCtx.clear_contexts(self._op_names)

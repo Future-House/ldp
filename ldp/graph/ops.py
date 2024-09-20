@@ -7,7 +7,7 @@ import itertools
 import logging
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterable, Iterator, Mapping, Sequence
 from typing import Any, ClassVar, Generic, TypeAlias, TypeVar
 from uuid import UUID
 
@@ -336,6 +336,17 @@ class OpCtx(BaseModel):
         except KeyError:
             return cls(op_name=op_name)  # Create
 
+    @classmethod
+    def clear_contexts(cls, op_names: Iterable[str] | None = None) -> None:
+        """Clear the data in all contexts. If op_names is provided, only clear those contexts."""
+        if op_names is None:
+            op_names = cls._CTX_REGISTRY.keys()
+        for op_name in op_names:
+            try:
+                cls._CTX_REGISTRY[op_name].data.clear()
+            except KeyError:
+                logger.warning(f"Op with name={op_name} not found in context registry.")
+
     def get(self, call_id: CallID, key: str, default: Any = NOT_FOUND) -> Any:
         """Get an attribute with an optional default, emulating dict.get."""
         value = self.data.get(call_id.run_id, {}).get((call_id.fwd_id, key), default)
@@ -387,6 +398,9 @@ class Op(ABC, Generic[TOutput]):
     name: str
     ctx: OpCtx
     _fwd_args: list[inspect.Parameter]
+
+    def clear_ctx(self) -> None:
+        self.ctx.data.clear()
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
