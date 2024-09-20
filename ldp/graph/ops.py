@@ -337,7 +337,7 @@ class OpCtx(BaseModel):
             return cls(op_name=op_name)  # Create
 
     @classmethod
-    def clear_data(cls, op_names: Collection[str] | None = None) -> None:
+    def clear_data(cls, op_names: Iterable[str] | None = None) -> None:
         """Clear the context registry. If op_names is provided, only clear those contexts."""
         if op_names is None:
             op_names = cls._CTX_REGISTRY.keys()
