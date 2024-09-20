@@ -346,7 +346,7 @@ class OpCtx(BaseModel):
                 cls._CTX_REGISTRY[op_name].data.clear()
             except KeyError:
                 logger.warning(
-                    f"OpCtx with op_name={op_name} not found in context registry."
+                    f"Op with name={op_name} not found in context registry."
                 )
 
     def get(self, call_id: CallID, key: str, default: Any = NOT_FOUND) -> Any:
