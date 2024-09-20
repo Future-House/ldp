@@ -15,7 +15,7 @@ from aviary.tools import MessagesAdapter, ToolRequestMessage
 
 from ldp.agent import Agent
 from ldp.data_structures import Trajectory, Transition
-from ldp.graph.ops import OpResult
+from ldp.graph.ops import OpCtx, OpResult
 
 try:
     import wandb
@@ -375,3 +375,11 @@ class WandBLoggingCallback(TrajectoryMetricsCallback):
             f"eval/{key}_mean": sum(vals) / len(vals)
             for key, vals in flattened_metrics.items()
         })
+
+
+class ClearContextCallback(Callback):
+    async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
+        OpCtx.clear_data()
+
+    async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
+        OpCtx.clear_data()

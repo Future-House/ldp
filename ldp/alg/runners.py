@@ -11,12 +11,12 @@ from pydantic import BaseModel, ConfigDict, Field
 from tqdm import tqdm, trange
 
 from ldp.agent import Agent
-from ldp.alg.callbacks import Callback
+from ldp.alg.callbacks import Callback, ClearContextCallback
 from ldp.alg.optimizer import Optimizer
 from ldp.alg.rollout import RolloutManager
 from ldp.data_structures import Trajectory
 from ldp.graph.op_utils import eval_mode, train_mode
-from ldp.graph.ops import OpCtx, OpResult
+from ldp.graph.ops import OpResult
 
 
 async def _run_eval_loop(
@@ -96,11 +96,15 @@ class Evaluator:
         agent: Agent,
         dataset: TaskDataset,
         callbacks: Sequence[Callback] | None = None,
+        clear_ctx_at_each_iter: bool = True,
     ):
         self.config = config
         self.agent = agent
         self.dataset = dataset
         self.callbacks = callbacks or []
+        if clear_ctx_at_each_iter:
+            clear_cb = ClearContextCallback()
+            self.callbacks = [*self.callbacks, clear_cb] if callbacks else [clear_cb]
         self.rollout_manager = self.config.make_rollout_manager(agent, self.callbacks)
 
     @eval_mode()
@@ -159,6 +163,7 @@ class OnlineTrainer:
         train_dataset: TaskDataset,
         eval_dataset: TaskDataset | None = None,
         callbacks: Sequence[Callback] | None = None,
+        clear_ctx_at_each_iter: bool = True,
     ):
         if config.eval_every is not None and eval_dataset is None:
             raise ValueError("Must specify eval_dataset if eval_every is set")
@@ -169,6 +174,9 @@ class OnlineTrainer:
         self.eval_dataset = eval_dataset
         self.optimizer = optimizer
         self.callbacks = callbacks or []
+        if clear_ctx_at_each_iter:
+            clear_cb = ClearContextCallback()
+            self.callbacks = [*self.callbacks, clear_cb] if callbacks else [clear_cb]
         self.rollout_manager = self.config.make_rollout_manager(
             agent=agent, callbacks=self.callbacks
         )
@@ -196,9 +204,6 @@ class OnlineTrainer:
 
                 if pbar.n == self.config.num_train_iterations:
                     break
-
-                # Clear all op contexts
-                OpCtx.clear_registry()
 
         pbar.close()
 
@@ -279,6 +284,7 @@ class OfflineTrainer:
         optimizer: Optimizer,
         train_trajectories: list[Trajectory],
         callbacks: Sequence[Callback] | None = None,
+        clear_ctx_at_each_iter: bool = True,
     ):
         self.config = config
         self.agent = agent
@@ -286,6 +292,9 @@ class OfflineTrainer:
         # copy so we can shuffle
         self.train_trajectories = train_trajectories.copy()
         self.callbacks = callbacks or []
+        if clear_ctx_at_each_iter:
+            clear_cb = ClearContextCallback()
+            self.callbacks = [*self.callbacks, clear_cb] if callbacks else [clear_cb]
 
     async def train(self) -> None:
         random.shuffle(self.train_trajectories)
@@ -317,6 +326,3 @@ class OfflineTrainer:
             await asyncio.gather(*[
                 callback.after_train_step(batch) for callback in self.callbacks
             ])
-
-            # Clear all op contexts
-            OpCtx.clear_registry()
