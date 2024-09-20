@@ -16,7 +16,7 @@ from ldp.alg.optimizer import Optimizer
 from ldp.alg.rollout import RolloutManager
 from ldp.data_structures import Trajectory
 from ldp.graph.op_utils import eval_mode, train_mode
-from ldp.graph.ops import OpResult
+from ldp.graph.ops import OpCtx, OpResult
 
 
 async def _run_eval_loop(
@@ -197,6 +197,9 @@ class OnlineTrainer:
                 if pbar.n == self.config.num_train_iterations:
                     break
 
+                # Clear all op contexts
+                OpCtx.clear_registry()
+
         pbar.close()
 
         await self._eval_loop()
@@ -314,3 +317,6 @@ class OfflineTrainer:
             await asyncio.gather(*[
                 callback.after_train_step(batch) for callback in self.callbacks
             ])
+
+            # Clear all op contexts
+            OpCtx.clear_registry()

@@ -336,6 +336,19 @@ class OpCtx(BaseModel):
         except KeyError:
             return cls(op_name=op_name)  # Create
 
+    @classmethod
+    def clear_registry(cls, op_names: Collection[str] | None = None) -> None:
+        """Clear the context registry. If op_names is provided, only clear those contexts."""
+        if op_names is None:
+            op_names = cls._CTX_REGISTRY.keys()
+        for op_name in op_names:
+            try:
+                cls._CTX_REGISTRY[op_name].data.clear()
+            except KeyError:
+                logger.warning(
+                    f"OpCtx with op_name={op_name} not found in context registry."
+                )
+
     def get(self, call_id: CallID, key: str, default: Any = NOT_FOUND) -> Any:
         """Get an attribute with an optional default, emulating dict.get."""
         value = self.data.get(call_id.run_id, {}).get((call_id.fwd_id, key), default)
@@ -387,6 +400,9 @@ class Op(ABC, Generic[TOutput]):
     name: str
     ctx: OpCtx
     _fwd_args: list[inspect.Parameter]
+
+    def clear_ctx(self) -> None:
+        self.ctx.data.clear()
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
