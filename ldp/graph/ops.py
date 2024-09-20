@@ -345,9 +345,7 @@ class OpCtx(BaseModel):
             try:
                 cls._CTX_REGISTRY[op_name].data.clear()
             except KeyError:
-                logger.warning(
-                    f"Op with name={op_name} not found in context registry."
-                )
+                logger.warning(f"Op with name={op_name} not found in context registry.")
 
     def get(self, call_id: CallID, key: str, default: Any = NOT_FOUND) -> Any:
         """Get an attribute with an optional default, emulating dict.get."""
