@@ -359,4 +359,4 @@ async def test_clear_contexts():
 
         # Test instance clear
         op2.clear_ctx()
-        assert len(op2.ctx.data) == 0
+        assert not op2.ctx.data
