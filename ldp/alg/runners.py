@@ -77,7 +77,7 @@ class EvaluatorConfig(BaseModel):
     max_rollout_steps: int | None = None
     catch_agent_failures: bool = True
     catch_env_failures: bool = True
-    clear_ctx_at_each_iter: bool = True
+    clear_ctx_at_each_iter: bool = False
 
     def make_rollout_manager(
         self, agent: Agent, callbacks: Sequence[Callback]
@@ -152,7 +152,7 @@ class OnlineTrainerConfig(EvaluatorConfig):
         True,  # noqa: FBT003
         description="If True (default), run an evaluation loop before training.",
     )
-    clear_ctx_at_each_iter: bool = True
+    clear_ctx_at_each_iter: bool = False
 
 
 class OnlineTrainer:
@@ -273,7 +273,7 @@ class OfflineTrainerConfig(BaseModel):
         1,
         description="Number of training iterations to run before updating the model.",
     )
-    clear_ctx_at_each_iter: bool = True
+    clear_ctx_at_each_iter: bool = False
     # TODO: add some concept of eval loops
 
 
