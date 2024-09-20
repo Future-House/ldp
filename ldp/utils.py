@@ -17,6 +17,8 @@ def configure_log_levels() -> None:
             "httpx": {"level": "WARNING"},
             # SEE: https://github.com/BerriAI/litellm/issues/2256
             "LiteLLM": {"level": "WARNING"},
+            "LiteLLM Proxy": {"level": "WARNING"},
+            "LiteLLM Router": {"level": "WARNING"},
         },
     })
 
