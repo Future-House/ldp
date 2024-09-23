@@ -27,7 +27,7 @@ _AUTOCAST_DEVICES = {"cpu", "cuda", "hpu", "xpu"}
 def _get_autocast_context(dtype: torch.dtype | None, device_type: str):
     return (
         nullcontext()
-        if dtype is None and device_type not in _AUTOCAST_DEVICES
+        if dtype is None or device_type not in _AUTOCAST_DEVICES
         else torch.autocast(dtype=dtype, device_type=device_type)
     )
 

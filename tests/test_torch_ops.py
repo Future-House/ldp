@@ -9,7 +9,11 @@ import pytest
 import torch
 from torch import nn
 
-from ldp.graph.async_torch import AsyncTorchModule, async_protect_torch_call
+from ldp.graph.async_torch import (
+    AsyncTorchModule,
+    _get_autocast_context,
+    async_protect_torch_call,
+)
 from ldp.graph.common_ops import ConfigOp, FxnOp, PromptOp
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
 from ldp.graph.op_utils import compute_graph, set_training_mode
@@ -324,3 +328,14 @@ class TestAsyncTorchModule:
         )
 
         assert async_time < sync_time * expected_speedup
+
+
+@pytest.mark.parametrize("device_type", ["cpu", "cuda", "mps"])
+def test_autocast(device_type: str):
+    with _get_autocast_context(torch.bfloat16, device_type) as ctx:
+        if device_type in {"mps", "cpu"}:
+            # MPS and CPU devices don't support autocast
+            assert not torch.is_autocast_enabled()
+        else:
+            # CUDA will only work if we've got a GPU
+            assert torch.is_autocast_enabled() == torch.cuda.is_available()
