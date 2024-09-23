@@ -6,12 +6,17 @@ import logging
 from functools import partial
 from typing import Any
 
-import torch
 import tree
 
 from ldp.graph.op_utils import CallID
 from ldp.graph.ops import GradInType, OpCtx, OpResult, ResultOrValue
 from ldp.graph.torch_ops import TorchOp
+
+try:
+    import torch
+
+except ImportError:
+    torch = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +175,11 @@ class TorchParamBackwardEstimator:
     """
 
     def __init__(self, module: torch.nn.Module):
+        if torch is None:
+            raise RuntimeError(
+                f"PyTorch library not found. Unable to use {type(self).__name__} class. "
+                "To install PyTorch dependencies, please run `pip install ldp[nn]`."
+            )
         self.params = dict(module.named_parameters())
 
     def backward(
@@ -184,7 +194,6 @@ class TorchParamBackwardEstimator:
             raise RuntimeError(
                 f"Attempted to use TorchParamBackwardEstimator with non-TorchOp operation {ctx.op_name}."
             )
-
         tensor_args, tensor_kwargs = ctx.get(call_id, TorchOp.CTX_TENSOR_INPUT_KEY)
         n_pos_args = len(tensor_args)
         n_pos_kwargs = len(tensor_kwargs)
