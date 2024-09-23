@@ -13,6 +13,7 @@ import tree
 from ldp.graph.common_ops import ConfigOp, FxnOp
 from ldp.graph.gradient_estimators import (
     TorchParamBackwardEstimator,
+    _torch_available,
     assign_constant_grads,
     assign_default_grads,
 )
@@ -382,6 +383,7 @@ async def test_serial_ops_diff_run_id():
         await op2(result1)
 
 
+@pytest.mark.skipif(not _torch_available, reason="PyTorch not available")
 @pytest.mark.parametrize("hidden_nodes", [1, 4])
 @pytest.mark.asyncio
 async def test_torch_param_backward_estimator(hidden_nodes: int):
