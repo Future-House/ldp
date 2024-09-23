@@ -15,9 +15,8 @@ from ldp.graph.torch_ops import TorchOp
 try:
     import torch
 
-    _torch_available = True
 except ImportError as err:
-    _torch_available = False
+    torch = None  # type: ignore[assignment]
     IMPORT_TORCH_ERR = err
 
 logger = logging.getLogger(__name__)
@@ -177,7 +176,7 @@ class TorchParamBackwardEstimator:
     """
 
     def __init__(self, module: torch.nn.Module):
-        if not _torch_available:
+        if torch is None:
             raise RuntimeError(
                 "PyTorch library not found. Unable to use {self.__class__.__name__} class. "
                 "To install PyTorch dependencies, please run `pip install 'ldp[nn]'`"
