@@ -227,6 +227,7 @@ class ComputeTrajectoryMetricsMixin:
                 for traj in trajectories
             ],
             "num_steps": [len(traj.steps) for traj in trajectories],
+            "failures": [traj.failed for traj in trajectories],
         }
 
 

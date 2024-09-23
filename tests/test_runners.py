@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from unittest.mock import patch
 
+import litellm
 import pytest
 from aviary.env import DummyEnv, TaskDataset
 
@@ -89,6 +90,27 @@ async def test_evaluator(clear_ctx_at_each_iter) -> None:
         all(not ctx_data.data for ctx_data in OpCtx._CTX_REGISTRY.values())
     else:
         any(ctx_data.data for ctx_data in OpCtx._CTX_REGISTRY.values())
+
+
+@pytest.mark.asyncio
+async def test_can_measure_evaluation_failure_rate() -> None:
+    dataset = TaskDataset.from_name("dummy")
+    metrics_callback = MeanMetricsCallback(eval_dataset=dataset)
+
+    evaluator = Evaluator(
+        config=EvaluatorConfig(
+            batch_size=1, num_eval_iterations=1, max_rollout_steps=2
+        ),
+        agent=SimpleAgent(),
+        dataset=dataset,
+        callbacks=[metrics_callback],
+    )
+    with patch.object(
+        type(evaluator.agent), "get_asv", side_effect=litellm.APIError
+    ) as mock_get_asv:
+        await evaluator.evaluate()  # Confirm this does not crash
+    mock_get_asv.assert_awaited_once()
+    assert metrics_callback.eval_means["failures"] == 1.0
 
 
 @pytest.mark.asyncio
