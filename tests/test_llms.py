@@ -46,7 +46,7 @@ def test_json_schema_validation() -> None:
 
 
 @pytest.mark.parametrize(
-    "model_name", ["gpt-3.5-turbo", CILLMModelNames.ANTHROPIC.value]
+    "model_name", [CILLMModelNames.OPENAI.value, CILLMModelNames.ANTHROPIC.value]
 )
 @pytest.mark.asyncio
 async def test_achat(model_name: str) -> None:
@@ -169,7 +169,7 @@ class TestMultipleCompletionLLMModel:
     ) -> list[LLMResult]:
         return await model.call(*args, **kwargs)
 
-    @pytest.mark.parametrize("model_name", ["gpt-3.5-turbo"])
+    @pytest.mark.parametrize("model_name", [CILLMModelNames.OPENAI.value])
     @pytest.mark.asyncio
     async def test_model(self, model_name: str) -> None:
         # Make model_name an arg so that TestLLMModel can parametrize it
@@ -191,7 +191,7 @@ class TestMultipleCompletionLLMModel:
             assert result.logprob is None or result.logprob <= 0
 
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-3.5-turbo"]
+        "model_name", [CILLMModelNames.ANTHROPIC.value, CILLMModelNames.OPENAI.value]
     )
     @pytest.mark.asyncio
     async def test_streaming(self, model_name: str) -> None:
@@ -220,7 +220,9 @@ class TestMultipleCompletionLLMModel:
             """
 
         results = await self.call_model(
-            self.MODEL_CLS(name="gpt-3.5-turbo", config=self.DEFAULT_CONFIG),
+            self.MODEL_CLS(
+                name=CILLMModelNames.OPENAI.value, config=self.DEFAULT_CONFIG
+            ),
             messages=[Message(content="Please win.")],
             tools=[Tool.from_function(play)],
         )
@@ -235,7 +237,9 @@ class TestMultipleCompletionLLMModel:
     @pytest.mark.asyncio
     @pytest.mark.vcr
     async def test_output_schema(self) -> None:
-        model = self.MODEL_CLS(name="gpt-3.5-turbo", config=self.DEFAULT_CONFIG)
+        model = self.MODEL_CLS(
+            name=CILLMModelNames.OPENAI.value, config=self.DEFAULT_CONFIG
+        )
         messages = [
             Message(
                 content=(
@@ -290,7 +294,7 @@ class TestLLMModel(TestMultipleCompletionLLMModel):
         return [await model.call(*args, **kwargs)]
 
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-3.5-turbo"]
+        "model_name", [CILLMModelNames.ANTHROPIC.value, CILLMModelNames.OPENAI.value]
     )
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -298,7 +302,7 @@ class TestLLMModel(TestMultipleCompletionLLMModel):
         await super().test_model(model_name)
 
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-3.5-turbo"]
+        "model_name", [CILLMModelNames.ANTHROPIC.value, CILLMModelNames.OPENAI.value]
     )
     @pytest.mark.asyncio
     async def test_streaming(self, model_name: str) -> None:

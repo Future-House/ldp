@@ -108,7 +108,7 @@ class MultipleCompletionLLMModel(BaseModel):
     name: str = "unknown"
     config: dict = Field(
         default={
-            "model": "gpt-3.5-turbo",  # Default model should have cheap input/output for testing
+            "model": "gpt-4o-mini",  # Default model should have cheap input/output for testing
             "temperature": 0.1,
         }
     )
@@ -120,7 +120,7 @@ class MultipleCompletionLLMModel(BaseModel):
     @model_validator(mode="after")
     def set_model_name(self) -> Self:
         if (
-            self.config.get("model") in {"gpt-3.5-turbo", None}
+            self.config.get("model") in {"gpt-4o-mini", None}
             and self.name != "unknown"
             or self.name != "unknown"
             and "model" not in self.config

@@ -23,6 +23,8 @@ from ldp.graph.op_utils import (
 from ldp.graph.ops import GradInType, Op, OpCtx, OpResult, ResultOrValue, TOutput
 from ldp.llms import LLMModel, append_to_sys
 
+from . import CILLMModelNames
+
 
 class StatefulFxnOp(FxnOp[TOutput]):
     async def forward(self, *args, **kwargs) -> TOutput:
@@ -105,7 +107,7 @@ async def test_opresult_typing(op_return: tuple[T, type[T]], training: bool) -> 
 class TestLLMCallOp:
     @pytest.mark.asyncio
     async def test_cost_tracking(self) -> None:
-        model_name = "gpt-3.5-turbo"
+        model_name = CILLMModelNames.OPENAI.value
 
         class LLMCallingEnv(DummyEnv):
             """Showing how environments can use LiteLLM to track their own costs."""
@@ -189,7 +191,7 @@ async def test_llm_call_graph() -> None:
 
     package_msg_op = FxnOp(append_to_sys)
     config = {
-        "model": "gpt-3.5-turbo-0125",
+        "model": CILLMModelNames.OPENAI.value,
         "temperature": 0.1,
         "logprobs": True,
         "top_logprobs": 1,
