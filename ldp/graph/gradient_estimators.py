@@ -180,7 +180,7 @@ class TorchParamBackwardEstimator:
         if not _torch_available:
             raise RuntimeError(
                 "PyTorch library not found. Unable to use {self.__class__.__name__} class. "
-                "To install PyTorch, refer to the instructions at https://pytorch.org."
+                "To install PyTorch dependencies, please run `pip install 'ldp[nn]'`"
             ) from IMPORT_TORCH_ERR
         self.params = dict(module.named_parameters())
 
