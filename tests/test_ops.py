@@ -178,6 +178,7 @@ async def test_simple_prompt_graph() -> None:
     assert grad[1]["age"] == -2.0
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_llm_call_graph() -> None:
     sys_prompt_op = PromptOp(
