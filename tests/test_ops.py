@@ -103,6 +103,7 @@ async def test_opresult_typing(op_return: tuple[T, type[T]], training: bool) -> 
 
 
 class TestLLMCallOp:
+    @pytest.mark.vcr
     @pytest.mark.asyncio
     async def test_cost_tracking(self) -> None:
         model_name = "gpt-3.5-turbo"
@@ -150,6 +151,7 @@ class TestLLMCallOp:
         # Environment tracks its internal costs
         assert env.total_cost > 0
 
+    @pytest.mark.vcr
     @pytest.mark.asyncio
     async def test_empty_tools(self) -> None:
         llm_call_op = LLMCallOp()
@@ -178,6 +180,7 @@ async def test_simple_prompt_graph() -> None:
     assert grad[1]["age"] == -2.0
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_llm_call_graph() -> None:
     sys_prompt_op = PromptOp(

@@ -1,3 +1,4 @@
+import litellm
 import pytest
 import tenacity
 import tree
@@ -153,6 +154,7 @@ def mem_opt_failed(exc: BaseException) -> bool:
     return isinstance(exc, AssertionError) and "should be less than" in str(exc)
 
 
+@pytest.mark.flaky(reruns=3, only_on=[litellm.exceptions.APIConnectionError])
 @pytest.mark.asyncio
 @tenacity.retry(
     stop=tenacity.stop_after_attempt(3),

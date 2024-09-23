@@ -87,10 +87,8 @@ def many_edge_cases(
 
 
 class TestAgentState:
-    @pytest.mark.parametrize(
-        "agent",
-        [SimpleAgent(), MemoryAgent(), ReActAgent()],
-    )
+    @pytest.mark.vcr
+    @pytest.mark.parametrize("agent", [SimpleAgent(), MemoryAgent(), ReActAgent()])
     @pytest.mark.asyncio
     async def test_no_state_mutation(self, dummy_env: DummyEnv, agent: Agent) -> None:
         obs, tools = await dummy_env.reset()
