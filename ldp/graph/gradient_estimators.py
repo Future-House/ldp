@@ -178,7 +178,7 @@ class TorchParamBackwardEstimator:
         if torch is None:
             raise RuntimeError(
                 f"PyTorch library not found. Unable to use {type(self).__name__} class. "
-                "To install PyTorch dependencies, please run `pip install 'ldp[nn]'`"
+                "To install PyTorch dependencies, please run `pip install ldp[nn]`."
             )
         self.params = dict(module.named_parameters())
 
