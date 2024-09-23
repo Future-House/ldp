@@ -169,6 +169,7 @@ class TestMultipleCompletionLLMModel:
     ) -> list[LLMResult]:
         return await model.call(*args, **kwargs)
 
+    @pytest.mark.vcr
     @pytest.mark.parametrize("model_name", ["gpt-3.5-turbo"])
     @pytest.mark.asyncio
     async def test_model(self, model_name: str) -> None:
@@ -210,6 +211,7 @@ class TestMultipleCompletionLLMModel:
         ):
             await self.call_model(model, messages, [callback])
 
+    @pytest.mark.vcr
     @pytest.mark.asyncio
     async def test_parameterizing_tool_from_arg_union(self) -> None:
         def play(move: int | None) -> None:
@@ -297,6 +299,7 @@ class TestLLMModel(TestMultipleCompletionLLMModel):
     async def test_model(self, model_name: str) -> None:
         await super().test_model(model_name)
 
+    @pytest.mark.vcr
     @pytest.mark.parametrize(
         "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-3.5-turbo"]
     )
@@ -315,6 +318,11 @@ class TestLLMModel(TestMultipleCompletionLLMModel):
         result = await model.call(messages, [callback])
         assert result.completion_count > 0
         assert content
+
+    @pytest.mark.vcr
+    @pytest.mark.asyncio
+    async def test_parameterizing_tool_from_arg_union(self) -> None:
+        await super().test_parameterizing_tool_from_arg_union()
 
     @pytest.mark.asyncio
     async def test_output_type_rejected_validation(self) -> None:

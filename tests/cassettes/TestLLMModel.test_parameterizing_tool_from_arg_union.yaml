@@ -1,0 +1,108 @@
+interactions:
+  - request:
+      body:
+        '{"messages": [{"role": "user", "content": "Please win."}], "model": "gpt-3.5-turbo",
+        "tool_choice": "required", "tools": [{"type": "function", "function": {"name":
+        "play", "description": "Play one turn by choosing a move.", "parameters": {"type":
+        "object", "properties": {"move": {"anyOf": [{"type": "integer"}, {"type": "null"}],
+        "description": "Choose an integer to lose, choose None to win.", "title": "Move"}},
+        "required": ["move"]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "440"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.47.1
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 1.47.1
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.5
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//dFJda9tAEHzXrzj22Q6WSiJHb47dkpYQKG0htCnifFrJl94Xd6smxvi/
+          l5McSTGpHsSxc7MzO7eHhDGQFRQMxI6T0E7NV6un3UqIUN+mn57zn7V4zr6tv3/emPTLfQ6zyLDb
+          JxT0yroQVjuFJK3pYeGRE8auaZ7laZZl11cdoG2FKtIaR/MPF5dzav3Wzhdpdnli7qwUGKBgvxLG
+          GDt0/+jRVPgCBVvMXisaQ+ANQjFcYgy8VbECPAQZiBuC2QgKawhNtG1apSYAWatKwZUahfvvMDmP
+          QXGlys1D9TG/+2Hq5Wb9NayX97cPd3Tz0kz0+tZ71xmqWyOGgCb4UC/OxBgDw3XHdYrvz3iMAfdN
+          q9FQ9AyHR9D2Lz5CEUc7wpvLx+S98+9JAB7rNnB1SuZUPw5RK9s4b7fhLDmopZFhV3rkoZsAAlnX
+          a0edTgHaN68EzlvtqCT7B01seHXdt4NxiUYwTU8gWeJqrC8X/yOVFRKX3UMOu9P7k6YZGywGk92U
+          EPaBUJe1NA165+WwJckx+QcAAP//AwAqNTvaJAMAAA==
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 8c7d2f50fc026456-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Mon, 23 Sep 2024 20:11:36 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=Bq2sSYUMDMQdwcWXA7ovMOAxtaJkTrzHdeyW1_JC34E-1727122296-1.0.1.1-LYNn4wmRJv0tayFUI2kAbATGRPx35vLxUCjPCPNd23g6qSPxySahiyLzeBX07qx0b_ufaUYJw0e.pS8GwlFJCQ;
+            path=/; expires=Mon, 23-Sep-24 20:41:36 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=A.mc1uJ8aeR1ffVnKX9q6oJOnwqwX3224FEnCA.HKb8-1727122296919-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        access-control-expose-headers:
+          - X-Request-ID
+        alt-svc:
+          - h3=":443"; ma=86400
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "251"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=15552000; includeSubDomains; preload
+        x-ratelimit-limit-requests:
+          - "12000"
+        x-ratelimit-limit-tokens:
+          - "1000000"
+        x-ratelimit-remaining-requests:
+          - "11999"
+        x-ratelimit-remaining-tokens:
+          - "999980"
+        x-ratelimit-reset-requests:
+          - 5ms
+        x-ratelimit-reset-tokens:
+          - 1ms
+        x-request-id:
+          - req_3f11abb741c6285308d530b3445ebf32
+      status:
+        code: 200
+        message: OK
+version: 1

@@ -1,0 +1,154 @@
+interactions:
+  - request:
+      body:
+        '{"messages": [{"role": "user", "content": [{"type": "text", "text": "Hello,
+        how are you?"}]}], "temperature": 0.1, "system": [{"type": "text", "text": "Respond
+        with single words."}], "max_tokens": 4096, "model": "claude-3-haiku-20240307",
+        "stream": true}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "254"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.47.1
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: 'event: message_start
+
+          data: {"type":"message_start","message":{"id":"msg_01HApSixURutmLzNAaQpoU2J","type":"message","role":"assistant","model":"claude-3-haiku-20240307","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":19,"output_tokens":1}}           }
+
+
+          event: content_block_start
+
+          data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}    }
+
+
+          event: ping
+
+          data: {"type": "ping"}
+
+
+          event: content_block_delta
+
+          data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Goo"}            }
+
+
+          event: content_block_delta
+
+          data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"d."}              }
+
+
+          event: content_block_stop
+
+          data: {"type":"content_block_stop","index":0              }
+
+
+          event: message_delta
+
+          data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":5}   }
+
+
+          event: message_stop
+
+          data: {"type":"message_stop"       }
+
+
+          '
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 8c7d28a9ed066435-SJC
+        Cache-Control:
+          - no-cache
+        Connection:
+          - keep-alive
+        Content-Type:
+          - text/event-stream; charset=utf-8
+        Date:
+          - Mon, 23 Sep 2024 20:07:04 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Robots-Tag:
+          - none
+        request-id:
+          - req_01PZGoP3y7si94FU58qFeb1u
+        via:
+          - 1.1 google
+      status:
+        code: 200
+        message: OK
+  - request:
+      body: null
+      headers:
+        Accept:
+          - "*/*"
+        Accept-Encoding:
+          - identity
+        Connection:
+          - keep-alive
+        X-Amzn-Trace-Id:
+          - c240207e-e0bc-4b3b-8a1a-244eda180343
+        user-agent:
+          - unknown/None; hf_hub/0.25.1; python/3.12.5; torch/2.4.1
+      method: HEAD
+      uri: https://huggingface.co/claude-3-haiku-20240307/resolve/main/tokenizer.json
+    response:
+      body:
+        string: ""
+      headers:
+        Access-Control-Allow-Origin:
+          - https://huggingface.co
+        Access-Control-Expose-Headers:
+          - X-Repo-Commit,X-Request-Id,X-Error-Code,X-Error-Message,X-Total-Count,ETag,Link,Accept-Ranges,Content-Range
+        Connection:
+          - keep-alive
+        Content-Length:
+          - "20"
+        Content-Type:
+          - text/plain; charset=utf-8
+        Date:
+          - Mon, 23 Sep 2024 20:07:04 GMT
+        ETag:
+          - W/"14-ZYI5tVOD2gG7mWSpjynndpu9W6Y"
+        Referrer-Policy:
+          - strict-origin-when-cross-origin
+        Vary:
+          - Origin
+        Via:
+          - 1.1 e7b9009e52a576fa5517765b87250a32.cloudfront.net (CloudFront)
+        X-Amz-Cf-Id:
+          - HyhZHfAIhFial26K6xup6h41t6qPS3THz2TZjVBdOedB2ObZT5HGdQ==
+        X-Amz-Cf-Pop:
+          - SFO53-P5
+        X-Cache:
+          - Error from cloudfront
+        X-Error-Code:
+          - RepoNotFound
+        X-Error-Message:
+          - Repository not found
+        X-Powered-By:
+          - huggingface-moon
+        X-Request-Id:
+          - Root=1-66f1ca68-3925a411677e59b47c6d3d8b;c240207e-e0bc-4b3b-8a1a-244eda180343
+        cross-origin-opener-policy:
+          - same-origin
+      status:
+        code: 404
+        message: Not Found
+version: 1

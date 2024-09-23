@@ -61,6 +61,7 @@ class TestLiteEmbeddingModel:
         etext1, etext2 = await model.embed_texts(stub_texts)
         assert len(etext1) == len(etext2) == 8
 
+    @pytest.mark.vcr
     @pytest.mark.asyncio
     async def test_caching(self) -> None:
         model = LiteEmbeddingModel(

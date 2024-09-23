@@ -61,6 +61,7 @@ async def count_exclamations(traj: Trajectory) -> float:
     )
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize("training", [True, False])
 @pytest.mark.asyncio
 async def test_rollout(training: bool) -> None:
@@ -92,6 +93,7 @@ async def adeepcopy(x):
     return deepcopy(x)
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 async def test_beam_search() -> None:
     agent = SimpleAgent()
