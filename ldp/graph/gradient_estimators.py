@@ -10,10 +10,11 @@ import tree
 
 from ldp.graph.op_utils import CallID
 from ldp.graph.ops import GradInType, OpCtx, OpResult, ResultOrValue
-from ldp.graph.torch_ops import TorchOp
 
 try:
     import torch
+
+    from ldp.graph.torch_ops import TorchOp
 
 except ImportError:
     torch = None  # type: ignore[assignment]
