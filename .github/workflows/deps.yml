@@ -1,0 +1,10 @@
+name: deps-sync
+on:
+  push:
+    branches: [main, deps]
+
+jobs: # SEE: https://github.com/mmkal/trpc-cli/blob/v0.5.1/.github/workflows/deps.yml
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mmkal/runovate@676a208cba11fc44d3e06177e64f4601ae05f340
