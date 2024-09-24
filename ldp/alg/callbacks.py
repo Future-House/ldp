@@ -172,9 +172,10 @@ class RolloutDebugDumpCallback(Callback):
     ) -> None:
         self.start = time.time()
 
-    def _get_time_elapsed(self) -> float:
+    def _get_elapsed_time(self, reset: bool = True) -> float:
         elapsed = time.time() - self.start
-        self.start = time.time()
+        if reset:
+            self.start = time.time()
         return elapsed
 
     async def after_agent_get_asv(
@@ -184,33 +185,28 @@ class RolloutDebugDumpCallback(Callback):
         next_agent_state: Any,
         value: float,
     ) -> None:
-        log = {
+        log_jsonl = json.dumps({
             "event": "AGENT_GET_ASV",
-            "elapsed": self._get_time_elapsed(),
+            "elapsed": self._get_elapsed_time(),
             "action": action.value.model_dump(),
             "value": value,
-        }
+        })
         async with aiofiles.open(self._get_out_file(traj_id), "a") as f:
-            await f.write(json.dumps(log) + "\n")
+            await f.write(log_jsonl + "\n")
 
     async def after_env_step(
-        self,
-        traj_id: str,
-        obs: list[Message],
-        reward: float,
-        done: bool,
-        trunc: bool,
-    ):
-        log = {
+        self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
+    ) -> None:
+        log_jsonl = json.dumps({
             "event": "ENV_STEP",
-            "elapsed": self._get_time_elapsed(),
+            "elapsed": self._get_elapsed_time(),
             "obs": MessagesAdapter.dump_python(obs),
             "reward": reward,
             "done": done,
             "truncated": trunc,
-        }
+        })
         async with aiofiles.open(self._get_out_file(traj_id), "a") as f:
-            await f.write(json.dumps(log) + "\n")
+            await f.write(log_jsonl + "\n")
 
 
 class ComputeTrajectoryMetricsMixin:
