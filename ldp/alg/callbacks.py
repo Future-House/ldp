@@ -144,9 +144,14 @@ class TrajectoryFileCallback(Callback):
 
 
 class RolloutDebugDumpCallback(Callback):
-    """Writes rollout debug info to an output directory."""
+    """Dump JSONL files for each agent and environment step to a directory."""
 
     def __init__(self, output_dir: os.PathLike | str):
+        """Initialize.
+
+        Args:
+            output_dir: Directory to place JSONL files.
+        """
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
