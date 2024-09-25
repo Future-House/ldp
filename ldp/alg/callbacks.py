@@ -3,8 +3,7 @@ import logging
 import os
 import time
 from collections import defaultdict
-from collections.abc import Callable, Iterable, Sequence
-from functools import partial
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -244,10 +243,6 @@ class TrajectoryMetricsCallback(Callback):
         self,
         train_dataset: TaskDataset | None = None,
         eval_dataset: TaskDataset | None = None,
-        train_metrics_transform: Callable[[dict[str, list[float]]], Any] = lambda x: x,
-        eval_metrics_transform: Callable[
-            [list[dict[str, list[float]]]], Any
-        ] = lambda x: x,
     ):
         for ds in (train_dataset, eval_dataset):
             if ds and not isinstance(ds, ComputeTrajectoryMetricsMixin):
@@ -262,27 +257,19 @@ class TrajectoryMetricsCallback(Callback):
         self._eval_metrics_fn = (
             eval_dataset.compute_trajectory_metrics if eval_dataset else None  # type: ignore[attr-defined]
         )
-        self._train_metrics_transform = train_metrics_transform
-        self._eval_metrics_transform = eval_metrics_transform
-        self._eval_trajectories: list[Sequence[Trajectory]] = []
+
+        self._train_metrics: dict[str, list[float]] | None = None
+        self._eval_metrics: dict[str, list[float]] = defaultdict(list)
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
-        if not self._train_metrics_fn:
-            return
-        self._train_metrics_transform(self._train_metrics_fn(trajectories))
+        self._train_metrics = self._train_metrics_fn(trajectories)
 
     async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
-        if not self._eval_metrics_fn:
-            return
-        self._eval_trajectories.append(trajectories)
+        for k, v in self._eval_metrics_fn(trajectories).items():
+            self._eval_metrics[k].extend(v)
 
     async def after_eval_loop(self) -> None:
-        if not self._eval_metrics_fn:
-            return
-        self._eval_metrics_transform([
-            self._eval_metrics_fn(ts) for ts in self._eval_trajectories
-        ])
-        self._eval_trajectories.clear()
+        self._eval_metrics.clear()
 
 
 class MeanMetricsCallback(TrajectoryMetricsCallback):
@@ -293,26 +280,25 @@ class MeanMetricsCallback(TrajectoryMetricsCallback):
         train_dataset: TaskDataset | None = None,
         eval_dataset: TaskDataset | None = None,
     ):
-        super().__init__(
-            train_dataset,
-            eval_dataset,
-            train_metrics_transform=partial(self._compute_means, "_train_means"),
-            eval_metrics_transform=partial(self._compute_means, "_eval_means"),
-        )
+        super().__init__(train_dataset, eval_dataset)
         self._train_means: dict[str, float] | None = None
         self._eval_means: dict[str, float] | None = None
 
-    def _compute_means(
-        self, attr: str, metrics: dict[str, list[float]] | list[dict[str, list[float]]]
-    ) -> None:
-        if isinstance(metrics, list):  # We need to flatten
-            buckets: dict[str, list[float]] = defaultdict(list)
-            for m in metrics:
-                for k, v in m.items():
-                    buckets[k].extend(v)
-        else:
-            buckets = metrics
-        setattr(self, attr, {k: sum(v) / len(v) for k, v in buckets.items()})
+    async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
+        await super().after_train_step(trajectories)
+        if self._train_metrics is not None:
+            # may be None if train_dataset was not provided
+            self._train_means = self._compute_means(self._train_metrics)
+
+    async def after_eval_loop(self) -> None:
+        if self._eval_metrics:
+            # may be empty if eval_dataset was not provided
+            self._eval_means = self._compute_means(self._eval_metrics)
+        await super().after_eval_loop()
+
+    @staticmethod
+    def _compute_means(metrics: dict[str, list[float]]) -> dict[str, float]:
+        return {k: sum(v) / len(v) for k, v in metrics.items()}
 
     @property
     def train_means(self) -> dict[str, float]:
@@ -342,41 +328,38 @@ class WandBLoggingCallback(TrajectoryMetricsCallback):
                 f"{type(self).__name__} processing requires the 'monitor' extra for"
                 " 'wandb'. Please: `pip install aviary-internal[monitor]`."
             )
-        super().__init__(
-            train_dataset,
-            eval_dataset,
-            train_metrics_transform=self._train_log,
-            eval_metrics_transform=self._eval_log,
-        )
+        super().__init__(train_dataset, eval_dataset)
 
         self._num_train_step = 0
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
+        await super().after_train_step(trajectories)
         self._num_train_step += 1
-        return await super().after_train_step(trajectories)
 
-    def _train_log(self, metrics: dict[str, list[float]]) -> None:
+        if self._train_metrics is None:
+            return
+
         # Each wandb.log() increments the wandb step by 1. Log the training step here
         # so we can use it as an x-axis for training metrics that are logged by different
         # wandb.log() calls.
         wandb.log(
             {
                 f"train/{key}_mean": sum(vals) / len(vals)
-                for key, vals in metrics.items()
+                for key, vals in self._train_metrics.items()
             }
             | {"train/step": self._num_train_step}
         )
 
-    @staticmethod
-    def _eval_log(metrics: list[dict[str, list[float]]]) -> None:
-        flattened_metrics = defaultdict(list)
-        for m in metrics:
-            for k, v in m.items():
-                flattened_metrics[k].extend(v)
+    async def after_eval_loop(self) -> None:
+        if not self._eval_metrics:
+            return
+
         wandb.log({
             f"eval/{key}_mean": sum(vals) / len(vals)
-            for key, vals in flattened_metrics.items()
+            for key, vals in self._eval_metrics.items()
         })
+
+        await super().after_eval_loop()
 
 
 class ClearContextCallback(Callback):
