@@ -285,6 +285,7 @@ class MeanMetricsCallback(TrajectoryMetricsCallback):
         self._eval_means: dict[str, float] | None = None
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
+        await super().after_train_step(trajectories)
         if self._train_metrics is not None:
             # may be None if train_dataset was not provided
             self._train_means = self._compute_means(self._train_metrics)
