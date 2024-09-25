@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +14,7 @@ from aviary.tools import MessagesAdapter, ToolRequestMessage
 
 from ldp.agent import Agent
 from ldp.data_structures import Trajectory, Transition
-from ldp.graph.ops import OpResult
+from ldp.graph.ops import OpCtx, OpResult
 
 try:
     import wandb
@@ -143,9 +143,14 @@ class TrajectoryFileCallback(Callback):
 
 
 class RolloutDebugDumpCallback(Callback):
-    """Writes rollout debug info to an output directory."""
+    """Dump JSONL files for each agent and environment step to a directory."""
 
     def __init__(self, output_dir: os.PathLike | str):
+        """Initialize.
+
+        Args:
+            output_dir: Directory to place JSONL files.
+        """
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -166,9 +171,10 @@ class RolloutDebugDumpCallback(Callback):
     ) -> None:
         self.start = time.time()
 
-    def _get_time_elapsed(self) -> float:
+    def _get_elapsed_time(self, reset: bool = True) -> float:
         elapsed = time.time() - self.start
-        self.start = time.time()
+        if reset:
+            self.start = time.time()
         return elapsed
 
     async def after_agent_get_asv(
@@ -178,33 +184,28 @@ class RolloutDebugDumpCallback(Callback):
         next_agent_state: Any,
         value: float,
     ) -> None:
-        log = {
+        log_jsonl = json.dumps({
             "event": "AGENT_GET_ASV",
-            "elapsed": self._get_time_elapsed(),
+            "elapsed": self._get_elapsed_time(),
             "action": action.value.model_dump(),
             "value": value,
-        }
+        })
         async with aiofiles.open(self._get_out_file(traj_id), "a") as f:
-            await f.write(json.dumps(log) + "\n")
+            await f.write(log_jsonl + "\n")
 
     async def after_env_step(
-        self,
-        traj_id: str,
-        obs: list[Message],
-        reward: float,
-        done: bool,
-        trunc: bool,
-    ):
-        log = {
+        self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
+    ) -> None:
+        log_jsonl = json.dumps({
             "event": "ENV_STEP",
-            "elapsed": self._get_time_elapsed(),
+            "elapsed": self._get_elapsed_time(),
             "obs": MessagesAdapter.dump_python(obs),
             "reward": reward,
             "done": done,
             "truncated": trunc,
-        }
+        })
         async with aiofiles.open(self._get_out_file(traj_id), "a") as f:
-            await f.write(json.dumps(log) + "\n")
+            await f.write(log_jsonl + "\n")
 
 
 class ComputeTrajectoryMetricsMixin:
@@ -226,6 +227,7 @@ class ComputeTrajectoryMetricsMixin:
                 for traj in trajectories
             ],
             "num_steps": [len(traj.steps) for traj in trajectories],
+            "failures": [traj.failed for traj in trajectories],
         }
 
 
@@ -357,3 +359,14 @@ class WandBLoggingCallback(TrajectoryMetricsCallback):
         })
 
         await super().after_eval_loop()
+
+
+class ClearContextCallback(Callback):
+    def __init__(self, op_names: Iterable[str] | None = None):
+        self._op_names = op_names
+
+    async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
+        OpCtx.clear_contexts(self._op_names)
+
+    async def after_update(self) -> None:
+        OpCtx.clear_contexts(self._op_names)

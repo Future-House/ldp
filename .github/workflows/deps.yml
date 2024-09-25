@@ -1,0 +1,13 @@
+name: Rollup Renovate
+on:
+  push:
+    branches: [main, deps]
+
+jobs: # SEE: https://github.com/mmkal/trpc-cli/blob/v0.5.1/.github/workflows/deps.yml
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      # TODO: return to mmkal/runovate after:
+      # - https://github.com/mmkal/runovate/pull/5
+      # - https://github.com/mmkal/runovate/pull/8
+      - uses: jamesbraza/runovate@4aac8ab5e9e724cc0de7741e9e808eeed3df5719

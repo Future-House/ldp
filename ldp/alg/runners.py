@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from tqdm import tqdm, trange
 
 from ldp.agent import Agent
-from ldp.alg.callbacks import Callback
+from ldp.alg.callbacks import Callback, ClearContextCallback
 from ldp.alg.optimizer import Optimizer
 from ldp.alg.rollout import RolloutManager
 from ldp.data_structures import Trajectory
@@ -77,6 +77,7 @@ class EvaluatorConfig(BaseModel):
     max_rollout_steps: int | None = None
     catch_agent_failures: bool = True
     catch_env_failures: bool = True
+    clear_ctx_at_each_iter: bool = False
 
     def make_rollout_manager(
         self, agent: Agent, callbacks: Sequence[Callback]
@@ -101,6 +102,9 @@ class Evaluator:
         self.agent = agent
         self.dataset = dataset
         self.callbacks = callbacks or []
+        if self.config.clear_ctx_at_each_iter:
+            clear_cb = ClearContextCallback()
+            self.callbacks = [*self.callbacks, clear_cb] if callbacks else [clear_cb]
         self.rollout_manager = self.config.make_rollout_manager(agent, self.callbacks)
 
     @eval_mode()
@@ -148,6 +152,7 @@ class OnlineTrainerConfig(EvaluatorConfig):
         True,  # noqa: FBT003
         description="If True (default), run an evaluation loop before training.",
     )
+    clear_ctx_at_each_iter: bool = False
 
 
 class OnlineTrainer:
@@ -169,6 +174,9 @@ class OnlineTrainer:
         self.eval_dataset = eval_dataset
         self.optimizer = optimizer
         self.callbacks = callbacks or []
+        if self.config.clear_ctx_at_each_iter:
+            clear_cb = ClearContextCallback()
+            self.callbacks = [*self.callbacks, clear_cb] if callbacks else [clear_cb]
         self.rollout_manager = self.config.make_rollout_manager(
             agent=agent, callbacks=self.callbacks
         )
@@ -265,6 +273,7 @@ class OfflineTrainerConfig(BaseModel):
         1,
         description="Number of training iterations to run before updating the model.",
     )
+    clear_ctx_at_each_iter: bool = False
     # TODO: add some concept of eval loops
 
 
@@ -283,6 +292,9 @@ class OfflineTrainer:
         # copy so we can shuffle
         self.train_trajectories = train_trajectories.copy()
         self.callbacks = callbacks or []
+        if self.config.clear_ctx_at_each_iter:
+            clear_cb = ClearContextCallback()
+            self.callbacks = [*self.callbacks, clear_cb] if callbacks else [clear_cb]
 
     async def train(self) -> None:
         random.shuffle(self.train_trajectories)

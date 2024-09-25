@@ -2,8 +2,11 @@ name: Lint and Test
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - renovate/*
   pull_request:
+  workflow_dispatch:
 
 jobs:
   pre-commit:
@@ -18,7 +21,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: pre-commit/action@v3.0.1
-      - uses: pre-commit-ci/lite-action@v1.0.2
+      - uses: pre-commit-ci/lite-action@v1.0.3
         if: always()
   lint:
     runs-on: ubuntu-latest

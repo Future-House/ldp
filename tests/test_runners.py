@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from unittest.mock import patch
 
+import litellm
 import pytest
 from aviary.env import DummyEnv, TaskDataset
 
@@ -19,10 +20,12 @@ from ldp.alg.runners import (
     OnlineTrainerConfig,
 )
 from ldp.data_structures import Trajectory
+from ldp.graph.ops import OpCtx
 
 
 @pytest.mark.asyncio
-async def test_online_trainer():
+@pytest.mark.parametrize("clear_ctx_at_each_iter", [True, False])
+async def test_online_trainer(clear_ctx_at_each_iter):
     agent = MemoryAgent()
     opt = default_optimizer_factory(agent)
     dataset = TaskDataset.from_name("dummy")
@@ -34,6 +37,7 @@ async def test_online_trainer():
         max_rollout_steps=1,
         num_eval_iterations=1,
         eval_every=1,
+        clear_ctx_at_each_iter=clear_ctx_at_each_iter,
     )
     trainer = OnlineTrainer(
         config=train_conf,
@@ -49,15 +53,24 @@ async def test_online_trainer():
         # eval is run 3 times: before training, during training, after training
         assert v == (3 if "eval" in k else 1)
 
+    if clear_ctx_at_each_iter:
+        all(not ctx_data.data for ctx_data in OpCtx._CTX_REGISTRY.values())
+    else:
+        any(ctx_data.data for ctx_data in OpCtx._CTX_REGISTRY.values())
+
 
 @pytest.mark.asyncio
-async def test_evaluator() -> None:
+@pytest.mark.parametrize("clear_ctx_at_each_iter", [True, False])
+async def test_evaluator(clear_ctx_at_each_iter) -> None:
     agent = SimpleAgent()
     dataset = TaskDataset.from_name("dummy")
     metrics_callback = MeanMetricsCallback(eval_dataset=dataset)
     count_callback = DummyCallback()
 
-    eval_conf = EvaluatorConfig(num_eval_iterations=1)
+    eval_conf = EvaluatorConfig(
+        num_eval_iterations=1,
+        clear_ctx_at_each_iter=clear_ctx_at_each_iter,
+    )
     evaluator = Evaluator(
         config=eval_conf,
         agent=agent,
@@ -73,9 +86,36 @@ async def test_evaluator() -> None:
     for k, v in count_callback.fn_invocations.items():
         assert v == (1 if "eval" in k else 0)
 
+    if clear_ctx_at_each_iter:
+        all(not ctx_data.data for ctx_data in OpCtx._CTX_REGISTRY.values())
+    else:
+        any(ctx_data.data for ctx_data in OpCtx._CTX_REGISTRY.values())
+
 
 @pytest.mark.asyncio
-async def test_offline_trainer():
+async def test_can_measure_evaluation_failure_rate() -> None:
+    dataset = TaskDataset.from_name("dummy")
+    metrics_callback = MeanMetricsCallback(eval_dataset=dataset)
+
+    evaluator = Evaluator(
+        config=EvaluatorConfig(
+            batch_size=1, num_eval_iterations=1, max_rollout_steps=2
+        ),
+        agent=SimpleAgent(),
+        dataset=dataset,
+        callbacks=[metrics_callback],
+    )
+    with patch.object(
+        type(evaluator.agent), "get_asv", side_effect=litellm.APIError
+    ) as mock_get_asv:
+        await evaluator.evaluate()  # Confirm this does not crash
+    mock_get_asv.assert_awaited_once()
+    assert metrics_callback.eval_means["failures"] == 1.0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("clear_ctx_at_each_iter", [True, False])
+async def test_offline_trainer(clear_ctx_at_each_iter):
     # This is kind of a system test of getting trajectories from the evaluator
     # and then training on them "offline"
     agent = MemoryAgent()
@@ -84,7 +124,10 @@ async def test_offline_trainer():
     traj_callback = StoreTrajectoriesCallback()
 
     evaluator = Evaluator(
-        config=EvaluatorConfig(num_eval_iterations=1),
+        config=EvaluatorConfig(
+            num_eval_iterations=1,
+            clear_ctx_at_each_iter=clear_ctx_at_each_iter,
+        ),
         agent=agent,
         dataset=dataset,
         callbacks=[traj_callback],
@@ -93,7 +136,10 @@ async def test_offline_trainer():
     assert len(traj_callback.trajectories) == 1
 
     count_callback = DummyCallback()
-    train_conf = OfflineTrainerConfig(batch_size=1)
+    train_conf = OfflineTrainerConfig(
+        batch_size=1,
+        clear_ctx_at_each_iter=clear_ctx_at_each_iter,
+    )
     trainer = OfflineTrainer(
         config=train_conf,
         agent=agent,
@@ -109,6 +155,11 @@ async def test_offline_trainer():
         "after_eval_loop": 0,
         "after_update": 1,
     }
+
+    if clear_ctx_at_each_iter:
+        all(not ctx_data.data for ctx_data in OpCtx._CTX_REGISTRY.values())
+    else:
+        any(ctx_data.data for ctx_data in OpCtx._CTX_REGISTRY.values())
 
 
 class StoreTrajectoriesCallback(Callback):
