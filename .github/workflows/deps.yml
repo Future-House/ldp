@@ -3,10 +3,6 @@ on:
   push:
     branches: [main, deps]
 
-permissions:
-  actions: write # Allowing runovate to git push
-  contents: write # Allowing github.rest.git.createRef
-
 jobs: # SEE: https://github.com/mmkal/trpc-cli/blob/v0.5.1/.github/workflows/deps.yml
   run:
     runs-on: ubuntu-latest
