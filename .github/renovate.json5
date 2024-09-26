@@ -1,6 +1,6 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
-  extends: ["config:recommended", ":enablePreCommit", "group:allNonMajor"],
+  extends: ["config:recommended"],
   schedule: ["* 2 * * 1"],
   prHourlyLimit: 4,
   timezone: "America/Los_Angeles",
@@ -8,10 +8,21 @@
   lockFileMaintenance: {
     enabled: true,
   },
-  // The below is required by mmkal/runovate
-  // SEE: https://github.com/mmkal/runovate/blob/676a208cba11fc44d3e06177e64f4601ae05f340/action.yml#L127-L132
-  baseBranches: ["deps"],
-  automerge: true,
-  automergeType: "branch",
-  fetchChangeLogs: "branch",
+  "pre-commit": {
+    enabled: true,
+  },
+  packageRules: [
+    {
+      matchUpdateTypes: ["lockFileMaintenance"],
+      automerge: true,
+    },
+    {
+      // group:allNonMajor, with automerge
+      groupName: "all non-major dependencies",
+      groupSlug: "all-minor-patch",
+      matchPackageNames: ["*"],
+      matchUpdateTypes: ["minor", "patch"],
+      automerge: true,
+    },
+  ],
 }
