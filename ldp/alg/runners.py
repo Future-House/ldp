@@ -138,8 +138,9 @@ class OnlineTrainerConfig(EvaluatorConfig):
         "environment per training iteration.",
     )
     update_every: int = Field(
-        1,
+        default=1,
         description="Number of training iterations to run before updating the model.",
+        ge=1,
     )
     eval_every: int | None = Field(
         None,
