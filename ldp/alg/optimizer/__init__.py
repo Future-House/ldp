@@ -10,12 +10,13 @@ from ldp.alg.optimizer.opt import _OPTIMIZER_REGISTRY, ChainedOptimizer, Optimiz
 _DEFAULT_OPTIMIZER_ERROR_MSG = (
     "Didn't yet implement an optimizer of type {opt_type} for {agent_type}."
 )
+AUTOSELECT_BEST_OPTIMIZER = None
 
 
 class OptimizerConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    optimizer_type: str
+    optimizer_type: str | None = AUTOSELECT_BEST_OPTIMIZER
     optimizer_kwargs: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -26,14 +27,16 @@ _DEFAULT_OPTIMIZER_MAP: dict[type[Agent], type[Optimizer]] = {
 
 
 def default_optimizer_factory(
-    agent: Agent, optimizer_cls: str | type[Optimizer] | None = None, **optimizer_kwargs
+    agent: Agent,
+    optimizer_cls: str | type[Optimizer] | None = AUTOSELECT_BEST_OPTIMIZER,
+    **optimizer_kwargs,
 ) -> Optimizer:
     """A method that constructs a default optimizer for commonly-used agents.
 
     Args:
         agent: Agent to construct the optimizer for.
-        optimizer_cls: The optimizer class to use. If not specified, we will try a default.
-            based on the provided agent.
+        optimizer_cls: The optimizer class to use. If not specified, we will try a
+            default based on the provided agent.
         optimizer_kwargs: Arguments forwarded to optimizer_cls.
 
     Returns:
