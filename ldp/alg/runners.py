@@ -225,9 +225,7 @@ class OnlineTrainer:
         )
 
     @train_mode()
-    async def _training_step(
-        self, training_step: int, envs: Sequence[Environment]
-    ) -> None:
+    async def _training_step(self, i_iter: int, envs: Sequence[Environment]) -> None:
         training_batch: list[Trajectory] = []
 
         for _ in range(self.config.num_rollouts_per_env):
@@ -240,14 +238,14 @@ class OnlineTrainer:
 
             training_batch.extend(traj for traj in trajectories if not traj.failed)
 
-        await self._optimizer_step(training_step, training_batch)
+        await self._optimizer_step(i_iter, training_batch)
 
         await asyncio.gather(*[
             callback.after_train_step(trajectories) for callback in self.callbacks
         ])
 
     async def _optimizer_step(
-        self, training_step: int, training_batch: Sequence[Trajectory]
+        self, i_iter: int, training_batch: Sequence[Trajectory]
     ) -> None:
         for traj in training_batch:
             for step in traj.steps:
@@ -257,7 +255,7 @@ class OnlineTrainer:
 
         self.optimizer.aggregate(training_batch)
 
-        if (training_step + 1) % self.config.update_every == 0:
+        if (i_iter + 1) % self.config.update_every == 0:
             await self.optimizer.update()
 
             await asyncio.gather(*[
