@@ -8,9 +8,13 @@ from pathlib import Path
 from typing import Any
 
 import aiofiles
-from aviary.env import Environment, TaskDataset
-from aviary.message import Message
-from aviary.tools import MessagesAdapter, ToolRequestMessage
+from aviary.core import (
+    Environment,
+    Message,
+    MessagesAdapter,
+    TaskDataset,
+    ToolRequestMessage,
+)
 
 from ldp.agent import Agent
 from ldp.data_structures import Trajectory, Transition

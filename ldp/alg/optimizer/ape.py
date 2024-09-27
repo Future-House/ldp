@@ -6,7 +6,7 @@ from collections import UserDict
 from enum import StrEnum, auto
 from typing import Any, Self, cast
 
-from aviary.message import Message
+from aviary.core import Message
 from pydantic import (
     BaseModel,
     ConfigDict,

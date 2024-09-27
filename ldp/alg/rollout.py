@@ -6,8 +6,7 @@ from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager, nullcontext
 from typing import Any, TypeVar, overload
 
-from aviary.env import Environment
-from aviary.message import Message
+from aviary.core import Environment, Message
 
 from ldp.agent import Agent
 from ldp.alg.callbacks import Callback

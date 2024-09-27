@@ -4,7 +4,7 @@ from collections.abc import Awaitable, Callable, Sequence
 from contextlib import suppress
 from typing import NamedTuple
 
-from aviary.env import Environment
+from aviary.core import Environment
 
 from ldp.agent.agent import Agent, TAgentState
 from ldp.alg.callbacks import Callback
