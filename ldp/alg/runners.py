@@ -188,27 +188,25 @@ class OnlineTrainer:
         if self.config.eval_before:
             await self.evaluate()
 
-        pbar = tqdm(
+        with tqdm(
             desc="Training Iterations", ncols=0, total=self.config.num_train_iterations
-        )
-
-        while pbar.n < self.config.num_train_iterations:
-            for batch in self.train_dataset.iter_batches(
-                self.config.batch_size, shuffle=True
-            ):
-                await self._training_step(pbar.n, batch)
-                pbar.update()
-
-                if (
-                    self.config.eval_every is not None
-                    and pbar.n % self.config.eval_every == 0
+        ) as pbar:
+            # We use pbar.n as a counter for the number of training steps
+            while pbar.n < self.config.num_train_iterations:
+                for batch in self.train_dataset.iter_batches(
+                    self.config.batch_size, shuffle=True
                 ):
-                    await self.evaluate()
+                    await self._training_step(pbar.n, batch)
+                    pbar.update()  # Increment pbar.n by 1
 
-                if pbar.n == self.config.num_train_iterations:
-                    break
+                    if (
+                        self.config.eval_every is not None
+                        and pbar.n % self.config.eval_every == 0
+                    ):
+                        await self.evaluate()
 
-        pbar.close()
+                    if pbar.n == self.config.num_train_iterations:
+                        break  # Will also break out of the outer while loop
 
         await self.evaluate()
 
