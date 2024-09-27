@@ -183,7 +183,7 @@ class OnlineTrainer:
 
     async def train(self) -> None:
         if self.config.eval_before:
-            await self._eval_loop()
+            await self.evaluate()
 
         pbar = tqdm(
             desc="Training Iterations", ncols=0, total=self.config.num_train_iterations
@@ -200,17 +200,17 @@ class OnlineTrainer:
                     self.config.eval_every is not None
                     and pbar.n % self.config.eval_every == 0
                 ):
-                    await self._eval_loop()
+                    await self.evaluate()
 
                 if pbar.n == self.config.num_train_iterations:
                     break
 
         pbar.close()
 
-        await self._eval_loop()
+        await self.evaluate()
 
     @eval_mode()
-    async def _eval_loop(self, **kwargs) -> None:
+    async def evaluate(self, **kwargs) -> None:
         if self.config.num_eval_iterations == 0:
             return
 
