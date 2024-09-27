@@ -44,6 +44,10 @@ monitor = [
 nn = [
     "torch>=2.2",
 ]
+rich = [
+    "rich",
+    "tqdm>=4.56",  # When tqdm.rich was created
+]
 server = [
     "fastapi>=0.109",  # For Python 3.12 support
 ]
@@ -411,7 +415,7 @@ dev-dependencies = [
     "codeflash",
     "fhaviary[xml]",
     "ipython>=8",  # Pin to keep recent
-    "ldp[monitor,nn,server,typing,visualization]",
+    "ldp[monitor,nn,rich,server,typing,visualization]",
     "litellm>=1.42.1",  # Pin lower for UnsupportedParamsError fix
     "mypy>=1.8",  # Pin for mutable-override
     "pre-commit~=3.4",  # Pin to keep recent
