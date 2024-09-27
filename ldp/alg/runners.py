@@ -133,15 +133,22 @@ class Evaluator:
 
 class OnlineTrainerConfig(EvaluatorConfig):
     batch_size: int
-    num_train_iterations: int
+    num_train_iterations: int = Field(
+        ge=0,
+        description=(
+            "Number of iterations (at one batch per iteration) to process during"
+            " training, and setting to 0 skips training."
+        ),
+    )
     num_rollouts_per_env: int = Field(
-        1,
-        description="Number of rollouts to execute for each "
-        "environment per training iteration.",
+        default=1,
+        description=(
+            "Number of rollouts to execute for each environment per training iteration."
+        ),
     )
     update_every: int = Field(
         default=1,
-        description="Number of training iterations to run before updating the model.",
+        description="Number of training iterations between optimizer update calls.",
         ge=1,
     )
     eval_every: int | None = Field(
@@ -153,7 +160,10 @@ class OnlineTrainerConfig(EvaluatorConfig):
     )
     eval_before: bool = Field(
         default=True,
-        description="If True (default), run an evaluation loop before training.",
+        description=(
+            "If True (default), evaluate on the validation set before kicking off"
+            " training."
+        ),
     )
     clear_ctx_at_each_iter: bool = False
 
@@ -188,27 +198,25 @@ class OnlineTrainer:
         if self.config.eval_before:
             await self.evaluate()
 
-        pbar = tqdm(
+        with tqdm(
             desc="Training Iterations", ncols=0, total=self.config.num_train_iterations
-        )
-
-        while pbar.n < self.config.num_train_iterations:
-            for batch in self.train_dataset.iter_batches(
-                self.config.batch_size, shuffle=True
-            ):
-                await self._training_step(pbar.n, batch)
-                pbar.update()
-
-                if (
-                    self.config.eval_every is not None
-                    and pbar.n % self.config.eval_every == 0
+        ) as pbar:
+            # We use pbar.n as a counter for the number of training steps
+            while pbar.n < self.config.num_train_iterations:
+                for batch in self.train_dataset.iter_batches(
+                    self.config.batch_size, shuffle=True
                 ):
-                    await self.evaluate()
+                    await self._training_step(pbar.n, batch)
+                    pbar.update()  # Increment pbar.n by 1
 
-                if pbar.n == self.config.num_train_iterations:
-                    break
+                    if (
+                        self.config.eval_every is not None
+                        and pbar.n % self.config.eval_every == 0
+                    ):
+                        await self.evaluate()
 
-        pbar.close()
+                    if pbar.n == self.config.num_train_iterations:
+                        break  # Will also break out of the outer while loop
 
         await self.evaluate()
 
@@ -225,9 +233,7 @@ class OnlineTrainer:
         )
 
     @train_mode()
-    async def _training_step(
-        self, training_step: int, envs: Sequence[Environment]
-    ) -> None:
+    async def _training_step(self, i_iter: int, envs: Sequence[Environment]) -> None:
         training_batch: list[Trajectory] = []
 
         for _ in range(self.config.num_rollouts_per_env):
@@ -240,14 +246,14 @@ class OnlineTrainer:
 
             training_batch.extend(traj for traj in trajectories if not traj.failed)
 
-        await self._optimizer_step(training_step, training_batch)
+        await self._optimizer_step(i_iter, training_batch)
 
         await asyncio.gather(*[
             callback.after_train_step(trajectories) for callback in self.callbacks
         ])
 
     async def _optimizer_step(
-        self, training_step: int, training_batch: Sequence[Trajectory]
+        self, i_iter: int, training_batch: Sequence[Trajectory]
     ) -> None:
         for traj in training_batch:
             for step in traj.steps:
@@ -257,7 +263,7 @@ class OnlineTrainer:
 
         self.optimizer.aggregate(training_batch)
 
-        if (training_step + 1) % self.config.update_every == 0:
+        if (i_iter + 1) % self.config.update_every == 0:
             await self.optimizer.update()
 
             await asyncio.gather(*[
@@ -270,8 +276,9 @@ class OfflineTrainerConfig(BaseModel):
 
     batch_size: int
     update_every: int = Field(
-        1,
+        default=1,
         description="Number of training iterations to run before updating the model.",
+        ge=1,
     )
     clear_ctx_at_each_iter: bool = False
     # TODO: add some concept of eval loops
