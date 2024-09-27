@@ -38,6 +38,8 @@ async def _run_eval_loop(
                 "If num_iterations is not provided, the "
                 "dataset must be finite and implement __len__."
             ) from None
+    if not num_iterations:
+        return
 
     for i_iter, envs in tqdm(
         enumerate(dataset.iter_batches(batch_size, shuffle=shuffle)),
@@ -211,9 +213,6 @@ class OnlineTrainer:
 
     @eval_mode()
     async def evaluate(self, **kwargs) -> None:
-        if self.config.num_eval_iterations == 0:
-            return
-
         await _run_eval_loop(
             dataset=cast(TaskDataset, self.eval_dataset),
             rollout_manager=self.rollout_manager,
