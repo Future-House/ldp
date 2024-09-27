@@ -29,6 +29,10 @@ class MemoryOpt(BaseModel, Optimizer):
     memory_op: MemoryOp
     output_op: Op
     reward_discount: float = 1.0
+    memory_template: str = Field(
+        default="Input: {input}\nOutput: {output}\nReward: {value}",
+        description="Template for a Memory's string representation.",
+    )
 
     ### State
     steps: int = 0
@@ -90,7 +94,7 @@ class MemoryOpt(BaseModel, Optimizer):
                     output=str(self.output_op.ctx.get(output_call_id, "output").value),
                     value=d_return,
                     run_id=output_call_id.run_id,
-                    template="Input: {input}\nOutput: {output}\nReward: {value}",
+                    template=self.memory_template,
                 )
             )
 
