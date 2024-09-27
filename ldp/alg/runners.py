@@ -149,7 +149,7 @@ class OnlineTrainerConfig(EvaluatorConfig):
         ),
     )
     eval_before: bool = Field(
-        True,  # noqa: FBT003
+        default=True,
         description="If True (default), run an evaluation loop before training.",
     )
     clear_ctx_at_each_iter: bool = False
