@@ -4,9 +4,8 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 
-from tqdm import tqdm
-
 from ldp.data_structures import Trajectory
+from ldp.shims import tqdm
 
 logger = logging.getLogger(__name__)
 
