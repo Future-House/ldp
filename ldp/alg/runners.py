@@ -133,15 +133,22 @@ class Evaluator:
 
 class OnlineTrainerConfig(EvaluatorConfig):
     batch_size: int
-    num_train_iterations: int
+    num_train_iterations: int = Field(
+        ge=0,
+        description=(
+            "Number of iterations (at one batch per iteration) to process during"
+            " training, and setting to 0 skips training."
+        ),
+    )
     num_rollouts_per_env: int = Field(
-        1,
-        description="Number of rollouts to execute for each "
-        "environment per training iteration.",
+        default=1,
+        description=(
+            "Number of rollouts to execute for each environment per training iteration."
+        ),
     )
     update_every: int = Field(
         default=1,
-        description="Number of training iterations to run before updating the model.",
+        description="Number of training iterations between optimizer update calls.",
         ge=1,
     )
     eval_every: int | None = Field(
@@ -153,7 +160,10 @@ class OnlineTrainerConfig(EvaluatorConfig):
     )
     eval_before: bool = Field(
         default=True,
-        description="If True (default), run an evaluation loop before training.",
+        description=(
+            "If True (default), evaluate on the validation set before kicking off"
+            " training."
+        ),
     )
     clear_ctx_at_each_iter: bool = False
 
@@ -266,8 +276,9 @@ class OfflineTrainerConfig(BaseModel):
 
     batch_size: int
     update_every: int = Field(
-        1,
+        default=1,
         description="Number of training iterations to run before updating the model.",
+        ge=1,
     )
     clear_ctx_at_each_iter: bool = False
     # TODO: add some concept of eval loops
