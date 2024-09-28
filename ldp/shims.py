@@ -7,7 +7,7 @@ from tqdm import tqdm, trange
 
 logger = logging.getLogger(__name__)
 
-if os.environ.get("LDP_TQDM_USE_RICH", "").lower in {"1", "true", "yes"}:
+if os.environ.get("LDP_TQDM_USE_RICH", "").lower() in {"1", "true", "yes"}:
     # TODO: remove after https://github.com/tqdm/tqdm/issues/1618
     try:
         # pylint: disable-next=reimported
