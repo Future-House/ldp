@@ -407,7 +407,7 @@ class EmbeddingOp(Op):
         self.embedding = HybridEmbeddingModel(models=emb_models)
 
     async def forward(self, string_input: str) -> np.ndarray:
-        return await self.embedding.embed_text(str(string_input))
+        return await self.embedding.embed_text(string_input)
 
     @classmethod
     def backward(
