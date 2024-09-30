@@ -389,7 +389,7 @@ class EmbeddingOp(Op):
         **embedding_model_kwargs,
     ):
         if "timeout" not in embedding_model_kwargs:
-            embedding_model_kwargs["timeout"] = 10.0
+            embedding_model_kwargs["timeout"] = 60.0
         emb_models: list[EmbeddingModel] = []
         if dense_embedding_dim > 0:
             emb_models.append(
