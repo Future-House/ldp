@@ -367,10 +367,13 @@ async def test_clear_contexts():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("dense_embedding_size", [256, 512])
-@pytest.mark.parametrize("sparse_embedding_size", [32, 64])
+@pytest.mark.vcr
+@pytest.mark.parametrize("dense_embedding_size", [0, 256, 512])
+@pytest.mark.parametrize("sparse_embedding_size", [0, 32, 64])
 @pytest.mark.parametrize("model", ["text-embedding-3-small", "text-embedding-3-large"])
 async def test_embedding_op(model, dense_embedding_size, sparse_embedding_size) -> None:
+    if dense_embedding_size == sparse_embedding_size == 0:
+        return
     op = EmbeddingOp(
         dense_embedding=model,
         dense_embedding_dim=dense_embedding_size,
