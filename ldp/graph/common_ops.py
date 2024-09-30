@@ -386,20 +386,17 @@ class EmbeddingOp(Op):
         dense_embedding: str = "text-embedding-3-small",
         dense_embedding_dim: int = 512,
         sparse_embedding_dim: int = 0,
-        num_retries: int = 3,
-        timeout: int = 5,
+        **embedding_model_kwargs,
     ):
+        if "timeout" not in embedding_model_kwargs:
+            embedding_model_kwargs["timeout"] = 10.0
         emb_models: list[EmbeddingModel] = []
         if dense_embedding_dim > 0:
             emb_models.append(
                 LiteEmbeddingModel(
                     name=dense_embedding,
                     dimensions=dense_embedding_dim,
-                    embed_kwargs={
-                        "caching": True,
-                        "num_retries": num_retries,
-                        "timeout": timeout,
-                    },
+                    embed_kwargs=embedding_model_kwargs,
                 )
             )
         if sparse_embedding_dim > 0:
