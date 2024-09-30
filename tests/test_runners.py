@@ -23,6 +23,7 @@ from ldp.data_structures import Trajectory
 from ldp.graph.ops import OpCtx
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 @pytest.mark.parametrize("clear_ctx_at_each_iter", [True, False])
 async def test_online_trainer(clear_ctx_at_each_iter: bool) -> None:
@@ -115,6 +116,7 @@ async def test_can_measure_evaluation_failure_rate() -> None:
     assert metrics_callback.eval_means["failures"] == 1.0
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 @pytest.mark.parametrize("clear_ctx_at_each_iter", [True, False])
 async def test_offline_trainer(clear_ctx_at_each_iter: bool) -> None:
