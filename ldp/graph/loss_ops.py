@@ -1,15 +1,24 @@
 """This module contains loss Op implementations."""
 
-import numpy as np
+from typing import TYPE_CHECKING
+
 import tree
 
 from ldp.graph.op_utils import CallID
 from ldp.graph.ops import GradInType, Op, OpCtx
 
+if TYPE_CHECKING:
+    import numpy.typing as npt
+    import torch
+
 
 class MSELossOp(Op):
-    async def forward(self, prediction: np.ndarray, target: np.ndarray) -> float:
-        return np.mean((prediction - target) ** 2)
+    async def forward(
+        self,
+        prediction: "npt.NDArray | torch.Tensor",
+        target: "npt.NDArray | torch.Tensor",
+    ) -> "float | torch.Tensor":
+        return ((prediction - target) ** 2).mean()
 
     @classmethod
     def backward(
