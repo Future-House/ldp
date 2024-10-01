@@ -262,11 +262,13 @@ class TrajectoryMetricsCallback(Callback):
         self._eval_metrics: dict[str, list[float]] = defaultdict(list)
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
-        self._train_metrics = self._train_metrics_fn(trajectories)
+        if self._train_metrics_fn is not None:
+            self._train_metrics = self._train_metrics_fn(trajectories)
 
     async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
-        for k, v in self._eval_metrics_fn(trajectories).items():
-            self._eval_metrics[k].extend(v)
+        if self._eval_metrics_fn is not None:
+            for k, v in self._eval_metrics_fn(trajectories).items():
+                self._eval_metrics[k].extend(v)
 
     async def after_eval_loop(self) -> None:
         self._eval_metrics.clear()
