@@ -8,9 +8,8 @@ from ldp.graph.ops import GradInType, Op, OpCtx
 
 
 class MSELossOp(Op):
-    async def forward(self, prediction: np.ndarray , target: np.ndarray) -> float:
-        loss = np.mean((prediction - target) **2)
-        return loss
+    async def forward(self, prediction: np.ndarray, target: np.ndarray) -> float:
+        return np.mean((prediction - target) ** 2)
 
     @classmethod
     def backward(
@@ -23,5 +22,5 @@ class MSELossOp(Op):
     ) -> GradInType:
         prediction = input_kwargs["prediction"]
         target = input_kwargs["target"]
-        grad = 2 * (prediction - target)  
+        grad = 2 * (prediction - target)
         return [], {"prediction": grad, "target": None}
