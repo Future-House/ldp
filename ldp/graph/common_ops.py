@@ -21,7 +21,14 @@ from ldp.graph.gradient_estimators import assign_constant_grads
 from ldp.graph.memory import Memory, MemoryModel, UIndexMemoryModel
 from ldp.graph.op_utils import CallID, get_call_id, get_training_mode
 from ldp.graph.ops import GradInType, Op, OpCtx, ResultOrValue, TOutput
-from ldp.llms import EmbeddingModel, LLMModel, LLMResult
+from ldp.llms import (
+    EmbeddingModel,
+    HybridEmbeddingModel,
+    LiteEmbeddingModel,
+    LLMModel,
+    LLMResult,
+    SparseEmbeddingModel,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -368,3 +375,44 @@ class MemoryOp(Op[list[Memory]]):
     ) -> GradInType:
         """Backward pass for memory retrieval - goes back to item."""
         return assign_constant_grads(input_args, input_kwargs, 0.0)
+
+
+class EmbeddingOp(Op):
+    """A general operation for embedding text using LiteLLM."""
+
+    def __init__(
+        self,
+        *,
+        dense_embedding: str = "text-embedding-3-small",
+        dense_embedding_dim: int = 512,
+        sparse_embedding_dim: int = 0,
+        **embedding_model_kwargs,
+    ):
+        if "timeout" not in embedding_model_kwargs:
+            embedding_model_kwargs.setdefault("timeout", 60)
+        emb_models: list[EmbeddingModel] = []
+        if dense_embedding_dim > 0:
+            emb_models.append(
+                LiteEmbeddingModel(
+                    name=dense_embedding,
+                    dimensions=dense_embedding_dim,
+                    embed_kwargs=embedding_model_kwargs,
+                )
+            )
+        if sparse_embedding_dim > 0:
+            emb_models.append(SparseEmbeddingModel(dimensions=sparse_embedding_dim))
+        self.embedding = HybridEmbeddingModel(models=emb_models)
+
+    async def forward(self, string_input: str) -> np.ndarray:
+        return await self.embedding.embed_text(string_input)
+
+    @classmethod
+    def backward(
+        cls,
+        ctx: OpCtx,
+        input_args,
+        input_kwargs,
+        grad_output: tree.Structure,
+        call_id: CallID,
+    ) -> GradInType:
+        return [], {"string_input": None}
