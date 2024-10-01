@@ -395,7 +395,8 @@ class EmbeddingOp(Op):
                 LiteEmbeddingModel(
                     name=dense_embedding,
                     dimensions=dense_embedding_dim,
-                    embed_kwargs={"timeout": embedding_model_timeout} | embedding_model_kwargs,
+                    embed_kwargs={"timeout": embedding_model_timeout}
+                    | embedding_model_kwargs,
                 )
             )
         if sparse_embedding_dim > 0:
