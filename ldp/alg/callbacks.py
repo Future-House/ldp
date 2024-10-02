@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Collection, Iterable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -399,7 +399,7 @@ class LoggingCallback(MeanMetricsCallback):
         self,
         train_dataset: TaskDataset | None = None,
         eval_dataset: TaskDataset | None = None,
-        metrics_to_log: Iterable[str] | None = None,
+        metrics_to_log: Collection[str] | None = None,
     ):
         """Initialize the callback with a list of metric keys to log.
 
