@@ -381,19 +381,22 @@ class LoggingCallback(MeanMetricsCallback):
     This callback extends the `MeanMetricsCallback` and allows logging of user-specified metrics
     after each training step and after the evaluation loop. It calculates the specified metrics
     (e.g., pass rates) from the trajectories and logs the results.
-
-    Args:
-        metrics_to_log: List of metric keys to log (e.g., ["pass"]).
     """
 
-    def __init__(self, metrics_to_log: list[str] | None = None):
+    def __init__(
+            self,
+            train_dataset: TaskDataset | None = None,
+            eval_datset: TaskDataset | None = None,
+            metrics_to_log: list[str] | None = None):
         """Initialize the callback with a list of metric keys to log.
 
         Args:
+            train_dataset: The training dataset for computing metrics.
+            eval_dataset: The evaluation dataset for computing metrics.
             metrics_to_log: A list of metric keys (e.g., ["pass"]) to log.
                             If None, all metrics will be logged.
         """
-        super().__init__()
+        super().__init__(train_dataset, eval_datset)
         self.metrics_to_log = (
             metrics_to_log or []
         )  # If no metrics provided, log all by default
