@@ -56,21 +56,21 @@ class Callback:
     """
 
     async def before_transition(
-            self,
-            traj_id: str,
-            agent: Agent,
-            env: Environment,
-            agent_state: Any,
-            obs: list[Message],
+        self,
+        traj_id: str,
+        agent: Agent,
+        env: Environment,
+        agent_state: Any,
+        obs: list[Message],
     ) -> None:
         """Invoked by RolloutManager before each transition."""
 
     async def after_agent_get_asv(
-            self,
-            traj_id: str,
-            action: OpResult[ToolRequestMessage],
-            next_agent_state: Any,
-            value: float,
+        self,
+        traj_id: str,
+        action: OpResult[ToolRequestMessage],
+        next_agent_state: Any,
+        value: float,
     ):
         """Invoked by RolloutManager after agent.get_asv()."""
 
