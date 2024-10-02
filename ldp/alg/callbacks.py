@@ -433,4 +433,3 @@ class LoggingCallback(MeanMetricsCallback):
         await super().after_eval_loop()  # Call the parent to compute means
         if self.eval_means:
             self._log_filtered_metrics(self.eval_means, step_type="Eval")
-
