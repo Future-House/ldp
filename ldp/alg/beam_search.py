@@ -7,9 +7,10 @@ from typing import NamedTuple
 from aviary.env import Environment
 
 from ldp.agent.agent import Agent, TAgentState
-from ldp.alg.callbacks import Callback
-from ldp.alg.rollout import AgentError, EnvError, TEnv, reraise_exc_as
 from ldp.data_structures import Trajectory, Transition
+
+from .callbacks import Callback
+from .rollout import AgentError, EnvError, TEnv, reraise_exc_as
 
 
 class Beam(NamedTuple):

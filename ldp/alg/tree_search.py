@@ -8,8 +8,10 @@ from aviary.message import Message
 from aviary.utils import is_coroutine_callable
 
 from ldp.agent import Agent
-from ldp.alg.callbacks import Callback
-from ldp.alg.rollout import (
+from ldp.data_structures import TransitionTree
+
+from .callbacks import Callback
+from .rollout import (
     AgentError,
     CaughtError,
     EnvError,
@@ -17,7 +19,6 @@ from ldp.alg.rollout import (
     TEnv,
     reraise_exc_as,
 )
-from ldp.data_structures import TransitionTree
 
 logger = logging.getLogger(__name__)
 
