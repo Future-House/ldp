@@ -164,6 +164,23 @@ class TestLLMCallOp:
         assert isinstance(message_result.value, ToolRequestMessage)
         assert not message_result.value.tool_calls
 
+    @pytest.mark.vcr
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("temperature", [0.0, 0.5, 1.0])
+    async def test_compute_logprob(self, temperature) -> None:
+        model_name = "gpt-4o-mini"
+        config = {"model": model_name, "temperature": temperature}
+        llm_op = LLMCallOp()
+        output = await llm_op(config, msgs=[Message(content="Hello")])
+        logp = llm_op.ctx.get(output.call_id, "logprob")
+        raw_logp = llm_op.ctx.get(output.call_id, "raw_logprob")
+        if temperature == 0.0:
+            assert logp == 1.0
+        elif temperature == 1.0:
+            assert logp == raw_logp
+        else:
+            assert logp is None
+
 
 @pytest.mark.asyncio
 async def test_simple_prompt_graph() -> None:
