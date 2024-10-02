@@ -223,9 +223,15 @@ class RolloutManager:
         try:
             with reraise_exc_as(EnvError, enabled=self.catch_env_failures):
                 obs, tools = await env.reset()
+            await asyncio.gather(*[
+                c.after_env_reset(traj_id, obs, tools) for c in self.callbacks
+            ])
 
             with reraise_exc_as(AgentError, enabled=self.catch_agent_failures):
                 agent_state = await self.agent.init_state(tools)
+            await asyncio.gather(*[
+                c.after_agent_init_state(traj_id, agent_state) for c in self.callbacks
+            ])
 
             for timestep in itertools.count():
                 step = await self._take_step(timestep, traj_id, env, agent_state, obs)
