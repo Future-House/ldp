@@ -1,4 +1,4 @@
-from .algorithms import discounted_returns, to_network
+from .algorithms import to_network
 from .beam_search import Beam, BeamSearchRollout
 from .callbacks import (
     Callback,
@@ -42,6 +42,5 @@ __all__ = [
     "TrajectoryMetricsCallback",
     "TreeSearchRollout",
     "WandBLoggingCallback",
-    "discounted_returns",
     "to_network",
 ]

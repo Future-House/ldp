@@ -10,8 +10,9 @@ from aviary.env import Environment
 from aviary.message import Message
 
 from ldp.agent import Agent
-from ldp.alg.callbacks import Callback
 from ldp.data_structures import Trajectory, Transition
+
+from .callbacks import Callback
 
 logger = logging.getLogger(__name__)
 

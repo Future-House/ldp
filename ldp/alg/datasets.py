@@ -1,7 +1,7 @@
 from aviary.env import TASK_DATASET_REGISTRY
 from aviary.env import DummyTaskDataset as _DummyTaskDataset
 
-from ldp.alg.callbacks import ComputeTrajectoryMetricsMixin
+from .callbacks import ComputeTrajectoryMetricsMixin
 
 
 class DummyTaskDataset(_DummyTaskDataset, ComputeTrajectoryMetricsMixin):
