@@ -395,7 +395,7 @@ class LoggingCallback(MeanMetricsCallback):
         """
         super().__init__()
         self.metrics_to_log = (
-                metrics_to_log or []
+            metrics_to_log or []
         )  # If no metrics provided, log all by default
 
     def _log_filtered_metrics(self, metrics: dict[str, float], step_type: str) -> None:
