@@ -375,7 +375,7 @@ class ClearContextCallback(Callback):
         OpCtx.clear_contexts(self._op_names)
 
 
-class ConsoleLoggingCallback(MeanMetricsCallback):
+class LoggingCallback(MeanMetricsCallback):
     """Custom callback for logging pass rates and other metrics to the console.
 
     This callback extends the `MeanMetricsCallback` and adds additional functionality
