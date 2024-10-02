@@ -128,7 +128,7 @@ class TrajectoryFileCallback(Callback):
             )
 
     async def after_transition(
-            self, traj_id: str, agent: Agent, env: Environment, transition: Transition
+        self, traj_id: str, agent: Agent, env: Environment, transition: Transition
     ) -> None:
         assert traj_id in self.out_files
         traj = self.trajs[traj_id]
@@ -162,12 +162,12 @@ class RolloutDebugDumpCallback(Callback):
         return self.out_files[traj_id]
 
     async def before_transition(
-            self,
-            traj_id: str,
-            agent: Agent,
-            env: Environment,
-            agent_state,
-            obs: list[Message],
+        self,
+        traj_id: str,
+        agent: Agent,
+        env: Environment,
+        agent_state,
+        obs: list[Message],
     ) -> None:
         self.start = time.time()
 
