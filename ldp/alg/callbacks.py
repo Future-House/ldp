@@ -382,9 +382,6 @@ class LoggingCallback(MeanMetricsCallback):
     for logging metrics and pass rates to the console after each training step and
     after the evaluation loop. It calculates the pass rate by averaging the metric
     named "pass" from the trajectories and logs the results.
-
-    Inherits:
-        MeanMetricsCallback: A base callback that calculates the mean of all metrics.
     """
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
         """Log metrics and pass rate after each training step.
