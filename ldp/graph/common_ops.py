@@ -279,14 +279,14 @@ class LLMCallOp(Op[Message]):
 
         It takes as input the logprob at T=1. The derivation is in Section 5.1 of the Aviary notes.
         """
-        if raw_log_p is None or self.num_samples_partition_estimate == 0:
-            return None
-
         if temperature == 1:
             return raw_log_p
 
         if temperature == 0:
             return 1.0
+
+        if raw_log_p is None or self.num_samples_partition_estimate == 0:
+            return None
 
         # TODO: Try using n completions from a single API call. Need to modify LLMModel.call to do this, since
         # it currently only checks completion.choices[0]. Would reduce cost for long prompts.
