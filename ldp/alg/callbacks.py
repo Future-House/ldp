@@ -399,7 +399,7 @@ class LoggingCallback(MeanMetricsCallback):
         self,
         train_dataset: TaskDataset | None = None,
         eval_dataset: TaskDataset | None = None,
-        metrics_to_log: list[str] | None = None,
+        metrics_to_log: Iterable[str] | None = None,
     ):
         """Initialize the callback with a list of metric keys to log.
 
