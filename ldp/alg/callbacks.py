@@ -396,7 +396,7 @@ class LoggingCallback(MeanMetricsCallback):
             metrics_to_log: A list of metric keys (e.g., ["pass"]) to log.
                             If None, all metrics will be logged.
         """
-        super().__init__(train_dataset, eval_datset)
+        super().__init__(train_dataset, eval_dataset)
         self.metrics_to_log = (
             metrics_to_log or []
         )  # If no metrics provided, log all by default
