@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Collection, Iterable, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -385,3 +385,71 @@ class ClearContextCallback(Callback):
 
     async def after_update(self) -> None:
         OpCtx.clear_contexts(self._op_names)
+
+
+class LoggingCallback(MeanMetricsCallback):
+    """Custom callback for logging filtered metrics (e.g., pass rates) to the console.
+
+    This callback extends the `MeanMetricsCallback` and allows logging of user-specified metrics
+    after each training step and after the evaluation loop. It calculates the specified metrics
+    (e.g., pass rates) from the trajectories and logs the results.
+    """
+
+    def __init__(
+        self,
+        train_dataset: TaskDataset | None = None,
+        eval_dataset: TaskDataset | None = None,
+        metrics_to_log: Collection[str] | None = None,
+    ):
+        """Initialize the callback with a list of metric keys to log.
+
+        Args:
+            train_dataset: The training dataset for computing metrics.
+            eval_dataset: The evaluation dataset for computing metrics.
+            metrics_to_log: Optional metric names (e.g., ["pass"]) to log.
+                            If left as default of None, all metrics will be logged.
+        """
+        super().__init__(train_dataset, eval_dataset)
+        self.metrics_to_log = (
+            metrics_to_log or set()
+        )  # If no metrics provided, log all by default
+
+    def _log_filtered_metrics(self, metrics: dict[str, float], step_type: str) -> None:
+        """Helper function to log only the specified metrics.
+
+        Args:
+            metrics: Dictionary of calculated means for the current step (e.g., train or eval).
+            step_type: The type of step (e.g., "Train" or "Eval") for logging purposes.
+        """
+        if self.metrics_to_log:
+            for metric in self.metrics_to_log:
+                if metric in metrics:
+                    logger.info(
+                        f"{metric.upper()} RATE ({step_type}): {metrics[metric]:.5f}"
+                    )
+        else:
+            # Log all metrics if no specific ones are provided
+            logger.info(f"{step_type} Metrics: {metrics}")
+
+    async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
+        """Log metrics and pass rate after each training step.
+
+        This method is called after every training step, calculating and logging
+        the training metrics and pass rate.
+
+        Args:
+            trajectories: A sequence of trajectories from the training step.
+        """
+        await super().after_train_step(trajectories)  # Call the parent to compute means
+        if self.train_means:
+            self._log_filtered_metrics(self.train_means, step_type="Train")
+
+    async def after_eval_loop(self) -> None:
+        """Log metrics and pass rate after the evaluation loop.
+
+        This method is called after the evaluation loop finishes, calculating and logging
+        the evaluation metrics and pass rate.
+        """
+        await super().after_eval_loop()  # Call the parent to compute means
+        if self.eval_means:
+            self._log_filtered_metrics(self.eval_means, step_type="Eval")
