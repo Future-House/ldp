@@ -387,7 +387,7 @@ class LoggingCallback(MeanMetricsCallback):
         """Log metrics and pass rate after each training step.
 
         This method is called after every training step, calculating and logging
-        the training metrics and pass rate to the console.
+        the training metrics and pass rate.
 
         Args:
             trajectories: A sequence of trajectories from the training step.
@@ -404,7 +404,7 @@ class LoggingCallback(MeanMetricsCallback):
         """Log metrics and pass rate after the evaluation loop.
 
         This method is called after the evaluation loop finishes, calculating and logging
-        the evaluation metrics and pass rate to the console.
+        the evaluation metrics and pass rate.
         """
         await super().after_eval_loop()  # Call the parent to compute means
         if self._eval_metrics:
