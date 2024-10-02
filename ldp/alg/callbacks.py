@@ -393,8 +393,8 @@ class LoggingCallback(MeanMetricsCallback):
         Args:
             train_dataset: The training dataset for computing metrics.
             eval_dataset: The evaluation dataset for computing metrics.
-            metrics_to_log: A list of metric keys (e.g., ["pass"]) to log.
-                            If None, all metrics will be logged.
+            metrics_to_log: Optional metric names (e.g., ["pass"]) to log.
+                            If left as default of None, all metrics will be logged.
         """
         super().__init__(train_dataset, eval_dataset)
         self.metrics_to_log = (
