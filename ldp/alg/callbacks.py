@@ -394,7 +394,9 @@ class LoggingCallback(MeanMetricsCallback):
                             If None, all metrics will be logged.
         """
         super().__init__()
-        self.metrics_to_log = metrics_to_log or []  # If no metrics provided, log all by default
+        self.metrics_to_log = (
+                metrics_to_log or []
+        )  # If no metrics provided, log all by default
 
     def _log_filtered_metrics(self, metrics: dict[str, float], step_type: str) -> None:
         """Helper function to log only the specified metrics.
@@ -406,7 +408,9 @@ class LoggingCallback(MeanMetricsCallback):
         if self.metrics_to_log:
             for metric in self.metrics_to_log:
                 if metric in metrics:
-                    logger.info(f"{metric.upper()} RATE ({step_type}): {metrics[metric]:.5f}")
+                    logger.info(
+                        f"{metric.upper()} RATE ({step_type}): {metrics[metric]:.5f}"
+                    )
         else:
             # Log all metrics if no specific ones are provided
             logger.info(f"{step_type} Metrics: {metrics}")
