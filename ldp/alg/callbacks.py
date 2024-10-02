@@ -75,12 +75,12 @@ class Callback:
         """Invoked by RolloutManager after agent.get_asv()."""
 
     async def after_env_step(
-            self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
+        self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
     ):
         """Invoked by RolloutManager after env.step()."""
 
     async def after_transition(
-            self, traj_id: str, agent: Agent, env: Environment, transition: Transition
+        self, traj_id: str, agent: Agent, env: Environment, transition: Transition
     ) -> None:
         """Invoked by RolloutManager after each transition."""
 
@@ -115,12 +115,12 @@ class TrajectoryFileCallback(Callback):
         return f"{traj_id}.jsonl"
 
     async def before_transition(
-            self,
-            traj_id: str,
-            agent: Agent,
-            env: Environment,
-            agent_state: Any,
-            obs: list[Message],
+        self,
+        traj_id: str,
+        agent: Agent,
+        env: Environment,
+        agent_state: Any,
+        obs: list[Message],
     ) -> None:
         if traj_id not in self.out_files:
             self.out_files[traj_id] = self.output_dir / self._make_filename(
@@ -178,11 +178,11 @@ class RolloutDebugDumpCallback(Callback):
         return elapsed
 
     async def after_agent_get_asv(
-            self,
-            traj_id: str,
-            action: OpResult[ToolRequestMessage],
-            next_agent_state: Any,
-            value: float,
+        self,
+        traj_id: str,
+        action: OpResult[ToolRequestMessage],
+        next_agent_state: Any,
+        value: float,
     ) -> None:
         log_jsonl = json.dumps({
             "event": "AGENT_GET_ASV",
@@ -194,7 +194,7 @@ class RolloutDebugDumpCallback(Callback):
             await f.write(log_jsonl + "\n")
 
     async def after_env_step(
-            self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
+        self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
     ) -> None:
         log_jsonl = json.dumps({
             "event": "ENV_STEP",
@@ -212,8 +212,8 @@ class ComputeTrajectoryMetricsMixin:
     """Mixin for TaskDataset classes to enable them to compute metrics."""
 
     def compute_trajectory_metrics(
-            self,
-            trajectories: Sequence[Trajectory],
+        self,
+        trajectories: Sequence[Trajectory],
     ) -> dict[str, list[float]]:
         return {
             "reward": [
@@ -240,9 +240,9 @@ class TrajectoryMetricsCallback(Callback):
     """
 
     def __init__(
-            self,
-            train_dataset: TaskDataset | None = None,
-            eval_dataset: TaskDataset | None = None,
+        self,
+        train_dataset: TaskDataset | None = None,
+        eval_dataset: TaskDataset | None = None,
     ):
         for ds in (train_dataset, eval_dataset):
             if ds and not isinstance(ds, ComputeTrajectoryMetricsMixin):
@@ -278,9 +278,9 @@ class MeanMetricsCallback(TrajectoryMetricsCallback):
     """Take a mean of all metrics."""
 
     def __init__(
-            self,
-            train_dataset: TaskDataset | None = None,
-            eval_dataset: TaskDataset | None = None,
+        self,
+        train_dataset: TaskDataset | None = None,
+        eval_dataset: TaskDataset | None = None,
     ):
         super().__init__(train_dataset, eval_dataset)
         self._train_means: dict[str, float] | None = None
@@ -321,9 +321,9 @@ class MeanMetricsCallback(TrajectoryMetricsCallback):
 
 class WandBLoggingCallback(TrajectoryMetricsCallback):
     def __init__(
-            self,
-            train_dataset: TaskDataset | None = None,
-            eval_dataset: TaskDataset | None = None,
+        self,
+        train_dataset: TaskDataset | None = None,
+        eval_dataset: TaskDataset | None = None,
     ):
         if wandb is None:
             raise ImportError(
