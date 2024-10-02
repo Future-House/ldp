@@ -1,4 +1,3 @@
-import collections
 import itertools
 import random
 import tempfile
@@ -121,7 +120,16 @@ async def test_beam_search() -> None:
 
 class DummyCallback(Callback):
     def __init__(self):
-        self.fn_invocations = collections.defaultdict(int)
+        # NOTE: don't use collections.defaultdict here because it can lead to
+        # test aliasing for a callback being missed altogether
+        self.fn_invocations = {
+            "before_transition": 0,
+            "after_agent_init_state": 0,
+            "after_agent_get_asv": 0,
+            "after_env_reset": 0,
+            "after_env_step": 0,
+            "after_transition": 0,
+        }
 
     async def before_transition(
         self,
