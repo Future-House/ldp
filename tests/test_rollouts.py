@@ -1,3 +1,4 @@
+import collections
 import itertools
 import random
 import tempfile
@@ -120,12 +121,7 @@ async def test_beam_search() -> None:
 
 class DummyCallback(Callback):
     def __init__(self):
-        self.fn_invocations = {
-            "before_transition": 0,
-            "after_agent_get_asv": 0,
-            "after_env_step": 0,
-            "after_transition": 0,
-        }
+        self.fn_invocations = collections.defaultdict(int)
 
     async def before_transition(
         self,
@@ -231,7 +227,7 @@ class NoisyCountingEnv(CountingEnv):
 
 class TestTreeSearch:
     @pytest.mark.asyncio
-    async def test_tree_search(self):
+    async def test_tree_search(self) -> None:
         agent = CountingAgent()
         # Use a slightly stochastic env so we can distinguish branches
         env = NoisyCountingEnv()
@@ -248,7 +244,7 @@ class TestTreeSearch:
         trajs = tree.get_trajectories()
         assert len(trajs) == 8
 
-        traj_ids_wo_root = {
+        traj_ids_wo_root: set[str] = {
             cast(str, traj.traj_id).replace(tree.root_id, "").lstrip(":")
             for traj in trajs
         }
@@ -257,7 +253,7 @@ class TestTreeSearch:
             ":".join(x) for x in itertools.product("01", repeat=3)
         }
 
-        observations = {}  # type: ignore[var-annotated]
+        observations: dict[tuple[str, ...], str] = {}
         for traj in trajs:
             branch_path = tuple(cast(str, traj.traj_id).split(":")[1:])
 
@@ -269,6 +265,8 @@ class TestTreeSearch:
 
                 # Steps that started at the same node in the tree should have the same observation
                 node_id = branch_path[: i_step + 1]
+                assert len(step.observation) == 1
+                assert step.observation[0].content
                 if node_id in observations:
                     assert observations[node_id] == step.observation[0].content
                 else:
@@ -282,7 +280,7 @@ class TestTreeSearch:
         assert all(v == 14 for v in callback.fn_invocations.values())
 
     @pytest.mark.asyncio
-    async def test_early_stopping(self):
+    async def test_early_stopping(self) -> None:
         agent = CountingAgent()
         # Use a slightly stochastic env so we can distinguish branches
         env = NoisyCountingEnv()
