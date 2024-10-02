@@ -72,11 +72,8 @@ class BeamSearchRollout:
         return [self.traj_buffer[traj_id] for traj_id in traj_ids]
 
     async def _rollout(
-        self,
-        traj_id: str,
-        env: Environment,
-        max_steps: int | None,
-    ):
+        self, traj_id: str, env: Environment, max_steps: int | None
+    ) -> None:
         with suppress(AgentError, EnvError):
             # for samples_per_beam==1. we want to ensemble and pick the highest-scoring one
             n_seeds = 1 if self.samples_per_beam > 1 else self.beam_width
@@ -92,11 +89,15 @@ class BeamSearchRollout:
 
             with reraise_exc_as(EnvError, self.catch_env_failures):
                 init_obs, tools = await env.reset()
+            await asyncio.gather(*[
+                c.after_env_reset(traj_id, init_obs, tools) for c in self.callbacks
+            ])
 
             with reraise_exc_as(AgentError, self.catch_agent_failures):
                 seed_agent_states = await asyncio.gather(
                     *(self.agent.init_state(tools) for _ in range(n_seeds))
                 )
+            # TODO: implement after_agent_init_state callback
 
             while len(done_beams) < self.beam_width and beams:
                 new_beams = []
