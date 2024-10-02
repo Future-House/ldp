@@ -56,31 +56,31 @@ class Callback:
     """
 
     async def before_transition(
-        self,
-        traj_id: str,
-        agent: Agent,
-        env: Environment,
-        agent_state: Any,
-        obs: list[Message],
+            self,
+            traj_id: str,
+            agent: Agent,
+            env: Environment,
+            agent_state: Any,
+            obs: list[Message],
     ) -> None:
         """Invoked by RolloutManager before each transition."""
 
     async def after_agent_get_asv(
-        self,
-        traj_id: str,
-        action: OpResult[ToolRequestMessage],
-        next_agent_state: Any,
-        value: float,
+            self,
+            traj_id: str,
+            action: OpResult[ToolRequestMessage],
+            next_agent_state: Any,
+            value: float,
     ):
         """Invoked by RolloutManager after agent.get_asv()."""
 
     async def after_env_step(
-        self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
+            self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
     ):
         """Invoked by RolloutManager after env.step()."""
 
     async def after_transition(
-        self, traj_id: str, agent: Agent, env: Environment, transition: Transition
+            self, traj_id: str, agent: Agent, env: Environment, transition: Transition
     ) -> None:
         """Invoked by RolloutManager after each transition."""
 
@@ -115,12 +115,12 @@ class TrajectoryFileCallback(Callback):
         return f"{traj_id}.jsonl"
 
     async def before_transition(
-        self,
-        traj_id: str,
-        agent: Agent,
-        env: Environment,
-        agent_state: Any,
-        obs: list[Message],
+            self,
+            traj_id: str,
+            agent: Agent,
+            env: Environment,
+            agent_state: Any,
+            obs: list[Message],
     ) -> None:
         if traj_id not in self.out_files:
             self.out_files[traj_id] = self.output_dir / self._make_filename(
@@ -128,7 +128,7 @@ class TrajectoryFileCallback(Callback):
             )
 
     async def after_transition(
-        self, traj_id: str, agent: Agent, env: Environment, transition: Transition
+            self, traj_id: str, agent: Agent, env: Environment, transition: Transition
     ) -> None:
         assert traj_id in self.out_files
         traj = self.trajs[traj_id]
@@ -162,12 +162,12 @@ class RolloutDebugDumpCallback(Callback):
         return self.out_files[traj_id]
 
     async def before_transition(
-        self,
-        traj_id: str,
-        agent: Agent,
-        env: Environment,
-        agent_state,
-        obs: list[Message],
+            self,
+            traj_id: str,
+            agent: Agent,
+            env: Environment,
+            agent_state,
+            obs: list[Message],
     ) -> None:
         self.start = time.time()
 
@@ -178,11 +178,11 @@ class RolloutDebugDumpCallback(Callback):
         return elapsed
 
     async def after_agent_get_asv(
-        self,
-        traj_id: str,
-        action: OpResult[ToolRequestMessage],
-        next_agent_state: Any,
-        value: float,
+            self,
+            traj_id: str,
+            action: OpResult[ToolRequestMessage],
+            next_agent_state: Any,
+            value: float,
     ) -> None:
         log_jsonl = json.dumps({
             "event": "AGENT_GET_ASV",
@@ -194,7 +194,7 @@ class RolloutDebugDumpCallback(Callback):
             await f.write(log_jsonl + "\n")
 
     async def after_env_step(
-        self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
+            self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
     ) -> None:
         log_jsonl = json.dumps({
             "event": "ENV_STEP",
@@ -212,8 +212,8 @@ class ComputeTrajectoryMetricsMixin:
     """Mixin for TaskDataset classes to enable them to compute metrics."""
 
     def compute_trajectory_metrics(
-        self,
-        trajectories: Sequence[Trajectory],
+            self,
+            trajectories: Sequence[Trajectory],
     ) -> dict[str, list[float]]:
         return {
             "reward": [
@@ -240,9 +240,9 @@ class TrajectoryMetricsCallback(Callback):
     """
 
     def __init__(
-        self,
-        train_dataset: TaskDataset | None = None,
-        eval_dataset: TaskDataset | None = None,
+            self,
+            train_dataset: TaskDataset | None = None,
+            eval_dataset: TaskDataset | None = None,
     ):
         for ds in (train_dataset, eval_dataset):
             if ds and not isinstance(ds, ComputeTrajectoryMetricsMixin):
@@ -278,9 +278,9 @@ class MeanMetricsCallback(TrajectoryMetricsCallback):
     """Take a mean of all metrics."""
 
     def __init__(
-        self,
-        train_dataset: TaskDataset | None = None,
-        eval_dataset: TaskDataset | None = None,
+            self,
+            train_dataset: TaskDataset | None = None,
+            eval_dataset: TaskDataset | None = None,
     ):
         super().__init__(train_dataset, eval_dataset)
         self._train_means: dict[str, float] | None = None
@@ -321,9 +321,9 @@ class MeanMetricsCallback(TrajectoryMetricsCallback):
 
 class WandBLoggingCallback(TrajectoryMetricsCallback):
     def __init__(
-        self,
-        train_dataset: TaskDataset | None = None,
-        eval_dataset: TaskDataset | None = None,
+            self,
+            train_dataset: TaskDataset | None = None,
+            eval_dataset: TaskDataset | None = None,
     ):
         if wandb is None:
             raise ImportError(
@@ -373,3 +373,46 @@ class ClearContextCallback(Callback):
 
     async def after_update(self) -> None:
         OpCtx.clear_contexts(self._op_names)
+
+
+class ConsoleLoggingCallback(MeanMetricsCallback):
+    """Custom callback for logging pass rates and other metrics to the console.
+
+    This callback extends the `MeanMetricsCallback` and adds additional functionality
+    for logging metrics and pass rates to the console after each training step and
+    after the evaluation loop. It calculates the pass rate by averaging the metric
+    named "pass" from the trajectories and logs the results.
+
+    Inherits:
+        MeanMetricsCallback: A base callback that calculates the mean of all metrics.
+    """
+    async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
+        """Log metrics and pass rate after each training step.
+
+        This method is called after every training step, calculating and logging
+        the training metrics and pass rate to the console.
+
+        Args:
+            trajectories: A sequence of trajectories from the training step.
+        """
+        await super().after_train_step(trajectories)  # Call the parent to compute means
+        if self._train_metrics:
+            logger.info(f"Train step completed. Metrics: {self._train_metrics}")
+        if self.train_means:
+            pass_rate = self.train_means.get("pass", None)
+            if pass_rate is not None:
+                logger.info(f"PASS RATE (Train): {pass_rate:.5f}")
+
+    async def after_eval_loop(self) -> None:
+        """Log metrics and pass rate after the evaluation loop.
+
+        This method is called after the evaluation loop finishes, calculating and logging
+        the evaluation metrics and pass rate to the console.
+        """
+        await super().after_eval_loop()  # Call the parent to compute means
+        if self._eval_metrics:
+            logger.info(f"Evaluation completed. Metrics: {self._eval_metrics}")
+        if self.eval_means:
+            pass_rate = self.eval_means.get("pass", None)
+            if pass_rate is not None:
+                logger.info(f"PASS RATE (Test): {pass_rate:.5f}")
