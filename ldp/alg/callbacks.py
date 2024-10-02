@@ -379,7 +379,7 @@ class LoggingCallback(MeanMetricsCallback):
     """Custom callback for logging pass rates and other metrics to the console.
 
     This callback extends the `MeanMetricsCallback` and adds additional functionality
-    for logging metrics and pass rates to the console after each training step and
+    for logging metrics and pass rates after each training step and
     after the evaluation loop. It calculates the pass rate by averaging the metric
     named "pass" from the trajectories and logs the results.
     """
