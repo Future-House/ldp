@@ -411,7 +411,7 @@ class LoggingCallback(MeanMetricsCallback):
         """
         super().__init__(train_dataset, eval_dataset)
         self.metrics_to_log = (
-            metrics_to_log or []
+            metrics_to_log or set()
         )  # If no metrics provided, log all by default
 
     def _log_filtered_metrics(self, metrics: dict[str, float], step_type: str) -> None:
