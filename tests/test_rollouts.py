@@ -133,6 +133,9 @@ class DummyCallback(Callback):
     ) -> None:
         self.fn_invocations["before_transition"] += 1
 
+    async def after_agent_init_state(self, traj_id: str, init_state: Any) -> None:
+        self.fn_invocations["after_agent_init_state"] += 1
+
     async def after_agent_get_asv(
         self,
         traj_id: str,
@@ -141,6 +144,11 @@ class DummyCallback(Callback):
         value: float,
     ):
         self.fn_invocations["after_agent_get_asv"] += 1
+
+    async def after_env_reset(
+        self, traj_id: str, obs: list[Message], tools: list[Tool]
+    ) -> None:
+        self.fn_invocations["after_env_reset"] += 1
 
     async def after_env_step(
         self,
@@ -274,10 +282,14 @@ class TestTreeSearch:
 
                 prev_step = step
 
-        # We expect sum_{i=1}^3 2^i = 2^4 - 2 = 14 transitions:
-        # - branching factor = 2, depth = 3
-        # - root node isn't sampled, so no i=0 term in sum
-        assert all(v == 14 for v in callback.fn_invocations.values())
+        for callback_fn, num_calls in callback.fn_invocations.items():
+            if callback_fn in {"after_agent_init_state", "after_env_reset"}:
+                assert num_calls == 1, "These should be invoked once at the start"
+            else:
+                # We expect sum_{i=1}^3 2^i = 2^4 - 2 = 14 transitions:
+                # - branching factor = 2, depth = 3
+                # - root node isn't sampled, so no i=0 term in sum
+                assert num_calls == 14
 
     @pytest.mark.asyncio
     async def test_early_stopping(self) -> None:
