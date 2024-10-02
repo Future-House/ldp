@@ -24,7 +24,7 @@ from ldp.agent import (
     SimpleAgentState,
     make_simple_agent_server,
 )
-from ldp.alg.algorithms import to_network
+from ldp.alg import to_network
 from ldp.graph.common_ops import LLMCallOp
 from ldp.graph.gradient_estimators import llm_straight_through_estimator as llm_ste
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
