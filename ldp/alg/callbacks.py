@@ -10,7 +10,7 @@ from typing import Any
 import aiofiles
 from aviary.env import Environment, TaskDataset
 from aviary.message import Message
-from aviary.tools import MessagesAdapter, ToolRequestMessage
+from aviary.tools import MessagesAdapter, Tool, ToolRequestMessage
 
 from ldp.agent import Agent
 from ldp.data_structures import Trajectory, Transition
@@ -30,6 +30,10 @@ class Callback:
     Pseudocode to demonstrate how callback methods are invoked (marked as *):
 
     RolloutManager.sample_trajectories():
+        env.reset()
+        callback.after_env_reset() *
+        agent.init_state()
+        callback.after_agent_init_state() *
         while not done:
             callback.before_transition() *
             agent.get_asv()
@@ -65,6 +69,9 @@ class Callback:
     ) -> None:
         """Invoked by RolloutManager before each transition."""
 
+    async def after_agent_init_state(self, traj_id: str, init_state: Any) -> None:
+        """Invoked by RolloutManager after agent.init_state()."""
+
     async def after_agent_get_asv(
         self,
         traj_id: str,
@@ -73,6 +80,11 @@ class Callback:
         value: float,
     ) -> None:
         """Invoked by RolloutManager after agent.get_asv()."""
+
+    async def after_env_reset(
+        self, traj_id: str, obs: list[Message], tools: list[Tool]
+    ) -> None:
+        """Invoked by RolloutManager after env.reset()."""
 
     async def after_env_step(
         self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
