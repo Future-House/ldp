@@ -7,6 +7,7 @@ from .callbacks import (
     LoggingCallback,
     MeanMetricsCallback,
     RolloutDebugDumpCallback,
+    TrajectoryFileCallback,
     TrajectoryMetricsCallback,
     WandBLoggingCallback,
 )
@@ -37,6 +38,7 @@ __all__ = [
     "OnlineTrainerConfig",
     "RolloutDebugDumpCallback",
     "RolloutManager",
+    "TrajectoryFileCallback",
     "TrajectoryMetricsCallback",
     "TreeSearchRollout",
     "WandBLoggingCallback",
