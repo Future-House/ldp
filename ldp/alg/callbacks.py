@@ -71,12 +71,12 @@ class Callback:
         action: OpResult[ToolRequestMessage],
         next_agent_state: Any,
         value: float,
-    ):
+    ) -> None:
         """Invoked by RolloutManager after agent.get_asv()."""
 
     async def after_env_step(
         self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
-    ):
+    ) -> None:
         """Invoked by RolloutManager after env.step()."""
 
     async def after_transition(
