@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from itertools import product
 from typing import Self, cast
 
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 class MemoryOpt(BaseModel, Optimizer):
     """Trainer for memory agents. By default it is a minimizer.
 
-    We simply store the memories in the memory op with their gradient.
+    This optimizer simply adds memories to the MemoryOp using a memory factory.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -29,6 +30,9 @@ class MemoryOpt(BaseModel, Optimizer):
     memory_op: MemoryOp
     output_op: Op
     reward_discount: float = 1.0
+    memory_factory: Callable[..., Memory] = Field(
+        default=Memory.from_ops, description="Function to make a Memory.", exclude=True
+    )
     memory_template: str = Field(
         default="Input: {input}\nOutput: {output}\nReward: {value}",
         description="Template for a Memory's string representation.",
@@ -84,12 +88,12 @@ class MemoryOpt(BaseModel, Optimizer):
     async def update(self) -> None:
         """Create new memories from the example buffer and add them to MemoryOp."""
         new_memories = [
-            Memory.from_ops(
+            self.memory_factory(
                 self.memory_op,
                 mem_call_id,
                 self.output_op,
                 output_call_id,
-                value=d_return,
+                d_return,
                 template=self.memory_template,
             )
             for mem_call_id, output_call_id, d_return in self.example_buffer
