@@ -73,7 +73,8 @@ class MemoryOpt(BaseModel, Optimizer):
             output_call_ids = self.output_op.get_call_ids({output.call_id.run_id})
             if len(mem_call_ids) > 1 and len(output_call_ids) > 1:
                 raise ValueError(
-                    "Multiple memory or output calls in a single run - this violates our 1-1 correspondence assumption."
+                    "Multiple memory or output calls in a single run - this violates"
+                    " our 1-1 correspondence assumption."
                 )
 
             self.example_buffer.extend(
@@ -82,22 +83,17 @@ class MemoryOpt(BaseModel, Optimizer):
 
     async def update(self) -> None:
         """Create new memories from the example buffer and add them to MemoryOp."""
-        new_memories = []
-        for mem_call_id, output_call_id, d_return in self.example_buffer:
-            query = self.memory_op.ctx.get(mem_call_id, "query")
-            input = self.memory_op.ctx.get(mem_call_id, "memory_input")  # noqa: A001
-            new_memories.append(
-                # why do we want this gradient and not memory_op's grad output?
-                Memory(
-                    query=query,
-                    input=input if input is not None else query,
-                    output=str(self.output_op.ctx.get(output_call_id, "output").value),
-                    value=d_return,
-                    run_id=output_call_id.run_id,
-                    template=self.memory_template,
-                )
+        new_memories = [
+            Memory.from_ops(
+                self.memory_op,
+                mem_call_id,
+                self.output_op,
+                output_call_id,
+                value=d_return,
+                template=self.memory_template,
             )
-
+            for mem_call_id, output_call_id, d_return in self.example_buffer
+        ]
         for memory in new_memories:
             await self.memory_op.memory_model.add_memory(memory)
         self.steps += 1
