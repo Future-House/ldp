@@ -32,7 +32,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
                 docstring += self._get_param_string(pname, pprops) + ", "
                 arg_doc = "   " + pname
                 if "description" in pprops:
-                    arg_doc + ": " + pprops.get("description", "")
+                    arg_doc += ": " + pprops.get("description", "")
                 arg_docs.append(arg_doc)
 
             docstring = docstring.rstrip(", ") + "):\n"
