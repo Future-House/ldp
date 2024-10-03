@@ -5,7 +5,7 @@ memories, formatted using specified prompts. A memory is typically a set of prev
 """
 
 from collections.abc import Callable, Iterable
-from typing import cast
+from typing import ClassVar, cast
 
 from aviary.message import Message
 from aviary.tools import ToolRequestMessage
@@ -20,6 +20,10 @@ from ldp.llms.prompts import indent_xml
 from .simple_agent import SimpleAgent, SimpleAgentState
 
 
+def _default_query_factory(messages: Iterable[Message]) -> str:
+    return "\n\n".join([str(m) for m in messages if m.role != "system"])
+
+
 class MemoryAgent(SimpleAgent):
     """
     Simple agent that can pick and invoke tools with memory.
@@ -29,9 +33,10 @@ class MemoryAgent(SimpleAgent):
     As such, the value estimate vhat will always be zero.
     """
 
-    @staticmethod
-    def default_query_factory(messages: Iterable[Message]) -> str:
-        return "\n\n".join([str(m) for m in messages if m.role != "system"])
+    # Working around https://github.com/pydantic/pydantic/issues/10551
+    default_query_factory: ClassVar[Callable[[Iterable[Message]], str]] = (
+        _default_query_factory
+    )
 
     prompt: str = Field(
         default=(
