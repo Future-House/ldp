@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.agent import Agent, MemoryAgent, ReActAgent
 from ldp.alg.optimizer.ape import APEOpt, APEScoreFn
-from ldp.alg.optimizer.memory import MemoryOpt, PositiveMemoryOpt
+from ldp.alg.optimizer.memory import MemoryFactory, MemoryOpt, PositiveMemoryOpt
 from ldp.alg.optimizer.opt import _OPTIMIZER_REGISTRY, ChainedOptimizer, Optimizer
 
 _DEFAULT_OPTIMIZER_ERROR_MSG = (
@@ -79,6 +79,7 @@ __all__ = [
     "APEOpt",
     "APEScoreFn",
     "ChainedOptimizer",
+    "MemoryFactory",
     "MemoryOpt",
     "Optimizer",
     "OptimizerConfig",

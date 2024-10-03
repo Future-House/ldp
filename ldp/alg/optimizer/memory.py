@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
 from itertools import product
-from typing import Self, cast
+from typing import Protocol, Self, cast, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -13,9 +12,22 @@ from ldp.data_structures import Trajectory
 from ldp.graph.common_ops import MemoryOp
 from ldp.graph.memory import Memory
 from ldp.graph.op_utils import CallID
-from ldp.graph.ops import Op, OpResult
+from ldp.graph.ops import Op, OpResult, TOutput
 
 logger = logging.getLogger(__name__)
+
+
+@runtime_checkable
+class MemoryFactory(Protocol):
+    def __call__(
+        self,
+        mem_op: MemoryOp,
+        mem_call_id: CallID,
+        output_op: Op[TOutput],
+        output_call_id: CallID,
+        value: float,
+        **kwargs,
+    ) -> Memory: ...
 
 
 class MemoryOpt(BaseModel, Optimizer):
@@ -30,7 +42,7 @@ class MemoryOpt(BaseModel, Optimizer):
     memory_op: MemoryOp
     output_op: Op
     reward_discount: float = 1.0
-    memory_factory: Callable[..., Memory] = Field(
+    memory_factory: MemoryFactory = Field(
         default=Memory.from_ops, description="Function to make a Memory.", exclude=True
     )
     memory_template: str = Field(
