@@ -624,15 +624,19 @@ def test_agent_config(agent_cls: type[Agent]):
     assert isinstance(agent, agent_cls)
 
 
-@pytest.mark.skip(reason="Requires human interaction.")
 @pytest.mark.asyncio
-async def test_interactive(dummy_env: DummyEnv):
+async def test_interactive(dummy_env: DummyEnv, mocker):
     agent = InteractiveAgent()
 
     obs, tools = await dummy_env.reset()
     agent_state = await agent.init_state(tools=tools)
     done = False
 
-    while not done:
-        action, agent_state, _ = await agent.get_asv(agent_state, obs)
-        next_obs, _, done, _ = await dummy_env.step(action.value)
+    mock_input = mocker.patch(
+        "builtins.input", side_effect=["print_story", "A cat wore a hat."]
+    )
+
+    action, agent_state, _ = await agent.get_asv(agent_state, obs)
+    next_obs, _, done, _ = await dummy_env.step(action.value)
+
+    assert mock_input.call_count >= 2
