@@ -6,6 +6,7 @@ from functools import partial
 from pathlib import Path
 from unittest.mock import patch
 
+from ldp.agent.interactive_agent import InteractiveAgent
 import networkx as nx
 import pytest
 from aviary.env import DummyEnv
@@ -621,3 +622,17 @@ def test_agent_config(agent_cls: type[Agent]):
     assert isinstance(hash(config), int), "AgentConfig should be hashable"
     agent = config.construct_agent()
     assert isinstance(agent, agent_cls)
+
+
+@pytest.mark.skip(reason="Requires human interaction.")
+@pytest.mark.asyncio
+async def test_interactive(dummy_env: DummyEnv):
+    agent = InteractiveAgent()
+
+    obs, tools = await dummy_env.reset()
+    agent_state = await agent.init_state(tools=tools)
+    done = False
+
+    while not done:
+        action, agent_state, _ = await agent.get_asv(agent_state, obs)
+        next_obs, _, done, _ = await dummy_env.step(action.value)
