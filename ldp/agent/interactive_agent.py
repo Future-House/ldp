@@ -1,6 +1,6 @@
 import contextlib
 import json
-from typing import Any, cast
+from typing import Any
 
 from aviary.message import Message
 from aviary.tools import Tool, ToolRequestMessage
@@ -47,6 +47,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
     async def get_asv(
         self, agent_state: SimpleAgentState, obs: list[Message]
     ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+        print()  # add a newline to flush any progress bars, etc
         print("OBSERVATIONS:\n" + ("-" * 80))
         for msg in obs:
             print((msg.content or "") + "\n")
@@ -56,7 +57,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
 
         tool: Tool | None = None
         while not tool:
-            tool_choice = input("Select tool by name: ")
+            tool_choice = input(">>> Select tool by name: ")
             tool = next(
                 (t for t in agent_state.tools if t.info.name == tool_choice), None
             )
@@ -65,12 +66,10 @@ class InteractiveAgent(Agent[SimpleAgentState]):
                     f"Tool '{tool_choice}' not found. Please select from the above tools."
                 )
 
-        tool = cast(Tool, tool)
-
         params: dict[str, Any] = {}
         for pname, pprops in tool.info.parameters.properties.items():
             pdefault = pprops.get("default", MISSING_DEFAULT)
-            prompt = f"Enter parameter ({self._get_param_string(pname, pprops)}): "
+            prompt = f">>> Enter parameter ({self._get_param_string(pname, pprops)}): "
             while True:
                 value = input(prompt)
                 with contextlib.suppress(json.JSONDecodeError):
