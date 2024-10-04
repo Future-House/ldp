@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from itertools import product
-from typing import Protocol, Self, cast, runtime_checkable
+from typing import ClassVar, Protocol, Self, cast, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 @runtime_checkable
 class MemoryFactory(Protocol):
-    def __call__(
+    async def __call__(
         self,
         mem_op: MemoryOp,
         mem_call_id: CallID,
@@ -30,6 +31,19 @@ class MemoryFactory(Protocol):
     ) -> Memory: ...
 
 
+async def _default_memory_factory(
+    mem_op: MemoryOp,
+    mem_call_id: CallID,
+    output_op: Op[TOutput],
+    output_call_id: CallID,
+    value: float,
+    **kwargs,
+) -> Memory:
+    return Memory.from_ops(
+        mem_op, mem_call_id, output_op, output_call_id, value, **kwargs
+    )
+
+
 class MemoryOpt(BaseModel, Optimizer):
     """Trainer for memory agents. By default it is a minimizer.
 
@@ -38,12 +52,20 @@ class MemoryOpt(BaseModel, Optimizer):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    # Working around https://github.com/pydantic/pydantic/issues/10551
+    default_memory_factory: ClassVar[MemoryFactory] = _default_memory_factory
+
     ### Configuration
     memory_op: MemoryOp
     output_op: Op
     reward_discount: float = 1.0
     memory_factory: MemoryFactory = Field(
-        default=Memory.from_ops, description="Function to make a Memory.", exclude=True
+        default=default_memory_factory,
+        description=(
+            "Async function to make a Memory. It's async so this can involve an LLM"
+            " completion if desired."
+        ),
+        exclude=True,
     )
     memory_template: str = Field(
         default="Input: {input}\nOutput: {output}\nReward: {value}",
@@ -99,17 +121,19 @@ class MemoryOpt(BaseModel, Optimizer):
 
     async def update(self) -> None:
         """Create new memories from the example buffer and add them to MemoryOp."""
-        new_memories = [
-            self.memory_factory(
-                self.memory_op,
-                mem_call_id,
-                self.output_op,
-                output_call_id,
-                d_return,
-                template=self.memory_template,
+        new_memories = await asyncio.gather(
+            *(
+                self.memory_factory(
+                    self.memory_op,
+                    mem_call_id,
+                    self.output_op,
+                    output_call_id,
+                    d_return,
+                    template=self.memory_template,
+                )
+                for mem_call_id, output_call_id, d_return in self.example_buffer
             )
-            for mem_call_id, output_call_id, d_return in self.example_buffer
-        ]
+        )
         for memory in new_memories:
             await self.memory_op.memory_model.add_memory(memory)
         self.steps += 1

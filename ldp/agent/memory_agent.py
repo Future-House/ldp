@@ -4,7 +4,7 @@ capabilities. The MemoryAgent can pick and invoke tools based on the stored and 
 memories, formatted using specified prompts. A memory is typically a set of previous trajectories
 """
 
-from collections.abc import Callable, Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from typing import ClassVar, cast
 
 from aviary.message import Message
@@ -20,7 +20,7 @@ from ldp.llms.prompts import indent_xml
 from .simple_agent import SimpleAgent, SimpleAgentState
 
 
-def _default_query_factory(messages: Iterable[Message]) -> str:
+async def _default_query_factory(messages: Iterable[Message]) -> str:
     return "\n\n".join([str(m) for m in messages if m.role != "system"])
 
 
@@ -34,7 +34,7 @@ class MemoryAgent(SimpleAgent):
     """
 
     # Working around https://github.com/pydantic/pydantic/issues/10551
-    default_query_factory: ClassVar[Callable[[Iterable[Message]], str]] = (
+    default_query_factory: ClassVar[Callable[[Iterable[Message]], Awaitable[str]]] = (
         _default_query_factory
     )
 
@@ -49,9 +49,12 @@ class MemoryAgent(SimpleAgent):
         ),
         description="Prompt that includes the memories.",
     )
-    query_factory: Callable[[Iterable[Message]], str] = Field(
+    query_factory: Callable[[Iterable[Message]], Awaitable[str]] = Field(
         default=default_query_factory,
-        description="Function to generate a Memory query string from messages.",
+        description=(
+            "Async function to generate a Memory query string from messages. It's async"
+            " so this can involve an LLM completion if desired."
+        ),
         exclude=True,
     )
     memory_prompt: str = Field(
@@ -86,7 +89,7 @@ class MemoryAgent(SimpleAgent):
 
     def __init__(self, memory_model: MemoryModel | None = None, **kwargs):
         super().__init__(**kwargs)
-        self._query_factory_op = FxnOp(self.query_factory)
+        self._query_factory_op: FxnOp[str] = FxnOp(self.query_factory)
         self._memory_op = MemoryOp(memory_model)
         self._format_memory_op = FxnOp(self._parse_memory)
         self._prompt_op = PromptOp(self.prompt)
