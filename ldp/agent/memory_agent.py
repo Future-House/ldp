@@ -71,7 +71,7 @@ class MemoryAgent(SimpleAgent):
     model_config = ConfigDict(frozen=True)
 
     @staticmethod
-    def _parse_memory(prompt: str, memories: list[Memory]) -> str:
+    def _format_memories(prompt: str, memories: Iterable[Memory]) -> str:
         return indent_xml(
             "\n".join([
                 prompt.format(**m.model_dump(exclude={"run_id", "template"}))
@@ -91,7 +91,7 @@ class MemoryAgent(SimpleAgent):
         super().__init__(**kwargs)
         self._query_factory_op: FxnOp[str] = FxnOp(self.query_factory)
         self._memory_op = MemoryOp(memory_model)
-        self._format_memory_op = FxnOp(self._parse_memory)
+        self._format_memory_op = FxnOp(self._format_memories)
         self._prompt_op = PromptOp(self.prompt)
         self._package_op = FxnOp(self._package_messages)
 
