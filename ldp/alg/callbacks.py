@@ -369,7 +369,7 @@ class WandBLoggingCallback(TrajectoryMetricsCallback):
             return
 
         wandb.log({
-            f"eval/{key}_mean": sum(vals) / len(vals)
+            f"eval/{key}_mean": (sum(vals) / len(vals) if vals else None)
             for key, vals in self._eval_metrics.items()
         })
 
