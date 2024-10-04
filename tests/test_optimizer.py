@@ -148,106 +148,107 @@ async def test_ape_optimizer() -> None:
     raise AssertionError("Failed to complete optimization after retries.")
 
 
-def mem_opt_failed(exc: BaseException) -> bool:
-    # Sometimes the memory opt fails to converge because the training examples
-    # are not informative. Try again
-    return isinstance(exc, AssertionError) and "should be less than" in str(exc)
+class TestMemoryOpt:
+    @staticmethod
+    def _mem_opt_failed(exc: BaseException) -> bool:
+        # Sometimes the memory opt fails to converge because the training examples
+        # are not informative. Try again
+        return isinstance(exc, AssertionError) and "should be less than" in str(exc)
 
-
-@pytest.mark.flaky(reruns=3, only_on=[litellm.exceptions.APIConnectionError])
-@pytest.mark.asyncio
-@tenacity.retry(
-    stop=tenacity.stop_after_attempt(3),
-    retry=tenacity.retry_if_exception(mem_opt_failed),
-)
-async def test_memory_optimizer() -> None:
-    x = ["Hello", "Day", "Bar"]
-    y = [str(len(xi)) for xi in x]
-
-    mem_op = MemoryOp()
-    # seed with one memory to show example
-    await mem_op.memory_model.add_memory(
-        Memory(query="Great", output=str(len("Great")), value=1.0)
+    @pytest.mark.flaky(reruns=3, only_on=[litellm.exceptions.APIConnectionError])
+    @pytest.mark.asyncio
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(3),
+        retry=tenacity.retry_if_exception(_mem_opt_failed),
     )
-    package_msg_op = FxnOp(
-        lambda mems, xi: append_to_sys(
-            "Previous attempts:\n"
-            + "\n\n".join(str(m) for m in mems)
-            + f"\n-----\n\n{xi}",
-            "Guess a number based on the input word.",
+    async def test_memory_optimizer(self) -> None:
+        x = ["Hello", "Day", "Bar"]
+        y = [str(len(xi)) for xi in x]
+
+        mem_op = MemoryOp()
+        # seed with one memory to show example
+        await mem_op.memory_model.add_memory(
+            Memory(query="Great", output=str(len("Great")), value=1.0)
         )
-    )
-    # this is flaky, so use a smarter model
-    llm_config = {"model": "gpt-4-turbo", "temperature": 0.0, "max_retries": 3}
-    llm_call_op = LLMCallOp()
-    strip_op = FxnOp(lambda x: x.content)
-    loss_op = SquaredErrorLoss()
-
-    async def reward_fn(target: str, result: OpResult) -> float:
-        # MemoryOp works with rewards, not gradients. So instead of
-        # backpropagating through the loss, we compute a non-differentiable
-        # reward.
-        loss = (await loss_op(target, result)).value
-        if loss == 0:
-            # positive reward if it got it right
-            return 1.0
-        return -loss
-
-    opt = MemoryOpt(memory_op=mem_op, output_op=llm_call_op)
-
-    trajectory = Trajectory()
-    for xi, yi in zip(x, y, strict=True):
-        async with compute_graph():
-            mems = await mem_op(xi)
-            msg = await package_msg_op(mems, xi)
-            c = await llm_call_op(llm_config, msg)
-            yh = await strip_op(c)
-
-            reward = await reward_fn(yi, yh)
-        yh.compute_grads()
-
-        # MemoryOpt is only going to look at action and reward, so set placeholders
-        # for the other values
-        trajectory.steps.append(
-            Transition(
-                timestep=0,
-                agent_state=None,
-                next_agent_state=None,
-                observation=Transition.NO_OBSERVATION,
-                next_observation=Transition.NO_OBSERVATION,
-                action=yh,
-                reward=reward,
-                done=False,
+        package_msg_op = FxnOp(
+            lambda mems, xi: append_to_sys(
+                "Previous attempts:\n"
+                + "\n\n".join(str(m) for m in mems)
+                + f"\n-----\n\n{xi}",
+                "Guess a number based on the input word.",
             )
         )
+        # this is flaky, so use a smarter model
+        llm_config = {"model": "gpt-4-turbo", "temperature": 0.0, "max_retries": 3}
+        llm_call_op = LLMCallOp()
+        strip_op = FxnOp(lambda x: x.content)
+        loss_op = SquaredErrorLoss()
 
-    opt.aggregate([trajectory])
-    await opt.update()
+        async def reward_fn(target: str, result: OpResult) -> float:
+            # MemoryOp works with rewards, not gradients. So instead of
+            # backpropagating through the loss, we compute a non-differentiable
+            # reward.
+            loss = (await loss_op(target, result)).value
+            if loss == 0:
+                # positive reward if it got it right
+                return 1.0
+            return -loss
 
-    assert (
-        len(mem_op.memory_model.memories) == 4
-    ), "Incorrect number of stored memories after optimization step."
-    assert (
-        not opt.example_buffer
-    ), "MemoryOpt buffer should be empty after applying update"
+        opt = MemoryOpt(memory_op=mem_op, output_op=llm_call_op)
 
-    x_eval, y_eval = xi, yi  # pylint: disable=undefined-loop-variable
-    async with compute_graph():
-        with eval_mode():
-            mems = await mem_op(x_eval)
-            msg = await package_msg_op(mems, x_eval)
-            print(msg)
-            assert len(msg.value) > 1, "Message should have multiple memories."
-            # check that Input appears a few times (from memories)
-            assert msg.value[-1].content, "unexpected message content"
-            assert (
-                msg.value[-1].content.count("Input") > 2
-            ), "Input should appear multiple times in the response."
+        trajectory = Trajectory()
+        for xi, yi in zip(x, y, strict=True):
+            async with compute_graph():
+                mems = await mem_op(xi)
+                msg = await package_msg_op(mems, xi)
+                c = await llm_call_op(llm_config, msg)
+                yh = await strip_op(c)
 
-            c = await llm_call_op(llm_config, msg)
-            yh = await strip_op(c)
-            loss = await loss_op(y_eval, yh)
+                reward = await reward_fn(yi, yh)
+            yh.compute_grads()
 
-    assert (
-        loss.value < 100
-    ), f"Loss ({loss.value:.3f}) should be less than 100 after training."
+            # MemoryOpt is only going to look at action and reward, so set placeholders
+            # for the other values
+            trajectory.steps.append(
+                Transition(
+                    timestep=0,
+                    agent_state=None,
+                    next_agent_state=None,
+                    observation=Transition.NO_OBSERVATION,
+                    next_observation=Transition.NO_OBSERVATION,
+                    action=yh,
+                    reward=reward,
+                    done=False,
+                )
+            )
+
+        opt.aggregate([trajectory])
+        await opt.update()
+
+        assert (
+            len(mem_op.memory_model.memories) == 4
+        ), "Incorrect number of stored memories after optimization step."
+        assert (
+            not opt.example_buffer
+        ), "MemoryOpt buffer should be empty after applying update"
+
+        x_eval, y_eval = xi, yi  # pylint: disable=undefined-loop-variable
+        async with compute_graph():
+            with eval_mode():
+                mems = await mem_op(x_eval)
+                msg = await package_msg_op(mems, x_eval)
+                print(msg)
+                assert len(msg.value) > 1, "Message should have multiple memories."
+                # check that Input appears a few times (from memories)
+                assert msg.value[-1].content, "unexpected message content"
+                assert (
+                    msg.value[-1].content.count("Input") > 2
+                ), "Input should appear multiple times in the response."
+
+                c = await llm_call_op(llm_config, msg)
+                yh = await strip_op(c)
+                loss = await loss_op(y_eval, yh)
+
+        assert (
+            loss.value < 100
+        ), f"Loss ({loss.value:.3f}) should be less than 100 after training."
