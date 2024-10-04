@@ -47,7 +47,9 @@ class Memory(BaseModel):
         ),
     )
     output: str = Field(description="Some output (e.g. tool selection).")
-    value: float = Field(description="Measure of the output's quality (e.g. loss).")
+    value: float | str = Field(
+        description="Measure of the output's quality (e.g. loss)."
+    )
     run_id: UUID | None = Field(
         default=None,
         description=(
