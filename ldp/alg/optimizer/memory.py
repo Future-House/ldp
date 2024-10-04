@@ -5,7 +5,7 @@ import logging
 from itertools import product
 from typing import ClassVar, Protocol, Self, cast, runtime_checkable
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 from ldp.agent import MemoryAgent
 from ldp.alg.optimizer.opt import Optimizer
@@ -74,7 +74,9 @@ class MemoryOpt(BaseModel, Optimizer):
 
     ### State
     steps: int = 0
-    example_buffer: list[tuple[CallID, CallID, float]] = Field(default_factory=list)
+    example_buffer: list[tuple[CallID, CallID, float, JsonValue]] = Field(
+        default_factory=list
+    )
 
     @classmethod
     def from_agent(cls, agent: MemoryAgent, **kwargs) -> Self:
@@ -101,14 +103,13 @@ class MemoryOpt(BaseModel, Optimizer):
         d_returns = trajectory.compute_discounted_returns(self.reward_discount)
 
         for step, d_return in zip(trajectory.steps, d_returns, strict=True):
-            output = cast(OpResult, step.action)
-            mem_call_ids = self.memory_op.get_call_ids({output.call_id.run_id})
+            output_run_id = cast(OpResult, step.action).call_id.run_id
             mem_call_ids = {
                 m
-                for m in mem_call_ids
+                for m in self.memory_op.get_call_ids({output_run_id})
                 if self._memory_filter(m, self.memory_op, d_return)
             }
-            output_call_ids = self.output_op.get_call_ids({output.call_id.run_id})
+            output_call_ids = self.output_op.get_call_ids({output_run_id})
             if len(mem_call_ids) > 1 and len(output_call_ids) > 1:
                 raise ValueError(
                     "Multiple memory or output calls in a single run - this violates"
@@ -116,7 +117,16 @@ class MemoryOpt(BaseModel, Optimizer):
                 )
 
             self.example_buffer.extend(
-                (*x, d_return) for x in product(mem_call_ids, output_call_ids)
+                (
+                    *x,
+                    d_return,
+                    {
+                        "timestep": step.timestep,
+                        "done": step.done,
+                        "truncated": step.truncated,
+                    },
+                )
+                for x in product(mem_call_ids, output_call_ids)
             )
 
     async def update(self) -> None:
@@ -130,8 +140,9 @@ class MemoryOpt(BaseModel, Optimizer):
                     output_call_id,
                     d_return,
                     template=self.memory_template,
+                    metadata=metadata,
                 )
-                for mem_call_id, output_call_id, d_return in self.example_buffer
+                for mem_call_id, output_call_id, d_return, metadata in self.example_buffer
             )
         )
         for memory in new_memories:

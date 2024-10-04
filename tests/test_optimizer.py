@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from typing import cast
 
 import litellm
 import pytest
@@ -206,8 +207,14 @@ class TestMemoryOpt:
         model = NumberGuesserModule()
         # seed with one memory to show example
         await model.mem_op.memory_model.add_memory(
-            Memory(query="Great", output=str(len("Great")), value=1.0)
+            Memory(
+                query="Great",
+                output=str(len("Great")),
+                value=1.0,
+                metadata={"timestep": 0, "done": False, "truncated": False},
+            )
         )
+        prior_num_memories = 1
         opt = MemoryOpt(memory_op=model.mem_op, output_op=model.llm_call_op)
 
         x = ["Hello", "Day", "Bar"]
@@ -240,8 +247,12 @@ class TestMemoryOpt:
         await opt.update()
 
         assert (
-            len(model.mem_op.memory_model.memories) == 4
+            len(model.mem_op.memory_model.memories) == len(x) + prior_num_memories
         ), "Incorrect number of stored memories after optimization step."
+        assert all(
+            not cast(dict, m.metadata)["done"]
+            for m in model.mem_op.memory_model.memories.values()
+        )
         assert (
             not opt.example_buffer
         ), "MemoryOpt buffer should be empty after applying update"
