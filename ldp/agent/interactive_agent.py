@@ -13,6 +13,8 @@ from ldp.graph.op_utils import compute_graph
 from ldp.graph.ops import OpResult
 
 MISSING_DEFAULT = object()
+CLEAR = "CLEAR"
+KILL = "KILL"
 
 
 class InteractiveAgent(Agent[SimpleAgentState]):
@@ -44,7 +46,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
         return SimpleAgentState(tools=tools)
 
     @compute_graph()
-    async def get_asv(
+    async def get_asv(  # noqa: C901
         self, agent_state: SimpleAgentState, obs: list[Message]
     ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
         print()  # add a newline to flush any progress bars, etc
@@ -58,6 +60,11 @@ class InteractiveAgent(Agent[SimpleAgentState]):
         tool: Tool | None = None
         while not tool:
             tool_choice = input(">>> Select tool by name: ")
+            if tool_choice == CLEAR:
+                continue
+            if tool_choice == KILL:
+                raise RuntimeError("User requested to kill the agent.")
+
             tool = next(
                 (t for t in agent_state.tools if t.info.name == tool_choice), None
             )
@@ -72,6 +79,11 @@ class InteractiveAgent(Agent[SimpleAgentState]):
             prompt = f">>> Enter parameter ({self._get_param_string(pname, pprops)}): "
             while True:
                 value = input(prompt)
+                if value == CLEAR:
+                    return await self.get_asv(agent_state, obs)  # just start over
+                if value == KILL:
+                    raise RuntimeError("User requested to kill the agent.")
+
                 with contextlib.suppress(json.JSONDecodeError):
                     # lets us load ints, etc. Otherwise, assume it's a string
                     value = json.loads(value)
@@ -98,6 +110,6 @@ class InteractiveAgent(Agent[SimpleAgentState]):
         if ptype := (pprops.get("type") or "Any"):
             pstring += f": {ptype}"
 
-        if pdefault := pprops.get("default", MISSING_DEFAULT) is not MISSING_DEFAULT:
+        if (pdefault := pprops.get("default", MISSING_DEFAULT)) is not MISSING_DEFAULT:
             pstring += f" = {pdefault}"
         return pstring
