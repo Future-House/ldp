@@ -56,7 +56,8 @@ class MemoryAgent(SimpleAgent):
     def _parse_memory(prompt: str, memories: list[Memory]) -> str:
         return indent_xml(
             "\n".join([
-                prompt.format(**m.model_dump(exclude={"call_id"})) for m in memories
+                prompt.format(**m.model_dump(exclude={"run_id", "template"}))
+                for m in memories
             ])
         )
 

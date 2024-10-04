@@ -2,7 +2,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any, ClassVar, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Self, TypeVar, cast
 from uuid import UUID
 
 import numpy as np
@@ -18,6 +18,11 @@ from pydantic import (
 from usearch.index import Index
 
 from ldp.llms import EmbeddingModel
+
+if TYPE_CHECKING:
+    from ldp.graph.common_ops import MemoryOp
+    from ldp.graph.op_utils import CallID
+    from ldp.graph.ops import Op, OpResult, TOutput
 
 
 class Memory(BaseModel):
@@ -62,6 +67,29 @@ class Memory(BaseModel):
 
     def __str__(self) -> str:
         return self.template.format(**self.model_dump())
+
+    @classmethod
+    def from_ops(
+        cls,
+        mem_op: "MemoryOp",
+        mem_call_id: "CallID",
+        output_op: "Op[TOutput]",
+        output_call_id: "CallID",
+        value: float,
+        **kwargs,
+    ) -> Self:
+        """Create from a MemoryOp, output Op, and their call IDs."""
+        query: str = mem_op.ctx.get(mem_call_id, "query")
+        memory_input: str | None = mem_op.ctx.get(mem_call_id, "memory_input")
+        output_result: OpResult[TOutput] = output_op.ctx.get(output_call_id, "output")
+        return cls(
+            query=query,
+            input=memory_input if memory_input is not None else query,
+            output=str(output_result.value),
+            value=value,
+            run_id=output_call_id.run_id,
+            **kwargs,
+        )
 
 
 TIndex = TypeVar("TIndex")
