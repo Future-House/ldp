@@ -1,7 +1,10 @@
+from collections.abc import Iterable
+
 import litellm
 import pytest
 import tenacity
 import tree
+from aviary.message import Message
 
 from ldp.agent import Agent, MemoryAgent, ReActAgent
 from ldp.alg.optimizer import (
@@ -148,6 +151,44 @@ async def test_ape_optimizer() -> None:
     raise AssertionError("Failed to complete optimization after retries.")
 
 
+class NumberGuesserModule:
+    """Made up module used to enable simple training scripts."""
+
+    def __init__(self):
+        self.mem_op = MemoryOp()
+        self.package_msg_op = FxnOp(self._package)
+        self.llm_call_op = LLMCallOp()
+        self.strip_op = FxnOp(lambda x: x.content)
+
+    @staticmethod
+    def _package(mems: Iterable[Memory], query: str) -> list[Message]:
+        itemized_mems = "\n\n".join(str(m) for m in mems)
+        return [
+            Message(content="Guess a number based on the input word."),
+            Message(content=f"Previous attempts:\n{itemized_mems}\n-----\n\n{query}"),
+        ]
+
+    async def __call__(self, query: str) -> tuple[OpResult[str], list[Message]]:
+        mems = await self.mem_op(query)
+        msgs = await self.package_msg_op(mems, query)
+        c = await self.llm_call_op(
+            config={
+                "model": "gpt-4-turbo",  # this is flaky, so use a smarter model
+                "temperature": 0,
+                "max_retries": 3,
+            },
+            msgs=msgs,
+        )
+        return await self.strip_op(c), msgs.value
+
+
+async def nondifferentiable_reward_model(target: str, result: OpResult[str]) -> float:
+    se = (await SquaredErrorLoss()(target, result)).value
+    if se == 0:
+        return 1.0  # Positive reward if it got it right
+    return -se  # Squared error is positive, so convert to negative
+
+
 class TestMemoryOpt:
     @staticmethod
     def _mem_opt_failed(exc: BaseException) -> bool:
@@ -161,54 +202,27 @@ class TestMemoryOpt:
         stop=tenacity.stop_after_attempt(3),
         retry=tenacity.retry_if_exception(_mem_opt_failed),
     )
-    async def test_memory_optimizer(self) -> None:
-        x = ["Hello", "Day", "Bar"]
-        y = [str(len(xi)) for xi in x]
-
-        mem_op = MemoryOp()
+    async def test_standard_memory_optimizer(self) -> None:
+        model = NumberGuesserModule()
         # seed with one memory to show example
-        await mem_op.memory_model.add_memory(
+        await model.mem_op.memory_model.add_memory(
             Memory(query="Great", output=str(len("Great")), value=1.0)
         )
-        package_msg_op = FxnOp(
-            lambda mems, xi: append_to_sys(
-                "Previous attempts:\n"
-                + "\n\n".join(str(m) for m in mems)
-                + f"\n-----\n\n{xi}",
-                "Guess a number based on the input word.",
-            )
-        )
-        # this is flaky, so use a smarter model
-        llm_config = {"model": "gpt-4-turbo", "temperature": 0.0, "max_retries": 3}
-        llm_call_op = LLMCallOp()
-        strip_op = FxnOp(lambda x: x.content)
-        loss_op = SquaredErrorLoss()
+        opt = MemoryOpt(memory_op=model.mem_op, output_op=model.llm_call_op)
 
-        async def reward_fn(target: str, result: OpResult) -> float:
-            # MemoryOp works with rewards, not gradients. So instead of
-            # backpropagating through the loss, we compute a non-differentiable
-            # reward.
-            loss = (await loss_op(target, result)).value
-            if loss == 0:
-                # positive reward if it got it right
-                return 1.0
-            return -loss
-
-        opt = MemoryOpt(memory_op=mem_op, output_op=llm_call_op)
-
+        x = ["Hello", "Day", "Bar"]
+        y = [str(len(xi)) for xi in x]
         trajectory = Trajectory()
         for xi, yi in zip(x, y, strict=True):
             async with compute_graph():
-                mems = await mem_op(xi)
-                msg = await package_msg_op(mems, xi)
-                c = await llm_call_op(llm_config, msg)
-                yh = await strip_op(c)
-
-                reward = await reward_fn(yi, yh)
+                yh, _ = await model(xi)
+                # MemoryOp works with rewards, not gradients. So instead of backpropagating
+                # through the loss, for training we compute a non-differentiable reward.
+                reward = await nondifferentiable_reward_model(yi, yh)
             yh.compute_grads()
 
-            # MemoryOpt is only going to look at action and reward, so set placeholders
-            # for the other values
+            # MemoryOpt is only going to look at action and reward,
+            # so set placeholders for the other values
             trajectory.steps.append(
                 Transition(
                     timestep=0,
@@ -226,7 +240,7 @@ class TestMemoryOpt:
         await opt.update()
 
         assert (
-            len(mem_op.memory_model.memories) == 4
+            len(model.mem_op.memory_model.memories) == 4
         ), "Incorrect number of stored memories after optimization step."
         assert (
             not opt.example_buffer
@@ -235,20 +249,15 @@ class TestMemoryOpt:
         x_eval, y_eval = xi, yi  # pylint: disable=undefined-loop-variable
         async with compute_graph():
             with eval_mode():
-                mems = await mem_op(x_eval)
-                msg = await package_msg_op(mems, x_eval)
-                print(msg)
-                assert len(msg.value) > 1, "Message should have multiple memories."
-                # check that Input appears a few times (from memories)
-                assert msg.value[-1].content, "unexpected message content"
-                assert (
-                    msg.value[-1].content.count("Input") > 2
-                ), "Input should appear multiple times in the response."
-
-                c = await llm_call_op(llm_config, msg)
-                yh = await strip_op(c)
-                loss = await loss_op(y_eval, yh)
+                yh, msgs = await model(x_eval)
+            assert len(msgs) > 1, "Message should have multiple memories."
+            # check that Input appears a few times (from memories)
+            assert msgs[-1].content, "unexpected message content"
+            assert (
+                msgs[-1].content.count("Input") > 2
+            ), "Input should appear multiple times in the response."
+            se_loss = (await SquaredErrorLoss()(y_eval, yh)).value
 
         assert (
-            loss.value < 100
-        ), f"Loss ({loss.value:.3f}) should be less than 100 after training."
+            se_loss < 100
+        ), f"Loss ({se_loss:.3f}) should be less than 100 after training."
