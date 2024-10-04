@@ -185,7 +185,7 @@ async def test_memory_optimizer() -> None:
 
     async def reward_fn(target: str, result: OpResult) -> float:
         # MemoryOp works with rewards, not gradients. So instead of
-        # backproping through the loss, we compute a non-differentiable
+        # backpropagating through the loss, we compute a non-differentiable
         # reward.
         loss = (await loss_op(target, result)).value
         if loss == 0:
