@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import asyncio
 import logging
+from collections.abc import Iterable
 from itertools import product
 from typing import ClassVar, Protocol, Self, cast, runtime_checkable
 
@@ -22,26 +22,31 @@ logger = logging.getLogger(__name__)
 class MemoryFactory(Protocol):
     async def __call__(
         self,
-        mem_op: MemoryOp,
-        mem_call_id: CallID,
+        memory_op: MemoryOp,
         output_op: Op[TOutput],
-        output_call_id: CallID,
-        value: float,
-        **kwargs,
-    ) -> Memory: ...
+        memory_template: str,
+        example_buffer: Iterable[tuple[CallID, CallID, float, JsonValue]],
+    ) -> list[Memory]: ...
 
 
 async def _default_memory_factory(
-    mem_op: MemoryOp,
-    mem_call_id: CallID,
+    memory_op: MemoryOp,
     output_op: Op[TOutput],
-    output_call_id: CallID,
-    value: float,
-    **kwargs,
-) -> Memory:
-    return Memory.from_ops(
-        mem_op, mem_call_id, output_op, output_call_id, value, **kwargs
-    )
+    memory_template: str,
+    example_buffer: Iterable[tuple[CallID, CallID, float, JsonValue]],
+) -> list[Memory]:
+    return [
+        Memory.from_ops(
+            memory_op,
+            mem_call_id,
+            output_op,
+            output_call_id,
+            d_return,
+            template=memory_template,
+            metadata=metadata,
+        )
+        for mem_call_id, output_call_id, d_return, metadata in example_buffer
+    ]
 
 
 class MemoryOpt(BaseModel, Optimizer):
@@ -62,8 +67,8 @@ class MemoryOpt(BaseModel, Optimizer):
     memory_factory: MemoryFactory = Field(
         default=default_memory_factory,
         description=(
-            "Async function to make a Memory. It's async so this can involve an LLM"
-            " completion if desired."
+            "Async function to make Memories from an example buffer. It's async so this"
+            " can involve an LLM completion if desired."
         ),
         exclude=True,
     )
@@ -131,21 +136,9 @@ class MemoryOpt(BaseModel, Optimizer):
 
     async def update(self) -> None:
         """Create new memories from the example buffer and add them to MemoryOp."""
-        new_memories = await asyncio.gather(
-            *(
-                self.memory_factory(
-                    self.memory_op,
-                    mem_call_id,
-                    self.output_op,
-                    output_call_id,
-                    d_return,
-                    template=self.memory_template,
-                    metadata=metadata,
-                )
-                for mem_call_id, output_call_id, d_return, metadata in self.example_buffer
-            )
-        )
-        for memory in new_memories:
+        for memory in await self.memory_factory(  # pylint: disable=too-many-function-args
+            self.memory_op, self.output_op, self.memory_template, self.example_buffer
+        ):
             await self.memory_op.memory_model.add_memory(memory)
         self.steps += 1
         self.example_buffer.clear()
