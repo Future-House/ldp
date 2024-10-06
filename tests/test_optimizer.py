@@ -1,14 +1,17 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from typing import cast
+from uuid import UUID
 
 import litellm
 import pytest
 import tenacity
 import tree
 from aviary.message import Message
+from pydantic import BaseModel, Field, JsonValue
 
 from ldp.agent import Agent, MemoryAgent, ReActAgent
 from ldp.alg.optimizer import (
+    MemoryFactory,
     MemoryOpt,
     Optimizer,
     default_optimizer_factory,
@@ -26,6 +29,8 @@ from ldp.graph.memory import Memory
 from ldp.graph.op_utils import CallID, compute_graph, eval_mode
 from ldp.graph.ops import GradInType, Op, OpCtx, OpResult
 from ldp.llms import LLMModel, append_to_sys
+from tests import CILLMModelNames
+from tests.conftest import VCR_DEFAULT_MATCH_ON
 
 
 @pytest.mark.parametrize(
@@ -272,3 +277,130 @@ class TestMemoryOpt:
         assert (
             se_loss < 100
         ), f"Loss ({se_loss:.3f}) should be less than 100 after training."
+
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.asyncio
+    async def test_lessons_memory_optimizer(self) -> None:
+        """
+        Test we can use LLM completions to generate lessons instead of memories.
+
+        This test is loosely based on Reflexion (https://arxiv.org/abs/2303.11366).
+        """
+        memory_distiller = LLMModel(config={"model": CILLMModelNames.OPENAI.value})
+
+        class LessonEntry(BaseModel):
+            """Entry for a lesson created from some example data."""
+
+            query: str = Field(
+                description=(
+                    "Plain text string for retrieving this lesson from a database of"
+                    " lessons."
+                )
+            )
+            lesson: str = Field(description="Lesson generated from past attempts.")
+
+            @staticmethod
+            def make_prompt(examples: Sequence[tuple]) -> str:
+                """Create an LLM prompt to generate a lesson from examples."""
+                itemized_examples = "\n-".join(str(x) for x in examples)
+                return (
+                    "We are trying to guess a number based on the input word. We just"
+                    f" tried {len(examples)} times, and collected rewards where a"
+                    " higher reward is better. Here are the results in three-tuples of"
+                    f" input, output, reward:\n- {itemized_examples}\n\nPlease create"
+                    " a lesson based on this data referencing the relative success or"
+                    " failure associated with the reward, use concise wording and"
+                    " don't repeat yourself."
+                )
+
+            @classmethod
+            def to_memory(cls, lesson_json: str, run_id: UUID | None = None) -> Memory:
+                lesson = cls.model_validate_json(lesson_json)
+                return Memory(
+                    query=lesson.query, output=lesson.lesson, value="", run_id=run_id
+                )
+
+            @classmethod
+            async def memory_factory(
+                cls,
+                memory_op: MemoryOp,
+                output_op: Op[Message],
+                memory_template: str,
+                example_buffer: Iterable[tuple[CallID, CallID, float, JsonValue]],
+            ) -> list[Memory]:
+                example_buffer = list(example_buffer)
+                if not example_buffer:
+                    raise RuntimeError("Expected non-empty example buffer.")
+                query_airesponse_dreturns: list[tuple[str, str, float]] = [
+                    (
+                        memory_op.ctx.get(mem_call_id, "query"),
+                        output_op.ctx.get(output_call_id, "output").value.content,
+                        d_return,
+                    )
+                    for mem_call_id, output_call_id, d_return, metadata in example_buffer
+                ]
+                response = await memory_distiller.call(
+                    messages=[
+                        Message(
+                            content=LessonEntry.make_prompt(query_airesponse_dreturns)
+                        )
+                    ],
+                    tool_choice="none",
+                    output_type=LessonEntry,
+                )
+                if (
+                    not response.messages
+                    or len(response.messages) != 1
+                    or not response.messages[0].content
+                ):
+                    raise ValueError(
+                        "Expected a single message in the response containing a"
+                        f" serialized {cls.__name__}."
+                    )
+                return [
+                    cls.to_memory(
+                        response.messages[0].content, run_id=example_buffer[0][0].run_id
+                    )
+                ]
+
+        assert isinstance(LessonEntry.memory_factory, MemoryFactory)
+
+        model = NumberGuesserModule()
+        opt = MemoryOpt(
+            memory_op=model.mem_op,
+            output_op=model.llm_call_op,
+            memory_factory=LessonEntry.memory_factory,
+        )
+
+        x = ["Hello", "Day", "Bar"]
+        y = [str(len(xi)) for xi in x]
+        trajectory = Trajectory()
+        for xi, yi in zip(x, y, strict=True):
+            async with compute_graph():
+                yh, _ = await model(xi)
+                # MemoryOp works with rewards, not gradients. So instead of backpropagating
+                # through the loss, for training we compute a non-differentiable reward.
+                reward = await nondifferentiable_reward_model(yi, yh)
+            yh.compute_grads()
+
+            # MemoryOpt is only going to look at action and reward,
+            # so set placeholders for the other values
+            trajectory.steps.append(
+                Transition(
+                    timestep=0,
+                    agent_state=None,
+                    next_agent_state=None,
+                    observation=Transition.NO_OBSERVATION,
+                    next_observation=Transition.NO_OBSERVATION,
+                    action=yh,
+                    reward=reward,
+                    done=False,
+                )
+            )
+
+        opt.aggregate([trajectory])
+        await opt.update()
+
+        assert (
+            not opt.example_buffer
+        ), "MemoryOpt buffer should be empty after applying update"
