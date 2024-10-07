@@ -41,27 +41,27 @@ async def _run_eval_loop(
     if not num_iterations:
         return
 
-    for i_iter, envs in tqdm(
-        enumerate(dataset.iter_batches(batch_size, shuffle=shuffle)),
-        desc="Evaluation Iterations",
-        ncols=0,
-        leave=False,
-        total=num_iterations,
-    ):
-        trajectories = await rollout_manager.sample_trajectories(
-            environments=envs, max_steps=max_rollout_steps
-        )
+    with tqdm(
+        desc="Evaluation Iterations", ncols=0, total=num_iterations, leave=False
+    ) as pbar:
+        # We use pbar.n as a counter for the number of training steps
+        while pbar.n < num_iterations:
+            for batch in dataset.iter_batches(batch_size, shuffle=shuffle):
+                trajectories = await rollout_manager.sample_trajectories(
+                    environments=batch, max_steps=max_rollout_steps
+                )
 
-        # Close the environment after we have sampled from it,
-        # in case it needs to tear down resources.
-        await asyncio.gather(*(env.close() for env in envs))
+                # Close the environment after we have sampled from it,
+                # in case it needs to tear down resources.
+                await asyncio.gather(*(env.close() for env in batch))
 
-        await asyncio.gather(*[
-            callback.after_eval_step(trajectories) for callback in callbacks
-        ])
+                await asyncio.gather(*[
+                    callback.after_eval_step(trajectories) for callback in callbacks
+                ])
+                pbar.update()
 
-        if i_iter == num_iterations - 1:
-            break
+                if pbar.n == num_iterations:
+                    break
 
     await asyncio.gather(*[callback.after_eval_loop() for callback in callbacks])
 
