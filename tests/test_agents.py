@@ -11,7 +11,7 @@ import pytest
 from aviary.env import DummyEnv
 from aviary.message import Message
 from aviary.tools import Tool, ToolCall, ToolRequestMessage
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from pydantic import BaseModel, Field
 
 from ldp.agent import (
@@ -576,7 +576,7 @@ class TestHTTPAgentClient:
             request_headers={"Authorization": "Bearer stub"},
         )
         async with AsyncClient(
-            app=make_simple_agent_server(agent=remote_agent),
+            transport=ASGITransport(app=make_simple_agent_server(agent=remote_agent)),
             base_url=base_server_url,
         ) as async_client:
             # NOTE: just directly hit the server, since info is not an Agent method
