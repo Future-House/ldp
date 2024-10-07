@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from itertools import product
-from typing import Self, cast
+from typing import Protocol, Self, cast, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -12,15 +12,28 @@ from ldp.data_structures import Trajectory
 from ldp.graph.common_ops import MemoryOp
 from ldp.graph.memory import Memory
 from ldp.graph.op_utils import CallID
-from ldp.graph.ops import Op, OpResult
+from ldp.graph.ops import Op, OpResult, TOutput
 
 logger = logging.getLogger(__name__)
+
+
+@runtime_checkable
+class MemoryFactory(Protocol):
+    def __call__(
+        self,
+        mem_op: MemoryOp,
+        mem_call_id: CallID,
+        output_op: Op[TOutput],
+        output_call_id: CallID,
+        value: float,
+        **kwargs,
+    ) -> Memory: ...
 
 
 class MemoryOpt(BaseModel, Optimizer):
     """Trainer for memory agents. By default it is a minimizer.
 
-    We simply store the memories in the memory op with their gradient.
+    This optimizer simply adds memories to the MemoryOp using a memory factory.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -29,6 +42,9 @@ class MemoryOpt(BaseModel, Optimizer):
     memory_op: MemoryOp
     output_op: Op
     reward_discount: float = 1.0
+    memory_factory: MemoryFactory = Field(
+        default=Memory.from_ops, description="Function to make a Memory.", exclude=True
+    )
     memory_template: str = Field(
         default="Input: {input}\nOutput: {output}\nReward: {value}",
         description="Template for a Memory's string representation.",
@@ -73,7 +89,8 @@ class MemoryOpt(BaseModel, Optimizer):
             output_call_ids = self.output_op.get_call_ids({output.call_id.run_id})
             if len(mem_call_ids) > 1 and len(output_call_ids) > 1:
                 raise ValueError(
-                    "Multiple memory or output calls in a single run - this violates our 1-1 correspondence assumption."
+                    "Multiple memory or output calls in a single run - this violates"
+                    " our 1-1 correspondence assumption."
                 )
 
             self.example_buffer.extend(
@@ -82,22 +99,17 @@ class MemoryOpt(BaseModel, Optimizer):
 
     async def update(self) -> None:
         """Create new memories from the example buffer and add them to MemoryOp."""
-        new_memories = []
-        for mem_call_id, output_call_id, d_return in self.example_buffer:
-            query = self.memory_op.ctx.get(mem_call_id, "query")
-            input = self.memory_op.ctx.get(mem_call_id, "memory_input")  # noqa: A001
-            new_memories.append(
-                # why do we want this gradient and not memory_op's grad output?
-                Memory(
-                    query=query,
-                    input=input if input is not None else query,
-                    output=str(self.output_op.ctx.get(output_call_id, "output").value),
-                    value=d_return,
-                    run_id=output_call_id.run_id,
-                    template=self.memory_template,
-                )
+        new_memories = [
+            self.memory_factory(
+                self.memory_op,
+                mem_call_id,
+                self.output_op,
+                output_call_id,
+                d_return,
+                template=self.memory_template,
             )
-
+            for mem_call_id, output_call_id, d_return in self.example_buffer
+        ]
         for memory in new_memories:
             await self.memory_op.memory_model.add_memory(memory)
         self.steps += 1

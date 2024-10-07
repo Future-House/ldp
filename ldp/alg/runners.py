@@ -8,15 +8,16 @@ from typing import cast
 
 from aviary.env import Environment, TaskDataset
 from pydantic import BaseModel, ConfigDict, Field
-from tqdm import tqdm, trange
 
 from ldp.agent import Agent
-from ldp.alg.callbacks import Callback, ClearContextCallback
 from ldp.alg.optimizer import Optimizer
-from ldp.alg.rollout import RolloutManager
 from ldp.data_structures import Trajectory
 from ldp.graph.op_utils import eval_mode, train_mode
 from ldp.graph.ops import OpResult
+from ldp.shims import tqdm, trange
+
+from .callbacks import Callback, ClearContextCallback
+from .rollout import RolloutManager
 
 
 async def _run_eval_loop(

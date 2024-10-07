@@ -11,7 +11,7 @@ import pytest
 from aviary.env import DummyEnv
 from aviary.message import Message
 from aviary.tools import Tool, ToolCall, ToolRequestMessage
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from pydantic import BaseModel, Field
 
 from ldp.agent import (
@@ -24,7 +24,8 @@ from ldp.agent import (
     SimpleAgentState,
     make_simple_agent_server,
 )
-from ldp.alg.algorithms import to_network
+from ldp.agent.interactive_agent import InteractiveAgent
+from ldp.alg import to_network
 from ldp.graph.common_ops import LLMCallOp
 from ldp.graph.gradient_estimators import llm_straight_through_estimator as llm_ste
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
@@ -575,7 +576,7 @@ class TestHTTPAgentClient:
             request_headers={"Authorization": "Bearer stub"},
         )
         async with AsyncClient(
-            app=make_simple_agent_server(agent=remote_agent),
+            transport=ASGITransport(app=make_simple_agent_server(agent=remote_agent)),
             base_url=base_server_url,
         ) as async_client:
             # NOTE: just directly hit the server, since info is not an Agent method
@@ -621,3 +622,21 @@ def test_agent_config(agent_cls: type[Agent]):
     assert isinstance(hash(config), int), "AgentConfig should be hashable"
     agent = config.construct_agent()
     assert isinstance(agent, agent_cls)
+
+
+@pytest.mark.asyncio
+async def test_interactive(dummy_env: DummyEnv, mocker):
+    agent = InteractiveAgent()
+
+    obs, tools = await dummy_env.reset()
+    agent_state = await agent.init_state(tools=tools)
+    done = False
+
+    mock_input = mocker.patch(
+        "builtins.input", side_effect=["print_story", "A cat wore a hat."]
+    )
+
+    action, agent_state, _ = await agent.get_asv(agent_state, obs)
+    next_obs, _, done, _ = await dummy_env.step(action.value)
+
+    assert mock_input.call_count >= 2

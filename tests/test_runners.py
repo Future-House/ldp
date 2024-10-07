@@ -6,30 +6,33 @@ import pytest
 from aviary.env import DummyEnv, TaskDataset
 
 from ldp.agent import MemoryAgent, SimpleAgent
-from ldp.alg.callbacks import Callback, MeanMetricsCallback
-from ldp.alg.datasets import (  # noqa: F401  # Force TASK_DATASET_REGISTRY update
-    DummyTaskDataset,
-)
-from ldp.alg.optimizer import default_optimizer_factory
-from ldp.alg.runners import (
+from ldp.alg import (
+    Callback,
     Evaluator,
     EvaluatorConfig,
+    MeanMetricsCallback,
     OfflineTrainer,
     OfflineTrainerConfig,
     OnlineTrainer,
     OnlineTrainerConfig,
 )
+from ldp.alg.datasets import (  # noqa: F401  # Force TASK_DATASET_REGISTRY update
+    DummyTaskDataset,
+)
+from ldp.alg.optimizer import default_optimizer_factory
 from ldp.data_structures import Trajectory
 from ldp.graph.ops import OpCtx
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 @pytest.mark.parametrize("clear_ctx_at_each_iter", [True, False])
-async def test_online_trainer(clear_ctx_at_each_iter):
+async def test_online_trainer(clear_ctx_at_each_iter: bool) -> None:
     agent = MemoryAgent()
     opt = default_optimizer_factory(agent)
     dataset = TaskDataset.from_name("dummy")
-    callback = DummyCallback()
+    dummy_callback = DummyCallback()
+    metrics_callback = MeanMetricsCallback(train_dataset=dataset)
 
     train_conf = OnlineTrainerConfig(
         batch_size=1,
@@ -45,13 +48,14 @@ async def test_online_trainer(clear_ctx_at_each_iter):
         optimizer=opt,
         train_dataset=dataset,
         eval_dataset=dataset,
-        callbacks=[callback],
+        callbacks=[dummy_callback, metrics_callback],
     )
     await trainer.train()
 
-    for k, v in callback.fn_invocations.items():
+    for k, v in dummy_callback.fn_invocations.items():
         # eval is run 3 times: before training, during training, after training
         assert v == (3 if "eval" in k else 1)
+    assert metrics_callback.train_means["failures"] < 1, "Training should work"
 
     if clear_ctx_at_each_iter:
         all(not ctx_data.data for ctx_data in OpCtx._CTX_REGISTRY.values())
@@ -113,9 +117,10 @@ async def test_can_measure_evaluation_failure_rate() -> None:
     assert metrics_callback.eval_means["failures"] == 1.0
 
 
+@pytest.mark.vcr
 @pytest.mark.asyncio
 @pytest.mark.parametrize("clear_ctx_at_each_iter", [True, False])
-async def test_offline_trainer(clear_ctx_at_each_iter):
+async def test_offline_trainer(clear_ctx_at_each_iter: bool) -> None:
     # This is kind of a system test of getting trajectories from the evaluator
     # and then training on them "offline"
     agent = MemoryAgent()
@@ -136,16 +141,16 @@ async def test_offline_trainer(clear_ctx_at_each_iter):
     assert len(traj_callback.trajectories) == 1
 
     count_callback = DummyCallback()
-    train_conf = OfflineTrainerConfig(
-        batch_size=1,
-        clear_ctx_at_each_iter=clear_ctx_at_each_iter,
-    )
+    metrics_callback = MeanMetricsCallback(train_dataset=dataset)
     trainer = OfflineTrainer(
-        config=train_conf,
+        config=OfflineTrainerConfig(
+            batch_size=1,
+            clear_ctx_at_each_iter=clear_ctx_at_each_iter,
+        ),
         agent=agent,
         optimizer=opt,
         train_trajectories=traj_callback.trajectories,
-        callbacks=[count_callback],
+        callbacks=[count_callback, metrics_callback],
     )
     await trainer.train()
 
@@ -155,6 +160,7 @@ async def test_offline_trainer(clear_ctx_at_each_iter):
         "after_eval_loop": 0,
         "after_update": 1,
     }
+    assert metrics_callback.train_means["failures"] < 1, "Training should work"
 
     if clear_ctx_at_each_iter:
         all(not ctx_data.data for ctx_data in OpCtx._CTX_REGISTRY.values())

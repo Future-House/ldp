@@ -4,7 +4,8 @@ capabilities. The MemoryAgent can pick and invoke tools based on the stored and 
 memories, formatted using specified prompts. A memory is typically a set of previous trajectories
 """
 
-from typing import cast
+from collections.abc import Callable, Iterable
+from typing import ClassVar, cast
 
 from aviary.message import Message
 from aviary.tools import ToolRequestMessage
@@ -19,6 +20,10 @@ from ldp.llms.prompts import indent_xml
 from .simple_agent import SimpleAgent, SimpleAgentState
 
 
+def _default_query_factory(messages: Iterable[Message]) -> str:
+    return "\n\n".join([str(m) for m in messages if m.role != "system"])
+
+
 class MemoryAgent(SimpleAgent):
     """
     Simple agent that can pick and invoke tools with memory.
@@ -27,6 +32,11 @@ class MemoryAgent(SimpleAgent):
     it simply supplies previous trajectories via the prompt.
     As such, the value estimate vhat will always be zero.
     """
+
+    # Working around https://github.com/pydantic/pydantic/issues/10551
+    default_query_factory: ClassVar[Callable[[Iterable[Message]], str]] = (
+        _default_query_factory
+    )
 
     prompt: str = Field(
         default=(
@@ -38,6 +48,11 @@ class MemoryAgent(SimpleAgent):
             "Considering the memories, choose the next action."
         ),
         description="Prompt that includes the memories.",
+    )
+    query_factory: Callable[[Iterable[Message]], str] = Field(
+        default=default_query_factory,
+        description="Function to generate a Memory query string from messages.",
+        exclude=True,
     )
     memory_prompt: str = Field(
         default="<memory><obs>{input}</obs><action>{output}</action><reward>{value}</reward></memory>",
@@ -56,7 +71,8 @@ class MemoryAgent(SimpleAgent):
     def _parse_memory(prompt: str, memories: list[Memory]) -> str:
         return indent_xml(
             "\n".join([
-                prompt.format(**m.model_dump(exclude={"call_id"})) for m in memories
+                prompt.format(**m.model_dump(exclude={"run_id", "template"}))
+                for m in memories
             ])
         )
 
@@ -70,6 +86,7 @@ class MemoryAgent(SimpleAgent):
 
     def __init__(self, memory_model: MemoryModel | None = None, **kwargs):
         super().__init__(**kwargs)
+        self._query_factory_op = FxnOp(self.query_factory)
         self._memory_op = MemoryOp(memory_model)
         self._format_memory_op = FxnOp(self._parse_memory)
         self._prompt_op = PromptOp(self.prompt)
@@ -81,8 +98,10 @@ class MemoryAgent(SimpleAgent):
     ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
         next_state = agent_state.get_next_state(obs)
 
-        query = "\n\n".join([str(m) for m in next_state.messages if m.role != "system"])
-        memories = await self._memory_op(query, matches=self.num_memories)
+        memories = await self._memory_op(
+            query=await self._query_factory_op(next_state.messages),
+            matches=self.num_memories,
+        )
         packaged_messages = await self._package_op(
             next_state.messages,
             memory_prompt=await self._prompt_op(

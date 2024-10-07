@@ -2,7 +2,7 @@ import pytest
 from aviary.env import DummyEnv
 
 from ldp.agent import SimpleAgent
-from ldp.alg.algorithms import discounted_returns
+from ldp.utils import discounted_returns
 
 
 @pytest.mark.asyncio

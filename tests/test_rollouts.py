@@ -11,10 +11,7 @@ from aviary.tools import Tool, ToolRequestMessage
 from pydantic import BaseModel
 
 from ldp.agent import Agent, SimpleAgent, SimpleAgentState
-from ldp.alg.beam_search import BeamSearchRollout
-from ldp.alg.callbacks import Callback
-from ldp.alg.rollout import RolloutManager
-from ldp.alg.tree_search import TreeSearchRollout
+from ldp.alg import BeamSearchRollout, Callback, RolloutManager, TreeSearchRollout
 from ldp.data_structures import Trajectory, Transition
 from ldp.graph.common_ops import FxnOp
 from ldp.graph.op_utils import compute_graph, set_training_mode
@@ -115,14 +112,22 @@ async def test_beam_search() -> None:
     )
     assert len(trajs) == 2
 
-    assert all(v == 2 for v in callback.fn_invocations.values())
+    assert all(
+        v == 2
+        for k, v in callback.fn_invocations.items()
+        if k != "after_agent_init_state"  # TODO: support this callback too
+    )
 
 
 class DummyCallback(Callback):
     def __init__(self):
+        # NOTE: don't use collections.defaultdict here because it can lead to
+        # test aliasing for a callback being missed altogether
         self.fn_invocations = {
             "before_transition": 0,
+            "after_agent_init_state": 0,
             "after_agent_get_asv": 0,
+            "after_env_reset": 0,
             "after_env_step": 0,
             "after_transition": 0,
         }
@@ -137,6 +142,9 @@ class DummyCallback(Callback):
     ) -> None:
         self.fn_invocations["before_transition"] += 1
 
+    async def after_agent_init_state(self, traj_id: str, init_state: Any) -> None:
+        self.fn_invocations["after_agent_init_state"] += 1
+
     async def after_agent_get_asv(
         self,
         traj_id: str,
@@ -145,6 +153,11 @@ class DummyCallback(Callback):
         value: float,
     ):
         self.fn_invocations["after_agent_get_asv"] += 1
+
+    async def after_env_reset(
+        self, traj_id: str, obs: list[Message], tools: list[Tool]
+    ) -> None:
+        self.fn_invocations["after_env_reset"] += 1
 
     async def after_env_step(
         self,
@@ -231,7 +244,7 @@ class NoisyCountingEnv(CountingEnv):
 
 class TestTreeSearch:
     @pytest.mark.asyncio
-    async def test_tree_search(self):
+    async def test_tree_search(self) -> None:
         agent = CountingAgent()
         # Use a slightly stochastic env so we can distinguish branches
         env = NoisyCountingEnv()
@@ -248,7 +261,7 @@ class TestTreeSearch:
         trajs = tree.get_trajectories()
         assert len(trajs) == 8
 
-        traj_ids_wo_root = {
+        traj_ids_wo_root: set[str] = {
             cast(str, traj.traj_id).replace(tree.root_id, "").lstrip(":")
             for traj in trajs
         }
@@ -257,7 +270,7 @@ class TestTreeSearch:
             ":".join(x) for x in itertools.product("01", repeat=3)
         }
 
-        observations = {}  # type: ignore[var-annotated]
+        observations: dict[tuple[str, ...], str] = {}
         for traj in trajs:
             branch_path = tuple(cast(str, traj.traj_id).split(":")[1:])
 
@@ -269,6 +282,8 @@ class TestTreeSearch:
 
                 # Steps that started at the same node in the tree should have the same observation
                 node_id = branch_path[: i_step + 1]
+                assert len(step.observation) == 1
+                assert step.observation[0].content
                 if node_id in observations:
                     assert observations[node_id] == step.observation[0].content
                 else:
@@ -276,13 +291,17 @@ class TestTreeSearch:
 
                 prev_step = step
 
-        # We expect sum_{i=1}^3 2^i = 2^4 - 2 = 14 transitions:
-        # - branching factor = 2, depth = 3
-        # - root node isn't sampled, so no i=0 term in sum
-        assert all(v == 14 for v in callback.fn_invocations.values())
+        for callback_fn, num_calls in callback.fn_invocations.items():
+            if callback_fn in {"after_agent_init_state", "after_env_reset"}:
+                assert num_calls == 1, "These should be invoked once at the start"
+            else:
+                # We expect sum_{i=1}^3 2^i = 2^4 - 2 = 14 transitions:
+                # - branching factor = 2, depth = 3
+                # - root node isn't sampled, so no i=0 term in sum
+                assert num_calls == 14
 
     @pytest.mark.asyncio
-    async def test_early_stopping(self):
+    async def test_early_stopping(self) -> None:
         agent = CountingAgent()
         # Use a slightly stochastic env so we can distinguish branches
         env = NoisyCountingEnv()

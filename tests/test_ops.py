@@ -4,13 +4,14 @@ from typing import TypeVar, cast
 from uuid import UUID
 
 import litellm
+import numpy as np
 import pytest
 import tree
 from aviary.env import DummyEnv
 from aviary.message import Message
 from aviary.tools import Tool, ToolRequestMessage
 
-from ldp.graph.common_ops import ConfigOp, FxnOp, LLMCallOp, PromptOp
+from ldp.graph.common_ops import ConfigOp, EmbeddingOp, FxnOp, LLMCallOp, PromptOp
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
 from ldp.graph.op_utils import (
     CallID,
@@ -162,6 +163,23 @@ class TestLLMCallOp:
         )
         assert isinstance(message_result.value, ToolRequestMessage)
         assert not message_result.value.tool_calls
+
+    @pytest.mark.vcr
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("temperature", [0.0, 0.5, 1.0])
+    async def test_compute_logprob(self, temperature) -> None:
+        model_name = "gpt-4o-mini"
+        config = {"model": model_name, "temperature": temperature}
+        llm_op = LLMCallOp()
+        output = await llm_op(config, msgs=[Message(content="Hello")])
+        logp = llm_op.ctx.get(output.call_id, "logprob")
+        raw_logp = llm_op.ctx.get(output.call_id, "raw_logprob")
+        if temperature == 0.0:
+            assert logp == 1.0
+        elif temperature == 1.0:
+            assert logp == raw_logp
+        else:
+            assert logp is None
 
 
 @pytest.mark.asyncio
@@ -363,3 +381,24 @@ async def test_clear_contexts():
         # Test instance clear
         op2.clear_ctx()
         assert not op2.ctx.data
+
+
+@pytest.mark.asyncio
+@pytest.mark.vcr
+@pytest.mark.parametrize("dense_embedding_size", [0, 256, 512])
+@pytest.mark.parametrize("sparse_embedding_size", [0, 32, 64])
+@pytest.mark.parametrize("model", ["text-embedding-3-small", "text-embedding-3-large"])
+async def test_embedding_op(model, dense_embedding_size, sparse_embedding_size) -> None:
+    if dense_embedding_size == sparse_embedding_size == 0:
+        return
+    op = EmbeddingOp(
+        dense_embedding=model,
+        dense_embedding_dim=dense_embedding_size,
+        sparse_embedding_dim=sparse_embedding_size,
+    )
+    async with compute_graph():
+        op_result = await op("test text")
+    assert isinstance(op_result.value, np.ndarray)
+    assert op_result.value.shape[0] == dense_embedding_size + sparse_embedding_size
+    op_result.compute_grads()
+    assert op.get_input_grads(op_result.call_id) == ([], {"string_input": None})
