@@ -26,7 +26,22 @@ class MemoryFactory(Protocol):
         output_op: Op[TOutput],
         memory_template: str,
         example_buffer: Iterable[tuple[CallID, CallID, float, JsonValue]],
-    ) -> list[Memory]: ...
+    ) -> list[Memory]:
+        """
+        Create new memories from the example buffer.
+
+        Args:
+            memory_op: MemoryOp whose context contains the MemoryModel's query and input.
+            output_op: Op whose context contains an output that can be correlated with
+                how good the outcome was.
+            memory_template: Template used for the Memory's string representation.
+            example_buffer: Buffer of 4-tuples containing the memory_op's call ID, the
+                output_op's call ID, the current discounted return, and arbitrary JSON
+                metadata (which can be used to add task-specific metadata the memory).
+
+        Returns:
+            New Memories created.
+        """
 
 
 async def _default_memory_factory(
