@@ -89,7 +89,7 @@ class MemoryAgent(SimpleAgent):
 
     def __init__(self, memory_model: MemoryModel | None = None, **kwargs):
         super().__init__(**kwargs)
-        self._query_factory_op: FxnOp[str] = FxnOp(self.query_factory)
+        self._query_factory_op = FxnOp[str](self.query_factory)
         self._memory_op = MemoryOp(memory_model)
         self._format_memory_op = FxnOp(self._format_memories)
         self._prompt_op = PromptOp(self.prompt)
