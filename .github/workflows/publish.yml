@@ -17,4 +17,4 @@ jobs:
         run: uv build --sdist --wheel --out-dir dist/ .
       - run: uv publish
         env:
-          UV_PUBLISH_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
