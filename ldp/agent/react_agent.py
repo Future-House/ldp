@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import Any, Self, cast
 
@@ -28,9 +27,6 @@ from .agent import Agent
 from .simple_agent import SimpleAgentState
 
 logger = logging.getLogger(__name__)
-
-
-lock = asyncio.Lock()
 
 
 class ReActAgent(BaseModel, Agent[SimpleAgentState]):
