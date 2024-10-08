@@ -3,6 +3,7 @@ __all__ = ["AsyncTorchModule", "async_protect_torch_call"]
 import asyncio
 import operator
 import time
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from contextlib import nullcontext
 from typing import Any
@@ -59,7 +60,89 @@ def async_protect_torch_call(
 # adaptive mode.
 
 
-class AsyncTorchModule:
+class AsyncBufferedWorker(ABC):
+    def __init__(
+        self,
+        batch_size: int,
+        max_wait_interval: float,
+        collate_fn: Callable = lambda x: x,
+        decollate_fn: Callable = lambda x: x,
+    ):
+        """Abstract class for a worker that buffers inputs and processes them in batches.
+
+        Args:
+            batch_size: The target batch size to use when calling the module. As soon as
+                batch_size calls are made, a forward pass is executed.
+            max_wait_interval: The maximum time to wait for a batch to fill up before
+                executing the calls we have buffered.
+            collate_fn: A function to pre-process a list of inputs into a batch. Defaults to a
+                no-op.
+            decollate_fn: Kind of like the opposite of collate_fn. This function should take
+                 the batched output and return an ordered list of outputs. Defaults to no-op.
+        """
+        self.batch_size = batch_size
+        self.timeout = max_wait_interval
+        self.collate_fn = collate_fn
+        self.decollate_fn = decollate_fn
+
+        self._work_buffer: list[tuple[float, UUID, dict[str, Any]]] = []
+        self._result_buffer: dict[UUID, Any] = {}
+        self._lock = asyncio.Lock()
+
+    async def __call__(self, **kwargs):
+        request_id = uuid4()
+        request_ts = time.time()
+
+        async with self._lock:
+            # Make sure only one coroutine is using the work buffer at a time
+            self._work_buffer.append((request_ts, request_id, kwargs))
+
+        while True:
+            async with self._lock:
+                # Only one coroutine allowed in here when:
+                # - modifying the result buffer
+                # - modifying the work buffer
+
+                if request_id in self._result_buffer:
+                    # Our request was fulfilled by this or another coroutine!
+                    return self._result_buffer.pop(request_id)
+
+                # Try to run a batch.
+                await self._maybe_process_batch()
+
+            # Sleep, to let another coroutine take over if it needs to
+            await asyncio.sleep(0.0)
+
+    async def _maybe_process_batch(self):
+        now = time.time()
+
+        # sort by oldest requests first
+        self._work_buffer.sort(key=operator.itemgetter(0))
+
+        if (
+            len(self._work_buffer) >= self.batch_size
+            or now - self._work_buffer[0][0] > self.timeout
+        ):
+            # if we're over batch size or have at least one input waiting for
+            # more than timeout, pull out a batch to run
+            batch = self._work_buffer[: self.batch_size]
+            self._work_buffer = self._work_buffer[self.batch_size :]
+
+            # Construct the batch tensors
+            sample_kwargs = [x[2] for x in batch]
+            batch_kwargs = self.collate_fn(sample_kwargs)
+
+            batched_results = await self._batched_call(batch_kwargs)
+            request_ids = [x[1] for x in batch]
+            results = self.decollate_fn(batched_results)
+            self._result_buffer.update(zip(request_ids, results, strict=True))
+
+    @abstractmethod
+    async def _batched_call(self, batch_kwargs: dict[str, Any]):
+        """Logic to call the worker on a batch of inputs."""
+
+
+class AsyncTorchModule(AsyncBufferedWorker):
     def __init__(
         self,
         module: nn.Module,
@@ -99,72 +182,24 @@ class AsyncTorchModule:
                  the batched output and return an ordered list of outputs. Defaults to list.
             module_call_fn: Function that allows for customizing the call to the module.
         """
+        super().__init__(
+            batch_size=batch_size,
+            max_wait_interval=max_wait_interval,
+            collate_fn=collate_fn,
+            decollate_fn=decollate_fn,
+        )
         self.module = module
-        self.batch_size = batch_size
-        self.timeout = max_wait_interval
-        self.collate_fn = collate_fn
-        self.decollate_fn = decollate_fn
         self.module_call_fn = module_call_fn
-
-        self._work_buffer: list[tuple[float, UUID, dict[str, Any]]] = []
-        self._result_buffer: dict[UUID, Any] = {}
-        self._lock = asyncio.Lock()
 
     def _get_dtype_and_device(self) -> tuple[torch.dtype, torch.device]:
         param = next(self.module.parameters())
         return param.dtype, param.device
 
-    async def __call__(self, **kwargs):
-        request_id = uuid4()
-        request_ts = time.time()
-
-        async with self._lock:
-            # Make sure only one coroutine is using the work buffer at a time
-            self._work_buffer.append((request_ts, request_id, kwargs))
-
-        while True:
-            async with self._lock:
-                # Only one coroutine allowed in here when:
-                # - modifying the result buffer
-                # - modifying the work buffer
-                # - calling the module (handled by _TORCH_LOCK)
-
-                if request_id in self._result_buffer:
-                    # Our request was fulfilled by this or another coroutine!
-                    return self._result_buffer.pop(request_id)
-
-                # Try to run a batch. To be safe, set _TORCH_LOCK to prevent other
-                # coroutines from messing with torch state while running.
-                async with _TORCH_LOCK:
-                    self._batched_call()
-
-            # Sleep, to let another coroutine take over if it needs to
-            await asyncio.sleep(0.0)
-
-    def _batched_call(self):
-        now = time.time()
-
-        # sort by oldest requests first
-        self._work_buffer.sort(key=operator.itemgetter(0))
-
-        if (
-            len(self._work_buffer) >= self.batch_size
-            or now - self._work_buffer[0][0] > self.timeout
-        ):
-            # if we're over batch size or have at least one input waiting for
-            # more than timeout, pull out a batch to run
-            batch = self._work_buffer[: self.batch_size]
-            self._work_buffer = self._work_buffer[self.batch_size :]
-
-            # Construct the batch tensors
-            sample_kwargs = [x[2] for x in batch]
-            batch_kwargs = self.collate_fn(sample_kwargs)
-
-            # Call the module and store results
+    async def _batched_call(self, batch_kwargs: dict[str, Any]):
+        # Call the module and store results
+        # To be safe, set _TORCH_LOCK to prevent other
+        # coroutines from messing with torch state while running.
+        async with _TORCH_LOCK:
             dtype, device = self._get_dtype_and_device()
             with torch.no_grad(), _get_autocast_context(dtype, device.type):
-                batched_results = self.module_call_fn(self.module, **batch_kwargs)
-
-            request_ids = [x[1] for x in batch]
-            results = self.decollate_fn(batched_results)
-            self._result_buffer.update(zip(request_ids, results, strict=True))
+                return self.module_call_fn(self.module, **batch_kwargs)
