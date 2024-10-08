@@ -82,6 +82,8 @@ def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:  # noqa:
         message_content = message_content[: loc if loc > 0 else None]
     # we need to override the message too - don't want the model to hallucinate
     m.content = message_content
+    
+    print("Received back!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" + m.content)
 
     action_args: tuple[Any, ...] = ()
     # https://regex101.com/r/qmqZ7Z/1
@@ -141,6 +143,8 @@ def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:  # noqa:
     action = re.search(r"Action:[ \t]*(\S*)", m.content)
     if not action:
         raise MalformedMessageError("Action not emitted.")
+    if "Observation:" in m.content:
+        raise MalformedMessageError("Observation found in message content and not expected.")
     tool_name = action.group(1).strip()
     # have to match up name to tool to line up args in order
     try:
