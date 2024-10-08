@@ -271,7 +271,7 @@ class TrajectoryMetricsCallback(Callback):
         )
 
         self._train_metrics: dict[str, list[float]] | None = None
-        self._eval_metrics: dict[str, list[float]] = defaultdict(list)
+        self._eval_metrics: dict[str, list[float]] = {}
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
         if self._train_metrics_fn is not None:
@@ -280,6 +280,9 @@ class TrajectoryMetricsCallback(Callback):
     async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
         if self._eval_metrics_fn is not None:
             for k, v in self._eval_metrics_fn(trajectories).items():
+                if k not in self._eval_metrics:
+                    # Don't use defaultdict - error prone in user code
+                    self._eval_metrics[k] = []
                 self._eval_metrics[k].extend(v)
 
     async def after_eval_loop(self) -> None:
