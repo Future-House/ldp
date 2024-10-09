@@ -61,6 +61,8 @@ def async_protect_torch_call(
 
 
 class AsyncBufferedWorker(ABC):
+    """Abstract class for a worker that buffers inputs and processes them in batches."""
+
     def __init__(
         self,
         batch_size: int,
@@ -68,7 +70,7 @@ class AsyncBufferedWorker(ABC):
         collate_fn: Callable = lambda x: x,
         decollate_fn: Callable = lambda x: x,
     ):
-        """Abstract class for a worker that buffers inputs and processes them in batches.
+        """Initialize.
 
         Args:
             batch_size: The target batch size to use when calling the module. As soon as
@@ -114,6 +116,10 @@ class AsyncBufferedWorker(ABC):
             await asyncio.sleep(0.0)
 
     async def _maybe_process_batch(self):
+        """If the buffer is >= batch size or we have been waiting long enough, process the old batch.
+
+        If neither condition is met, do nothing.
+        """
         now = time.time()
 
         # sort by oldest requests first
