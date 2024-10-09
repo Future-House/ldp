@@ -5,7 +5,7 @@ import time
 from collections import defaultdict
 from collections.abc import Collection, Iterable, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import aiofiles
 from aviary.env import Environment, TaskDataset
@@ -67,10 +67,10 @@ class Callback:
         agent_state: Any,
         obs: list[Message],
     ) -> None:
-        """Invoked by RolloutManager before each transition."""
+        """Invoked by runners before each transition and after agent and env reset."""
 
     async def after_agent_init_state(self, traj_id: str, init_state: Any) -> None:
-        """Invoked by RolloutManager after agent.init_state()."""
+        """Invoked by runners after agent.init_state()."""
 
     async def after_agent_get_asv(
         self,
@@ -79,22 +79,22 @@ class Callback:
         next_agent_state: Any,
         value: float,
     ) -> None:
-        """Invoked by RolloutManager after agent.get_asv()."""
+        """Invoked by runners after agent.get_asv()."""
 
     async def after_env_reset(
         self, traj_id: str, obs: list[Message], tools: list[Tool]
     ) -> None:
-        """Invoked by RolloutManager after env.reset()."""
+        """Invoked by runners after env.reset()."""
 
     async def after_env_step(
         self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
     ) -> None:
-        """Invoked by RolloutManager after env.step()."""
+        """Invoked by runners after env.step()."""
 
     async def after_transition(
         self, traj_id: str, agent: Agent, env: Environment, transition: Transition
     ) -> None:
-        """Invoked by RolloutManager after each transition."""
+        """Invoked by runners after each transition."""
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
         """Invoked by OnlineTrainer after each training step."""
@@ -223,11 +223,14 @@ class RolloutDebugDumpCallback(Callback):
 class ComputeTrajectoryMetricsMixin:
     """Mixin for TaskDataset classes to enable them to compute metrics."""
 
+    # Tools or tool names to include in trajectory metrics
+    tools_to_track: Collection[str | Tool] = set()
+
     def compute_trajectory_metrics(
         self,
         trajectories: Sequence[Trajectory],
     ) -> dict[str, list[float]]:
-        return {
+        metrics: dict[str, list[float]] = {
             "reward": [
                 sum(step.reward for step in traj.steps) for traj in trajectories
             ],
@@ -241,6 +244,18 @@ class ComputeTrajectoryMetricsMixin:
             "num_steps": [len(traj.steps) for traj in trajectories],
             "failures": [traj.failed for traj in trajectories],
         }
+        for tool in self.tools_to_track:  # Default of empty set means this is not run
+            if isinstance(tool, Tool):
+                tool = tool.info.name
+            metrics[f"tool_{tool}"] = [
+                sum(
+                    sum(tc.function.name == tool for tc in s.action.value.tool_calls)
+                    for s in traj.steps
+                    if isinstance(s.action, OpResult)
+                )
+                for traj in trajectories
+            ]
+        return metrics
 
 
 class TrajectoryMetricsCallback(Callback):
@@ -255,8 +270,11 @@ class TrajectoryMetricsCallback(Callback):
         self,
         train_dataset: TaskDataset | None = None,
         eval_dataset: TaskDataset | None = None,
+        track_tool_usage: bool = False,
     ):
-        for ds in (train_dataset, eval_dataset):
+        self._datasets = train_dataset, eval_dataset
+        self._track_tool_usage = track_tool_usage
+        for ds in self._datasets:
             if ds and not isinstance(ds, ComputeTrajectoryMetricsMixin):
                 raise ValueError(
                     f"Dataset {ds} didn't implement"
@@ -272,6 +290,15 @@ class TrajectoryMetricsCallback(Callback):
 
         self._train_metrics: dict[str, list[float]] | None = None
         self._eval_metrics: dict[str, list[float]] = {}
+
+    async def after_env_reset(
+        self, traj_id: str, obs: list[Message], tools: list[Tool]
+    ) -> None:
+        for ds in (ds for ds in self._datasets if ds):
+            if self._track_tool_usage:
+                cast(ComputeTrajectoryMetricsMixin, ds).tools_to_track = {
+                    t.info.name for t in tools
+                }
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
         if self._train_metrics_fn is not None:
@@ -292,12 +319,8 @@ class TrajectoryMetricsCallback(Callback):
 class MeanMetricsCallback(TrajectoryMetricsCallback):
     """Take a mean of all metrics."""
 
-    def __init__(
-        self,
-        train_dataset: TaskDataset | None = None,
-        eval_dataset: TaskDataset | None = None,
-    ):
-        super().__init__(train_dataset, eval_dataset)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._train_means: dict[str, float] | None = None
         self._eval_means: dict[str, float] | None = None
 
@@ -335,17 +358,13 @@ class MeanMetricsCallback(TrajectoryMetricsCallback):
 
 
 class WandBLoggingCallback(TrajectoryMetricsCallback):
-    def __init__(
-        self,
-        train_dataset: TaskDataset | None = None,
-        eval_dataset: TaskDataset | None = None,
-    ):
+    def __init__(self, *args, **kwargs):
         if wandb is None:
             raise ImportError(
                 f"{type(self).__name__} processing requires the 'monitor' extra for"
                 " 'wandb'. Please: `pip install aviary-internal[monitor]`."
             )
-        super().__init__(train_dataset, eval_dataset)
+        super().__init__(*args, **kwargs)
 
         self._num_train_step = 0
 
