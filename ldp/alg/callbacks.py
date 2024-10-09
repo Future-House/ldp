@@ -67,10 +67,10 @@ class Callback:
         agent_state: Any,
         obs: list[Message],
     ) -> None:
-        """Invoked by RolloutManager before each transition."""
+        """Invoked by runners before each transition and after agent and env reset."""
 
     async def after_agent_init_state(self, traj_id: str, init_state: Any) -> None:
-        """Invoked by RolloutManager after agent.init_state()."""
+        """Invoked by runners after agent.init_state()."""
 
     async def after_agent_get_asv(
         self,
@@ -79,22 +79,22 @@ class Callback:
         next_agent_state: Any,
         value: float,
     ) -> None:
-        """Invoked by RolloutManager after agent.get_asv()."""
+        """Invoked by runners after agent.get_asv()."""
 
     async def after_env_reset(
         self, traj_id: str, obs: list[Message], tools: list[Tool]
     ) -> None:
-        """Invoked by RolloutManager after env.reset()."""
+        """Invoked by runners after env.reset()."""
 
     async def after_env_step(
         self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
     ) -> None:
-        """Invoked by RolloutManager after env.step()."""
+        """Invoked by runners after env.step()."""
 
     async def after_transition(
         self, traj_id: str, agent: Agent, env: Environment, transition: Transition
     ) -> None:
-        """Invoked by RolloutManager after each transition."""
+        """Invoked by runners after each transition."""
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
         """Invoked by OnlineTrainer after each training step."""
