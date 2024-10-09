@@ -225,7 +225,6 @@ class ComputeTrajectoryMetricsMixin:
 
     # Tools or tool names to include in trajectory metrics
     tools_to_track: Collection[str | Tool] = set()
-    track_tools: bool = False
 
     def compute_trajectory_metrics(
         self,
@@ -271,9 +270,12 @@ class TrajectoryMetricsCallback(Callback):
         self,
         train_dataset: TaskDataset | None = None,
         eval_dataset: TaskDataset | None = None,
+        track_train_tool_usage: bool = False,
+        track_eval_tool_usage: bool = False,
     ):
-        self._both_datasets = train_dataset, eval_dataset
-        for ds in self._both_datasets:
+        self._datasets = train_dataset, eval_dataset
+        self._track_tool_usage = track_train_tool_usage, track_eval_tool_usage
+        for ds in self._datasets:
             if ds and not isinstance(ds, ComputeTrajectoryMetricsMixin):
                 raise ValueError(
                     f"Dataset {ds} didn't implement"
@@ -293,8 +295,12 @@ class TrajectoryMetricsCallback(Callback):
     async def after_env_reset(
         self, traj_id: str, obs: list[Message], tools: list[Tool]
     ) -> None:
-        for ds in self._both_datasets:
-            if ds and isinstance(ds, ComputeTrajectoryMetricsMixin) and ds.track_tools:
+        for i, ds in enumerate(self._datasets):
+            if (
+                ds
+                and isinstance(ds, ComputeTrajectoryMetricsMixin)
+                and self._track_tool_usage[i]
+            ):
                 ds.tools_to_track = {t.info.name for t in tools}
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
@@ -316,12 +322,8 @@ class TrajectoryMetricsCallback(Callback):
 class MeanMetricsCallback(TrajectoryMetricsCallback):
     """Take a mean of all metrics."""
 
-    def __init__(
-        self,
-        train_dataset: TaskDataset | None = None,
-        eval_dataset: TaskDataset | None = None,
-    ):
-        super().__init__(train_dataset, eval_dataset)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._train_means: dict[str, float] | None = None
         self._eval_means: dict[str, float] | None = None
 
@@ -359,17 +361,13 @@ class MeanMetricsCallback(TrajectoryMetricsCallback):
 
 
 class WandBLoggingCallback(TrajectoryMetricsCallback):
-    def __init__(
-        self,
-        train_dataset: TaskDataset | None = None,
-        eval_dataset: TaskDataset | None = None,
-    ):
+    def __init__(self, *args, **kwargs):
         if wandb is None:
             raise ImportError(
                 f"{type(self).__name__} processing requires the 'monitor' extra for"
                 " 'wandb'. Please: `pip install aviary-internal[monitor]`."
             )
-        super().__init__(train_dataset, eval_dataset)
+        super().__init__(*args, **kwargs)
 
         self._num_train_step = 0
 

@@ -34,9 +34,8 @@ async def test_online_trainer(clear_ctx_at_each_iter: bool) -> None:
         "train_dataset": TaskDataset.from_name("dummy"),
         "eval_dataset": TaskDataset.from_name("dummy"),
     }
-    datasets["eval_dataset"].track_tools = True  # type: ignore[attr-defined]
     dummy_callback = DummyCallback()
-    metrics_callback = MeanMetricsCallback(**datasets)
+    metrics_callback = MeanMetricsCallback(**datasets, track_eval_tool_usage=True)
 
     train_conf = OnlineTrainerConfig(
         batch_size=1,
