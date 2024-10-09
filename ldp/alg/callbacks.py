@@ -5,7 +5,7 @@ import time
 from collections import defaultdict
 from collections.abc import Collection, Iterable, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import aiofiles
 from aviary.env import Environment, TaskDataset
@@ -270,11 +270,10 @@ class TrajectoryMetricsCallback(Callback):
         self,
         train_dataset: TaskDataset | None = None,
         eval_dataset: TaskDataset | None = None,
-        track_train_tool_usage: bool = False,
-        track_eval_tool_usage: bool = False,
+        track_tool_usage: bool = False,
     ):
         self._datasets = train_dataset, eval_dataset
-        self._track_tool_usage = track_train_tool_usage, track_eval_tool_usage
+        self._track_tool_usage = track_tool_usage
         for ds in self._datasets:
             if ds and not isinstance(ds, ComputeTrajectoryMetricsMixin):
                 raise ValueError(
@@ -295,13 +294,11 @@ class TrajectoryMetricsCallback(Callback):
     async def after_env_reset(
         self, traj_id: str, obs: list[Message], tools: list[Tool]
     ) -> None:
-        for i, ds in enumerate(self._datasets):
-            if (
-                ds
-                and isinstance(ds, ComputeTrajectoryMetricsMixin)
-                and self._track_tool_usage[i]
-            ):
-                ds.tools_to_track = {t.info.name for t in tools}
+        for ds in (ds for ds in self._datasets if ds):
+            if self._track_tool_usage:
+                cast(ComputeTrajectoryMetricsMixin, ds).tools_to_track = {
+                    t.info.name for t in tools
+                }
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
         if self._train_metrics_fn is not None:

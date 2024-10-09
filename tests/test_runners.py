@@ -30,12 +30,9 @@ from ldp.graph.ops import OpCtx
 async def test_online_trainer(clear_ctx_at_each_iter: bool) -> None:
     agent = MemoryAgent()
     opt = default_optimizer_factory(agent)
-    datasets = {
-        "train_dataset": TaskDataset.from_name("dummy"),
-        "eval_dataset": TaskDataset.from_name("dummy"),
-    }
+    dataset = TaskDataset.from_name("dummy")
     dummy_callback = DummyCallback()
-    metrics_callback = MeanMetricsCallback(**datasets, track_eval_tool_usage=True)
+    metrics_callback = MeanMetricsCallback(train_dataset=dataset, track_tool_usage=True)
 
     train_conf = OnlineTrainerConfig(
         batch_size=1,
@@ -49,7 +46,8 @@ async def test_online_trainer(clear_ctx_at_each_iter: bool) -> None:
         config=train_conf,
         agent=agent,
         optimizer=opt,
-        **datasets,
+        train_dataset=dataset,
+        eval_dataset=dataset,
         callbacks=[dummy_callback, metrics_callback],
     )
     await trainer.train()
@@ -58,8 +56,7 @@ async def test_online_trainer(clear_ctx_at_each_iter: bool) -> None:
         # eval is run 3 times: before training, during training, after training
         assert v == (3 if "eval" in k else 1)
     assert metrics_callback.train_means["failures"] < 1, "Training should work"
-    assert "tool_print_story" not in metrics_callback.train_means
-    assert "tool_print_story" in metrics_callback.eval_means
+    assert "tool_print_story" in metrics_callback.train_means
 
     if clear_ctx_at_each_iter:
         all(not ctx_data.data for ctx_data in OpCtx._CTX_REGISTRY.values())
@@ -90,6 +87,7 @@ async def test_evaluator(clear_ctx_at_each_iter) -> None:
 
     mock_close.assert_awaited_once(), "Env should be closed"
     assert isinstance(metrics_callback.eval_means["reward"], float)
+    assert "tool_print_story" not in metrics_callback.eval_means
 
     for k, v in count_callback.fn_invocations.items():
         assert v == (1 if "eval" in k else 0)
