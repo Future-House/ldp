@@ -13,8 +13,8 @@ from ldp.graph.op_utils import compute_graph
 from ldp.graph.ops import OpResult
 
 MISSING_DEFAULT = object()
-CLEAR = "CLEAR"
-KILL = "KILL"
+CLEAR = "CLEAR"  # Clears the current input and allows the user to start over, e.g. if they made a mistake
+EXIT = "EXIT"  # Exits the agent by raising a RuntimeError. Makes it possible to interrupt a rollout
 
 
 class InteractiveAgent(Agent[SimpleAgentState]):
@@ -62,7 +62,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
             tool_choice = input(">>> Select tool by name: ")
             if tool_choice == CLEAR:
                 continue
-            if tool_choice == KILL:
+            if tool_choice == EXIT:
                 raise RuntimeError("User requested to kill the agent.")
 
             tool = next(
@@ -81,7 +81,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
                 value = input(prompt)
                 if value == CLEAR:
                     return await self.get_asv(agent_state, obs)  # just start over
-                if value == KILL:
+                if value == EXIT:
                     raise RuntimeError("User requested to kill the agent.")
 
                 with contextlib.suppress(json.JSONDecodeError):
