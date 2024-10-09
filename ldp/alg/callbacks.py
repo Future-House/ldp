@@ -223,11 +223,15 @@ class RolloutDebugDumpCallback(Callback):
 class ComputeTrajectoryMetricsMixin:
     """Mixin for TaskDataset classes to enable them to compute metrics."""
 
+    # Tools or tool names to include in trajectory metrics
+    tools_to_track: Collection[str | Tool] = set()
+    track_tools: bool = False
+
     def compute_trajectory_metrics(
         self,
         trajectories: Sequence[Trajectory],
     ) -> dict[str, list[float]]:
-        return {
+        metrics: dict[str, list[float]] = {
             "reward": [
                 sum(step.reward for step in traj.steps) for traj in trajectories
             ],
@@ -241,6 +245,18 @@ class ComputeTrajectoryMetricsMixin:
             "num_steps": [len(traj.steps) for traj in trajectories],
             "failures": [traj.failed for traj in trajectories],
         }
+        for tool in self.tools_to_track:  # Default of empty set means this is not run
+            if isinstance(tool, Tool):
+                tool = tool.info.name
+            metrics[f"tool_{tool}"] = [
+                sum(
+                    sum(tc.function.name == tool for tc in s.action.value.tool_calls)
+                    for s in traj.steps
+                    if isinstance(s.action, OpResult)
+                )
+                for traj in trajectories
+            ]
+        return metrics
 
 
 class TrajectoryMetricsCallback(Callback):
@@ -256,7 +272,8 @@ class TrajectoryMetricsCallback(Callback):
         train_dataset: TaskDataset | None = None,
         eval_dataset: TaskDataset | None = None,
     ):
-        for ds in (train_dataset, eval_dataset):
+        self._both_datasets = train_dataset, eval_dataset
+        for ds in self._both_datasets:
             if ds and not isinstance(ds, ComputeTrajectoryMetricsMixin):
                 raise ValueError(
                     f"Dataset {ds} didn't implement"
@@ -272,6 +289,13 @@ class TrajectoryMetricsCallback(Callback):
 
         self._train_metrics: dict[str, list[float]] | None = None
         self._eval_metrics: dict[str, list[float]] = {}
+
+    async def after_env_reset(
+        self, traj_id: str, obs: list[Message], tools: list[Tool]
+    ) -> None:
+        for ds in self._both_datasets:
+            if ds and isinstance(ds, ComputeTrajectoryMetricsMixin) and ds.track_tools:
+                ds.tools_to_track = {t.info.name for t in tools}
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
         if self._train_metrics_fn is not None:
