@@ -101,6 +101,8 @@ def validate_json_completion(
 
 
 class MultipleCompletionLLMModel(BaseModel):
+    """Run n completions at once, all starting from the same messages."""
+
     model_config = ConfigDict(extra="forbid")
 
     # this should keep the original model

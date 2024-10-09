@@ -11,6 +11,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    JsonValue,
     PrivateAttr,
     field_validator,
     model_validator,
@@ -47,7 +48,16 @@ class Memory(BaseModel):
         ),
     )
     output: str = Field(description="Some output (e.g. tool selection).")
-    value: float = Field(description="Measure of the output's quality (e.g. loss).")
+    value: float | str = Field(
+        description="Measure of the output's quality (e.g. loss)."
+    )
+    metadata: JsonValue = Field(
+        default_factory=dict,
+        description=(
+            "Optional JSON metadata to store with the memory. An example is storing"
+            " information an optimizer can use at training time."
+        ),
+    )
     run_id: UUID | None = Field(
         default=None,
         description=(

@@ -30,10 +30,10 @@ jobs:
         python-version: [3.11, 3.12] # Our min and max supported Python versions
     steps:
       - uses: actions/checkout@v4
-      - name: Set up uv
-        run: |-
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          uv python pin ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - run: uv python pin ${{ matrix.python-version }}
       - run: uv sync --python-preference=only-managed
       - run: uv run refurb ldp tests
       - run: uv run pylint ldp tests
@@ -41,8 +41,9 @@ jobs:
     runs-on: large-runner
     steps:
       - uses: actions/checkout@v4
-      - name: Set up uv
-        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
       - run: uv sync
       - run: uv run pytest -n 16 --dist=loadfile # auto only launches 8 workers in CI, despite runners have 16 cores
         env:
