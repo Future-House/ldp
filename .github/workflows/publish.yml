@@ -10,12 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
+      - id: build
+        uses: hynek/build-and-inspect-python-package@v2
+      - name: Download built artifact to dist/
+        uses: actions/download-artifact@v4
         with:
-          enable-cache: true
-      - run: uv sync
-      - name: Build a binary wheel and a source tarball
-        run: uv build --sdist --wheel --out-dir dist/ .
-      - run: uv publish
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          name: ${{ steps.build.outputs.artifact-name }}
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
