@@ -191,10 +191,6 @@ class TorchParamBackwardEstimator:
         grad_output: tree.Structure,
         call_id: CallID,
     ) -> GradInType:
-        if ctx.op_name != TorchOp.__name__:
-            raise RuntimeError(
-                f"Attempted to use TorchParamBackwardEstimator with non-TorchOp operation {ctx.op_name}."
-            )
         tensor_args, tensor_kwargs = ctx.get(call_id, TorchOp.CTX_TENSOR_INPUT_KEY)
         n_pos_args = len(tensor_args)
         n_pos_kwargs = len(tensor_kwargs)
@@ -202,8 +198,10 @@ class TorchParamBackwardEstimator:
 
         if not isinstance(grad_output, torch.Tensor):
             grad_output = torch.tensor(
-                grad_output, dtype=output.dtype, device=output.device
+                grad_output,
+                dtype=output.dtype,
             )
+        grad_output = grad_output.to(output.device)
 
         while grad_output.ndim < output.ndim:
             # Assume we can broadcast, so expand dims

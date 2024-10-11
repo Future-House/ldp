@@ -73,9 +73,8 @@ class TorchOp(Op[torch.Tensor]):
         output = ctx.get(call_id, "output").value
 
         if not isinstance(grad_output, torch.Tensor):
-            grad_output = torch.tensor(
-                grad_output, dtype=output.dtype, device=output.device
-            )
+            grad_output = torch.tensor(grad_output, dtype=output.dtype)
+        grad_output = grad_output.to(output.device)
 
         while grad_output.ndim < output.ndim:
             # Assume we can broadcast, so expand dims
