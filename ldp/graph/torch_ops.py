@@ -11,9 +11,9 @@ except ImportError:
         "Please run `pip install ldp[nn]`."
     ) from None
 
-from ldp.graph.async_torch import async_protect_torch_call
-from ldp.graph.op_utils import CallID, get_call_id, get_training_mode
-from ldp.graph.ops import GradInType, Op, OpCtx, ResultOrValue
+from .async_torch import async_protect_torch_call
+from .op_utils import CallID, get_call_id, get_training_mode
+from .ops import GradInType, Op, OpCtx, ResultOrValue
 
 
 class TorchOp(Op[torch.Tensor]):

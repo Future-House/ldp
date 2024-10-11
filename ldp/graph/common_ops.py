@@ -17,10 +17,6 @@ from aviary.tools import Tool, ToolRequestMessage
 from aviary.utils import is_coroutine_callable
 from pydantic import BaseModel
 
-from ldp.graph.gradient_estimators import assign_constant_grads
-from ldp.graph.memory import Memory, MemoryModel, UIndexMemoryModel
-from ldp.graph.op_utils import CallID, get_call_id, get_training_mode
-from ldp.graph.ops import GradInType, Op, OpCtx, ResultOrValue, TOutput
 from ldp.llms import (
     EmbeddingModel,
     HybridEmbeddingModel,
@@ -29,6 +25,11 @@ from ldp.llms import (
     LLMResult,
     SparseEmbeddingModel,
 )
+
+from .gradient_estimators import assign_constant_grads
+from .memory import Memory, MemoryModel, UIndexMemoryModel
+from .op_utils import CallID, get_call_id, get_training_mode
+from .ops import GradInType, Op, OpCtx, ResultOrValue, TOutput
 
 logger = logging.getLogger(__name__)
 

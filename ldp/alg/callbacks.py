@@ -14,7 +14,7 @@ from aviary.tools import MessagesAdapter, Tool, ToolRequestMessage
 
 from ldp.agent import Agent
 from ldp.data_structures import Trajectory, Transition
-from ldp.graph.ops import OpCtx, OpResult
+from ldp.graph import OpCtx, OpResult
 
 try:
     import wandb

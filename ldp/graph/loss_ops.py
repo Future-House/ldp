@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING
 
 import tree
 
-from ldp.graph.op_utils import CallID
-from ldp.graph.ops import GradInType, Op, OpCtx
+from .op_utils import CallID
+from .ops import GradInType, Op, OpCtx
 
 if TYPE_CHECKING:
     import numpy.typing as npt

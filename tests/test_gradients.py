@@ -10,14 +10,13 @@ import pytest
 import torch
 import tree
 
-from ldp.graph.common_ops import ConfigOp, FxnOp
+from ldp.graph import CallID, ConfigOp, FxnOp, Op, OpCtx, OpResult, compute_graph
 from ldp.graph.gradient_estimators import (
     TorchParamBackwardEstimator,
     assign_constant_grads,
     assign_default_grads,
 )
-from ldp.graph.op_utils import CallID, compute_graph
-from ldp.graph.ops import GradInType, Op, OpCtx, OpResult, ResultOrValue
+from ldp.graph.ops import GradInType, ResultOrValue
 from ldp.graph.torch_ops import TorchOp
 
 

@@ -7,13 +7,13 @@ from aviary.tools import Tool, ToolRequestMessage
 from pytest_subtests import SubTests
 
 from ldp.agent import ReActAgent
+from ldp.graph import OpResult
 from ldp.graph.modules import (
     ReActModule,
     ReflectModule,
     ReflectModuleConfig,
     parse_message,
 )
-from ldp.graph.ops import OpResult
 
 from . import CILLMModelNames
 

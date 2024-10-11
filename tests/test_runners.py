@@ -21,7 +21,7 @@ from ldp.alg.datasets import (  # noqa: F401  # Force TASK_DATASET_REGISTRY upda
 )
 from ldp.alg.optimizer import default_optimizer_factory
 from ldp.data_structures import Trajectory
-from ldp.graph.ops import OpCtx
+from ldp.graph import OpCtx
 
 
 @pytest.mark.vcr

@@ -18,16 +18,26 @@ from ldp.alg.optimizer import (
 )
 from ldp.alg.optimizer.ape import APEOpt, APEScoreFn, Example
 from ldp.data_structures import Trajectory, Transition
-from ldp.graph.common_ops import FxnOp, LLMCallOp, MemoryOp, PromptOp
+from ldp.graph import (
+    CallID,
+    FxnOp,
+    LLMCallOp,
+    Memory,
+    MemoryOp,
+    Op,
+    OpCtx,
+    OpResult,
+    PromptOp,
+    compute_graph,
+    eval_mode,
+)
 from ldp.graph.gradient_estimators import (
     llm_straight_through_estimator as llm_ste,
 )
 from ldp.graph.gradient_estimators import (
     straight_through_estimator as ste,
 )
-from ldp.graph.memory import Memory
-from ldp.graph.op_utils import CallID, compute_graph, eval_mode
-from ldp.graph.ops import GradInType, Op, OpCtx, OpResult
+from ldp.graph.ops import GradInType
 from ldp.llms import LLMModel, append_to_sys
 from tests import CILLMModelNames
 from tests.conftest import VCR_DEFAULT_MATCH_ON

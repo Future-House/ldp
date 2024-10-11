@@ -11,17 +11,24 @@ from aviary.env import DummyEnv
 from aviary.message import Message
 from aviary.tools import Tool, ToolRequestMessage
 
-from ldp.graph.common_ops import ConfigOp, EmbeddingOp, FxnOp, LLMCallOp, PromptOp
-from ldp.graph.gradient_estimators import straight_through_estimator as ste
-from ldp.graph.op_utils import (
+from ldp.graph import (
     CallID,
+    ConfigOp,
+    EmbeddingOp,
+    FxnOp,
+    LLMCallOp,
+    Op,
+    OpCtx,
+    OpResult,
+    PromptOp,
     compute_graph,
     eval_mode,
     get_call_id,
     get_run_id,
     set_training_mode,
 )
-from ldp.graph.ops import GradInType, Op, OpCtx, OpResult, ResultOrValue, TOutput
+from ldp.graph.gradient_estimators import straight_through_estimator as ste
+from ldp.graph.ops import GradInType, ResultOrValue, TOutput
 from ldp.llms import LLMModel, append_to_sys
 
 

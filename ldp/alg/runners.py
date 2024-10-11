@@ -12,8 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ldp.agent import Agent
 from ldp.alg.optimizer import Optimizer
 from ldp.data_structures import Trajectory
-from ldp.graph.op_utils import eval_mode, train_mode
-from ldp.graph.ops import OpResult
+from ldp.graph import OpResult, eval_mode, train_mode
 from ldp.shims import tqdm, trange
 
 from .callbacks import Callback, ClearContextCallback

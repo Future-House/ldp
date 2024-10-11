@@ -3,9 +3,7 @@ from typing import Any, Generic, TypeVar
 
 from aviary.message import Message
 
-from ldp.graph.common_ops import ConfigOp, FxnOp, LLMCallOp
-from ldp.graph.op_utils import compute_graph
-from ldp.graph.ops import OpResult
+from ldp.graph import ConfigOp, FxnOp, LLMCallOp, OpResult, compute_graph
 
 TParsedMessage = TypeVar("TParsedMessage", bound=Message)
 

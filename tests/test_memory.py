@@ -1,6 +1,7 @@
 import pytest
 
-from ldp.graph.memory import Memory, UIndexMemoryModel
+from ldp.graph import Memory
+from ldp.graph.memory import UIndexMemoryModel
 from ldp.llms import EmbeddingModel
 
 
