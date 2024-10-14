@@ -13,14 +13,13 @@ from tenacity import (
     stop_after_attempt,
 )
 
+from ldp.graph import OpResult, compute_graph
 from ldp.graph.modules.react import (
     ACT_DEFAULT_PROMPT_TEMPLATE,
     REACT_DEFAULT_PROMPT_TEMPLATE,
     ReActModule,
     ToolDescriptionMethods,
 )
-from ldp.graph.op_utils import compute_graph
-from ldp.graph.ops import OpResult
 
 from . import DefaultLLMModelNames
 from .agent import Agent

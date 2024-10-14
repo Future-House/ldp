@@ -8,13 +8,13 @@ from typing import Any
 
 import tree
 
-from ldp.graph.op_utils import CallID
-from ldp.graph.ops import GradInType, OpCtx, OpResult, ResultOrValue
+from .op_utils import CallID
+from .ops import GradInType, OpCtx, OpResult, ResultOrValue
 
 try:
     import torch
 
-    from ldp.graph.torch_ops import TorchOp
+    from .torch_ops import TorchOp
 
 except ImportError:
     torch = None  # type: ignore[assignment]

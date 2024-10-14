@@ -12,7 +12,7 @@ from aviary.message import Message, join
 from aviary.tools import ToolRequestMessage, ToolResponseMessage
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
 
-from ldp.graph.ops import OpResult
+from ldp.graph import OpResult
 from ldp.utils import discounted_returns
 
 logger = logging.getLogger(__name__)

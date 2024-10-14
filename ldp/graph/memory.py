@@ -21,9 +21,9 @@ from usearch.index import Index
 from ldp.llms import EmbeddingModel
 
 if TYPE_CHECKING:
-    from ldp.graph.common_ops import MemoryOp
-    from ldp.graph.op_utils import CallID
-    from ldp.graph.ops import Op, OpResult, TOutput
+    from .common_ops import MemoryOp
+    from .op_utils import CallID
+    from .ops import Op, OpResult, TOutput
 
 
 class Memory(BaseModel):

@@ -2,8 +2,7 @@ import numpy as np
 import pytest
 import torch
 
-from ldp.graph.loss_ops import MSELossOp
-from ldp.graph.op_utils import compute_graph
+from ldp.graph import MSELossOp, compute_graph
 
 
 @pytest.mark.asyncio

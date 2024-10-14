@@ -15,13 +15,7 @@ import networkx as nx
 import tree
 from pydantic import BaseModel, Field
 
-from ldp.graph.op_utils import (
-    CallID,
-    compute_graph,
-    get_call_id,
-    get_training_mode,
-    op_call,
-)
+from .op_utils import CallID, compute_graph, get_call_id, get_training_mode, op_call
 
 logger = logging.getLogger(__name__)
 

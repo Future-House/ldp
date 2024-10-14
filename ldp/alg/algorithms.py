@@ -6,7 +6,8 @@ import networkx as nx
 from aviary.message import Message, join
 from aviary.tools import Tool, ToolRequestMessage
 
-from ldp.graph.ops import GradOutType, OpResult
+from ldp.graph import OpResult
+from ldp.graph.ops import GradOutType
 
 
 def to_network(  # noqa: C901

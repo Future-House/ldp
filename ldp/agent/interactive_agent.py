@@ -6,11 +6,10 @@ from aviary.message import Message
 from aviary.tools import Tool, ToolRequestMessage
 from aviary.tools.base import ToolCall
 
-from ldp.agent.agent import Agent
-from ldp.agent.simple_agent import SimpleAgentState
-from ldp.graph.common_ops import IdentityOp
-from ldp.graph.op_utils import compute_graph
-from ldp.graph.ops import OpResult
+from ldp.graph import IdentityOp, OpResult, compute_graph
+
+from .agent import Agent
+from .simple_agent import SimpleAgentState
 
 MISSING_DEFAULT = object()
 CLEAR = "CLEAR"  # Clears the current input and allows the user to start over, e.g. if they made a mistake

@@ -13,9 +13,7 @@ from pydantic import BaseModel
 from ldp.agent import Agent, SimpleAgent, SimpleAgentState
 from ldp.alg import BeamSearchRollout, Callback, RolloutManager, TreeSearchRollout
 from ldp.data_structures import Trajectory, Transition
-from ldp.graph.common_ops import FxnOp
-from ldp.graph.op_utils import compute_graph, set_training_mode
-from ldp.graph.ops import OpResult
+from ldp.graph import FxnOp, OpResult, compute_graph, set_training_mode
 
 
 class DummyEnv(Environment[None]):

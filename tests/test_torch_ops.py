@@ -9,14 +9,13 @@ import pytest
 import torch
 from torch import nn
 
+from ldp.graph import ConfigOp, FxnOp, PromptOp, compute_graph, set_training_mode
 from ldp.graph.async_torch import (
     AsyncTorchModule,
     _get_autocast_context,
     async_protect_torch_call,
 )
-from ldp.graph.common_ops import ConfigOp, FxnOp, PromptOp
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
-from ldp.graph.op_utils import compute_graph, set_training_mode
 from ldp.graph.torch_ops import TorchOp
 
 

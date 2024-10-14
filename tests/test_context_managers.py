@@ -4,8 +4,7 @@ from uuid import UUID
 
 import pytest
 
-from ldp.graph.op_utils import (
-    _RUN_ID,
+from ldp.graph import (
     CallID,
     compute_graph,
     eval_mode,
@@ -16,6 +15,7 @@ from ldp.graph.op_utils import (
     set_training_mode,
     train_mode,
 )
+from ldp.graph.op_utils import _RUN_ID
 
 
 @pytest.mark.asyncio

@@ -4,11 +4,10 @@ from typing import Any
 from aviary.message import Message
 from aviary.tools import ToolRequestMessage
 
-from ldp.graph.common_ops import FxnOp, PromptOp
-from ldp.graph.modules import ParsedLLMCallModule
-from ldp.graph.op_utils import compute_graph
-from ldp.graph.ops import OpResult
+from ldp.graph import FxnOp, OpResult, PromptOp, compute_graph
 from ldp.llms import prepend_sys_and_append_sys
+
+from .llm_call import ParsedLLMCallModule
 
 
 class ThoughtModule:

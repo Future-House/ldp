@@ -11,10 +11,15 @@ from aviary.message import Message
 from aviary.tools import ToolRequestMessage
 from pydantic import ConfigDict, Field
 
-from ldp.graph.common_ops import FxnOp, MemoryOp, PromptOp
-from ldp.graph.memory import Memory, MemoryModel
-from ldp.graph.op_utils import compute_graph
-from ldp.graph.ops import OpResult
+from ldp.graph import (
+    FxnOp,
+    Memory,
+    MemoryModel,
+    MemoryOp,
+    OpResult,
+    PromptOp,
+    compute_graph,
+)
 from ldp.llms.prompts import indent_xml
 
 from .simple_agent import SimpleAgent, SimpleAgentState

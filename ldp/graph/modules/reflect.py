@@ -3,8 +3,7 @@ from typing import Any
 from aviary.message import Message
 from pydantic import BaseModel, Field
 
-from ldp.graph.common_ops import ConfigOp, FxnOp, LLMCallOp, PromptOp
-from ldp.graph.op_utils import compute_graph
+from ldp.graph import ConfigOp, FxnOp, LLMCallOp, PromptOp, compute_graph
 from ldp.graph.ops import ResultOrValue
 from ldp.llms import append_to_sys
 from ldp.llms.prompts import indent_xml

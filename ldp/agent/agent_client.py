@@ -7,8 +7,7 @@ from aviary.message import Message
 from aviary.tools import Messages, Tool, ToolRequestMessage, ToolsAdapter
 from pydantic import BaseModel
 
-from ldp.graph.op_utils import get_training_mode
-from ldp.graph.ops import OpResult
+from ldp.graph import OpResult, get_training_mode
 
 from .agent import Agent
 from .simple_agent import SimpleAgentState

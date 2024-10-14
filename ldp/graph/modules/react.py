@@ -8,11 +8,10 @@ from typing import Any
 from aviary.message import EMPTY_CONTENT_BASE_MSG, MalformedMessageError, Message
 from aviary.tools import Tool, ToolCall, ToolRequestMessage
 
-from ldp.graph.common_ops import FxnOp, PromptOp
-from ldp.graph.modules import ParsedLLMCallModule
-from ldp.graph.op_utils import compute_graph
-from ldp.graph.ops import OpResult
+from ldp.graph import FxnOp, OpResult, PromptOp, compute_graph
 from ldp.llms import prepend_sys
+
+from .llm_call import ParsedLLMCallModule
 
 _DEFAULT_PROMPT_TEMPLATE = textwrap.dedent(
     """    Answer the following questions as best you can. You have access to the following tools:

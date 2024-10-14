@@ -10,7 +10,7 @@ from aviary.message import Message
 from aviary.tools import Tool, ToolRequestMessage
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
-from ldp.graph.ops import Op, OpResult
+from ldp.graph import Op, OpResult
 
 try:
     # So we can skip torch objects when looking for Ops

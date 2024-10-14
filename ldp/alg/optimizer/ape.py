@@ -20,8 +20,7 @@ from pydantic import (
 from ldp.agent import ReActAgent
 from ldp.alg.optimizer.opt import Optimizer
 from ldp.data_structures import Trajectory
-from ldp.graph.common_ops import LLMCallOp, PromptOp
-from ldp.graph.ops import OpResult
+from ldp.graph import LLMCallOp, OpResult, PromptOp
 from ldp.llms import LLMModel, LLMResult
 
 logger = logging.getLogger(__name__)

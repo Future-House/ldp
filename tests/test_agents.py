@@ -26,13 +26,10 @@ from ldp.agent import (
 )
 from ldp.agent.interactive_agent import InteractiveAgent
 from ldp.alg import to_network
-from ldp.graph.common_ops import LLMCallOp
+from ldp.graph import LLMCallOp, Memory, OpResult, eval_mode
 from ldp.graph.gradient_estimators import llm_straight_through_estimator as llm_ste
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
-from ldp.graph.memory import Memory
 from ldp.graph.modules import ReActModule, ToolDescriptionMethods
-from ldp.graph.op_utils import eval_mode
-from ldp.graph.ops import OpResult
 from ldp.llms import LLMModel
 
 from . import CILLMModelNames
