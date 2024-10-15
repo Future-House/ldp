@@ -278,7 +278,7 @@ class RolloutManager:
         agent_state: Any,
         obs: list[Message],
     ) -> Transition:
-        async with self.concurrency_limiter:  # type: ignore[attr-defined]
+        async with self.concurrency_limiter:
             await asyncio.gather(*[
                 callback.before_transition(traj_id, self.agent, env, agent_state, obs)
                 for callback in self.callbacks
