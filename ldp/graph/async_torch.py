@@ -75,8 +75,8 @@ class AsyncBufferedWorker(ABC):
         Args:
             batch_size: The target batch size to use when calling the module. As soon as
                 batch_size calls are made, a forward pass is executed.
-            max_wait_interval: The maximum time to wait for a batch to fill up before
-                executing the calls we have buffered.
+            max_wait_interval: The maximum time (sec) to wait for a batch to fill up
+                before executing the calls we have buffered.
             collate_fn: A function to pre-process a list of inputs into a batch. Defaults to a
                 no-op.
             decollate_fn: Kind of like the opposite of collate_fn. This function should take
@@ -178,10 +178,8 @@ class AsyncTorchModule(AsyncBufferedWorker):
 
         Args:
             module: The PyTorch module to wrap.
-            batch_size: The target batch size to use when calling the module. As soon as
-                batch_size calls are made, a forward pass is executed.
-            max_wait_interval: The maximum time to wait for a batch to fill up before
-                executing the calls we have buffered.
+            batch_size: See parent class.
+            max_wait_interval: See parent class.
             collate_fn: A PyTorch collate function to use when batching inputs. Defaults to
                 the PyTorch default_collate.
             decollate_fn: Kind of like the opposite of collate_fn. This function should take
