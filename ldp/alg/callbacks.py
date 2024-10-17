@@ -1,7 +1,7 @@
+import time
 import json
 import logging
 import os
-import time
 from collections import defaultdict
 from collections.abc import Collection, Iterable, Sequence
 from pathlib import Path
@@ -475,3 +475,55 @@ class LoggingCallback(MeanMetricsCallback):
         await super().after_eval_loop()  # Call the parent to compute means
         if self.eval_means:
             self._log_filtered_metrics(self.eval_means, step_type="Eval")
+
+
+class TerminalLoggingCallback(Callback):
+    """Callback that prints action, observation, and timing information to the terminal."""
+    def __init__(self):
+        self.start_time = None
+        try:
+            from rich.pretty import pprint
+        except ImportError:
+            raise ImportError(
+                "rich is required for TerminalLoggingCallback. Please install it with `pip install rich`."
+            )
+
+    async def before_transition(
+        self,
+        traj_id: str,
+        agent: Agent,
+        env: Environment,
+        agent_state: Any,
+        obs: list[Message],
+    ) -> None:
+        """Start the timer before each transition."""
+        self.start_time = time.time()
+
+    async def after_agent_get_asv(
+        self,
+        traj_id: str,
+        action: OpResult[ToolRequestMessage],
+        next_agent_state: Any,
+        value: float,
+    ) -> None:
+        from rich.pretty import pprint
+        """Print the action after the agent gets action, state, and value."""
+        print("\nAction:")
+        pprint(action.value, expand_all=True)
+
+    async def after_env_step(
+        self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
+    ) -> None:
+        from rich.pretty import pprint
+        """Print the observation and timing information after the environment steps."""
+        # Compute elapsed time
+        if self.start_time is not None:
+            elapsed_time = time.time() - self.start_time
+            self.start_time = None  # Reset timer
+        else:
+            elapsed_time = 0.0
+        # Print the observation
+        print("\nObservation:")
+        pprint(obs, expand_all=True)
+        # Print timing information
+        print(f"Elapsed time: {elapsed_time:.2f} seconds")
