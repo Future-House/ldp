@@ -487,7 +487,7 @@ class TerminalLoggingCallback(Callback):
             from rich.pretty import pprint  # noqa: F401
         except ImportError:
             raise ImportError(
-                "rich is required for TerminalLoggingCallback. Please install it with `pip install rich`."
+                f"rich is required for {type(self).__name__}. Please install it with `pip install rich`."
             )
 
     async def before_transition(
