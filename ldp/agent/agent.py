@@ -84,6 +84,7 @@ class Agent(ABC, Generic[TAgentState]):
     def from_name(cls, name: str, **kwargs) -> Agent:
         return _AGENT_REGISTRY[name](**kwargs)
 
+
 class AgentConfig(BaseModel):
     """Configuration for specifying the type of agent i.e. the subclass of Agent above."""
 

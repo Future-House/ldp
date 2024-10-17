@@ -17,7 +17,7 @@ classifiers = [
 dependencies = [
     "aiofiles",
     "dm-tree",
-    "fhaviary>=0.6",  # For MalformedMessageError
+    "fhaviary>=0.80",  # For from_task
     "httpx",
     "litellm>=1.40.15",  # For LITELLM_LOG addition
     "networkx[default]~=3.4",  # Pin for pydot fix
@@ -317,6 +317,7 @@ ignore = [
     "ARG003",  # Thrown all the time when we are subclassing
     "ASYNC109",  # Buggy, SEE: https://github.com/astral-sh/ruff/issues/12353
     "ASYNC2",  # It's ok to mix async and sync ops (like opening a file)
+    "B904",
     "BLE001",  # Don't care to enforce blind exception catching
     "COM812",  # Trailing comma with black leads to wasting lines
     "D100",  # D100, D101, D102, D103, D104, D105, D106, D107: don't always need docstrings

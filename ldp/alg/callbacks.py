@@ -1,7 +1,7 @@
-import time
 import json
 import logging
 import os
+import time
 from collections import defaultdict
 from collections.abc import Collection, Iterable, Sequence
 from pathlib import Path
@@ -479,10 +479,12 @@ class LoggingCallback(MeanMetricsCallback):
 
 class TerminalLoggingCallback(Callback):
     """Callback that prints action, observation, and timing information to the terminal."""
+
     def __init__(self):
         self.start_time = None
+        # try now, rather than start running and die
         try:
-            from rich.pretty import pprint
+            from rich.pretty import pprint  # noqa: F401
         except ImportError:
             raise ImportError(
                 "rich is required for TerminalLoggingCallback. Please install it with `pip install rich`."
@@ -507,6 +509,7 @@ class TerminalLoggingCallback(Callback):
         value: float,
     ) -> None:
         from rich.pretty import pprint
+
         """Print the action after the agent gets action, state, and value."""
         print("\nAction:")
         pprint(action.value, expand_all=True)
@@ -515,6 +518,7 @@ class TerminalLoggingCallback(Callback):
         self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
     ) -> None:
         from rich.pretty import pprint
+
         """Print the observation and timing information after the environment steps."""
         # Compute elapsed time
         if self.start_time is not None:
