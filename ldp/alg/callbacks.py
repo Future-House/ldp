@@ -509,8 +509,6 @@ class TerminalLoggingCallback(Callback):
         value: float,
     ) -> None:
         from rich.pretty import pprint
-
-        """Print the action after the agent gets action, state, and value."""
         print("\nAction:")
         pprint(action.value, expand_all=True)
 
@@ -518,16 +516,12 @@ class TerminalLoggingCallback(Callback):
         self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
     ) -> None:
         from rich.pretty import pprint
-
-        """Print the observation and timing information after the environment steps."""
         # Compute elapsed time
         if self.start_time is not None:
             elapsed_time = time.time() - self.start_time
             self.start_time = None  # Reset timer
         else:
             elapsed_time = 0.0
-        # Print the observation
         print("\nObservation:")
         pprint(obs, expand_all=True)
-        # Print timing information
         print(f"Elapsed time: {elapsed_time:.2f} seconds")
