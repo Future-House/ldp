@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import pickle
+from contextlib import suppress
 from os import PathLike
 from pathlib import Path
 
@@ -16,10 +17,8 @@ def get_or_make_agent(agent: Agent | str | PathLike) -> Agent:
         return agent
 
     if isinstance(agent, str):
-        try:
+        with suppress(KeyError):
             return Agent.from_name(agent)
-        except KeyError:
-            pass
 
     path = Path(agent)
     if not path.exists():
@@ -34,10 +33,8 @@ def get_or_make_environment(environment: Environment | str, task: str) -> Enviro
         return environment
 
     if isinstance(environment, str):
-        try:
+        with suppress(KeyError):
             return Environment.from_name(environment, task=task)
-        except ValueError:
-            pass
 
     raise ValueError(
         f"Could not resolve environment: {environment}. Available environments: {Environment.available()}"
