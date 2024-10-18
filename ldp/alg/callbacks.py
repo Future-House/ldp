@@ -477,7 +477,7 @@ class LoggingCallback(MeanMetricsCallback):
             self._log_filtered_metrics(self.eval_means, step_type="Eval")
 
 
-class TerminalLoggingCallback(Callback):
+class TerminalPrintingCallback(Callback):
     """Callback that prints action, observation, and timing information to the terminal."""
 
     def __init__(self):
@@ -485,10 +485,10 @@ class TerminalLoggingCallback(Callback):
         # try now, rather than start running and die
         try:
             from rich.pretty import pprint  # noqa: F401
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 f"rich is required for {type(self).__name__}. Please install it with `pip install rich`."
-            )
+            ) from e
 
     async def before_transition(
         self,
@@ -509,6 +509,7 @@ class TerminalLoggingCallback(Callback):
         value: float,
     ) -> None:
         from rich.pretty import pprint
+
         print("\nAction:")
         pprint(action.value, expand_all=True)
 
@@ -516,6 +517,7 @@ class TerminalLoggingCallback(Callback):
         self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
     ) -> None:
         from rich.pretty import pprint
+
         # Compute elapsed time
         if self.start_time is not None:
             elapsed_time = time.time() - self.start_time

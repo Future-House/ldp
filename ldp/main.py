@@ -7,11 +7,11 @@ from pathlib import Path
 from aviary.env import Environment
 
 from ldp.agent import Agent
-from ldp.alg.callbacks import TerminalLoggingCallback
+from ldp.alg.callbacks import TerminalPrintingCallback
 from ldp.alg.rollout import RolloutManager
 
 
-def agent_factory(agent: Agent | str | PathLike) -> Agent:
+def get_or_make_agent(agent: Agent | str | PathLike) -> Agent:
     if isinstance(agent, Agent):
         return agent
 
@@ -29,7 +29,7 @@ def agent_factory(agent: Agent | str | PathLike) -> Agent:
         return pickle.load(f)  # noqa: S301
 
 
-def environment_factory(environment: Environment | str, task: str) -> Environment:
+def get_or_make_environment(environment: Environment | str, task: str) -> Environment:
     if isinstance(environment, Environment):
         return environment
 
@@ -49,13 +49,13 @@ async def main(
     environment: Environment | str,
     agent: Agent | str | PathLike = "SimpleAgent",
 ):
-    agent = agent_factory(agent)
+    agent = get_or_make_agent(agent)
 
-    callback = TerminalLoggingCallback()
+    callback = TerminalPrintingCallback()
     rollout_manager = RolloutManager(agent=agent, callbacks=[callback])
 
     _ = await rollout_manager.sample_trajectories(
-        environment_factory=lambda: environment_factory(environment, task)
+        environment_factory=lambda: get_or_make_environment(environment, task)
     )
 
 
