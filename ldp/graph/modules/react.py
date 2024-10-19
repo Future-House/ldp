@@ -57,22 +57,6 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
 )
 
 
-class ToolDescriptionMethods(StrEnum):
-    """Possible methods of describing the tools."""
-
-    STR = "describe_str"
-    XML = "describe_xml"
-    JSON = "describe_json"
-
-    def get_prompt_prefix(self) -> str:
-        """Get the prefix to put in front of the prompt."""
-        if self == self.STR:
-            return ""
-        if self == self.JSON:
-            return "Tools are specified with a JSON schema."
-        return "Tools are specified with an XML schema."
-
-
 def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:  # noqa: C901
     """
     Parse an Act or ReAct Message into a ToolRequestMessage.
@@ -175,6 +159,22 @@ def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:  # noqa:
         content=thought.group(1) if thought else None,
         tool_calls=[ToolCall.from_tool(tool, *action_args)],
     )
+
+
+class ToolDescriptionMethods(StrEnum):
+    """Possible methods of describing the tools."""
+
+    STR = "describe_str"
+    XML = "describe_xml"
+    JSON = "describe_json"
+
+    def get_prompt_prefix(self) -> str:
+        """Get the prefix to put in front of the prompt."""
+        if self == self.STR:
+            return ""
+        if self == self.JSON:
+            return "Tools are specified with a JSON schema."
+        return "Tools are specified with an XML schema."
 
 
 class ReActModule:
