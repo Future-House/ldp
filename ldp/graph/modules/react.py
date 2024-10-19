@@ -1,17 +1,13 @@
-import ast
-import re
 import textwrap
 from collections.abc import Iterable
 from enum import StrEnum
 from typing import Any, cast
 
-from aviary.message import EMPTY_CONTENT_BASE_MSG, MalformedMessageError, Message
-from aviary.tools import Tool, ToolCall, ToolRequestMessage
+from aviary.message import Message
+from aviary.tools import Tool, ToolRequestMessage
 
 from ldp.graph import FxnOp, LLMCallOp, OpResult, PromptOp, compute_graph
 from ldp.llms import prepend_sys
-
-from .llm_call import ParsedLLMCallModule
 
 _DEFAULT_PROMPT_TEMPLATE = textwrap.dedent(
     """    Answer the following questions as best you can. You have access to the following tools:
@@ -55,110 +51,6 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
         "\nObservation: The 7 day forecast for New York is [...]"
     ),
 )
-
-
-def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:  # noqa: C901
-    """
-    Parse an Act or ReAct Message into a ToolRequestMessage.
-
-    Args:
-        m: Input raw message.
-        tools: Tools used to confirm a valid tool selection
-
-    Returns:
-        Parsed ToolRequestMessage.
-    """
-    if not m.content:
-        raise MalformedMessageError(
-            f"{EMPTY_CONTENT_BASE_MSG} of type {type(m).__name__}."
-        )
-
-    message_content = m.content
-    # strip (and overwrite) up to end of action input
-    loc = message_content.find("Action Input:")
-    if loc != -1:
-        loc = message_content.find("\n", loc)
-        message_content = message_content[: loc if loc > 0 else None]
-    # we need to override the message too - don't want the model to hallucinate
-    m.content = message_content
-
-    action_args: tuple[Any, ...] = ()
-    # https://regex101.com/r/qmqZ7Z/1
-    action_input = re.search(r"Input:[ \t]*([ \S]*)", m.content)
-    # only parse if it takes arguments
-    if action_input and action_input.group(1).strip():
-        input_str = action_input.group(1).strip()
-        # if it has commas and no quotes, it's almost certainly a tuple without
-        # parentheses, so we add them
-        if "," in input_str and not (
-            input_str.startswith("(") and input_str.endswith(")")
-        ):
-            input_str = f"({input_str})"
-        try:
-            if input_str.startswith("(") and input_str.endswith(")"):
-                # Handle tuples and quoted strings inside
-                if '"' not in input_str and "'" not in input_str:
-                    # Add quotes around each element within parentheses if they are not already quoted
-                    # and if they are not purely numbers. There may exist a killer regex for this
-                    # but I am a simple man
-
-                    # just catches things like "1.1".isnumeric() == False
-                    # so we can't just use isnumeric
-                    def is_number(s: str) -> bool:
-                        try:
-                            float(s)
-                        except ValueError:
-                            return False
-                        return True
-
-                    input_str = ", ".join(
-                        f'"{e.strip()}"' if not is_number(e) else str(e)
-                        for e in input_str.strip("()").split(",")
-                        if e.strip()
-                    )
-                    input_str = f"({input_str})"
-                eval_result = ast.literal_eval(input_str)
-                action_args = (
-                    (eval_result,)
-                    if not isinstance(eval_result, tuple)
-                    else eval_result
-                )
-            else:
-                # Convert to int or float if possible
-                try:
-                    action_args = (ast.literal_eval(input_str),)
-                except (ValueError, SyntaxError):
-                    action_args = (input_str,)
-        except Exception as exc:
-            raise MalformedMessageError(
-                f"Action Input {input_str} could not be parsed."
-            ) from exc
-
-        if len(action_args) == 1 and isinstance(action_args[0], tuple):
-            action_args = action_args[0]
-
-    action = re.search(r"Action:[ \t]*(\S*)", m.content)
-    if not action:
-        raise MalformedMessageError("Action not emitted.")
-    tool_name = action.group(1).strip()
-    # have to match up name to tool to line up args in order
-    try:
-        tool = next(t for t in tools if t.info.name == tool_name)
-    except StopIteration as exc:
-        raise MalformedMessageError(f"Tool {tool_name} not found in tools.") from exc
-    if len(action_args) < len(tool.info.parameters.required):
-        raise MalformedMessageError(
-            f"Action Input {action_args!r} shorter than {tool.info.name!r} tool's"
-            " parameters."
-        )
-
-    # Anecdotally we've observed thought also often captures the action
-    # NOTE: for Act agents there is no Thought, so the regex will return None
-    thought = re.search(r"Thought:[ \t]*(.*)", m.content)
-    return ToolRequestMessage(
-        content=thought.group(1) if thought else None,
-        tool_calls=[ToolCall.from_tool(tool, *action_args)],
-    )
 
 
 class ToolDescriptionMethods(StrEnum):
@@ -210,10 +102,6 @@ class ReActModule:
     ...
     """
 
-    @staticmethod
-    def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:
-        return parse_message(m, tools)
-
     async def _create_system_prompt(self, tools: list[Tool]) -> OpResult[str]:
         tool_info = "\n".join([
             getattr(t.info, self._tool_description_method)() for t in tools
@@ -238,21 +126,16 @@ class ReActModule:
         llm_model["stop"] = ["Observation:"]
         self.llm_config = llm_model
         self.package_msg_op = FxnOp(prepend_sys)
-        self._llm_call_op = LLMCallOp()
-        self.tool_select_module = ParsedLLMCallModule[ToolRequestMessage](
-            llm_model=llm_model, parser=self.parse_message
-        )
+        self.llm_call_op = LLMCallOp()
 
     @compute_graph()
     async def __call__(
-        self,
-        messages: Iterable[Message],
-        tools: list[Tool],
+        self, messages: Iterable[Message], tools: list[Tool]
     ) -> tuple[OpResult[ToolRequestMessage], Message]:
         packaged_msgs = await self.package_msg_op(
             messages, sys_content=await self._create_system_prompt(tools)
         )
-        react_message = await self._llm_call_op(
+        react_message = await self.llm_call_op(
             self.llm_config,
             msgs=packaged_msgs.value,
             tools=tools,
@@ -265,7 +148,7 @@ class ReActModule:
             role="assistant",
         )
         packaged_msgs.value.append(assistant_message)
-        tool_selection = await self._llm_call_op(
+        tool_selection = await self.llm_call_op(
             self.llm_config, msgs=packaged_msgs.value, tools=tools
         )
         return cast(OpResult[ToolRequestMessage], tool_selection), assistant_message

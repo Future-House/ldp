@@ -162,7 +162,7 @@ class APEOpt(BaseModel, Optimizer):
     @classmethod
     def from_agent(cls, agent: ReActAgent, **kwargs) -> Self:
         return cls(
-            llm_call_op=agent._react_module.tool_select_module.llm_call_op,
+            llm_call_op=agent._react_module.llm_call_op,
             prompt_op=agent._react_module.prompt_op,
             **kwargs,
         )
