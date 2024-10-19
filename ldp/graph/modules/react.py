@@ -3,12 +3,12 @@ import re
 import textwrap
 from collections.abc import Iterable
 from enum import StrEnum
-from typing import Any
+from typing import Any, cast
 
 from aviary.message import EMPTY_CONTENT_BASE_MSG, MalformedMessageError, Message
 from aviary.tools import Tool, ToolCall, ToolRequestMessage
 
-from ldp.graph import FxnOp, OpResult, PromptOp, compute_graph
+from ldp.graph import FxnOp, LLMCallOp, OpResult, PromptOp, compute_graph
 from ldp.llms import prepend_sys
 
 from .llm_call import ParsedLLMCallModule
@@ -55,6 +55,22 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
         "\nObservation: The 7 day forecast for New York is [...]"
     ),
 )
+
+
+class ToolDescriptionMethods(StrEnum):
+    """Possible methods of describing the tools."""
+
+    STR = "describe_str"
+    XML = "describe_xml"
+    JSON = "describe_json"
+
+    def get_prompt_prefix(self) -> str:
+        """Get the prefix to put in front of the prompt."""
+        if self == self.STR:
+            return ""
+        if self == self.JSON:
+            return "Tools are specified with a JSON schema."
+        return "Tools are specified with an XML schema."
 
 
 def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:  # noqa: C901
@@ -161,22 +177,6 @@ def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:  # noqa:
     )
 
 
-class ToolDescriptionMethods(StrEnum):
-    """Possible methods of describing the tools."""
-
-    STR = "describe_str"
-    XML = "describe_xml"
-    JSON = "describe_json"
-
-    def get_prompt_prefix(self) -> str:
-        """Get the prefix to put in front of the prompt."""
-        if self == self.STR:
-            return ""
-        if self == self.JSON:
-            return "Tools are specified with a JSON schema."
-        return "Tools are specified with an XML schema."
-
-
 class ReActModule:
     """An Act or ReAct module built to work with chat models.
 
@@ -236,16 +236,36 @@ class ReActModule:
         self.prompt_op = PromptOp(sys_prompt)
         self._tool_description_method = tool_description_method
         llm_model["stop"] = ["Observation:"]
+        self.llm_config = llm_model
         self.package_msg_op = FxnOp(prepend_sys)
+        self._llm_call_op = LLMCallOp()
         self.tool_select_module = ParsedLLMCallModule[ToolRequestMessage](
             llm_model=llm_model, parser=self.parse_message
         )
 
     @compute_graph()
     async def __call__(
-        self, messages: Iterable[Message], tools: list[Tool]
+        self,
+        messages: Iterable[Message],
+        tools: list[Tool],
     ) -> tuple[OpResult[ToolRequestMessage], Message]:
         packaged_msgs = await self.package_msg_op(
             messages, sys_content=await self._create_system_prompt(tools)
         )
-        return await self.tool_select_module(packaged_msgs, tools=tools)  # type: ignore[arg-type]
+        react_message = await self._llm_call_op(
+            self.llm_config,
+            msgs=packaged_msgs.value,
+            tools=tools,
+            tool_choice="none",
+        )
+        assistant_message = Message(
+            content="[reasoning] . Based on this reasoning, let's select the appropiate tool!".replace(
+                "[reasoning]", react_message.value.content or ""
+            ),
+            role="assistant",
+        )
+        packaged_msgs.value.append(assistant_message)
+        tool_selection = await self._llm_call_op(
+            self.llm_config, msgs=packaged_msgs.value, tools=tools
+        )
+        return cast(OpResult[ToolRequestMessage], tool_selection), assistant_message

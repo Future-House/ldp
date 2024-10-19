@@ -1,17 +1,9 @@
 import logging
-from typing import Any, Self, cast
+from typing import Any, Self
 
-from aviary.message import MalformedMessageError, Message
+from aviary.message import Message
 from aviary.tools import Tool, ToolRequestMessage, ToolResponseMessage
 from pydantic import BaseModel, ConfigDict, Field
-from tenacity import (
-    Future,
-    RetryCallState,
-    before_sleep_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-)
 
 from ldp.graph import OpResult, compute_graph
 from ldp.graph.modules.react import (
@@ -102,22 +94,6 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:
         return SimpleAgentState(tools=tools)
 
-    @staticmethod
-    def after_retry_failure_log(retry_state: RetryCallState):
-        logger.error(
-            f"Failed across {retry_state.attempt_number} attempts to run get_asv given"
-            f" arguments {retry_state.args} and kwargs {retry_state.kwargs}."
-        )
-        # NOTE: this blows up with the underlying exception... it isn't wrapped in a
-        # RetryError like normal tenacity
-        return cast(Future, retry_state.outcome).result()
-
-    @retry(
-        retry=retry_if_exception_type(MalformedMessageError),
-        before_sleep=before_sleep_log(logger, logging.WARNING),
-        stop=stop_after_attempt(5),
-        retry_error_callback=after_retry_failure_log,
-    )
     @compute_graph()
     async def get_asv(
         self, agent_state: SimpleAgentState, obs: list[Message]
@@ -130,7 +106,6 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
                 for m in obs
             ]
         )
-
         final_result, react_message = await self._react_module(
             messages=next_state.messages, tools=next_state.tools
         )
