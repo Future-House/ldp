@@ -15,6 +15,7 @@ class ParsedLLMCallModule(Generic[TParsedMessage]):
         self, llm_model: dict[str, Any], parser: Callable[..., TParsedMessage]
     ):
         self.config_op = ConfigOp[dict](config=llm_model)
+        self.llm_model = llm_model
         self.llm_call_op = LLMCallOp()
         self.parse_msg_op = FxnOp(parser)
 
@@ -22,7 +23,18 @@ class ParsedLLMCallModule(Generic[TParsedMessage]):
     async def __call__(
         self, messages: Iterable[Message], *parse_args, **parse_kwargs
     ) -> tuple[OpResult[TParsedMessage], Message]:
-        raw_result = await self.llm_call_op(await self.config_op(), msgs=messages)
+        if "LocalLLMCallOp" in self.llm_call_op.__class__.__name__:
+            print(f"STARTING A CALL TO MODEL ======================= with {len(messages.value)} messages")
+            for i, message in enumerate(messages.value[1:], start=1):
+                print(f"message{i}: {message.content}")
+            print(f"END OF MESSAGES =======================")
+            raw_result = await self.llm_call_op(
+                xi=messages,
+                temperature=self.llm_model["temperature"],
+                max_new_tokens=self.llm_model["max_new_tokens"],
+            )
+        else:
+            raw_result = await self.llm_call_op(await self.config_op(), msgs=messages)
         return await self.parse_msg_op(
             raw_result, *parse_args, **parse_kwargs
         ), raw_result.value
