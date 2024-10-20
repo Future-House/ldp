@@ -133,14 +133,14 @@ class ReActModule:
         sys_prompt: str = REACT_DEFAULT_PROMPT_TEMPLATE,
         tool_description_method: ToolDescriptionMethods = ToolDescriptionMethods.STR,
     ):
-        self.prompt_op = PromptOp(sys_prompt)
-        self.tool_selection_msg_op = FxnOp(generate_tool_selection_prompt)
         self._tool_description_method = tool_description_method
         llm_model["stop"] = ["Observation:"]
         self.llm_config = llm_model
+        self.llm_call_op = LLMCallOp()
+        self.prompt_op = PromptOp(sys_prompt)
         self.package_msg_op = FxnOp(prepend_sys)
         self.append_msg_op = FxnOp(append_to_messages)
-        self.llm_call_op = LLMCallOp()
+        self.tool_selection_msg_op = FxnOp(generate_tool_selection_prompt)
 
     @compute_graph()
     async def __call__(
