@@ -51,9 +51,18 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
         "\nObservation: The 7 day forecast for New York is [...]"
     ),
 )
-_REASONING_TEMPLATE = textwrap.dedent("""
-    {reasoning}. Based on this reasoning, let's select the appropriate tool!
-""")
+
+
+def generate_tool_selection_prompt(react_message) -> Message:
+    reasoning_template = textwrap.dedent("""
+        {reasoning}. Based on this reasoning, let's select the appropriate tool!
+    """)
+
+    # Prepare the content using the template and provided arguments
+    content = reasoning_template.format(reasoning=react_message.content or "")
+
+    # Return the formatted Message
+    return Message(content=content, role="assistant")
 
 
 class ToolDescriptionMethods(StrEnum):
@@ -125,6 +134,7 @@ class ReActModule:
         tool_description_method: ToolDescriptionMethods = ToolDescriptionMethods.STR,
     ):
         self.prompt_op = PromptOp(sys_prompt)
+        self.tool_selection_msg_op = FxnOp(generate_tool_selection_prompt)
         self._tool_description_method = tool_description_method
         llm_model["stop"] = ["Observation:"]
         self.llm_config = llm_model
@@ -139,23 +149,24 @@ class ReActModule:
         packaged_msgs = await self.package_msg_op(
             messages, sys_content=await self._create_system_prompt(tools)
         )
-        react_message = await self.llm_call_op(
+        # Ask the LLM to do the reasoning
+        reasoning_msg = await self.llm_call_op(
             self.llm_config,
             msgs=packaged_msgs,
             tools=tools,
             tool_choice="none",
         )
-        assistant_message = Message(
-            content=_REASONING_TEMPLATE.format(
-                reasoning=react_message.value.content or ""
+        # Add the reasoning to messages. Generate the tool selection prompt
+        packaged_msgs_with_reasoning = await self.package_msg_op(
+            await self.append_msg_op(
+                messages, await self.tool_selection_msg_op(reasoning_msg)
             ),
-            role="assistant",
-        )
-        updated_packaged_msgs = await self.package_msg_op(
-            await self.append_msg_op(messages, assistant_message),
             sys_content=await self._create_system_prompt(tools),
         )
-        tool_selection = await self.llm_call_op(
-            self.llm_config, msgs=updated_packaged_msgs, tools=tools
+        # Ask the LLM to select the tool
+        tool_selection_msg = await self.llm_call_op(
+            self.llm_config, msgs=packaged_msgs_with_reasoning, tools=tools
         )
-        return cast(OpResult[ToolRequestMessage], tool_selection), assistant_message
+        return cast(
+            OpResult[ToolRequestMessage], tool_selection_msg
+        ), reasoning_msg.value
