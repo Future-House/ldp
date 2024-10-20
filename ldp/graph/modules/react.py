@@ -7,7 +7,7 @@ from aviary.message import Message
 from aviary.tools import Tool, ToolRequestMessage
 
 from ldp.graph import FxnOp, LLMCallOp, OpResult, PromptOp, compute_graph
-from ldp.llms import prepend_sys
+from ldp.llms import append_to_messages, prepend_sys
 
 _DEFAULT_PROMPT_TEMPLATE = textwrap.dedent(
     """    Answer the following questions as best you can. You have access to the following tools:
@@ -51,6 +51,9 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
         "\nObservation: The 7 day forecast for New York is [...]"
     ),
 )
+_REASONING_TEMPLATE = textwrap.dedent("""
+    {reasoning}. Based on this reasoning, let's select the appropriate tool!
+""")
 
 
 class ToolDescriptionMethods(StrEnum):
@@ -126,6 +129,7 @@ class ReActModule:
         llm_model["stop"] = ["Observation:"]
         self.llm_config = llm_model
         self.package_msg_op = FxnOp(prepend_sys)
+        self.append_msg_op = FxnOp(append_to_messages)
         self.llm_call_op = LLMCallOp()
 
     @compute_graph()
@@ -137,18 +141,21 @@ class ReActModule:
         )
         react_message = await self.llm_call_op(
             self.llm_config,
-            msgs=packaged_msgs.value,
+            msgs=packaged_msgs,
             tools=tools,
             tool_choice="none",
         )
         assistant_message = Message(
-            content="[reasoning] . Based on this reasoning, let's select the appropiate tool!".replace(
-                "[reasoning]", react_message.value.content or ""
+            content=_REASONING_TEMPLATE.format(
+                reasoning=react_message.value.content or ""
             ),
             role="assistant",
         )
-        packaged_msgs.value.append(assistant_message)
+        updated_packaged_msgs = await self.package_msg_op(
+            await self.append_msg_op(messages, assistant_message),
+            sys_content=await self._create_system_prompt(tools),
+        )
         tool_selection = await self.llm_call_op(
-            self.llm_config, msgs=packaged_msgs.value, tools=tools
+            self.llm_config, msgs=updated_packaged_msgs, tools=tools
         )
         return cast(OpResult[ToolRequestMessage], tool_selection), assistant_message
