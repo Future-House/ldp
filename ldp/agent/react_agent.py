@@ -2,7 +2,7 @@ import logging
 from typing import Any, Self
 
 from aviary.message import Message
-from aviary.tools import Tool, ToolRequestMessage, ToolResponseMessage
+from aviary.tools import Tool, ToolRequestMessage
 from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.graph import OpResult, compute_graph
@@ -99,15 +99,10 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         self, agent_state: SimpleAgentState, obs: list[Message]
     ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
         next_state = agent_state.get_next_state(
-            obs=[
-                Message(content=f"Observation: {m.content}")
-                if isinstance(m, ToolResponseMessage)
-                else m
-                for m in obs
-            ]
+            obs=obs,
         )
         final_result, react_message = await self._react_module(
             messages=next_state.messages, tools=next_state.tools
         )
-        next_state.messages = [*next_state.messages, react_message]
+        next_state.messages = [*next_state.messages, react_message, final_result.value]
         return final_result, next_state, 0.0

@@ -54,15 +54,11 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
 
 
 def generate_tool_selection_prompt(react_message) -> Message:
-    reasoning_template = textwrap.dedent("""
-        {reasoning}. Based on this reasoning, let's select the appropriate tool!
-    """)
-
-    # Prepare the content using the template and provided arguments
-    content = reasoning_template.format(reasoning=react_message.content or "")
-
-    # Return the formatted Message
-    return Message(content=content, role="assistant")
+    reasoning = react_message.content or ""
+    return Message(
+        content=f"{reasoning}. Based on this reasoning, let's select the appropriate tool!",
+        role="assistant",
+    )
 
 
 class ToolDescriptionMethods(StrEnum):
