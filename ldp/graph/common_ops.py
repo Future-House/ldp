@@ -209,9 +209,6 @@ class LLMCallOp(Op[Message]):
 
     def __init__(self, num_samples_logprob_estimate: int = 0) -> None:
         super().__init__()
-        # Trainable is metadata that an optimizer can use this. It enables things
-        # like (remote) fine-tuning with OpenAI
-        self.trainable: bool = False
         self.num_samples_partition_estimate = num_samples_logprob_estimate
 
     @overload
