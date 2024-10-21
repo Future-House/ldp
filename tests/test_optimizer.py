@@ -180,8 +180,13 @@ class NumberGuesserModule:
     def _package(mems: Iterable[Memory], query: str) -> list[Message]:
         itemized_mems = "\n\n".join(str(m) for m in mems)
         return [
-            Message(content="Guess a number based on the input word."),
-            Message(content=f"Previous attempts:\n{itemized_mems}\n-----\n\n{query}"),
+            Message(
+                content=(
+                    "Guess a number based on the input word, and make sure the response"
+                    " only contains the guessed number."
+                )
+            ),
+            Message(content=f"Previous memories:\n{itemized_mems}\n-----\n\n{query}"),
         ]
 
     async def __call__(self, query: str) -> tuple[OpResult[str], list[Message]]:
