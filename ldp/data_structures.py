@@ -126,6 +126,7 @@ class Trajectory(BaseModel):
         return traj
 
     def compute_discounted_returns(self, discount: float = 1.0) -> list[float]:
+        """Compute the discounted returns for each step in the trajectory."""
         return discounted_returns(
             rewards=[step.reward for step in self.steps],
             terminated=[step.truncated for step in self.steps],

@@ -80,6 +80,10 @@ class Agent(ABC, Generic[TAgentState]):
         """Analogous to torch.nn.Module.named_parameters()."""
         return _find_ops(self)
 
+    @classmethod
+    def from_name(cls, name: str, **kwargs) -> Agent:
+        return _AGENT_REGISTRY[name](**kwargs)
+
 
 class AgentConfig(BaseModel):
     """Configuration for specifying the type of agent i.e. the subclass of Agent above."""
@@ -96,7 +100,7 @@ class AgentConfig(BaseModel):
     )
 
     def construct_agent(self) -> Agent:
-        return _AGENT_REGISTRY[self.agent_type](**self.agent_kwargs)
+        return Agent.from_name(self.agent_type, **self.agent_kwargs)
 
     def __hash__(self) -> int:
         return hash(self.agent_type + json.dumps(self.agent_kwargs, sort_keys=True))
