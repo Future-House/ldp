@@ -126,6 +126,8 @@ def set_training_mode(training_mode: bool) -> None:
 
 
 class _TrainingModeContext:
+    """Automatically set and reset the training_mode with a context manager."""
+
     def __init__(self, training_mode: bool):
         self.training_mode = training_mode
         self.prev_training_mode = get_training_mode()
@@ -148,17 +150,17 @@ class _TrainingModeContext:
 
         return wrapper
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.prev_training_mode = get_training_mode()
         set_training_mode(self.training_mode)
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
         set_training_mode(self.prev_training_mode)
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> None:
         self.__enter__()
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
+    async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         self.__exit__(exc_type, exc_value, traceback)
 
 
