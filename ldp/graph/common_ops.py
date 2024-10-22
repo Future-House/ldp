@@ -319,10 +319,9 @@ class LLMCallOp(Op[Message]):
         # tree.map_structure allows us to assign a gradient of 0 to all fields of config
         grad_config = tree.map_structure(lambda _: 0.0, input_kwargs["config"])
         grad_kwargs = {"config": grad_config}
-        if "msgs" in input_kwargs:
-            grad_kwargs["msgs"] = 0.0
-        if "tools" in input_kwargs:
-            grad_kwargs["tools"] = 0.0
+        for arg in ("msgs", "tools", "tool_choice"):
+            if arg in input_kwargs:
+                grad_kwargs[arg] = 0.0
 
         return [], grad_kwargs
 
