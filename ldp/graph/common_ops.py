@@ -241,6 +241,11 @@ class LLMCallOp(Op[Message]):
     ) -> Message:
         model = LLMModel(config=config)
 
+        # HACK: vllm does not support 'required' and this is not easily exposed in the agent.
+        api_base = config.get("api_base")
+        if api_base and any(x in api_base for x in ("localhost", "0.0.0.0")):  # noqa: S104
+            tool_choice = "auto"
+
         result = await model.call(messages=msgs, tools=tools, tool_choice=tool_choice)
         if result.messages is None:
             raise ValueError("No messages returned")
