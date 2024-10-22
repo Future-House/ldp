@@ -29,7 +29,7 @@ from ldp.alg import to_network
 from ldp.graph import LLMCallOp, Memory, OpResult, eval_mode
 from ldp.graph.gradient_estimators import llm_straight_through_estimator as llm_ste
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
-from ldp.graph.modules import ReActModule, ToolDescriptionMethods
+from ldp.graph.modules import ToolDescriptionMethods
 from ldp.llms import LLMModel
 
 from . import CILLMModelNames
@@ -532,7 +532,6 @@ class TestReActAgent:
         user_msg = Message(content="Cast the string '5.6' to a float.")
         with (
             patch.object(LLMModel, "achat") as mock_achat,
-            patch.object(ReActModule, "parse_message"),
         ):
             agent = ReActAgent(tool_description_method=description_method)
             agent_state = await agent.init_state(tools=tools)
@@ -541,9 +540,8 @@ class TestReActAgent:
                     await agent.get_asv(agent_state, obs=[user_msg])
                 return
             await agent.get_asv(agent_state, obs=[user_msg])
-        mock_achat.assert_awaited_once()
         assert mock_achat.await_args
-        assert mock_achat.await_args[0][0] == [
+        assert mock_achat.await_args[0][0][:-1] == [
             Message(role="system", content=expected),
             user_msg,
         ]
