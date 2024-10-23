@@ -309,6 +309,9 @@ class OfflineTrainer:
         full_batch = len(self.train_trajectories) <= self.config.batch_size
 
         if full_batch:
+            # Separating out the full batch case lets the user run a single update()
+            # step even if train_trajectories is empty. This can be useful if the
+            # optimizer is pre-populated with offline training data, for example.
             batch = self.train_trajectories
 
             self.optimizer.aggregate(batch, show_pbar=True)
