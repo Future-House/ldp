@@ -103,6 +103,8 @@ def llm_straight_through_estimator(
         grad_kwargs["msgs"] = grad_output
     if "tools" in input_kwargs:
         grad_kwargs["tools"] = grad_output
+    if "tool_choice" in input_kwargs:
+        grad_kwargs["tool_choice"] = grad_output
 
     return grad_args, grad_kwargs
 
