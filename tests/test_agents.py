@@ -294,11 +294,15 @@ class TestMemoryAgent:
 
 class TestReActAgent:
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-4-turbo"]
+        ("single_prompt", "model_name"),
+        [
+            (True, CILLMModelNames.ANTHROPIC.value),
+            (True, "gpt-4-turbo"),
+            (False, "gpt-4o"),
+        ],
     )
-    @pytest.mark.parametrize("single_prompt", [True, False])
     @pytest.mark.asyncio
-    # @pytest.mark.vcr
+    @pytest.mark.vcr
     async def test_react_dummyenv(
         self, dummy_env: DummyEnv, model_name: str, single_prompt: bool
     ) -> None:
@@ -372,9 +376,13 @@ class TestReActAgent:
                 obj = getattr(obj, op)
             assert getattr(obj, op_name).name == expected
 
-    @pytest.mark.parametrize("single_prompt", [True, False])
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-4-turbo"]
+        ("single_prompt", "model_name"),
+        [
+            (True, CILLMModelNames.ANTHROPIC.value),
+            (True, "gpt-4-turbo"),
+            (False, "gpt-4o"),
+        ],
     )
     @pytest.mark.asyncio
     @pytest.mark.vcr
