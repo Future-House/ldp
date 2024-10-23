@@ -45,7 +45,7 @@ def fixture_mock_tools() -> list[Tool]:
 class TestReActModule:
     @pytest.mark.asyncio
     @pytest.mark.parametrize("single_prompt", [True, False])
-    async def test_templating(self, dummy_env: DummyEnv, single_prompt) -> None:
+    async def test_templating(self, dummy_env: DummyEnv, single_prompt: bool) -> None:
         obs, tools = await dummy_env.reset()
         if single_prompt:
             module = ReActModuleSinglePrompt(
