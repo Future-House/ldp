@@ -306,30 +306,47 @@ class OfflineTrainer:
     async def train(self) -> None:
         random.shuffle(self.train_trajectories)
 
-        for training_step, i_batch_start in enumerate(
-            trange(
-                0,
-                len(self.train_trajectories),
-                self.config.batch_size,
-                desc="Training iterations",
-                ncols=0,
-            )
-        ):
-            batch = self.train_trajectories[
-                i_batch_start : i_batch_start + self.config.batch_size
-            ]
+        full_batch = len(self.train_trajectories) <= self.config.batch_size
 
-            # Only show the progress bar if we are doing full-batch optimization
-            self.optimizer.aggregate(
-                batch, show_pbar=len(self.train_trajectories) <= self.config.batch_size
-            )
+        if full_batch:
+            # Separating out the full batch case lets the user run a single update()
+            # step even if train_trajectories is empty. This can be useful if the
+            # optimizer is pre-populated with offline training data, for example.
+            batch = self.train_trajectories
 
-            if (training_step + 1) % self.config.update_every == 0:
-                await self.optimizer.update()
-                await asyncio.gather(*[
-                    callback.after_update() for callback in self.callbacks
-                ])
+            self.optimizer.aggregate(batch, show_pbar=True)
+            await self.optimizer.update()
+
+            await asyncio.gather(*[
+                callback.after_update() for callback in self.callbacks
+            ])
 
             await asyncio.gather(*[
                 callback.after_train_step(batch) for callback in self.callbacks
             ])
+
+        else:
+            for training_step, i_batch_start in enumerate(
+                trange(
+                    0,
+                    len(self.train_trajectories),
+                    self.config.batch_size,
+                    desc="Training Iterations",
+                    ncols=0,
+                )
+            ):
+                batch = self.train_trajectories[
+                    i_batch_start : i_batch_start + self.config.batch_size
+                ]
+
+                self.optimizer.aggregate(batch)
+
+                if (training_step + 1) % self.config.update_every == 0:
+                    await self.optimizer.update()
+                    await asyncio.gather(*[
+                        callback.after_update() for callback in self.callbacks
+                    ])
+
+                await asyncio.gather(*[
+                    callback.after_train_step(batch) for callback in self.callbacks
+                ])
