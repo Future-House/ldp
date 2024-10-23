@@ -138,15 +138,12 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
     async def get_asv(
         self, agent_state: SimpleAgentState, obs: list[Message]
     ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+        obs = obs.copy()  # Keep original obs, as we edit the content below
         if self.single_prompt:
-            obs = [
-                Message(content=f"Observation: {m.content}")
-                if isinstance(m, ToolResponseMessage)
-                else m
-                for m in obs
-            ]
+            for i, m in enumerate(obs):
+                if isinstance(m, ToolResponseMessage):
+                    obs[i] = Message(content=f"Observation: {m.content}")
         else:
-            obs = obs.copy()  # Keep original obs, as we edit the content below
             for m in obs:
                 if isinstance(m, ToolResponseMessage):
                     m.content = f"Observation: {m.content}"

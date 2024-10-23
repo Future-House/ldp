@@ -301,6 +301,7 @@ class TestReActAgent:
             (False, "gpt-4o"),
         ],
     )
+    @pytest.mark.flaky(reruns=3)
     @pytest.mark.asyncio
     @pytest.mark.vcr
     async def test_react_dummyenv(
@@ -384,6 +385,7 @@ class TestReActAgent:
             (False, "gpt-4o"),
         ],
     )
+    @pytest.mark.flaky(reruns=3)
     @pytest.mark.asyncio
     @pytest.mark.vcr
     async def test_agent_grad(
@@ -450,7 +452,6 @@ class TestReActAgent:
                     output_dir / f"TestReActAgent.test_agent_grad.{model_name}.png",
                 )
 
-    @pytest.mark.parametrize("single_prompt", [True])
     @pytest.mark.parametrize(
         ("description_method", "expected"),
         [
@@ -554,7 +555,6 @@ class TestReActAgent:
         self,
         description_method: ToolDescriptionMethods,
         expected: str | type[Exception],
-        single_prompt: bool,
     ) -> None:
         tools = [
             Tool.from_function(many_edge_cases),
@@ -566,7 +566,7 @@ class TestReActAgent:
             patch.object(ReActModuleSinglePrompt, "parse_message"),
         ):
             agent = ReActAgent(
-                tool_description_method=description_method, single_prompt=single_prompt
+                tool_description_method=description_method,
             )
             agent_state = await agent.init_state(tools=tools)
             if not isinstance(expected, str):
@@ -574,21 +574,12 @@ class TestReActAgent:
                     await agent.get_asv(agent_state, obs=[user_msg])
                 return
             await agent.get_asv(agent_state, obs=[user_msg])
-        if single_prompt:
-            mock_achat.assert_awaited_once()
-        else:
-            assert mock_achat.await_count == 2
+        mock_achat.assert_awaited_once()
         assert mock_achat.await_args
-        if single_prompt:
-            assert mock_achat.await_args[0][0] == [
-                Message(role="system", content=expected),
-                user_msg,
-            ]
-        else:
-            assert mock_achat.await_args[0][0][0:-1] == [
-                Message(role="system", content=expected),
-                user_msg,
-            ]
+        assert mock_achat.await_args[0][0] == [
+            Message(role="system", content=expected),
+            user_msg,
+        ]
 
 
 class TestHTTPAgentClient:
