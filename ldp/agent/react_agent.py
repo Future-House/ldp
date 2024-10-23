@@ -146,7 +146,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
                 for m in obs
             ]
         else:
-            obs = obs.copy()  # Keep original obs, just in case.
+            obs = obs.copy()  # Keep original obs, as we edit the content below
             for m in obs:
                 if isinstance(m, ToolResponseMessage):
                     m.content = f"Observation: {m.content}"
