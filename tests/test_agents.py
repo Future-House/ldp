@@ -566,7 +566,7 @@ class TestReActAgent:
             patch.object(ReActModuleSinglePrompt, "parse_message"),
         ):
             agent = ReActAgent(
-                tool_description_method=description_method,
+                tool_description_method=description_method, single_prompt=True
             )
             agent_state = await agent.init_state(tools=tools)
             if not isinstance(expected, str):
