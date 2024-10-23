@@ -91,7 +91,13 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
     )
     single_prompt: bool = Field(
         default=False,
-        description="Whether to use a single prompt for reasoning and acting, or separate prompts.",
+        description=(
+            "Specifies whether to use a single prompt for both reasoning and action selection, "
+            "or to use 2 sequential prompts. When set to True, a single API call is made, and ldp "
+            "handles the message parsing to extract the action. If set to False, a second API call "
+            "is made specifically to request the action, with parsing done on the API side. "
+            "Defaults to False, as it results in fewer action selection failures."
+        ),
     )
 
     @classmethod
@@ -140,7 +146,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
                 for m in obs
             ]
         else:
-            obs = obs.copy()
+            obs = obs.copy()  # Keep original obs, just in case.
             for m in obs:
                 if isinstance(m, ToolResponseMessage):
                     m.content = f"Observation: {m.content}"

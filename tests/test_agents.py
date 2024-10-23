@@ -29,7 +29,10 @@ from ldp.alg import to_network
 from ldp.graph import LLMCallOp, Memory, OpResult, eval_mode
 from ldp.graph.gradient_estimators import llm_straight_through_estimator as llm_ste
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
-from ldp.graph.modules import ReActModule, ToolDescriptionMethods
+from ldp.graph.modules import (
+    ReActModuleSinglePrompt,
+    ToolDescriptionMethods,
+)
 from ldp.llms import LLMModel
 
 from . import CILLMModelNames
@@ -293,11 +296,17 @@ class TestReActAgent:
     @pytest.mark.parametrize(
         "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-4-turbo"]
     )
+    @pytest.mark.parametrize("single_prompt", [True, False])
     @pytest.mark.asyncio
-    @pytest.mark.vcr
-    async def test_react_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
+    # @pytest.mark.vcr
+    async def test_react_dummyenv(
+        self, dummy_env: DummyEnv, model_name: str, single_prompt: bool
+    ) -> None:
         obs, tools = await dummy_env.reset()
-        agent = ReActAgent(llm_model={"model": model_name, "temperature": 0.1})
+        agent = ReActAgent(
+            llm_model={"model": model_name, "temperature": 0.1},
+            single_prompt=single_prompt,
+        )
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         obs, reward, done, truncated = await dummy_env.step(action.value)
@@ -317,7 +326,8 @@ class TestReActAgent:
             raise RuntimeError("Could not find LLMCallOp in compute graph")
 
     @pytest.mark.asyncio
-    async def test_multi_step(self, dummy_env: DummyEnv) -> None:
+    @pytest.mark.parametrize("single_prompt", [True, False])
+    async def test_multi_step(self, dummy_env: DummyEnv, single_prompt: bool) -> None:
         obs, tools = await dummy_env.reset()
         obs = dummy_env.state.messages = [
             Message(
@@ -327,15 +337,16 @@ class TestReActAgent:
                 )
             )
         ]
-        agent = ReActAgent()
+        agent = ReActAgent(single_prompt=single_prompt)
         agent_state = await agent.init_state(tools=tools)
         for i in range(4):  # noqa: B007
             action, agent_state, _ = await agent.get_asv(agent_state, obs)
             for m in agent_state.messages:
-                assert m.content
-                assert (
-                    "Observation: Observation" not in m.content
-                ), "Prepended duplicate observations"
+                if not isinstance(m, ToolRequestMessage):
+                    assert m.content
+                    assert (
+                        "Observation: Observation" not in m.content
+                    ), "Prepended duplicate observations"
             obs, _, done, _ = await dummy_env.step(action.value)
             if done:
                 break
@@ -344,30 +355,38 @@ class TestReActAgent:
                 "Environment should have finished, with at least 2 environment steps."
             )
 
-    def test_agent_op_naming(self) -> None:
-        agent = ReActAgent()
-        for op_name in (
-            "prompt_op",
-            "package_msg_op",
-            "tool_select_module.config_op",
-            "tool_select_module.llm_call_op",
-            "tool_select_module.parse_msg_op",
-        ):
+    @pytest.mark.parametrize("single_prompt", [True, False])
+    def test_agent_op_naming(self, single_prompt: bool) -> None:
+        agent = ReActAgent(single_prompt=single_prompt)
+        ops = ["prompt_op", "package_msg_op"]
+        if single_prompt:
+            ops.extend([
+                "tool_select_module.config_op",
+                "tool_select_module.llm_call_op",
+                "tool_select_module.parse_msg_op",
+            ])
+        for op_name in ops:
             obj, expected = agent._react_module, f"_react_module.{op_name}"
             if "." in op_name:
                 op, op_name = op_name.split(".", maxsplit=1)
                 obj = getattr(obj, op)
             assert getattr(obj, op_name).name == expected
 
+    @pytest.mark.parametrize("single_prompt", [True, False])
     @pytest.mark.parametrize(
         "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-4-turbo"]
     )
     @pytest.mark.asyncio
     @pytest.mark.vcr
-    async def test_agent_grad(self, dummy_env: DummyEnv, model_name: str) -> None:
+    async def test_agent_grad(
+        self, dummy_env: DummyEnv, model_name: str, single_prompt: bool
+    ) -> None:
         obs, tools = await dummy_env.reset()
 
-        agent = ReActAgent(llm_model={"model": model_name, "temperature": 0.1})
+        agent = ReActAgent(
+            llm_model={"model": model_name, "temperature": 0.1},
+            single_prompt=single_prompt,
+        )
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
@@ -421,6 +440,7 @@ class TestReActAgent:
                     output_dir / f"TestReActAgent.test_agent_grad.{model_name}.png",
                 )
 
+    @pytest.mark.parametrize("single_prompt", [True])
     @pytest.mark.parametrize(
         ("description_method", "expected"),
         [
@@ -524,6 +544,7 @@ class TestReActAgent:
         self,
         description_method: ToolDescriptionMethods,
         expected: str | type[Exception],
+        single_prompt: bool,
     ) -> None:
         tools = [
             Tool.from_function(many_edge_cases),
@@ -532,21 +553,32 @@ class TestReActAgent:
         user_msg = Message(content="Cast the string '5.6' to a float.")
         with (
             patch.object(LLMModel, "achat") as mock_achat,
-            patch.object(ReActModule, "parse_message"),
+            patch.object(ReActModuleSinglePrompt, "parse_message"),
         ):
-            agent = ReActAgent(tool_description_method=description_method)
+            agent = ReActAgent(
+                tool_description_method=description_method, single_prompt=single_prompt
+            )
             agent_state = await agent.init_state(tools=tools)
             if not isinstance(expected, str):
                 with pytest.raises(expected):
                     await agent.get_asv(agent_state, obs=[user_msg])
                 return
             await agent.get_asv(agent_state, obs=[user_msg])
-        mock_achat.assert_awaited_once()
+        if single_prompt:
+            mock_achat.assert_awaited_once()
+        else:
+            assert mock_achat.await_count == 2
         assert mock_achat.await_args
-        assert mock_achat.await_args[0][0] == [
-            Message(role="system", content=expected),
-            user_msg,
-        ]
+        if single_prompt:
+            assert mock_achat.await_args[0][0] == [
+                Message(role="system", content=expected),
+                user_msg,
+            ]
+        else:
+            assert mock_achat.await_args[0][0][0:-1] == [
+                Message(role="system", content=expected),
+                user_msg,
+            ]
 
 
 class TestHTTPAgentClient:
