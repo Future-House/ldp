@@ -296,6 +296,7 @@ class ReActModule(ReActModuleSinglePrompt):
             self.llm_config,
             msgs=packaged_msgs,
             tools=tools,
+            # NOTE: as of 10/23/2024, this 'none' was incompatible with Anthropic API
             tool_choice="none",  # Reasoning shouldn't pick a tool
         )
         # Add the reasoning to messages. Generate the tool selection prompt
