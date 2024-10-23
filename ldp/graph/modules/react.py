@@ -296,7 +296,7 @@ class ReActModule(ReActModuleSinglePrompt):
             self.llm_config,
             msgs=packaged_msgs,
             tools=tools,
-            tool_choice="none",
+            tool_choice="none",  # Reasoning shouldn't pick a tool
         )
         # Add the reasoning to messages. Generate the tool selection prompt
         packaged_msgs_with_reasoning = await self.package_msg_op(
