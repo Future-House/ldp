@@ -263,7 +263,7 @@ class ReActModuleSinglePrompt:
 def generate_tool_selection_prompt(react_message) -> Message:
     reasoning = react_message.content or ""
     return Message(
-        content=f"Thought: {reasoning}. Based on this reasoning, let's select the appropriate tool! \n Action: ",
+        content=f"Thought: {reasoning}. Based on this reasoning, let's select the appropriate tool!\n Action: ",
         role="assistant",
     )
 
