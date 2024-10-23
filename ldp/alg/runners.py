@@ -328,7 +328,7 @@ class OfflineTrainer:
                     0,
                     len(self.train_trajectories),
                     self.config.batch_size,
-                    desc="Training iterations",
+                    desc="Training Iterations",
                     ncols=0,
                 )
             ):
