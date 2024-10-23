@@ -1,15 +1,24 @@
 import logging
-from typing import Any, Self
+from typing import Any, Self, cast
 
-from aviary.message import Message
-from aviary.tools import Tool, ToolRequestMessage
+from aviary.message import MalformedMessageError, Message
+from aviary.tools import Tool, ToolRequestMessage, ToolResponseMessage
 from pydantic import BaseModel, ConfigDict, Field
+from tenacity import (
+    Future,
+    RetryCallState,
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+)
 
 from ldp.graph import OpResult, compute_graph
 from ldp.graph.modules.react import (
     ACT_DEFAULT_PROMPT_TEMPLATE,
     REACT_DEFAULT_PROMPT_TEMPLATE,
     ReActModule,
+    ReActModuleSinglePrompt,
     ToolDescriptionMethods,
 )
 
@@ -80,6 +89,10 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         default=ToolDescriptionMethods.STR,
         description="Method used to describe the tools, defaults to 'str' description.",
     )
+    single_prompt: bool = Field(
+        default=False,
+        description="Whether to use a single prompt for reasoning and acting, or separate prompts.",
+    )
 
     @classmethod
     def make_act_agent(cls, **kwargs) -> Self:
@@ -87,22 +100,52 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._react_module = ReActModule(
-            self.llm_model, self.sys_prompt, self.tool_description_method
-        )
+        if self.single_prompt:
+            self._react_module = ReActModuleSinglePrompt(
+                self.llm_model, self.sys_prompt, self.tool_description_method
+            )
+        else:
+            self._react_module = ReActModule(
+                self.llm_model, self.sys_prompt, self.tool_description_method
+            )
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:
         return SimpleAgentState(tools=tools)
 
+    @staticmethod
+    def after_retry_failure_log(retry_state: RetryCallState):
+        logger.error(
+            f"Failed across {retry_state.attempt_number} attempts to run get_asv given"
+            f" arguments {retry_state.args} and kwargs {retry_state.kwargs}."
+        )
+        # NOTE: this blows up with the underlying exception... it isn't wrapped in a
+        # RetryError like normal tenacity
+        return cast(Future, retry_state.outcome).result()
+
+    @retry(
+        retry=retry_if_exception_type(MalformedMessageError),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        stop=stop_after_attempt(5),
+        retry_error_callback=after_retry_failure_log,
+    )
     @compute_graph()
     async def get_asv(
         self, agent_state: SimpleAgentState, obs: list[Message]
     ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
-        next_state = agent_state.get_next_state(
-            obs=obs,
-        )
-        final_result, react_message = await self._react_module(
+        if self.single_prompt:
+            obs = [
+                Message(content=f"Observation: {m.content}")
+                if isinstance(m, ToolResponseMessage)
+                else m
+                for m in obs
+            ]
+        else:
+            obs = obs.copy()
+            for m in obs:
+                if isinstance(m, ToolResponseMessage):
+                    m.content = f"Observation: {m.content}"
+        next_state = agent_state.get_next_state(obs=obs)
+        action_selection_op = await self._react_module(
             messages=next_state.messages, tools=next_state.tools
         )
-        next_state.messages = [*next_state.messages, react_message, final_result.value]
-        return final_result, next_state, 0.0
+        return action_selection_op, next_state, 0.0

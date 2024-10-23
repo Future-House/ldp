@@ -7,7 +7,9 @@ An analogous entity in PyTorch is torch.nn.Module.
 from .llm_call import ParsedLLMCallModule
 from .react import (
     ReActModule,
+    ReActModuleSinglePrompt,
     ToolDescriptionMethods,
+    parse_message,
 )
 from .reflect import ReflectModule, ReflectModuleConfig
 from .thought import ThoughtModule
@@ -15,8 +17,10 @@ from .thought import ThoughtModule
 __all__ = [
     "ParsedLLMCallModule",
     "ReActModule",
+    "ReActModuleSinglePrompt",
     "ReflectModule",
     "ReflectModuleConfig",
     "ThoughtModule",
     "ToolDescriptionMethods",
+    "parse_message",
 ]
