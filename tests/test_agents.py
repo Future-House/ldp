@@ -154,8 +154,8 @@ class TestSimpleAgent:
         "model_name",
         [
             CILLMModelNames.ANTHROPIC.value,
-            CILLMModelNames.OPENAI.value,
-        ],
+            CILLMModelNames.OPENAI.value
+        ]
     )
     @pytest.mark.asyncio
     @pytest.mark.vcr
