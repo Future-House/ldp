@@ -139,7 +139,7 @@ async def test_offline_trainer(clear_ctx_at_each_iter: bool) -> None:
         dataset=dataset,
         callbacks=[traj_callback],
     )
-    await evaluator.evaluate()
+    await evaluator.run()
     assert len(traj_callback.trajectories) == 1
 
     count_callback = DummyCallback()

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Iterable
-from itertools import product
 from typing import ClassVar, Protocol, Self, cast, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
@@ -108,13 +107,6 @@ class MemoryOpt(BaseModel, Optimizer):
         return memory_op.ctx.get(call_id, "grad_output", default=None) is not None
 
     def aggregate_trajectory(self, trajectory: Trajectory) -> None:
-        # NOTE: this is a little dangerous. This optimizer currently
-        # does not check which memory op calls are upstream of output op calls,
-        # besides making sure they belong to the same run.
-        # This is not a problem if we have no branching in the compute graph
-        # between the memory op and the *final* output op.
-        # TODO: fix the above using OpResult.traverse() to find the upstream calls
-
         if trajectory.failed:
             return
 
@@ -122,30 +114,31 @@ class MemoryOpt(BaseModel, Optimizer):
 
         for step, d_return in zip(trajectory.steps, d_returns, strict=True):
             output_run_id = cast(OpResult, step.action).call_id.run_id
-            mem_call_ids = {
-                m
-                for m in self.memory_op.get_call_ids({output_run_id})
-                if self._memory_filter(m, self.memory_op, d_return)
-            }
             output_call_ids = self.output_op.get_call_ids({output_run_id})
-            if len(mem_call_ids) > 1 and len(output_call_ids) > 1:
-                raise ValueError(
-                    "Multiple memory or output calls in a single run - this violates"
-                    " our 1-1 correspondence assumption."
-                )
 
-            self.example_buffer.extend(
-                (
-                    *x,
-                    d_return,
-                    {
-                        "timestep": step.timestep,
-                        "done": step.done,
-                        "truncated": step.truncated,
-                    },
+            for output_call_id in output_call_ids:
+                output = cast(
+                    OpResult, self.output_op.ctx.get(output_call_id, "output")
                 )
-                for x in product(mem_call_ids, output_call_ids)
-            )
+                mem_call_ids = {
+                    m.call_id
+                    for m in output.get_upstream_results(self.memory_op)
+                    if self._memory_filter(m.call_id, self.memory_op, d_return)
+                }
+
+                self.example_buffer.extend(
+                    (
+                        mem_call_id,
+                        output_call_id,
+                        d_return,
+                        {
+                            "timestep": step.timestep,
+                            "done": step.done,
+                            "truncated": step.truncated,
+                        },
+                    )
+                    for mem_call_id in mem_call_ids
+                )
 
     async def update(self) -> None:
         """Create new memories from the example buffer and add them to MemoryOp."""
