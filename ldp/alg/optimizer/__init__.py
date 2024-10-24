@@ -47,7 +47,8 @@ def default_optimizer_factory(
             optimizer_cls = _OPTIMIZER_REGISTRY[optimizer_cls]
         except KeyError:
             raise TypeError(
-                f"Optimizer class not supported by default_optimizer_factory: {optimizer_cls}"
+                "Optimizer class not supported by default_optimizer_factory:"
+                f" {optimizer_cls}"
             ) from None
 
     if optimizer_cls is None:

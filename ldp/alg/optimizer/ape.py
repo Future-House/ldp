@@ -100,13 +100,13 @@ class APEOpt(BaseModel, Optimizer):
         " The model sees a prompt, an input, and then generates an output."
     )
     query_prompt: str = (
-        "Here are correct example outputs that the language model and prompt should produce:"
-        "\n{good_examples}"
+        "Here are correct example outputs that the language model"
+        " and prompt should produce:\n{good_examples}"
         '\n\nThe current prompt is: "{prompt}"'
         "\n\nWhich resulted in the following incorrect input, output, and {score}:"
-        "\n{examples}"
-        "\n\nRevise the current prompt to improve the outputs."
-        " Your proposed prompt should be concise, correct, and specify the desired output format."
+        "\n{examples}\n\nRevise the current prompt to improve the outputs."
+        " Your proposed prompt should be concise, correct, and specify the desired"
+        " output format."
     )
     llm: LLMModel = Field(
         default_factory=LLMModel,
@@ -122,8 +122,10 @@ class APEOpt(BaseModel, Optimizer):
     score_fn: APEScoreFn = APEScoreFn.REWARD
     good_reward_threshold: float | None = Field(
         default=None,
-        description="If using reward as the score_fn, then a good example is defined by "
-        "reward>=good_reward_threshold.",
+        description=(
+            "If using reward as the score_fn, then a good example is defined by "
+            "reward>=good_reward_threshold."
+        ),
     )
     reward_discount: float = 1.0
 
@@ -140,7 +142,8 @@ class APEOpt(BaseModel, Optimizer):
         if self.score_fn == APEScoreFn.REWARD:
             if self.good_reward_threshold is None:
                 raise ValueError(
-                    "good_reward_threshold must be set if using reward as the score function"
+                    "good_reward_threshold must be set if using reward as the score"
+                    " function"
                 )
             self._score_str = "rewards"
         elif self.score_fn == APEScoreFn.GRADIENT:

@@ -23,6 +23,7 @@ class ParsedLLMCallModule(Generic[TParsedMessage]):
         self, messages: Iterable[Message], *parse_args, **parse_kwargs
     ) -> tuple[OpResult[TParsedMessage], Message]:
         raw_result = await self.llm_call_op(await self.config_op(), msgs=messages)
-        return await self.parse_msg_op(
-            raw_result, *parse_args, **parse_kwargs
-        ), raw_result.value
+        return (
+            await self.parse_msg_op(raw_result, *parse_args, **parse_kwargs),
+            raw_result.value,
+        )

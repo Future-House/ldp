@@ -34,9 +34,11 @@ class TorchOp(Op[torch.Tensor]):
 
     async def forward(self, *args, **kwargs: Any) -> torch.Tensor:
         tensor_args = [
-            arg
-            if isinstance(arg, torch.Tensor)
-            else torch.tensor(arg, requires_grad=True)
+            (
+                arg
+                if isinstance(arg, torch.Tensor)
+                else torch.tensor(arg, requires_grad=True)
+            )
             for arg in args
         ]
         tensor_kwargs = {
@@ -84,7 +86,8 @@ class TorchOp(Op[torch.Tensor]):
 
         if output.shape != grad_output.shape:
             raise RuntimeError(
-                f"Output shape {output.shape} does not match grad_output shape {grad_output.shape}"
+                f"Output shape {output.shape} does not match grad_output shape"
+                f" {grad_output.shape}"
             )
 
         gradients = torch.autograd.grad(

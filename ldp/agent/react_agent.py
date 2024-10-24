@@ -124,9 +124,11 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
     ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
         next_state = agent_state.get_next_state(
             obs=[
-                Message(content=f"Observation: {m.content}")
-                if isinstance(m, ToolResponseMessage)
-                else m
+                (
+                    Message(content=f"Observation: {m.content}")
+                    if isinstance(m, ToolResponseMessage)
+                    else m
+                )
                 for m in obs
             ]
         )

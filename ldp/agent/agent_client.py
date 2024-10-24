@@ -97,7 +97,9 @@ def make_simple_agent_server(
 
     asgi_app = FastAPI(
         title=f"aviary.Agent {type(agent).__name__}",
-        description="Serve inference endpoints for an aviary.Agent with a SimpleAgentState",
+        description=(
+            "Serve inference endpoints for an aviary.Agent with a SimpleAgentState"
+        ),
         # Only render Swagger docs if local since we don't have a login here
         docs_url="/docs" if render_docs else None,
         redoc_url="/redoc" if render_docs else None,

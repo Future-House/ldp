@@ -99,9 +99,9 @@ class TestAgentState:
             if done:
                 break
 
-        assert (
-            agent_state_0_json == agent_state_0.model_dump_json()
-        ), "Agent state should not be mutated between calls to get_asv"
+        assert agent_state_0_json == agent_state_0.model_dump_json(), (
+            "Agent state should not be mutated between calls to get_asv"
+        )
 
     def test_serialization_deserializaton(self) -> None:
         orig_state = SimpleAgentState(
@@ -125,9 +125,9 @@ class TestSimpleAgent:
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         obs, reward, done, truncated = await dummy_env.step(action.value)
-        assert (
-            reward > 0
-        ), "Reward should be positive, indicating agent called print_story tool"
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
         assert done
 
         # Check serialization after get_asv runs to ensure private
@@ -160,13 +160,13 @@ class TestSimpleAgent:
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
         obs, reward, done, _ = await dummy_env.step(action.value)
-        assert (
-            reward > 0
-        ), "Reward should be positive, indicating agent called print_story tool"
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
         assert done
-        assert (
-            action.call_id is not None
-        ), "action is not associated with a forward pass call_id"
+        assert action.call_id is not None, (
+            "action is not associated with a forward pass call_id"
+        )
 
         # NOTE: we would not normally pass reward as a gradient, but this is a way
         # to check that gradients are flowing
@@ -175,9 +175,9 @@ class TestSimpleAgent:
             backward_fns={"_config_op": ste, "_llm_call_op": llm_ste},
         )
         _, g = action.ctx.get_input_grads(action.call_id)
-        assert isinstance(
-            g["config"], dict
-        ), "compute_grads() didn't descend into config dict"
+        assert isinstance(g["config"], dict), (
+            "compute_grads() didn't descend into config dict"
+        )
         assert all(g["config"].values()), "Gradient should be non-zero"
 
         graph = to_network(action)
@@ -230,9 +230,9 @@ class TestMemoryAgent:
         new_action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert "Once there was" in str(new_action)
         obs, reward, done, truncated = await dummy_env.step(new_action.value)
-        assert (
-            reward > 0
-        ), "Reward should be positive, indicating agent called print_story tool"
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
         assert done
 
         # Check we can get the LLM results to sum cost and count tokens
@@ -255,13 +255,13 @@ class TestMemoryAgent:
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
         obs, reward, done, truncated = await dummy_env.step(action.value)
-        assert (
-            reward > 0
-        ), "Reward should be positive, indicating agent called print_story tool"
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
         assert done
-        assert (
-            action.call_id is not None
-        ), "action is not associated with a forward pass call_id"
+        assert action.call_id is not None, (
+            "action is not associated with a forward pass call_id"
+        )
 
         # NOTE: we would not normally pass reward as a gradient, but this is a way
         # to check that gradients are flowing
@@ -277,9 +277,9 @@ class TestMemoryAgent:
             },
         )
         _, g = action.ctx.get_input_grads(action.call_id)
-        assert isinstance(
-            g["config"], dict
-        ), "compute_grads() didn't descend into config dict"
+        assert isinstance(g["config"], dict), (
+            "compute_grads() didn't descend into config dict"
+        )
         assert all(g["config"].values()), "Action gradient should be non-zero"
 
         memory_op = agent._memory_op
@@ -301,9 +301,9 @@ class TestReActAgent:
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         obs, reward, done, truncated = await dummy_env.step(action.value)
-        assert (
-            reward > 0
-        ), "Reward should be positive, indicating agent called print_story tool"
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
         assert done
 
         # Check we can get the LLM results to sum cost and count tokens
@@ -333,9 +333,9 @@ class TestReActAgent:
             action, agent_state, _ = await agent.get_asv(agent_state, obs)
             for m in agent_state.messages:
                 assert m.content
-                assert (
-                    "Observation: Observation" not in m.content
-                ), "Prepended duplicate observations"
+                assert "Observation: Observation" not in m.content, (
+                    "Prepended duplicate observations"
+                )
             obs, _, done, _ = await dummy_env.step(action.value)
             if done:
                 break
@@ -372,13 +372,13 @@ class TestReActAgent:
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
         obs, reward, done, truncated = await dummy_env.step(action.value)
-        assert (
-            reward > 0
-        ), "Reward should be positive, indicating agent called print_story tool"
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
         assert done
-        assert (
-            action.call_id is not None
-        ), "action is not associated with a forward pass call_id"
+        assert action.call_id is not None, (
+            "action is not associated with a forward pass call_id"
+        )
 
         # NOTE: we would not normally pass reward as a gradient, but this is a way
         # to check that gradients are flowing

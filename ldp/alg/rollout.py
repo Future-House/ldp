@@ -109,9 +109,9 @@ class RolloutManager:
 
     async def sample_trajectories(self, **kwargs):
         if "environment_factory" in kwargs:
-            assert (
-                "environments" not in kwargs
-            ), "Cannot use environment_factory with environments"
+            assert "environments" not in kwargs, (
+                "Cannot use environment_factory with environments"
+            )
 
             return await self._sample_trajectories_from_env_factory(
                 kwargs["environment_factory"],
@@ -120,9 +120,9 @@ class RolloutManager:
             )
 
         if "environments" in kwargs:
-            assert (
-                "environment_factory" not in kwargs
-            ), "Cannot use environments with environment_factory"
+            assert "environment_factory" not in kwargs, (
+                "Cannot use environments with environment_factory"
+            )
             return await self._sample_trajectories_from_envs(
                 kwargs["environments"], kwargs.get("max_steps")
             )
