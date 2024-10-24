@@ -12,12 +12,10 @@ from .agent import Agent
 from .simple_agent import SimpleAgentState
 
 MISSING_DEFAULT = object()
-CLEAR = (  # Clears the current input and allows the user to start over, e.g. if they made a mistake
-    "CLEAR"
-)
-EXIT = (  # Exits the agent by raising a RuntimeError. Makes it possible to interrupt a rollout
-    "EXIT"
-)
+# Clears the current input and allows the user to start over, e.g. if they made a mistake
+CLEAR = "CLEAR"
+# Exits the agent by raising a RuntimeError. Makes it possible to interrupt a rollout
+EXIT = "EXIT"
 
 
 class InteractiveAgent(Agent[SimpleAgentState]):

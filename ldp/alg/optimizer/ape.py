@@ -100,10 +100,11 @@ class APEOpt(BaseModel, Optimizer):
         " The model sees a prompt, an input, and then generates an output."
     )
     query_prompt: str = (
-        "Here are correct example outputs that the language model and prompt should"
-        ' produce:\n{good_examples}\n\nThe current prompt is: "{prompt}"\n\nWhich'
-        " resulted in the following incorrect input, output, and"
-        " {score}:\n{examples}\n\nRevise the current prompt to improve the outputs."
+        "Here are correct example outputs that the language model"
+        " and prompt should produce:\n{good_examples}"
+        '\n\nThe current prompt is: "{prompt}"'
+        "\n\nWhich resulted in the following incorrect input, output, and {score}:"
+        "\n{examples}\n\nRevise the current prompt to improve the outputs."
         " Your proposed prompt should be concise, correct, and specify the desired"
         " output format."
     )
