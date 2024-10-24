@@ -152,5 +152,5 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         action_selection_result, new_messages = await self._react_module(
             messages=next_state.messages, tools=next_state.tools
         )
-        next_state.messages += new_messages
+        next_state.messages = [*next_state.messages, *new_messages]
         return action_selection_result, next_state, 0.0
