@@ -421,12 +421,13 @@ class TestReActAgent:
         ste_ = partial(ste, descend=False)
 
         action.compute_grads(
-            1.0,
+            reward,
             # Give everything a straight-through gradient approximation
             # so we can confirm gradient flow
             backward_fns={
                 "_react_module.package_msg_op": ste_,
                 "_react_module.prompt_op": ste_,
+                "_react_module.append_msg_op": ste_,
                 "_react_module.llm_call_op": llm_ste,
                 "_react_module.tool_select_module.parse_msg_op": ste_,
                 "_react_module.tool_select_module.config_op": ste_,
