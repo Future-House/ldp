@@ -62,18 +62,17 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//bJDBTsMwEETv+Qprzw1K26SluQEXBAUJhAQCoch1NonBsY3toALqvyMn
-          aZuqvfgw43k7u38BIcBzSAmwijpWaxFeLKuHRfJ4c182L7fLZv1Nr6+e7vTX62Xz+wwjn1CrD2Ru
-          mzpjqtYCHVeys5lB6tBTx/PJYj5NxrNxa9QqR+FjpXZhrMJJNInD6DyMZn2wUpyhhZS8BYQQ8te+
-          vqLMcQ0piUZbpUZraYmQ7j4RAkYJrwC1lltHpYPR3mRKOpRt66FssGgs9a1kI0Svb3ZzhCq1USvb
-          +zu94JLbKjNIrZKeaZ3S0LqbgJD3dp/moCJoo2rtMqc+UXrgNEk6HuwvuHf7XcEpR8Wp0AEuy9FR
-          LuzgIMAoqzAfEIPBbsczTyG6/bgsjyhBTwL7Yx3WWcFliUYb3p240FmcsFmO8WIaQ7AJ/gEAAP//
-          AwBGg7w4awIAAA==
+          H4sIAAAAAAAAA2yQS2/CMBCE7/kV1p5JleYF5IZ66KH00h6rKjLOJnHrl2wjFSH+e+UkQBBcfJjx
+          fDu7x4gQ4A1UBFhPPZNGxJttL0sqDupz07/o5H398eo5y7bZm+xWsAgJvftB5s+pJ6alEei5VqPN
+          LFKPgfq8TNfLrCzSdDCkblCEWGd8nOs4TdI8TlZxUk7BXnOGDiryFRFCyHF4Q0XV4B9UJFmcFYnO
+          0Q6hunwiBKwWQQHqHHeeKg+Lq8m08qiG1nPZYrt3NLRSeyEm/XSZI3RnrN65yb/oLVfc9bVF6rQK
+          TOe1gcE9RYR8D/vsbyqCsVoaX3v9iyoAs6IYeXC94NWddgWvPRWPQje4ukFPuXCzgwCjrMdmRoxm
+          u93PfIQY9+Oqu6NEEwncwXmUdctVh9ZYPp64NXVesLLBfJ3lEJ2ifwAAAP//AwA72yXnawIAAA==
       headers:
         CF-Cache-Status:
           - DYNAMIC
         CF-RAY:
-          - 8d765df6ea3517ec-SJC
+          - 8d767f2cfc3c5c22-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -81,7 +80,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Thu, 24 Oct 2024 01:59:21 GMT
+          - Thu, 24 Oct 2024 02:22:02 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -95,7 +94,7 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "174"
+          - "748"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -113,7 +112,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_66d8945d93122181aad5e9c533724bb9
+          - req_95b273c8f19f75b0962c316720419805
       status:
         code: 200
         message: OK
@@ -133,19 +132,19 @@ interactions:
         Input/Observation can repeat N times)\n\nExample:\n\nThought: I need to use
         the get_weather tool\nAction: get_weather\nAction Input: \"New York\", 7\nObservation:
         The 7 day forecast for New York is [...]"}, {"role": "user", "content": "Write
-        a 5 word story via print_story"}, {"role": "assistant", "content": "Thought:
-        . Based on this reasoning, let''s select the appropriate tool!\n Action: "}],
-        "model": "gpt-4o", "stop": ["Observation:", "Action:"], "temperature": 0.1,
-        "tool_choice": "required", "tools": [{"type": "function", "function": {"name":
-        "print_story", "description": "Print a story.", "parameters": {"type": "object",
-        "properties": {"story": {"description": "Story to print.", "title": "Story",
-        "type": "string"}}, "required": ["story"]}}}, {"type": "function", "function":
-        {"name": "cast_float", "description": "Cast the input argument x to a float.",
-        "parameters": {"type": "object", "properties": {"x": {"title": "X", "type":
-        "string"}}, "required": ["x"]}}}, {"type": "function", "function": {"name":
-        "cast_int", "description": "Cast the input argument x to an integer.", "parameters":
-        {"type": "object", "properties": {"x": {"title": "X", "type": "number"}}, "required":
-        ["x"]}}}]}'
+        a 5 word story via print_story"}, {"role": "assistant", "content": ""}, {"role":
+        "assistant", "content": "Thought: . Based on this reasoning, let''s select the
+        appropriate tool!\n Action: "}], "model": "gpt-4o", "stop": ["Observation:",
+        "Action:"], "temperature": 0.1, "tool_choice": "required", "tools": [{"type":
+        "function", "function": {"name": "print_story", "description": "Print a story.",
+        "parameters": {"type": "object", "properties": {"story": {"description": "Story
+        to print.", "title": "Story", "type": "string"}}, "required": ["story"]}}},
+        {"type": "function", "function": {"name": "cast_float", "description": "Cast
+        the input argument x to a float.", "parameters": {"type": "object", "properties":
+        {"x": {"title": "X", "type": "string"}}, "required": ["x"]}}}, {"type": "function",
+        "function": {"name": "cast_int", "description": "Cast the input argument x to
+        an integer.", "parameters": {"type": "object", "properties": {"x": {"title":
+        "X", "type": "number"}}, "required": ["x"]}}}]}'
       headers:
         accept:
           - application/json
@@ -154,7 +153,7 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "2143"
+          - "2181"
         content-type:
           - application/json
         host:
@@ -182,20 +181,20 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//bFJdj9owEHzPr7D2GU4QAil5Q7qTrlVzH23Vh5YqMs6S+HDs1N6IIsR/
-          rxJCErjLQ2TteGbWs3v0GAOZQsRA5JxEUarx6mv+uvoWrsTfzfPi149d8fgYh3z/PH0QMYdRzTCb
-          NxR0Yd0JU5QKSRp9hoVFTlirTkN/Gc7m04XfAIVJUdW0rKRxYMb+xA/Gk0/jyaIl5kYKdBCx3x5j
-          jB2bf92iTvEfRGwyulQKdI5nCFF3iTGwRtUV4M5JR1wTjHpQGE2o6651pdQAIGNUIrhSvfH5Ow7O
-          fU5cqST7abf7ly8v+dNbTMHn+Cne3c+r2evA7yx9KJuGtpUWXT4DvKtHN2aMgeZFwy2t1JQ4MvZw
-          Q2cMuM2qAjXVrcNxDc21NURr+F5ph8T2uXQlWsccCovkGBmmZZbT3RpOcCV38j46/xkkZXFbOa7a
-          CNv6qZuJMllpzcbdRAxbqaXLE4vcNU8dJu5d3BofqK6GCqU1RUkJmR3qWnYWzs+q0O9cj/rtegAZ
-          4mrAWl5YV3pJisRlM/Vu0QQXOaY9deINnvje9COJ8zOlzt6peK0SuIMjLJKt1BnaZr7NkpRJMBeL
-          FIPlLADv5P0HAAD//wMAklQuHJ4DAAA=
+          H4sIAAAAAAAAA2xSTY+bMBC98yusOYcVIWyycNuqUldVeuol3aZCjhnAXWNTe9BuNsp/r/gIkOxy
+          QNY8v/fGb+bkMQYyg4SBKDmJqlb+47as1vLrv/d3zH49y/xpu9S7Y/y6fXg5PsGiZZjDXxR0Yd0J
+          U9UKSRrdw8IiJ2xVl5sw3qzW92HYAZXJULW0oiY/Mn4YhJEfPPjBeiCWRgp0kLDfHmOMnbp/26LO
+          8A0SFiwulQqd4wVCMl5iDKxRbQW4c9IR1wSLCRRGE+q2a90oNQPIGJUKrtRk3H+n2XnKiSuVhssv
+          6ps42F3zI3iOvjsussdd9KZmfr30se4ayhstxnxm+FhPbswYA82rjltbqSl1ZOzxhs4YcFs0FWpq
+          W4fTHrpre0j28LPRDom9ltLVaB1zKCySY2SYlkVJd3s4w5Xc2fvs/GeWlMW8cVwNEQ718zgTZYra
+          moO7iRhyqaUrU4vcdU+dJ+5d3DofaK6GCrU1VU0pmRfUrexqE/eqMO3chIbDegAZ4mrGii+sK700
+          Q+Kym/q4aIKLErOJGnizJ340/Uyif6bUxQcVb1ACd3SEVZpLXaDt5tstSZ1G92KdYRSvIvDO3n8A
+          AAD//wMAwThg3J4DAAA=
       headers:
         CF-Cache-Status:
           - DYNAMIC
         CF-RAY:
-          - 8d765dfabe6717ec-SJC
+          - 8d767f329d785c22-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -203,7 +202,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Thu, 24 Oct 2024 01:59:22 GMT
+          - Thu, 24 Oct 2024 02:22:03 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -217,7 +216,7 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "481"
+          - "539"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -229,13 +228,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "9999"
         x-ratelimit-remaining-tokens:
-          - "29999688"
+          - "29999687"
         x-ratelimit-reset-requests:
           - 6ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_2660093f5c3d10f395c9be4568d4cae1
+          - req_f703d9acf3ad705543c1cc0d8d97e33c
       status:
         code: 200
         message: OK
