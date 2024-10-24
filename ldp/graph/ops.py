@@ -434,7 +434,7 @@ class Op(ABC, Generic[TOutput]):
     @classmethod
     def _make_unique_default_name(cls) -> str:
         # 6 bytes results in string of size 12
-        return f"{cls.__name__}_{secrets.token_hex(6)}"
+        return f"{cls.__name__}-{secrets.token_hex(6)}"
 
     def set_name(self, name: str) -> None:
         if _OP_REGISTRY.get(getattr(self, "name", "")) is self:
