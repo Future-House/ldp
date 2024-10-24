@@ -182,7 +182,7 @@ class TestSimpleAgent:
             reward,
             backward_fns={
                 "_config_op": ste,
-                "_llm_call_op": llm_ste,
+                "_llm_call_op": llm_ste
             },
         )
 
