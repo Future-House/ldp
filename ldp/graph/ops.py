@@ -419,7 +419,7 @@ class Op(ABC, Generic[TOutput]):
         instance = super().__new__(cls)
 
         # Needs to be overridden by caller if this Op is to have
-        # a unique name in the compute graph. c.f. Agent.__init_subclass__
+        # an identifiable name in the compute graph. c.f. Agent.__init_subclass__
         # for an example of how to do this.
         instance.set_name(cls._make_unique_default_name())
 
@@ -433,7 +433,7 @@ class Op(ABC, Generic[TOutput]):
 
     @classmethod
     def _make_unique_default_name(cls) -> str:
-        # hex of size 6 results in string of size 12
+        # 6 bytes results in string of size 12
         return f"{cls.__name__}_{secrets.token_hex(6)}"
 
     def set_name(self, name: str) -> None:
