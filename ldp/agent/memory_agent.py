@@ -45,12 +45,13 @@ class MemoryAgent(SimpleAgent):
 
     prompt: str = Field(
         default=(
-            "<episode-memories>\n<description>\nThese are relevant memories from"
-            " previous attempts at similar tasks, along with the action taken and the"
-            " discounted cumulative reward from that action. A negative reward is"
-            " failure, a positive reward is"
-            " success.\n</description>{memories}</episode-memories>\n\nConsidering the"
-            " memories, choose the next action."
+            "<episode-memories>\n<description>\n"
+            "These are relevant memories from previous attempts at similar tasks, "
+            "along with the action taken "
+            "and the discounted cumulative reward from that action. "
+            "A negative reward is failure, a positive reward is success.\n"
+            "</description>{memories}</episode-memories>\n\n"
+            "Considering the memories, choose the next action."
         ),
         description="Prompt that includes the memories.",
     )
