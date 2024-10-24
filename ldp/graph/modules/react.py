@@ -208,8 +208,6 @@ class ReActModuleSinglePrompt:
         Action:
         Action Input:
     ...
-
-    When called, this module appends its generated messages to the input sequence, extending the conversation context.
     """
 
     @staticmethod

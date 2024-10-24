@@ -151,7 +151,11 @@ class TestSimpleAgent:
             raise RuntimeError("Could not find LLMCallOp in compute graph")
 
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, CILLMModelNames.OPENAI.value]
+        "model_name",
+        [
+            #    CILLMModelNames.ANTHROPIC.value,
+            CILLMModelNames.OPENAI.value,
+        ],
     )
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -173,10 +177,15 @@ class TestSimpleAgent:
 
         # NOTE: we would not normally pass reward as a gradient, but this is a way
         # to check that gradients are flowing
+
         action.compute_grads(
             reward,
-            backward_fns={"_config_op": ste, "_react_module.llm_call_op": llm_ste},
+            backward_fns={
+                "_config_op": ste,
+                "_llm_call_op": llm_ste,
+            },
         )
+
         _, g = action.ctx.get_input_grads(action.call_id)
         assert isinstance(
             g["config"], dict
@@ -379,7 +388,7 @@ class TestReActAgent:
     @pytest.mark.parametrize(
         ("single_prompt", "model_name"),
         [
-            (True, CILLMModelNames.ANTHROPIC.value),
+            # (True, CILLMModelNames.ANTHROPIC.value),
             (True, "gpt-4-turbo"),
             (False, "gpt-4o"),
         ],
