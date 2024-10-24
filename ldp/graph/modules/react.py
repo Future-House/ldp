@@ -263,6 +263,7 @@ def generate_tool_selection_prompt(react_message: Message) -> Message:
     reasoning = (react_message.content or "").removeprefix("Thought: ")
     return Message(
         content=f"Thought: {reasoning}. Based on this reasoning, let's select the appropriate tool!\nAction: ",
+        # Role is 'assistant' here (normally 'user') since we use the model's reasoning to ask for an action.
         role="assistant",
     )
 
