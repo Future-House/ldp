@@ -245,7 +245,7 @@ class ReActModuleSinglePrompt:
     @compute_graph()
     async def __call__(
         self, messages: MutableSequence[Message], tools: list[Tool]
-    ) -> OpResult[ToolRequestMessage]:
+    ) -> tuple[OpResult[ToolRequestMessage], list[Message]]:
         packaged_msgs = await self.package_msg_op(
             messages, sys_content=await self._create_system_prompt(tools)
         )
@@ -253,8 +253,7 @@ class ReActModuleSinglePrompt:
             packaged_msgs,  # type: ignore[arg-type]
             tools=tools,
         )
-        messages += [react_message]
-        return final_result
+        return final_result, [react_message]
 
 
 def generate_tool_selection_prompt(react_message: Message) -> Message:
@@ -284,7 +283,7 @@ class ReActModule(ReActModuleSinglePrompt):
     @compute_graph()
     async def __call__(
         self, messages: MutableSequence[Message], tools: list[Tool]
-    ) -> OpResult[ToolRequestMessage]:
+    ) -> tuple[OpResult[ToolRequestMessage], list[Message]]:
         packaged_msgs = await self.package_msg_op(
             messages, sys_content=await self._create_system_prompt(tools)
         )
@@ -295,7 +294,6 @@ class ReActModule(ReActModuleSinglePrompt):
             tools=tools,
             tool_choice="none",  # Reasoning shouldn't pick a tool
         )
-        messages += [reasoning_msg.value]
         # Add the reasoning to messages. Generate the tool selection prompt
         packaged_msgs_with_reasoning = await self.package_msg_op(
             await self.append_msg_op(
@@ -307,5 +305,7 @@ class ReActModule(ReActModuleSinglePrompt):
         tool_selection_msg = await self.llm_call_op(
             self.llm_config, msgs=packaged_msgs_with_reasoning, tools=tools
         )
-        messages += [tool_selection_msg.value]
-        return cast(OpResult[ToolRequestMessage], tool_selection_msg)
+        return cast(OpResult[ToolRequestMessage], tool_selection_msg), [
+            reasoning_msg.value,
+            cast(ToolRequestMessage, tool_selection_msg.value),
+        ]

@@ -153,7 +153,7 @@ class TestSimpleAgent:
     @pytest.mark.parametrize(
         "model_name",
         [
-            #    CILLMModelNames.ANTHROPIC.value,
+            CILLMModelNames.ANTHROPIC.value,
             CILLMModelNames.OPENAI.value,
         ],
     )
@@ -388,7 +388,7 @@ class TestReActAgent:
     @pytest.mark.parametrize(
         ("single_prompt", "model_name"),
         [
-            # (True, CILLMModelNames.ANTHROPIC.value),
+            (True, CILLMModelNames.ANTHROPIC.value),
             (True, "gpt-4-turbo"),
             (False, "gpt-4o"),
         ],
