@@ -7,7 +7,6 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "ldp"
-copyright = "2024, FutureHouse"
 author = "FutureHouse"
 
 # -- General configuration ---------------------------------------------------
