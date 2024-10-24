@@ -1,7 +1,7 @@
 import ast
 import re
 import textwrap
-from collections.abc import MutableSequence
+from collections.abc import Iterable
 from enum import StrEnum
 from typing import Any, cast
 
@@ -247,7 +247,7 @@ class ReActModuleSinglePrompt:
 
     @compute_graph()
     async def __call__(
-        self, messages: MutableSequence[Message], tools: list[Tool]
+        self, messages: Iterable[Message], tools: list[Tool]
     ) -> tuple[OpResult[ToolRequestMessage], list[Message]]:
         packaged_msgs = await self.package_msg_op(
             messages, sys_content=await self._create_system_prompt(tools)
@@ -289,7 +289,7 @@ class ReActModule(ReActModuleSinglePrompt):
 
     @compute_graph()
     async def __call__(
-        self, messages: MutableSequence[Message], tools: list[Tool]
+        self, messages: Iterable[Message], tools: list[Tool]
     ) -> tuple[OpResult[ToolRequestMessage], list[Message]]:
         packaged_msgs = await self.package_msg_op(
             messages, sys_content=await self._create_system_prompt(tools)
