@@ -240,7 +240,9 @@ class ReActModuleSinglePrompt:
         self.tool_select_module = ParsedLLMCallModule[ToolRequestMessage](
             llm_model=llm_model, parser=self.parse_message
         )
-        self.llm_call_op = self.tool_select_module.llm_call_op
+    @property
+    def llm_call_op(self) -> LLMCallOp:
+        return self.tool_select_module.llm_call_op
 
     @compute_graph()
     async def __call__(
