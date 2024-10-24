@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import itertools
 import json
 import logging
 import os
@@ -289,12 +288,24 @@ class TransitionTree:
             step.value = step.reward + discount_factor * v_tp1
 
     def merge_identical_nodes(
-        self, agent_state_hash_fn: Callable[[Any], int]
+        self,
+        agent_state_hash_fn: Callable[[Any], int],
+        observation_hash_fn: Callable[
+            [list[ToolResponseMessage | Message]], int | str
+        ] = join,
+        next_observation_hash_fn: Callable[
+            [list[ToolResponseMessage | Message]], int | str
+        ] = join,
     ) -> TransitionTree:
         """Merge nodes with identical (state, observation, action)s. Returns a new tree.
 
         Args:
-            agent_state_hash_fn: A function that hashes the agent state of a transition.
+            agent_state_hash_fn: A function that returns a hashable representation
+                of the agent state of a transition.
+            observation_hash_fn: A function that returns a hashable representation
+                of the observation messages of a transition.
+            next_observation_hash_fn: A function that returns a hashable representation
+                of the next observation messages of a transition.
         """
         new_tree = TransitionTree(self.root_id)
 
@@ -325,8 +336,9 @@ class TransitionTree:
                 state_hash,
                 action_str,
                 # (s, a, o): works for deterministic envs
+                observation_hash_fn(step.observation),
                 # (s, a, o, o'): works for both deterministic and stochastic envs
-                join(itertools.chain(step.observation, step.next_observation)),
+                next_observation_hash_fn(step.next_observation),
             ))
             step_weight = self.get_weight(step_id)
 
