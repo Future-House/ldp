@@ -259,13 +259,18 @@ class ReActModuleSinglePrompt:
         return final_result, [react_message]
 
 
-def generate_tool_selection_prompt(react_message: Message) -> Message:
+def postprocess_and_concat_resoning_msg(
+    msgs: Iterable[Message], react_message: Message
+) -> Iterable[Message]:
     reasoning = (react_message.content or "").removeprefix("Thought: ")
-    return Message(
-        content=f"Thought: {reasoning}. Based on this reasoning, let's select the appropriate tool!\nAction: ",
-        # Role is 'assistant' here (normally 'user') since we use the model's reasoning to ask for an action.
-        role="assistant",
-    )
+    return [
+        *msgs,
+        Message(
+            content=f"Thought: {reasoning}. Based on this reasoning, let's select the appropriate tool!\nAction: ",
+            # Role is 'assistant' here (normally 'user') since we use the model's reasoning to ask for an action.
+            role="assistant",
+        ),
+    ]
 
 
 class ReActModule(ReActModuleSinglePrompt):
@@ -281,8 +286,7 @@ class ReActModule(ReActModuleSinglePrompt):
         self._llm_call_op = LLMCallOp()
         self.prompt_op = PromptOp(sys_prompt)
         self.package_msg_op = FxnOp(prepend_sys)
-        self.append_msg_op = FxnOp(lambda msgs, msg: [*msgs, msg])
-        self.tool_selection_msg_op = FxnOp(generate_tool_selection_prompt)
+        self.postprocess_reasoning_msg_op = FxnOp(postprocess_and_concat_resoning_msg)
 
     @property
     def llm_call_op(self) -> LLMCallOp:
@@ -304,9 +308,7 @@ class ReActModule(ReActModuleSinglePrompt):
         )
         # Add the reasoning to messages. Generate the tool selection prompt
         packaged_msgs_with_reasoning = await self.package_msg_op(
-            await self.append_msg_op(
-                messages, await self.tool_selection_msg_op(reasoning_msg)
-            ),
+            await self.postprocess_reasoning_msg_op(messages, reasoning_msg),
             sys_content=await self._create_system_prompt(tools),
         )
         # Ask the LLM to select the tool

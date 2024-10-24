@@ -420,12 +420,11 @@ class TestReActAgent:
             backward_fns={
                 "_react_module.package_msg_op": ste_,
                 "_react_module.prompt_op": ste_,
-                "_react_module.append_msg_op": ste_,
+                "_react_module.postprocess_reasoning_msg_op": ste_,
                 "_react_module.llm_call_op": llm_ste,
                 "_react_module._llm_call_op": llm_ste,
                 "_react_module.tool_select_module.parse_msg_op": ste_,
                 "_react_module.tool_select_module.config_op": ste_,
-                "_react_module.tool_selection_msg_op": ste_,
                 "_react_module.tool_select_module.llm_call_op": llm_ste,
             },
         )
