@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 GradOutType: TypeAlias = tree.Structure | None  # None means the gradient has terminated
 GradInType: TypeAlias = tuple[Sequence[GradOutType], Mapping[str, GradOutType]]
 BackwardsType: TypeAlias = Callable[
-    # Call signature of Op.backward or GradientEstimator.backward
+    # Call signature of Op.backward
     ["OpCtx", list, dict, tree.Structure, "CallID"], GradInType
 ]
 TOutput = TypeVar("TOutput")
