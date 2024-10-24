@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from typing import Any, Self, cast
 
 from aviary.message import MalformedMessageError, Message
@@ -138,7 +139,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
     async def get_asv(
         self, agent_state: SimpleAgentState, obs: list[Message]
     ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
-        obs = obs.copy()  # Keep original obs, as we edit the content below
+        obs = deepcopy(obs)  # Keep original obs, as we edit the content below
         if self.single_prompt:
             for i, m in enumerate(obs):
                 if isinstance(m, ToolResponseMessage):
