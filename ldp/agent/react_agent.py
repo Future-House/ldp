@@ -1,5 +1,4 @@
 import logging
-from copy import deepcopy
 from typing import Any, Self, cast
 
 from aviary.message import MalformedMessageError, Message
@@ -139,7 +138,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
     async def get_asv(
         self, agent_state: SimpleAgentState, obs: list[Message]
     ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
-        obs = deepcopy(obs)  # Keep original obs, as we edit the content below
+        obs = obs.copy()  # Keep original obs, as we edit the content below
         if self.single_prompt:
             for i, m in enumerate(obs):
                 if isinstance(m, ToolResponseMessage):
@@ -147,7 +146,9 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         else:
             for i, m in enumerate(obs):
                 if isinstance(m, ToolResponseMessage):
-                    obs[i] = m.model_copy(update={'content': f'Observation: {m.content}'})
+                    obs[i] = m.model_copy(
+                        update={"content": f"Observation: {m.content}"}
+                    )
         next_state = agent_state.get_next_state(obs=obs)
         action_selection_result, new_messages = await self._react_module(
             messages=next_state.messages, tools=next_state.tools
