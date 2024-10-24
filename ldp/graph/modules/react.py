@@ -307,5 +307,5 @@ class ReActModule(ReActModuleSinglePrompt):
         )
         return cast(OpResult[ToolRequestMessage], tool_selection_msg), [
             reasoning_msg.value,
-            tool_selection_msg.value,
+            cast(ToolRequestMessage, tool_selection_msg.value),
         ]
