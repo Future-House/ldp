@@ -26,9 +26,9 @@ async def test_run_ids():
         run_id_1 = get_run_id()
         async with compute_graph():
             run_id_2 = get_run_id()
-            assert (
-                run_id_1 == run_id_2
-            ), "Should not create a new run ID if already in a run context."
+            assert run_id_1 == run_id_2, (
+                "Should not create a new run ID if already in a run context."
+            )
 
     # Check that after exiting the context, _RUN_ID is no longer set
     with pytest.raises(LookupError):
@@ -43,9 +43,9 @@ async def test_run_ids():
             return get_run_id()
 
     run_ids = await asyncio.gather(*[run_id_test() for _ in range(10)])
-    assert len(run_ids) == len(
-        set(run_ids)
-    ), "At least two compute graphs had the same run ID, which indicates a clobber."
+    assert len(run_ids) == len(set(run_ids)), (
+        "At least two compute graphs had the same run ID, which indicates a clobber."
+    )
 
 
 @pytest.mark.asyncio
@@ -56,9 +56,9 @@ async def test_call_ids():
         call_id_1 = get_call_id()
         async with op_call():
             call_id_2 = get_call_id()
-            assert (
-                call_id_1 == call_id_2
-            ), "Should not create a new call ID if already in a call context."
+            assert call_id_1 == call_id_2, (
+                "Should not create a new call ID if already in a call context."
+            )
 
     # Check we cannot create a call ID if not in a run context
     with pytest.raises(RuntimeError, match=r".*not inside compute graph context.*"):
@@ -74,25 +74,25 @@ async def test_call_ids():
 
     async with compute_graph():
         call_ids = await asyncio.gather(*[call_test() for _ in range(10)])
-    assert len(call_ids) == len(
-        set(call_ids)
-    ), "At least two compute graphs had the same run ID, which indicates a clobber."
+    assert len(call_ids) == len(set(call_ids)), (
+        "At least two compute graphs had the same run ID, which indicates a clobber."
+    )
 
 
 @pytest.mark.asyncio
 async def test_training_mode():
     with eval_mode():
         assert not get_training_mode(), "Training mode was not set to False"
-    assert (
-        get_training_mode()
-    ), "Training mode should have been reset to True after exiting context"
+    assert get_training_mode(), (
+        "Training mode should have been reset to True after exiting context"
+    )
 
     set_training_mode(False)
     with train_mode():
         assert get_training_mode(), "Training mode was not set to True"
-    assert (
-        not get_training_mode()
-    ), "Training mode should have been reset to False after exiting context"
+    assert not get_training_mode(), (
+        "Training mode should have been reset to False after exiting context"
+    )
 
     # Put back to training for next round of tests
     set_training_mode(True)

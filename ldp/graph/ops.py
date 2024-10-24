@@ -25,7 +25,8 @@ GradOutType: TypeAlias = tree.Structure | None  # None means the gradient has te
 GradInType: TypeAlias = tuple[Sequence[GradOutType], Mapping[str, GradOutType]]
 BackwardsType: TypeAlias = Callable[
     # Call signature of Op.backward
-    ["OpCtx", list, dict, tree.Structure, "CallID"], GradInType
+    ["OpCtx", list, dict, tree.Structure, "CallID"],
+    GradInType,
 ]
 TOutput = TypeVar("TOutput")
 
@@ -108,7 +109,8 @@ class OpResult(Generic[TOutput]):
                 [tree.assert_same_structure(grad_output[0], g) for g in grad_output[1:]]
             except ValueError as e:
                 raise ValueError(
-                    f"Mismatched gradient structures in compute graph for at Op: {self.op_name}."
+                    "Mismatched gradient structures in compute graph for at Op:"
+                    f" {self.op_name}."
                 ) from e
             aggregated_grad_output = tree.map_structure(lambda *x: sum(x), *grad_output)  # noqa: FURB111
 
@@ -128,8 +130,9 @@ class OpResult(Generic[TOutput]):
 
             if kwarg_grads.keys() != input_kwargs.keys():
                 raise ValueError(
-                    f"Mismatch between grads returned in Op.backward and its input kwargs. "
-                    f"Expected {input_kwargs.keys()}, got {kwarg_grads.keys()}."
+                    "Mismatch between grads returned in Op.backward and its input"
+                    f" kwargs. Expected {input_kwargs.keys()}, got"
+                    f" {kwarg_grads.keys()}."
                 )
             for k, a in input_kwargs.items():
                 # input_kwargs.keys() may be a subset of kwarg_grads.keys() if defaults
@@ -328,12 +331,14 @@ class OpCtx(BaseModel):
     data: dict = Field(
         default_factory=lambda: defaultdict(dict),
         exclude=True,
-        description="Maps run_id -> (fwd_id, key) -> value. "
-        "data is excluded from model_dump() etc because we do "
-        "not use Pydantic to persist context information. That "
-        "should be done via the DB backend instead. OpCtx will "
-        "serialize op_name, which is enough to rehydrate "
-        "from the DB.",
+        description=(
+            "Maps run_id -> (fwd_id, key) -> value. "
+            "data is excluded from model_dump() etc because we do "
+            "not use Pydantic to persist context information. That "
+            "should be done via the DB backend instead. OpCtx will "
+            "serialize op_name, which is enough to rehydrate "
+            "from the DB."
+        ),
     )
 
     def __init__(self, **kwargs):
@@ -519,8 +524,8 @@ class Op(ABC, Generic[TOutput]):
             if isinstance(arg, OpResult)
         ):
             raise RuntimeError(
-                "All args and kwargs must have the same run_id as the call_id's run_id. "
-                "Consider using @compute_graph() decorator to ensure this."
+                "All args and kwargs must have the same run_id as the call_id's run_id."
+                " Consider using @compute_graph() decorator to ensure this."
             )
 
         # we're over-saving here - can explore later if memory usage is high

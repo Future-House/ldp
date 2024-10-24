@@ -72,9 +72,11 @@ class EvaluatorConfig(BaseModel):
     batch_size: int = 1
     num_eval_iterations: int | None = Field(
         None,
-        description="Number of eval iterations. "
-        "If not provided, will exhaust the dataset. "
-        "If 0, will not run the eval loop. ",
+        description=(
+            "Number of eval iterations. "
+            "If not provided, will exhaust the dataset. "
+            "If 0, will not run the eval loop. "
+        ),
     )
     max_rollout_steps: int | None = None
     catch_agent_failures: bool = True

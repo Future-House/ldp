@@ -487,7 +487,8 @@ class TerminalPrintingCallback(Callback):
             from rich.pretty import pprint  # noqa: F401
         except ImportError as e:
             raise ImportError(
-                f"rich is required for {type(self).__name__}. Please install it with `pip install rich`."
+                f"rich is required for {type(self).__name__}. Please install it with"
+                " `pip install rich`."
             ) from e
 
     async def before_transition(

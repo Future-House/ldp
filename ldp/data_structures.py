@@ -190,14 +190,14 @@ class TransitionTree:
             weight: Weight of the transition. Defaults to 1.0.
         """
         root_id, *step_ids = step_id.split(":")
-        assert (
-            root_id == self.root_id
-        ), f"Step ID {step_id} does not start with root ID {self.root_id}"
+        assert root_id == self.root_id, (
+            f"Step ID {step_id} does not start with root ID {self.root_id}"
+        )
         assert step_ids, "Step ID cannot be the same as the root ID."
         # TODO: maybe this should be warning?
-        assert (
-            step_id not in self.tree
-        ), f"Step ID {step_id} already exists in the tree."
+        assert step_id not in self.tree, (
+            f"Step ID {step_id} already exists in the tree."
+        )
 
         self._add_node(step_id, transition=step, weight=weight)
 

@@ -12,8 +12,12 @@ from .agent import Agent
 from .simple_agent import SimpleAgentState
 
 MISSING_DEFAULT = object()
-CLEAR = "CLEAR"  # Clears the current input and allows the user to start over, e.g. if they made a mistake
-EXIT = "EXIT"  # Exits the agent by raising a RuntimeError. Makes it possible to interrupt a rollout
+CLEAR = (  # Clears the current input and allows the user to start over, e.g. if they made a mistake
+    "CLEAR"
+)
+EXIT = (  # Exits the agent by raising a RuntimeError. Makes it possible to interrupt a rollout
+    "EXIT"
+)
 
 
 class InteractiveAgent(Agent[SimpleAgentState]):
@@ -69,7 +73,8 @@ class InteractiveAgent(Agent[SimpleAgentState]):
             )
             if not tool:
                 print(
-                    f"Tool '{tool_choice}' not found. Please select from the above tools."
+                    f"Tool '{tool_choice}' not found. Please select from the above"
+                    " tools."
                 )
 
         params: dict[str, Any] = {}

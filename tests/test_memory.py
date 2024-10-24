@@ -43,6 +43,6 @@ async def test_add_then_get_memory(sample_memory: Memory) -> None:
 @pytest.mark.asyncio
 async def test_initialization_without_embedding():
     model = UIndexMemoryModel()
-    assert isinstance(
-        model.embedding_model, EmbeddingModel
-    ), "Default embedding model should be set"
+    assert isinstance(model.embedding_model, EmbeddingModel), (
+        "Default embedding model should be set"
+    )

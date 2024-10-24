@@ -37,7 +37,8 @@ def get_or_make_environment(environment: Environment | str, task: str) -> Enviro
             return Environment.from_name(environment, task=task)
 
     raise ValueError(
-        f"Could not resolve environment: {environment}. Available environments: {Environment.available()}"
+        f"Could not resolve environment: {environment}. Available environments:"
+        f" {Environment.available()}"
     )
 
 

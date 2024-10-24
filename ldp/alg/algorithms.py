@@ -58,9 +58,9 @@ def to_network(  # noqa: C901
         return result if ":" not in result else f'"{result}"'  # Escape colons
 
     call_id = op_result.call_id
-    assert (
-        call_id is not None
-    ), "to_network currently assumes a compute graph is available"
+    assert call_id is not None, (
+        "to_network currently assumes a compute graph is available"
+    )
     ctx = op_result.ctx
 
     op_result_str = gvizify(op_result)
