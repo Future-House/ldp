@@ -179,6 +179,10 @@ class OpResult(Generic[TOutput]):
         #    deserialization makes it hard to enforce that.
         return OpCtx.get_or_create(self.op_name)
 
+    @property
+    def op(self) -> Op:
+        return _OP_REGISTRY[self.op_name]
+
     def get_compute_graph(self, backward: bool = True) -> nx.DiGraph:
         """Construct a directed graph of the compute graph that led to this OpResult.
 
@@ -370,6 +374,9 @@ def resolve_fully_qualified_name(cls: type) -> str:
 # without needing an instantiated Op.
 _OP_CLASS_REGISTRY: dict[str, type[Op]] = {}
 
+# A global registry of Op instances, so that OpResults can trace back their provenance
+_OP_REGISTRY: dict[str, Op] = {}
+
 
 class Op(ABC, Generic[TOutput]):
     """
@@ -417,8 +424,13 @@ class Op(ABC, Generic[TOutput]):
         return instance
 
     def set_name(self, name: str) -> None:
+        if _OP_REGISTRY.get(getattr(self, "name", "")) is self:
+            # de-register before setting the new name
+            del _OP_REGISTRY[self.name]
+
         self.name = name
         self.ctx = OpCtx.get_or_create(name)
+        _OP_REGISTRY[name] = self
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} (name={self.name}, id={id(self)})"
