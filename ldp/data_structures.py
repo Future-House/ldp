@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
 from typing import Any, ClassVar, Self, cast
 from uuid import UUID
 
@@ -289,12 +289,12 @@ class TransitionTree:
 
     def merge_identical_nodes(
         self,
-        agent_state_hash_fn: Callable[[Any], int],
+        agent_state_hash_fn: Callable[[Any], Hashable],
         observation_hash_fn: Callable[
-            [list[ToolResponseMessage | Message]], int | str
+            [list[ToolResponseMessage | Message]], Hashable
         ] = join,
         next_observation_hash_fn: Callable[
-            [list[ToolResponseMessage | Message]], int | str
+            [list[ToolResponseMessage | Message]], Hashable
         ] = join,
     ) -> TransitionTree:
         """Merge nodes with identical (state, observation, action)s. Returns a new tree.
