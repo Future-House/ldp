@@ -145,9 +145,9 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
                 if isinstance(m, ToolResponseMessage):
                     obs[i] = Message(content=f"Observation: {m.content}")
         else:
-            for m in obs:
+            for i, m in enumerate(obs):
                 if isinstance(m, ToolResponseMessage):
-                    m.content = f"Observation: {m.content}"
+                    obs[i] = m.model_copy(update={'content': f'Observation: {m.content}'})
         next_state = agent_state.get_next_state(obs=obs)
         action_selection_result, new_messages = await self._react_module(
             messages=next_state.messages, tools=next_state.tools
