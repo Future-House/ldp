@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 import itertools
 import logging
+import secrets
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Collection, Iterable, Iterator, Mapping, Sequence
@@ -413,7 +414,7 @@ class Op(ABC, Generic[TOutput]):
         # Needs to be overridden by caller if this Op is to have
         # a unique name in the compute graph. c.f. Agent.__init_subclass__
         # for an example of how to do this.
-        instance.set_name(cls.__name__)
+        instance.set_name(cls._make_unique_default_name())
 
         # Set an attribute to help us map positional forward arguments to parameter
         # names, for the backward pass. We do this on the instance and not cls b/c
@@ -422,6 +423,11 @@ class Op(ABC, Generic[TOutput]):
         instance._fwd_args = list(fwd_sig.parameters.values())
 
         return instance
+
+    @classmethod
+    def _make_unique_default_name(cls) -> str:
+        # hex of size 6 results in string of size 12
+        return f"{cls.__name__}_{secrets.token_hex(6)}"
 
     def set_name(self, name: str) -> None:
         if _OP_REGISTRY.get(getattr(self, "name", "")) is self:
