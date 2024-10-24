@@ -175,22 +175,16 @@ class APEOpt(BaseModel, Optimizer):
             d_returns = trajectory.compute_discounted_returns(self.reward_discount)
 
         for i_step, step in enumerate(trajectory.steps):
-            action_call_id = cast(OpResult, step.action).call_id
-            llm_call_ids = self.llm_call_op.get_call_ids({action_call_id.run_id})
+            action = cast(OpResult, step.action)
 
             if self.score_fn == APEScoreFn.GRADIENT:
-                prompt_call_id, *extra_prompt_call_ids = self.prompt_op.get_call_ids({
-                    action_call_id.run_id
-                })
-                # TODO: loosen this restriction once grad acc/topological traversal are done
-                assert (
-                    not extra_prompt_call_ids
-                ), "APE only supports one prompt call per run"
+                prompt_op_result, *extra = action.get_upstream_results(self.prompt_op)
+                assert not extra, "APE only supports one prompt call per run"
 
-            for llm_call_id in llm_call_ids:
+            for op_result in action.get_upstream_results(self.llm_call_op):
                 result = cast(
                     LLMResult | None,
-                    self.llm_call_op.ctx.get(llm_call_id, "result"),
+                    self.llm_call_op.ctx.get(op_result.call_id, "result"),
                 )
                 if result is None or not result.messages or not result.prompt:
                     continue
@@ -202,7 +196,7 @@ class APEOpt(BaseModel, Optimizer):
 
                 if self.score_fn == APEScoreFn.GRADIENT:
                     score = self.prompt_op.ctx.get(
-                        prompt_call_id, "grad_output", default=None
+                        prompt_op_result.call_id, "grad_output", default=None
                     )
                     if score is None:
                         # backprop did not reach this op call - move on

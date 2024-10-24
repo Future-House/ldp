@@ -409,3 +409,23 @@ async def test_embedding_op(model, dense_embedding_size, sparse_embedding_size) 
     assert op_result.value.shape[0] == dense_embedding_size + sparse_embedding_size
     op_result.compute_grads()
     assert op.get_input_grads(op_result.call_id) == ([], {"string_input": None})
+
+
+@pytest.mark.asyncio
+async def test_op_lookup():
+    op_a = FxnOp[int](lambda: 1)
+    op_a.set_name("op_a")
+
+    # don't set name on these two to make sure default names
+    # still map uniquely
+    op_b = FxnOp[int](lambda x: 2 * x)
+    op_c = FxnOp[int](lambda x: -x)
+
+    async with compute_graph():
+        a = await op_a()
+        b = await op_b(a)
+        c = await op_c(b)
+
+    assert a.op == op_a
+    assert b.op == op_b
+    assert c.op == op_c

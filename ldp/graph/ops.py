@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 import itertools
 import logging
+import secrets
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Collection, Iterable, Iterator, Mapping, Sequence
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 GradOutType: TypeAlias = tree.Structure | None  # None means the gradient has terminated
 GradInType: TypeAlias = tuple[Sequence[GradOutType], Mapping[str, GradOutType]]
 BackwardsType: TypeAlias = Callable[
-    # Call signature of Op.backward or GradientEstimator.backward
+    # Call signature of Op.backward
     ["OpCtx", list, dict, tree.Structure, "CallID"], GradInType
 ]
 TOutput = TypeVar("TOutput")
@@ -179,6 +180,10 @@ class OpResult(Generic[TOutput]):
         #    deserialization makes it hard to enforce that.
         return OpCtx.get_or_create(self.op_name)
 
+    @property
+    def op(self) -> Op:
+        return _OP_REGISTRY[self.op_name]
+
     def get_compute_graph(self, backward: bool = True) -> nx.DiGraph:
         """Construct a directed graph of the compute graph that led to this OpResult.
 
@@ -205,6 +210,18 @@ class OpResult(Generic[TOutput]):
         add_edges(graph, self)
 
         return graph
+
+    def get_upstream_results(self, op: str | Op) -> Iterator[OpResult]:
+        """Get all OpResults upstream of this node that were produced by the given Op.
+
+        Args:
+            op: Will return all upstream nodes that were produced by this Op. Can provide
+                 an instance or Op name.
+        """
+        if isinstance(op, Op):
+            op = op.name
+
+        return self.traverse(filter_fn=lambda node: node.op_name == op)
 
     def traverse(
         self,
@@ -303,6 +320,7 @@ NOT_FOUND = object()
 class OpCtx(BaseModel):
     # A global registry of contexts. We'd prefer to use an existing context
     # for an Op if it already has been created. Also useful for persist_all()
+    # NOTE: see the comment on _OP_REGISTRY below on a potential memory leak.
     _CTX_REGISTRY: ClassVar[dict[str, OpCtx]] = {}
 
     op_name: str
@@ -370,6 +388,12 @@ def resolve_fully_qualified_name(cls: type) -> str:
 # without needing an instantiated Op.
 _OP_CLASS_REGISTRY: dict[str, type[Op]] = {}
 
+# A global registry of Op instances, so that OpResults can trace back their provenance
+# TODO: this can leak memory if we are frequently deleting Ops. We should add a custom
+# garbage collection hook to remove Ops from the registry once the reference count
+# drops to 1 (i.e. just the registry).
+_OP_REGISTRY: dict[str, Op] = {}
+
 
 class Op(ABC, Generic[TOutput]):
     """
@@ -404,9 +428,9 @@ class Op(ABC, Generic[TOutput]):
         instance = super().__new__(cls)
 
         # Needs to be overridden by caller if this Op is to have
-        # a unique name in the compute graph. c.f. Agent.__init_subclass__
+        # an identifiable name in the compute graph. c.f. Agent.__init_subclass__
         # for an example of how to do this.
-        instance.set_name(cls.__name__)
+        instance.set_name(cls._make_unique_default_name())
 
         # Set an attribute to help us map positional forward arguments to parameter
         # names, for the backward pass. We do this on the instance and not cls b/c
@@ -416,9 +440,19 @@ class Op(ABC, Generic[TOutput]):
 
         return instance
 
+    @classmethod
+    def _make_unique_default_name(cls) -> str:
+        # 6 bytes results in string of size 12
+        return f"{cls.__name__}-{secrets.token_hex(6)}"
+
     def set_name(self, name: str) -> None:
+        if _OP_REGISTRY.get(getattr(self, "name", "")) is self:
+            # de-register before setting the new name
+            del _OP_REGISTRY[self.name]
+
         self.name = name
         self.ctx = OpCtx.get_or_create(name)
+        _OP_REGISTRY[name] = self
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__} (name={self.name}, id={id(self)})"
