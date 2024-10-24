@@ -1,5 +1,6 @@
 import networkx as nx
 import pytest
+from aviary.message import Message
 
 from ldp.data_structures import Transition, TransitionTree
 
@@ -47,7 +48,7 @@ def test_tree_mc_value():
     )
 
 
-def test_tree_node_merging():
+def test_tree_node_merging() -> None:
     root_id = "dummy"
     tree = TransitionTree(root_id=root_id)
 
@@ -65,24 +66,39 @@ def test_tree_node_merging():
     tree.add_transition(
         f"{root_id}:1", Transition(timestep=0, reward=0.0, agent_state=0, **kw)
     )
+    tree.add_transition(
+        f"{root_id}:2",
+        Transition(
+            timestep=0,
+            reward=0.0,
+            agent_state=0,
+            **(kw | {"next_observation": [Message(content="stub")]}),  # Stochastic env
+        ),
+    )
 
-    # Now add a child to each of the nodes
+    # Now some children nodes
     for parent in ("0", "1"):
-        tree.add_transition(
+        tree.add_transition(  # This tests merge of child nodes too
             f"{root_id}:{parent}:0",
             Transition(timestep=1, reward=0.0, agent_state=1, **kw),
         )
+    tree.add_transition(
+        f"{root_id}:2:0",
+        Transition(timestep=1, reward=0.0, agent_state=9, **kw),
+    )
 
-    # Tree at this stage is ROOT -> 0 -> 0:0; ROOT -> 1 -> 1:0
+    # Tree at this stage is ROOT -> 0 -> 0:0; ROOT -> 1 -> 1:0; ROOT -> 2 -> 2:0
 
     merged_tree = tree.merge_identical_nodes(lambda state: state)
-    # Tree should now be ROOT -> 0/1 -> 0:0/1:0
+    # Tree should now be ROOT -> 0/1 -> 0:0/1:0; ROOT -> 2 -> 2:0
 
-    assert len(tree.tree.nodes) == 5
-    assert len(merged_tree.tree.nodes) == 3
+    assert len(tree.tree.nodes) == 7
+    assert len(merged_tree.tree.nodes) == 5
 
     node_weights = [
         merged_tree.get_weight(step_id)
         for step_id in nx.topological_sort(merged_tree.tree)
     ]
-    assert node_weights == [1, 2, 2]  # 1 for the root, 2 for the others
+    # We expect 1 for the root, 2 for middle 0/1, 1 for the middle 2,
+    # 2 for the bottom 0 on the left, 1 for the bottom 0 on the right
+    assert node_weights == [1, 2, 1, 2, 1]

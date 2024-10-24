@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import json
 import logging
 import os
@@ -298,7 +299,7 @@ class TransitionTree:
         new_tree = TransitionTree(self.root_id)
 
         # step hash -> step ID
-        seen_nodes: dict[int, str] = {}
+        seen_hash_to_step_id: dict[int, str] = {}
         # old step ID -> new step ID
         node_remap: dict[str, str] = {self.root_id: self.root_id}
 
@@ -310,24 +311,31 @@ class TransitionTree:
             state_hash = agent_state_hash_fn(step.agent_state)
 
             if step.action is not None:
-                action = step.action.value
-                # Note that the tool call ID is not included in the hash, which we'd get if we did str(action)
-                # Two actions that have different IDs but are otherwise identical should be considered identical.
-                action_str = (action.content or "") + " ".join(
-                    str(tc) for tc in action.tool_calls
+                tool_request_msg = step.action.value
+                # NOTE: we are ignoring tool call ID in the comparison of tool requests.
+                # Thus, the tool call ID is excluded from the hash, so we can't just
+                # simply call str(tool_request_msg)
+                action_str = (tool_request_msg.content or "") + " ".join(
+                    str(tc) for tc in tool_request_msg.tool_calls
                 )
             else:
                 action_str = ""
 
-            step_hash = hash((state_hash, join(step.observation), action_str))
+            step_hash = hash((
+                state_hash,
+                action_str,
+                # (s, a, o): works for deterministic envs
+                # (s, a, o, o'): works for both deterministic and stochastic envs
+                join(itertools.chain(step.observation, step.next_observation)),
+            ))
             step_weight = self.get_weight(step_id)
 
-            if step_hash in seen_nodes:
-                merged_node_id = node_remap[step_id] = seen_nodes[step_hash]
+            if step_hash in seen_hash_to_step_id:  # Seen: merge
+                merged_step_id = node_remap[step_id] = seen_hash_to_step_id[step_hash]
                 # Not sure if this is the fastest way to do this
-                new_tree.tree.nodes[merged_node_id]["weight"] += step_weight
-            else:
-                node_remap[step_id] = seen_nodes[step_hash] = step_id
+                new_tree.tree.nodes[merged_step_id]["weight"] += step_weight
+            else:  # Unseen: don't merge
+                node_remap[step_id] = seen_hash_to_step_id[step_hash] = step_id
                 parent_id = node_remap[":".join(step_id.split(":")[:-1])]
 
                 # manually add transitions, since the step_id substring relationship
