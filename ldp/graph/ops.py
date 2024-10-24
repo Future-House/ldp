@@ -320,6 +320,7 @@ NOT_FOUND = object()
 class OpCtx(BaseModel):
     # A global registry of contexts. We'd prefer to use an existing context
     # for an Op if it already has been created. Also useful for persist_all()
+    # NOTE: see the comment on _OP_REGISTRY below on a potential memory leak.
     _CTX_REGISTRY: ClassVar[dict[str, OpCtx]] = {}
 
     op_name: str
@@ -388,6 +389,9 @@ def resolve_fully_qualified_name(cls: type) -> str:
 _OP_CLASS_REGISTRY: dict[str, type[Op]] = {}
 
 # A global registry of Op instances, so that OpResults can trace back their provenance
+# TODO: this can leak memory if we are frequently deleting Ops. We should add a custom
+# garbage collection hook to remove Ops from the registry once the reference count
+# drops to 1 (i.e. just the registry).
 _OP_REGISTRY: dict[str, Op] = {}
 
 
