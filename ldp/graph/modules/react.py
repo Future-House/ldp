@@ -260,10 +260,9 @@ class ReActModuleSinglePrompt:
 
 
 def generate_tool_selection_prompt(react_message: Message) -> Message:
-    reasoning = react_message.content or ""
-    reasoning = reasoning.removeprefix("Thought: ")
+    reasoning = (react_message.content or "").removeprefix("Thought: ")
     return Message(
-        content=f"Thought: {reasoning}. Based on this reasoning, let's select the appropriate tool!\n Action: ",
+        content=f"Thought: {reasoning}. Based on this reasoning, let's select the appropriate tool!\nAction: ",
         role="assistant",
     )
 
