@@ -151,11 +151,7 @@ class TestSimpleAgent:
             raise RuntimeError("Could not find LLMCallOp in compute graph")
 
     @pytest.mark.parametrize(
-        "model_name",
-        [
-            CILLMModelNames.ANTHROPIC.value,
-            CILLMModelNames.OPENAI.value
-        ]
+        "model_name", [CILLMModelNames.ANTHROPIC.value, CILLMModelNames.OPENAI.value]
     )
     @pytest.mark.asyncio
     @pytest.mark.vcr
