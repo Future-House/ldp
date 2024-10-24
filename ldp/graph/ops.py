@@ -212,7 +212,12 @@ class OpResult(Generic[TOutput]):
         return graph
 
     def get_upstream_results(self, op: str | Op) -> Iterator[OpResult]:
-        """Get all OpResults upstream of this node that were produced by the given Op."""
+        """Get all OpResults upstream of this node that were produced by the given Op.
+
+        Args:
+            op: Will return all upstream nodes that were produced by this Op. Can provide
+                 an instance or Op name.
+        """
         if isinstance(op, Op):
             op = op.name
 
