@@ -240,6 +240,7 @@ class ReActModuleSinglePrompt:
         self.tool_select_module = ParsedLLMCallModule[ToolRequestMessage](
             llm_model=llm_model, parser=self.parse_message
         )
+
     @property
     def llm_call_op(self) -> LLMCallOp:
         return self.tool_select_module.llm_call_op
@@ -276,11 +277,15 @@ class ReActModule(ReActModuleSinglePrompt):
         self._tool_description_method = tool_description_method
         llm_model["stop"] = ["Observation:", "Action:"]
         self.llm_config = llm_model
-        self.llm_call_op = LLMCallOp()
+        self._llm_call_op = LLMCallOp()
         self.prompt_op = PromptOp(sys_prompt)
         self.package_msg_op = FxnOp(prepend_sys)
         self.append_msg_op = FxnOp(lambda msgs, msg: [*msgs, msg])
         self.tool_selection_msg_op = FxnOp(generate_tool_selection_prompt)
+
+    @property
+    def llm_call_op(self) -> LLMCallOp:
+        return self._llm_call_op
 
     @compute_graph()
     async def __call__(

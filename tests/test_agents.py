@@ -180,10 +180,7 @@ class TestSimpleAgent:
 
         action.compute_grads(
             reward,
-            backward_fns={
-                "_config_op": ste,
-                "_llm_call_op": llm_ste
-            },
+            backward_fns={"_config_op": ste, "_llm_call_op": llm_ste},
         )
 
         _, g = action.ctx.get_input_grads(action.call_id)
@@ -429,6 +426,7 @@ class TestReActAgent:
                 "_react_module.prompt_op": ste_,
                 "_react_module.append_msg_op": ste_,
                 "_react_module.llm_call_op": llm_ste,
+                "_react_module._llm_call_op": llm_ste,
                 "_react_module.tool_select_module.parse_msg_op": ste_,
                 "_react_module.tool_select_module.config_op": ste_,
                 "_react_module.tool_selection_msg_op": ste_,
