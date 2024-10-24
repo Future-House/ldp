@@ -315,15 +315,15 @@ class TransitionTree:
                 # NOTE: we are ignoring tool call ID in the comparison of tool requests.
                 # Thus, the tool call ID is excluded from the hash, so we can't just
                 # simply call str(tool_request_msg)
-                action_hash = (tool_request_msg.content or "") + " ".join(
+                action_str = (tool_request_msg.content or "") + " ".join(
                     str(tc) for tc in tool_request_msg.tool_calls
                 )
             else:
-                action_hash = ""
+                action_str = ""
 
             step_hash = hash((
                 state_hash,
-                action_hash,
+                action_str,
                 # (s, a, o): works for deterministic envs
                 # (s, a, o, o'): works for both deterministic and stochastic envs
                 join(itertools.chain(step.observation, step.next_observation)),
