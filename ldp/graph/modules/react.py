@@ -9,7 +9,7 @@ from aviary.message import EMPTY_CONTENT_BASE_MSG, MalformedMessageError, Messag
 from aviary.tools import Tool, ToolCall, ToolRequestMessage
 
 from ldp.graph import FxnOp, LLMCallOp, OpResult, PromptOp, compute_graph
-from ldp.llms import append_to_messages, prepend_sys
+from ldp.llms import prepend_sys
 
 from .llm_call import ParsedLLMCallModule
 
@@ -242,13 +242,12 @@ class ReActModuleSinglePrompt:
         self.tool_select_module = ParsedLLMCallModule[ToolRequestMessage](
             llm_model=llm_model, parser=self.parse_message
         )
-        self.append_msg_op = FxnOp(append_to_messages)
         self.llm_call_op = self.tool_select_module.llm_call_op
 
     @compute_graph()
     async def __call__(
         self, messages: MutableSequence[Message], tools: list[Tool]
-    ) -> OpResult[ToolRequestMessage]:
+    ) -> tuple[OpResult[ToolRequestMessage], list[Message]]:
         packaged_msgs = await self.package_msg_op(
             messages, sys_content=await self._create_system_prompt(tools)
         )
@@ -256,14 +255,13 @@ class ReActModuleSinglePrompt:
             packaged_msgs,  # type: ignore[arg-type]
             tools=tools,
         )
-        await self.append_msg_op(messages, react_message)
-        return final_result
+        return final_result, [react_message]
 
 
 def generate_tool_selection_prompt(react_message: Message) -> Message:
     reasoning = react_message.content or ""
     return Message(
-        content=f"Thought: {reasoning}. Based on this reasoning, let's select the appropriate tool!\nAction: ",
+        content=f"Thought: {reasoning}. Based on this reasoning, let's select the appropriate tool!\n Action: ",
         role="assistant",
     )
 
@@ -281,13 +279,13 @@ class ReActModule(ReActModuleSinglePrompt):
         self.llm_call_op = LLMCallOp()
         self.prompt_op = PromptOp(sys_prompt)
         self.package_msg_op = FxnOp(prepend_sys)
-        self.append_msg_op = FxnOp(append_to_messages)
+        self.append_msg_op = FxnOp(lambda msgs, msg: [*msgs, msg])
         self.tool_selection_msg_op = FxnOp(generate_tool_selection_prompt)
 
     @compute_graph()
     async def __call__(
         self, messages: MutableSequence[Message], tools: list[Tool]
-    ) -> OpResult[ToolRequestMessage]:
+    ) -> tuple[OpResult[ToolRequestMessage], list[Message]]:
         packaged_msgs = await self.package_msg_op(
             messages, sys_content=await self._create_system_prompt(tools)
         )
@@ -296,7 +294,6 @@ class ReActModule(ReActModuleSinglePrompt):
             self.llm_config,
             msgs=packaged_msgs,
             tools=tools,
-            # NOTE: as of 10/23/2024, this 'none' was incompatible with Anthropic API
             tool_choice="none",  # Reasoning shouldn't pick a tool
         )
         # Add the reasoning to messages. Generate the tool selection prompt
@@ -310,5 +307,7 @@ class ReActModule(ReActModuleSinglePrompt):
         tool_selection_msg = await self.llm_call_op(
             self.llm_config, msgs=packaged_msgs_with_reasoning, tools=tools
         )
-        await self.append_msg_op(messages, tool_selection_msg)
-        return cast(OpResult[ToolRequestMessage], tool_selection_msg)
+        return cast(OpResult[ToolRequestMessage], tool_selection_msg), [
+            reasoning_msg.value,
+            tool_selection_msg.value,
+        ]

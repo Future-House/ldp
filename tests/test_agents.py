@@ -301,7 +301,6 @@ class TestReActAgent:
             (False, "gpt-4o"),
         ],
     )
-    @pytest.mark.flaky(reruns=3)
     @pytest.mark.asyncio
     @pytest.mark.vcr
     async def test_react_dummyenv(
@@ -385,7 +384,6 @@ class TestReActAgent:
             (False, "gpt-4o"),
         ],
     )
-    @pytest.mark.flaky(reruns=3)
     @pytest.mark.asyncio
     @pytest.mark.vcr
     async def test_agent_grad(
@@ -419,6 +417,8 @@ class TestReActAgent:
             backward_fns={
                 "_react_module.package_msg_op": ste_,
                 "_react_module.prompt_op": ste_,
+                "_react_module.append_msg_op": ste_,
+                "_react_module.tool_selection_msg_op": ste_,
                 "_react_module.tool_select_module.llm_call_op": llm_ste,  # for single_prompt
                 "_react_module.llm_call_op": llm_ste,  # for not single_prompt
                 "_react_module.tool_select_module.parse_msg_op": ste_,

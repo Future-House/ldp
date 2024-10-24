@@ -148,7 +148,8 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
                 if isinstance(m, ToolResponseMessage):
                     m.content = f"Observation: {m.content}"
         next_state = agent_state.get_next_state(obs=obs)
-        action_selection_op = await self._react_module(
+        action_selection_op, new_messages = await self._react_module(
             messages=next_state.messages, tools=next_state.tools
         )
+        next_state.messages = [*next_state.messages, *new_messages]
         return action_selection_op, next_state, 0.0
