@@ -36,7 +36,7 @@ from ldp.graph.modules import (
 from ldp.llms import LLMModel
 
 from . import CILLMModelNames
-from .conftest import IN_GITHUB_ACTIONS
+from .conftest import IN_GITHUB_ACTIONS, VCR_DEFAULT_MATCH_ON
 
 HERE = Path(__file__).parent
 
@@ -308,7 +308,7 @@ class TestReActAgent:
         ],
     )
     @pytest.mark.asyncio
-    @pytest.mark.vcr
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     async def test_react_dummyenv(
         self, dummy_env: DummyEnv, model_name: str, single_prompt: bool
     ) -> None:
@@ -391,7 +391,7 @@ class TestReActAgent:
         ],
     )
     @pytest.mark.asyncio
-    @pytest.mark.vcr
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     async def test_agent_grad(
         self, dummy_env: DummyEnv, model_name: str, single_prompt: bool
     ) -> None:
