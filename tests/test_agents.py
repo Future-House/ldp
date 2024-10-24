@@ -411,7 +411,7 @@ class TestReActAgent:
         # to check that gradients are flowing
         ste_ = partial(ste, descend=False)
         action.compute_grads(
-            reward,
+            1.0,
             # Give everything a straight-through gradient approximation
             # so we can confirm gradient flow
             backward_fns={
