@@ -9,6 +9,7 @@ from .common_ops import (
 )
 from .loss_ops import MSELossOp
 from .memory import Memory, MemoryModel
+from .modules import DQNOp, EmbeddingDQNOp
 from .op_utils import (
     CallID,
     compute_graph,
@@ -20,11 +21,13 @@ from .op_utils import (
     set_training_mode,
     train_mode,
 )
-from .ops import Op, OpCtx, OpResult
+from .ops import Op, OpCtx, OpResult, ResultOrValue
 
 __all__ = [
     "CallID",
     "ConfigOp",
+    "DQNOp",
+    "EmbeddingDQNOp",
     "EmbeddingOp",
     "FxnOp",
     "IdentityOp",
@@ -37,6 +40,7 @@ __all__ = [
     "OpCtx",
     "OpResult",
     "PromptOp",
+    "ResultOrValue",
     "compute_graph",
     "eval_mode",
     "get_call_id",
