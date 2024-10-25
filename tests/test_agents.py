@@ -301,6 +301,7 @@ class TestReActAgent:
             (True, CILLMModelNames.ANTHROPIC.value),
             (True, "gpt-4-turbo"),
             (False, "gpt-4o"),
+            (False, CILLMModelNames.ANTHROPIC.value),
         ],
     )
     @pytest.mark.asyncio
@@ -384,6 +385,7 @@ class TestReActAgent:
             (True, CILLMModelNames.ANTHROPIC.value),
             (True, "gpt-4-turbo"),
             (False, "gpt-4o"),
+            (False, CILLMModelNames.ANTHROPIC.value),
         ],
     )
     @pytest.mark.asyncio

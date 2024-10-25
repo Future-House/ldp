@@ -270,6 +270,11 @@ def postprocess_and_concat_resoning_msg(
             # Role is 'assistant' here (normally 'user') since we use the model's reasoning to ask for an action.
             role="assistant",
         ),
+        # We interleave a user message as required by some APIs
+        Message(
+            content="Continue...",
+            role="user",
+        ),
     ]
 
 
@@ -316,6 +321,6 @@ class ReActModule(ReActModuleSinglePrompt):
             self.llm_config, msgs=packaged_msgs_with_reasoning, tools=tools
         )
         return cast(OpResult[ToolRequestMessage], tool_selection_msg), [
-            reasoning_msg.value,
+            *packaged_msgs_with_reasoning.value[-2:],
             cast(ToolRequestMessage, tool_selection_msg.value),
         ]
