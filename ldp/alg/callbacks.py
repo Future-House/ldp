@@ -112,6 +112,20 @@ class Callback:
         """Invoked by OnlineTrainer after each optimizer.update() call."""
 
 
+class StoreTrajectoriesCallback(Callback):
+    """Simple callback that stores train/eval trajectories in an in-memory list."""
+
+    def __init__(self):
+        self.train_trajectories = []
+        self.eval_trajectories = []
+
+    async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
+        self.train_trajectories.extend(trajectories)
+
+    async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
+        self.eval_trajectories.extend(trajectories)
+
+
 class TrajectoryFileCallback(Callback):
     """Callback that writes trajectories to a file."""
 
