@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.graph.torch_ops &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.graph.torch_ops</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ClassVar</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">torch</span>
+    <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+        <span class="s2">&quot;ldp.graph.torch_ops requires PyTorch as a dependency. &quot;</span>
+        <span class="s2">&quot;Please run `pip install ldp[nn]`.&quot;</span>
+    <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span>
+
+<span class="kn">from</span> <span class="nn">.async_torch</span> <span class="kn">import</span> <span class="n">async_protect_torch_call</span>
+<span class="kn">from</span> <span class="nn">.op_utils</span> <span class="kn">import</span> <span class="n">CallID</span><span class="p">,</span> <span class="n">get_call_id</span><span class="p">,</span> <span class="n">get_training_mode</span>
+<span class="kn">from</span> <span class="nn">.ops</span> <span class="kn">import</span> <span class="n">GradInType</span><span class="p">,</span> <span class="n">Op</span><span class="p">,</span> <span class="n">OpCtx</span><span class="p">,</span> <span class="n">ResultOrValue</span>
+
+
+<div class="viewcode-block" id="TorchOp">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.torch_ops.TorchOp">[docs]</a>
+<span class="k">class</span> <span class="nc">TorchOp</span><span class="p">(</span><span class="n">Op</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An operation that wraps a PyTorch module.&quot;&quot;&quot;</span>
+
+    <span class="n">CTX_TENSOR_INPUT_KEY</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;tensor_input&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span> <span class="o">=</span> <span class="n">module</span>
+
+        <span class="c1"># override forward args with the signature of the function</span>
+        <span class="n">fwd_sig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">forward</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fwd_args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">fwd_sig</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+<div class="viewcode-block" id="TorchOp.forward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.torch_ops.TorchOp.forward">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">tensor_args</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">arg</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
+            <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span>
+        <span class="p">]</span>
+        <span class="n">tensor_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+
+        <span class="n">is_training</span> <span class="o">=</span> <span class="n">get_training_mode</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">is_training</span><span class="p">:</span>
+            <span class="n">store_tensor_inputs</span><span class="p">(</span>
+                <span class="n">ctx</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">,</span>
+                <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">CTX_TENSOR_INPUT_KEY</span><span class="p">,</span>
+                <span class="n">tensor_args</span><span class="o">=</span><span class="n">tensor_args</span><span class="p">,</span>
+                <span class="n">tensor_kwargs</span><span class="o">=</span><span class="n">tensor_kwargs</span><span class="p">,</span>
+                <span class="n">fwd_args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_fwd_args</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="k">await</span> <span class="n">async_protect_torch_call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">no_grad</span><span class="o">=</span><span class="ow">not</span> <span class="n">is_training</span><span class="p">)(</span>
+            <span class="o">*</span><span class="n">tensor_args</span><span class="p">,</span> <span class="o">**</span><span class="n">tensor_kwargs</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TorchOp.backward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.torch_ops.TorchOp.backward">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>
+        <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">grad_output</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+        <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+        <span class="n">tensor_args</span><span class="p">,</span> <span class="n">tensor_kwargs</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">CTX_TENSOR_INPUT_KEY</span><span class="p">)</span>
+        <span class="n">n_pos_args</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensor_args</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">grad_output</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">grad_output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">grad_output</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">grad_output</span> <span class="o">=</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="n">output</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
+            <span class="c1"># Assume we can broadcast, so expand dims</span>
+            <span class="c1"># e.g. if output.shape = (2, 1, 1) and grad_output is a scalar</span>
+            <span class="c1"># then we want to expand to (1, 1, 1) and then broadcast</span>
+            <span class="n">grad_output</span> <span class="o">=</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Output shape </span><span class="si">{</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> does not match grad_output shape </span><span class="si">{</span><span class="n">grad_output</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">gradients</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span>
+            <span class="n">output</span><span class="p">,</span>
+            <span class="p">[</span><span class="o">*</span><span class="n">tensor_args</span><span class="p">,</span> <span class="o">*</span><span class="n">tensor_kwargs</span><span class="o">.</span><span class="n">values</span><span class="p">()],</span>
+            <span class="n">grad_outputs</span><span class="o">=</span><span class="n">grad_output</span><span class="p">,</span>
+            <span class="n">allow_unused</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">retain_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">grad_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">grad</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="k">for</span> <span class="n">grad</span> <span class="ow">in</span> <span class="n">gradients</span><span class="p">[:</span><span class="n">n_pos_args</span><span class="p">]]</span>
+        <span class="n">grad_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">grad</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">grad</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">tensor_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">gradients</span><span class="p">[</span><span class="n">n_pos_args</span><span class="p">:],</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">grad_args</span><span class="p">,</span> <span class="n">grad_kwargs</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="store_tensor_inputs">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.torch_ops.store_tensor_inputs">[docs]</a>
+<span class="k">def</span> <span class="nf">store_tensor_inputs</span><span class="p">(</span>
+    <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">tensor_args</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+    <span class="n">tensor_kwargs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+    <span class="n">fwd_args</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">inspect</span><span class="o">.</span><span class="n">Parameter</span><span class="p">],</span>
+    <span class="n">detach</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">call_id</span> <span class="o">=</span> <span class="n">get_call_id</span><span class="p">()</span>
+    <span class="c1"># Save tensor inputs for backward pass. Do not clobber &quot;input&quot;, since</span>
+    <span class="c1"># that is needed for compute graph. Map positional args to kwargs</span>
+    <span class="c1"># Copying so we don&#39;t modify tensor_kwargs in-place</span>
+    <span class="n">ctx_kwargs</span> <span class="o">=</span> <span class="n">tensor_kwargs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  <span class="c1"># type: ignore[attr-defined]</span>
+
+    <span class="c1"># See Op.__call__ for some notes on what this is doing.</span>
+    <span class="k">for</span> <span class="n">i_arg</span><span class="p">,</span> <span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+        <span class="c1"># strict=False b/c not all params in _fwd_args will be in args (i.e. defaults and **kwargs)</span>
+        <span class="nb">zip</span><span class="p">(</span><span class="n">tensor_args</span><span class="p">,</span> <span class="n">fwd_args</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">inspect</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">VAR_POSITIONAL</span><span class="p">:</span>
+            <span class="n">ctx_args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">tensor_args</span><span class="p">[</span><span class="n">i_arg</span><span class="p">:])</span>
+            <span class="k">break</span>
+
+        <span class="c1"># Normal positional arg</span>
+        <span class="n">ctx_kwargs</span><span class="p">[</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">arg</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ctx_args</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># if we got here, there were no *args</span>
+
+    <span class="k">if</span> <span class="n">detach</span><span class="p">:</span>
+        <span class="c1"># Detach the tensors from the compute graph and move to CPU</span>
+        <span class="n">ctx_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">arg</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">ctx_args</span><span class="p">]</span>
+        <span class="n">ctx_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ctx_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="n">ctx</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="p">(</span><span class="n">ctx_args</span><span class="p">,</span> <span class="n">ctx_kwargs</span><span class="p">))</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, FutureHouse.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

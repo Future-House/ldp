@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.agent.react_agent &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.agent.react_agent</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Self</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">from</span> <span class="nn">aviary.message</span> <span class="kn">import</span> <span class="n">MalformedMessageError</span><span class="p">,</span> <span class="n">Message</span>
+<span class="kn">from</span> <span class="nn">aviary.tools</span> <span class="kn">import</span> <span class="n">Tool</span><span class="p">,</span> <span class="n">ToolRequestMessage</span><span class="p">,</span> <span class="n">ToolResponseMessage</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">tenacity</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Future</span><span class="p">,</span>
+    <span class="n">RetryCallState</span><span class="p">,</span>
+    <span class="n">before_sleep_log</span><span class="p">,</span>
+    <span class="n">retry</span><span class="p">,</span>
+    <span class="n">retry_if_exception_type</span><span class="p">,</span>
+    <span class="n">stop_after_attempt</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">ldp.graph</span> <span class="kn">import</span> <span class="n">OpResult</span><span class="p">,</span> <span class="n">compute_graph</span>
+<span class="kn">from</span> <span class="nn">ldp.graph.modules.react</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ACT_DEFAULT_PROMPT_TEMPLATE</span><span class="p">,</span>
+    <span class="n">REACT_DEFAULT_PROMPT_TEMPLATE</span><span class="p">,</span>
+    <span class="n">ReActModule</span><span class="p">,</span>
+    <span class="n">ToolDescriptionMethods</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">DefaultLLMModelNames</span>
+<span class="kn">from</span> <span class="nn">.agent</span> <span class="kn">import</span> <span class="n">Agent</span>
+<span class="kn">from</span> <span class="nn">.simple_agent</span> <span class="kn">import</span> <span class="n">SimpleAgentState</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ReActAgent">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.react_agent.ReActAgent">[docs]</a>
+<span class="k">class</span> <span class="nc">ReActAgent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Agent</span><span class="p">[</span><span class="n">SimpleAgentState</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An Act or ReAct Agent built to work with chat models.</span>
+
+<span class="sd">    Paper: https://arxiv.org/abs/2210.03629</span>
+
+<span class="sd">    The ReAct style is like so, and note Act style has no &#39;Thought: &#39; entries:</span>
+<span class="sd">    System:</span>
+<span class="sd">        Answer the following questions as best you can. You have access to the following tools:</span>
+
+<span class="sd">            {tools}</span>
+
+<span class="sd">            Use the following format:</span>
+
+<span class="sd">            Thought: you should always think about what to do</span>
+<span class="sd">            Action: the action to take, should be one of [{tool_names}]</span>
+<span class="sd">            Action Input: the input to the action</span>
+<span class="sd">            Observation: the result of the action</span>
+<span class="sd">            ... (this Thought/Action/Action Input/Observation can repeat N times)</span>
+<span class="sd">    User:</span>
+<span class="sd">        {questions}</span>
+<span class="sd">    Assistant:</span>
+<span class="sd">        Thought:</span>
+<span class="sd">        Action:</span>
+<span class="sd">        Action Input:</span>
+<span class="sd">    User:</span>
+<span class="sd">        Observation:</span>
+<span class="sd">    Assistant:</span>
+<span class="sd">        Thought:</span>
+<span class="sd">        Action:</span>
+<span class="sd">        Action Input:</span>
+<span class="sd">    ...</span>
+
+<span class="sd">    One notable design decision is that ReAct&#39;s state does not necessarily</span>
+<span class="sd">    track ToolRequestMessage. Recall that aviary is in a partially observable</span>
+<span class="sd">    domain, meaning we don&#39;t need to have perfect symmetry with Environments.</span>
+<span class="sd">    Instead, ReActAgent&#39;s state stores a ReAct-style message history, where the</span>
+<span class="sd">    messages are plain Message (and not a ToolRequestMessage).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Freeze to ensure the only mutation happens in either the agent state (which is</span>
+    <span class="c1"># passed around) or in the internal Ops</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">llm_model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">DefaultLLMModelNames</span><span class="o">.</span><span class="n">OPENAI</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+            <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+            <span class="s2">&quot;logprobs&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;top_logprobs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Starting configuration for the LLM model.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">sys_prompt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">REACT_DEFAULT_PROMPT_TEMPLATE</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Learnable system prompt template, defaults to ReAct.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">tool_description_method</span><span class="p">:</span> <span class="n">ToolDescriptionMethods</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">ToolDescriptionMethods</span><span class="o">.</span><span class="n">STR</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Method used to describe the tools, defaults to &#39;str&#39; description.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="ReActAgent.make_act_agent">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.react_agent.ReActAgent.make_act_agent">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">make_act_agent</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">sys_prompt</span><span class="o">=</span><span class="n">ACT_DEFAULT_PROMPT_TEMPLATE</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_react_module</span> <span class="o">=</span> <span class="n">ReActModule</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">llm_model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sys_prompt</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tool_description_method</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="ReActAgent.init_state">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.react_agent.ReActAgent.init_state">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tool</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SimpleAgentState</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SimpleAgentState</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ReActAgent.after_retry_failure_log">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.react_agent.ReActAgent.after_retry_failure_log">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">after_retry_failure_log</span><span class="p">(</span><span class="n">retry_state</span><span class="p">:</span> <span class="n">RetryCallState</span><span class="p">):</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Failed across </span><span class="si">{</span><span class="n">retry_state</span><span class="o">.</span><span class="n">attempt_number</span><span class="si">}</span><span class="s2"> attempts to run get_asv given&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot; arguments </span><span class="si">{</span><span class="n">retry_state</span><span class="o">.</span><span class="n">args</span><span class="si">}</span><span class="s2"> and kwargs </span><span class="si">{</span><span class="n">retry_state</span><span class="o">.</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+        <span class="c1"># NOTE: this blows up with the underlying exception... it isn&#39;t wrapped in a</span>
+        <span class="c1"># RetryError like normal tenacity</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">Future</span><span class="p">,</span> <span class="n">retry_state</span><span class="o">.</span><span class="n">outcome</span><span class="p">)</span><span class="o">.</span><span class="n">result</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="ReActAgent.get_asv">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.react_agent.ReActAgent.get_asv">[docs]</a>
+    <span class="nd">@retry</span><span class="p">(</span>
+        <span class="n">retry</span><span class="o">=</span><span class="n">retry_if_exception_type</span><span class="p">(</span><span class="n">MalformedMessageError</span><span class="p">),</span>
+        <span class="n">before_sleep</span><span class="o">=</span><span class="n">before_sleep_log</span><span class="p">(</span><span class="n">logger</span><span class="p">,</span> <span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">),</span>
+        <span class="n">stop</span><span class="o">=</span><span class="n">stop_after_attempt</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span>
+        <span class="n">retry_error_callback</span><span class="o">=</span><span class="n">after_retry_failure_log</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="nd">@compute_graph</span><span class="p">()</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_asv</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">agent_state</span><span class="p">:</span> <span class="n">SimpleAgentState</span><span class="p">,</span> <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">OpResult</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">],</span> <span class="n">SimpleAgentState</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+        <span class="n">next_state</span> <span class="o">=</span> <span class="n">agent_state</span><span class="o">.</span><span class="n">get_next_state</span><span class="p">(</span>
+            <span class="n">obs</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">Message</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Observation: </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">ToolResponseMessage</span><span class="p">)</span>
+                <span class="k">else</span> <span class="n">m</span>
+                <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">obs</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">final_result</span><span class="p">,</span> <span class="n">react_message</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_react_module</span><span class="p">(</span>
+            <span class="n">messages</span><span class="o">=</span><span class="n">next_state</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="n">next_state</span><span class="o">.</span><span class="n">tools</span>
+        <span class="p">)</span>
+        <span class="n">next_state</span><span class="o">.</span><span class="n">messages</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">next_state</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span> <span class="n">react_message</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">final_result</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="mf">0.0</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../agent.html">ldp.agent</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

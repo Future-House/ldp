@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.graph.ops &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.graph.ops</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module defines the Op class and its helper classes.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeAlias</span><span class="p">,</span> <span class="n">TypeVar</span>
+<span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">tree</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="kn">from</span> <span class="nn">.op_utils</span> <span class="kn">import</span> <span class="n">CallID</span><span class="p">,</span> <span class="n">compute_graph</span><span class="p">,</span> <span class="n">get_call_id</span><span class="p">,</span> <span class="n">get_training_mode</span><span class="p">,</span> <span class="n">op_call</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="n">GradOutType</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span> <span class="o">|</span> <span class="kc">None</span>  <span class="c1"># None means the gradient has terminated</span>
+<span class="n">GradInType</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">GradOutType</span><span class="p">],</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">GradOutType</span><span class="p">]]</span>
+<span class="n">BackwardsType</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[</span>
+    <span class="c1"># Call signature of Op.backward or GradientEstimator.backward</span>
+    <span class="p">[</span><span class="s2">&quot;OpCtx&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span> <span class="s2">&quot;CallID&quot;</span><span class="p">],</span> <span class="n">GradInType</span>
+<span class="p">]</span>
+<span class="n">TOutput</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;TOutput&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="OpResult">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.OpResult">[docs]</a>
+<span class="k">class</span> <span class="nc">OpResult</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">TOutput</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Result of a forward pass, used in the compute graph.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span> <span class="o">|</span> <span class="n">Any</span><span class="p">,</span> <span class="n">op_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">op_class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">TOutput</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize an OpResult instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            call_id: The unique identifier for the call.</span>
+<span class="sd">            op_name: Name of the Op instance (i.e. op.name) that produced this OpResult.</span>
+<span class="sd">            op_class_name: Fully qualified name of the class of the Op that produced this OpResult.</span>
+<span class="sd">            value: The output of the call.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span> <span class="o">=</span> <span class="n">CallID</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">call_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">op_name</span> <span class="o">=</span> <span class="n">op_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">op_class_name</span> <span class="o">=</span> <span class="n">op_class_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="OpResult.to_dict">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.OpResult.to_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">value_dump</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;call_id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span>
+            <span class="s2">&quot;op_name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_name</span><span class="p">,</span>
+            <span class="s2">&quot;op_class_name&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_class_name</span><span class="p">,</span>
+            <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">value_dump</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="OpResult.from_dict">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.OpResult.from_dict">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">t_output</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">TOutput</span><span class="p">],</span> <span class="n">dump</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OpResult</span><span class="p">[</span><span class="n">TOutput</span><span class="p">]:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">dump</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">t_output</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">):</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">t_output</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">[</span><span class="n">t_output</span><span class="p">](</span><span class="o">**</span><span class="n">dump</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>  <span class="c1"># type: ignore[index]</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">call_id</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OpResult.compute_grads">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.OpResult.compute_grads">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_grads</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">backward_fns</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">type</span><span class="p">,</span> <span class="n">BackwardsType</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the gradient of the backward graph in-place.</span>
+
+<span class="sd">        This executes topological traversal.</span>
+<span class="sd">        It is up to the Op to:</span>
+<span class="sd">            (a) define the backward computation</span>
+<span class="sd">            (b) store internal gradients for optimizer updates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># call ID -&gt; [d op(x) / d x] for each op that consumes x</span>
+        <span class="n">grad_outputs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">CallID</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+        <span class="c1"># grad_outputs stores a list of output grads (corresponding to each consuming op call).</span>
+        <span class="c1"># Since the root node is not consumed by any other node, we create a singleton list here.</span>
+        <span class="c1"># If None was passed, set it to 0 so that we don&#39;t prune the compute graph here.</span>
+        <span class="n">grad_outputs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">call_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">grad_output</span><span class="p">]</span> <span class="k">if</span> <span class="n">grad_output</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span>
+
+        <span class="c1"># We will traverse the graph in reverse topological order</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">traverse</span><span class="p">():</span>
+            <span class="c1"># get output gradients</span>
+            <span class="n">grad_output</span> <span class="o">=</span> <span class="n">grad_outputs</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">call_id</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">grad_output</span><span class="p">:</span>
+                <span class="c1"># compute graph terminated</span>
+                <span class="k">continue</span>
+            <span class="c1"># Make sure structure of grads match before summing</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="p">[</span><span class="n">tree</span><span class="o">.</span><span class="n">assert_same_structure</span><span class="p">(</span><span class="n">grad_output</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">grad_output</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Mismatched gradient structures in compute graph for at Op: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">op_name</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+            <span class="n">aggregated_grad_output</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="k">lambda</span> <span class="o">*</span><span class="n">x</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="o">*</span><span class="n">grad_output</span><span class="p">)</span>  <span class="c1"># noqa: FURB111</span>
+
+            <span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">inputs</span>
+            <span class="n">arg_grads</span><span class="p">,</span> <span class="n">kwarg_grads</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">_run_backward</span><span class="p">(</span>
+                <span class="n">input_args</span><span class="p">,</span>
+                <span class="n">input_kwargs</span><span class="p">,</span>
+                <span class="n">aggregated_grad_output</span><span class="p">,</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">_resolve_backward_impl</span><span class="p">(</span><span class="n">backward_fns</span><span class="p">),</span>
+            <span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">input_args</span><span class="p">,</span> <span class="n">arg_grads</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+                <span class="c1"># Must have exact match between input_args and arg_grads</span>
+                <span class="c1"># Only propagate gradients to input OpResults if grad is not None</span>
+                <span class="k">if</span> <span class="n">g</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">):</span>
+                    <span class="n">grad_outputs</span><span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">call_id</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">kwarg_grads</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">!=</span> <span class="n">input_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Mismatch between grads returned in Op.backward and its input kwargs. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="n">input_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">kwarg_grads</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">input_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># input_kwargs.keys() may be a subset of kwarg_grads.keys() if defaults</span>
+                <span class="c1"># are specified</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">g</span> <span class="o">:=</span> <span class="n">kwarg_grads</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">):</span>
+                    <span class="n">grad_outputs</span><span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">call_id</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">g</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_resolve_backward_impl</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">backward_fns</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">type</span><span class="p">,</span> <span class="n">BackwardsType</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BackwardsType</span><span class="p">:</span>
+        <span class="n">backward_fns</span> <span class="o">=</span> <span class="n">backward_fns</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">op_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_class_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_class</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">backward_fns</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">backward_fns</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">op_class</span><span class="o">.</span><span class="n">backward</span>
+
+    <span class="k">def</span> <span class="nf">_run_backward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>
+        <span class="n">backward_fn</span><span class="p">:</span> <span class="n">BackwardsType</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_ctx</span><span class="p">(</span><span class="s2">&quot;grad_output&quot;</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">)</span>
+        <span class="n">unwrapped_input_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">OpResult</span><span class="o">.</span><span class="n">unwrap_value</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">input_args</span><span class="p">]</span>
+        <span class="n">unwrapped_input_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">OpResult</span><span class="o">.</span><span class="n">unwrap_value</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">input_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="n">input_grads</span> <span class="o">=</span> <span class="n">backward_fn</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="p">,</span>
+            <span class="n">unwrapped_input_args</span><span class="p">,</span>
+            <span class="n">unwrapped_input_kwargs</span><span class="p">,</span>
+            <span class="n">grad_output</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_update_ctx</span><span class="p">(</span><span class="s2">&quot;grad_input&quot;</span><span class="p">,</span> <span class="n">input_grads</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">input_grads</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">op_class</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">Op</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">_OP_CLASS_REGISTRY</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">op_class_name</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ctx</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OpCtx</span><span class="p">:</span>
+        <span class="c1"># This is a property to avoid serialization of the context. There are two reasons:</span>
+        <span class="c1"># 1. Contexts have their own persist() mechanism for serialization</span>
+        <span class="c1"># 2. We&#39;d prefer contexts to be created via get_or_create(). Allowing for arbitrary</span>
+        <span class="c1">#    deserialization makes it hard to enforce that.</span>
+        <span class="k">return</span> <span class="n">OpCtx</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">op_name</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OpResult.get_compute_graph">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.OpResult.get_compute_graph">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_compute_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backward</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct a directed graph of the compute graph that led to this OpResult.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            backward: If True (default), constructs the backwards graph in which outputs</span>
+<span class="sd">                point to inputs. If False, constructs the forward call graph.</span>
+<span class="sd">                For most cases (e.g. backprop), backward=True is desirable.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            A digraph in which nodes are OpResults.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">add_edges</span><span class="p">(</span><span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">OpResult</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Recursively add edges to the input graph.&quot;&quot;&quot;</span>
+            <span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span> <span class="o">=</span> <span class="n">node</span><span class="o">.</span><span class="n">inputs</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">):</span>
+                    <span class="n">edge</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="n">backward</span> <span class="k">else</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span>
+                    <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="o">*</span><span class="n">edge</span><span class="p">)</span>
+                    <span class="n">add_edges</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+
+        <span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">add_edges</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">graph</span></div>
+
+
+<div class="viewcode-block" id="OpResult.traverse">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.OpResult.traverse">[docs]</a>
+    <span class="k">def</span> <span class="nf">traverse</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">topological_order</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">filter_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">OpResult</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">OpResult</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Traverse the compute graph that led to this OpResult.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            topological_order: If True, traverse the backwards graph in topological</span>
+<span class="sd">                order. This requires having the whole graph in memory. If False,</span>
+<span class="sd">                traverse the backwards graph in depth-first order. This can be done</span>
+<span class="sd">                lazily and is useful if we are trying to hydrate the graph node-by-node.</span>
+<span class="sd">                Most user-facing cases can leave this as True. Defaults to True.</span>
+<span class="sd">            filter_fn: Will only yield nodes that pass this filter function. Note that</span>
+<span class="sd">                nodes that fail will still be traversed.</span>
+
+<span class="sd">        Yields:</span>
+<span class="sd">            An iterator over the nodes of this graph.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">topological_order</span><span class="p">:</span>
+            <span class="n">G</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_compute_graph</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="n">G</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">filter_fn</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="n">node</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># If not topological order, do a recursive depth-first traversal.</span>
+            <span class="c1"># Note that, when traversing a node, its children do not need to be available</span>
+            <span class="c1"># yet. This allows us to lazily load nodes when hydrating from a ctx backend.</span>
+            <span class="k">if</span> <span class="n">filter_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="bp">self</span>
+            <span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">):</span>
+                    <span class="c1"># Recursively apply depth-first traversal on each node</span>
+                    <span class="k">yield from</span> <span class="n">a</span><span class="o">.</span><span class="n">traverse</span><span class="p">(</span><span class="n">topological_order</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">]]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_from_ctx</span><span class="p">(</span><span class="s2">&quot;input&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">logprob</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_from_ctx</span><span class="p">(</span><span class="s2">&quot;logprob&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">grad</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns `d ln(P_{compute_graph}) / d self` or None if gradients have not been computed.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_from_ctx</span><span class="p">(</span><span class="s2">&quot;grad_output&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">run_id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UUID</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span><span class="o">.</span><span class="n">run_id</span>
+
+<div class="viewcode-block" id="OpResult.unwrap_value">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.OpResult.unwrap_value">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">unwrap_value</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">ResultOrValue</span><span class="p">[</span><span class="n">TOutput</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">TOutput</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;OpResult(op=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">op_class_name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">op_name</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;call_id=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">call_id</span><span class="si">}</span><span class="s2">, value=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="si">!r}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_from_ctx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Attempting to access context but compute graph &quot;</span>
+                <span class="s2">&quot;is not available for this OpResult.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">call_id</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_update_ctx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">call_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Attempting to update context but compute graph &quot;</span>
+                <span class="s2">&quot;is not available for this OpResult.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">call_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">call_id</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
+
+
+
+<span class="n">ResultOrValue</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">OpResult</span><span class="p">[</span><span class="n">TOutput</span><span class="p">]</span> <span class="o">|</span> <span class="n">TOutput</span>
+
+<span class="c1"># Sentinel value for get() default</span>
+<span class="n">NOT_FOUND</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="OpCtx">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.OpCtx">[docs]</a>
+<span class="k">class</span> <span class="nc">OpCtx</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="c1"># A global registry of contexts. We&#39;d prefer to use an existing context</span>
+    <span class="c1"># for an Op if it already has been created. Also useful for persist_all()</span>
+    <span class="n">_CTX_REGISTRY</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">OpCtx</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">op_name</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">),</span>
+        <span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Maps run_id -&gt; (fwd_id, key) -&gt; value. &quot;</span>
+        <span class="s2">&quot;data is excluded from model_dump() etc because we do &quot;</span>
+        <span class="s2">&quot;not use Pydantic to persist context information. That &quot;</span>
+        <span class="s2">&quot;should be done via the DB backend instead. OpCtx will &quot;</span>
+        <span class="s2">&quot;serialize op_name, which is enough to rehydrate &quot;</span>
+        <span class="s2">&quot;from the DB.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_CTX_REGISTRY</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">op_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span>
+
+<div class="viewcode-block" id="OpCtx.get_or_create">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.OpCtx.get_or_create">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get_or_create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">op_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OpCtx</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return an OpCtx corresponding to the Op with the given name.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_CTX_REGISTRY</span><span class="p">[</span><span class="n">op_name</span><span class="p">]</span>  <span class="c1"># Get</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">op_name</span><span class="o">=</span><span class="n">op_name</span><span class="p">)</span>  <span class="c1"># Create</span></div>
+
+
+<div class="viewcode-block" id="OpCtx.clear_contexts">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.OpCtx.clear_contexts">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">clear_contexts</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">op_names</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear the data in all contexts. If op_names is provided, only clear those contexts.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">op_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">op_names</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_CTX_REGISTRY</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">op_name</span> <span class="ow">in</span> <span class="n">op_names</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">cls</span><span class="o">.</span><span class="n">_CTX_REGISTRY</span><span class="p">[</span><span class="n">op_name</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Op with name=</span><span class="si">{</span><span class="n">op_name</span><span class="si">}</span><span class="s2"> not found in context registry.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="OpCtx.get">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.OpCtx.get">[docs]</a>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">NOT_FOUND</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get an attribute with an optional default, emulating dict.get.&quot;&quot;&quot;</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_id</span><span class="o">.</span><span class="n">run_id</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">call_id</span><span class="o">.</span><span class="n">fwd_id</span><span class="p">,</span> <span class="n">key</span><span class="p">),</span> <span class="n">default</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="n">NOT_FOUND</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;call_id=</span><span class="si">{</span><span class="n">call_id</span><span class="si">}</span><span class="s2">, key=&#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; not found in context&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="OpCtx.update">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.OpCtx.update">[docs]</a>
+    <span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">call_id</span><span class="o">.</span><span class="n">run_id</span><span class="p">][(</span><span class="n">call_id</span><span class="o">.</span><span class="n">fwd_id</span><span class="p">,</span> <span class="n">key</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="OpCtx.get_input_grads">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.OpCtx.get_input_grads">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_input_grads</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+        <span class="c1"># TODO: this function name is confusing. Let&#39;s deprecate it. We only use it</span>
+        <span class="c1"># in tests as far as I can tell.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="s2">&quot;grad_input&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No gradients have been computed for call_id=</span><span class="si">{</span><span class="n">call_id</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="resolve_fully_qualified_name">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.resolve_fully_qualified_name">[docs]</a>
+<span class="k">def</span> <span class="nf">resolve_fully_qualified_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span></div>
+
+
+
+<span class="c1"># A global registry of Op classes, so we can look up backward() implementations</span>
+<span class="c1"># without needing an instantiated Op.</span>
+<span class="n">_OP_CLASS_REGISTRY</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">type</span><span class="p">[</span><span class="n">Op</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+
+
+<div class="viewcode-block" id="Op">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.Op">[docs]</a>
+<span class="k">class</span> <span class="nc">Op</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">TOutput</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An operation that is &#39;differentiable&#39; and can be used in an optimizer.</span>
+
+<span class="sd">    Think torch.autograd.Function that can also be applied to non-differentiable</span>
+<span class="sd">    operations like prompt template formatting or Python function calls.</span>
+
+<span class="sd">    These form a forward computation graph when composed with other Ops via</span>
+<span class="sd">    __call__. In training mode, this graph is constructed dynamically.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Name is not guaranteed to be unique. Reasons:</span>
+    <span class="c1"># 1. We definitely don&#39;t want it to be unique when recreating a compute graph</span>
+    <span class="c1">#    for training on previously-collected data. In that case, we want the Op&#39;s</span>
+    <span class="c1">#    name to be the same as it was before, to match up contexts/OpResults</span>
+    <span class="c1"># 2. Uniqueness could make some DB lookups faster, but I don&#39;t think we run the</span>
+    <span class="c1">#    risk of OpCtx clobbers as long as call_id (which is guaranteed to be unique)</span>
+    <span class="c1">#    is always used as part of the key.</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span>
+    <span class="n">_fwd_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">inspect</span><span class="o">.</span><span class="n">Parameter</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Op.clear_ctx">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.Op.clear_ctx">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear_ctx</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span> <span class="nf">__init_subclass__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init_subclass__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">_OP_CLASS_REGISTRY</span><span class="p">[</span><span class="n">resolve_fully_qualified_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">cls</span>
+
+    <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+
+        <span class="c1"># Needs to be overridden by caller if this Op is to have</span>
+        <span class="c1"># a unique name in the compute graph. c.f. Agent.__init_subclass__</span>
+        <span class="c1"># for an example of how to do this.</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">set_name</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+
+        <span class="c1"># Set an attribute to help us map positional forward arguments to parameter</span>
+        <span class="c1"># names, for the backward pass. We do this on the instance and not cls b/c</span>
+        <span class="c1"># some instancees may override (e.g FxnOp).</span>
+        <span class="n">fwd_sig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">instance</span><span class="o">.</span><span class="n">forward</span><span class="p">)</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">_fwd_args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">fwd_sig</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="n">instance</span>
+
+<div class="viewcode-block" id="Op.set_name">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.Op.set_name">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span> <span class="o">=</span> <span class="n">OpCtx</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> (name=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">, id=</span><span class="si">{</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+<div class="viewcode-block" id="Op.forward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.Op.forward">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TOutput</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass of the Op. Must accept call_id as an argument.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Depending on this Op&#39;s purpose, the return may be considered an action</span>
+<span class="sd">                (e.g. a tool call) or it may not (e.g. a loss calculation).</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Op.backward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.Op.backward">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>
+        <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">input_kwargs</span><span class="p">,</span>
+        <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>
+        <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Backward pass of the Op.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            ctx: Context that was used during the forward pass.</span>
+<span class="sd">            input_args: Variable-length input arguments passed to forward, i.e.</span>
+<span class="sd">                via *args.</span>
+<span class="sd">            input_kwargs: All other arguments passed to forward pass.</span>
+<span class="sd">            grad_output: A list of backpropagated gradients from each consumer</span>
+<span class="sd">                of the output of the forward pass. It is up to the implementation</span>
+<span class="sd">                to decide how to aggregate these gradients (e.g. in most cases summing).</span>
+<span class="sd">            call_id: Call ID of the forward pass.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            grad_input: `d log(p) / d input` for each input to the forward pass.</span>
+<span class="sd">                It should include gradients for all input positional and keyword</span>
+<span class="sd">                arguments. Set to None for gradients that should terminate.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Op.get_call_ids">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.Op.get_call_ids">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_call_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_ids</span><span class="p">:</span> <span class="n">Collection</span><span class="p">[</span><span class="n">UUID</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="n">CallID</span><span class="p">]:</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span>
+        <span class="k">if</span> <span class="n">run_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">run_ids</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+        <span class="c1"># de-duplicate before constructing CallIDs</span>
+        <span class="n">ids</span> <span class="o">=</span> <span class="p">{(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">fwd_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">run_id</span> <span class="ow">in</span> <span class="n">run_ids</span> <span class="k">for</span> <span class="n">fwd_id</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">ctx</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">run_id</span><span class="p">]}</span>
+        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">starmap</span><span class="p">(</span><span class="n">CallID</span><span class="p">,</span> <span class="n">ids</span><span class="p">))</span></div>
+
+
+    <span class="c1"># This compute_graph() decoration will do nothing if we are already inside a compute graph.</span>
+    <span class="c1"># We add it here in case we are calling a bare op(), in which case we want a graph</span>
+    <span class="c1"># with a single node.</span>
+    <span class="nd">@compute_graph</span><span class="p">()</span>
+    <span class="nd">@op_call</span><span class="p">()</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OpResult</span><span class="p">[</span><span class="n">TOutput</span><span class="p">]:</span>
+        <span class="n">call_id</span> <span class="o">=</span> <span class="n">get_call_id</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="n">arg</span><span class="o">.</span><span class="n">call_id</span><span class="o">.</span><span class="n">run_id</span> <span class="o">==</span> <span class="n">call_id</span><span class="o">.</span><span class="n">run_id</span>
+            <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;All args and kwargs must have the same run_id as the call_id&#39;s run_id. &quot;</span>
+                <span class="s2">&quot;Consider using @compute_graph() decorator to ensure this.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># we&#39;re over-saving here - can explore later if memory usage is high</span>
+        <span class="c1"># unpack the args and kwargs from the result holders</span>
+        <span class="n">unpacked_args</span> <span class="o">=</span> <span class="p">[(</span><span class="n">a</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">)</span> <span class="k">else</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">args</span><span class="p">]</span>
+        <span class="n">unpacked_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">)</span> <span class="k">else</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="n">get_training_mode</span><span class="p">():</span>
+            <span class="c1"># If training, save the inputs for the backward pass</span>
+            <span class="c1"># Map positional arguments to keyword arguments to make backward pass easier</span>
+            <span class="k">for</span> <span class="n">i_arg</span><span class="p">,</span> <span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">param</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span>
+                <span class="c1"># strict=False b/c not all params in _fwd_args will be in args (i.e. defaults and **kwargs)</span>
+                <span class="nb">zip</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fwd_args</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="c1"># Don&#39;t need to check for too many args or collisions with kwargs, since forward()</span>
+                <span class="c1"># will raise an exception anyway</span>
+                <span class="k">if</span> <span class="n">param</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="n">inspect</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">VAR_POSITIONAL</span><span class="p">:</span>
+                    <span class="c1"># *args, so scoop up the rest of the arg tuple.</span>
+                    <span class="n">var_args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="n">i_arg</span><span class="p">:])</span>
+                    <span class="k">break</span>
+
+                <span class="c1"># Normal positional arg</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="n">param</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">arg</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">var_args</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># there were no *args if we got here</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">var_args</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">))</span>
+
+        <span class="c1"># actually call forward pass with unpacked args and kwargs</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="o">*</span><span class="n">unpacked_args</span><span class="p">,</span> <span class="o">**</span><span class="n">unpacked_kwargs</span><span class="p">)</span>
+        <span class="n">t_output</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">TOutput</span><span class="p">]</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="c1"># Now package up my result so it can be consumed by other calls.</span>
+        <span class="c1"># Explicitly specify t_output. OpResult[TOutput] returns a generic object</span>
+        <span class="n">op_result</span> <span class="o">=</span> <span class="n">OpResult</span><span class="p">[</span><span class="n">t_output</span><span class="p">](</span>  <span class="c1"># type: ignore[valid-type]</span>
+            <span class="n">value</span><span class="o">=</span><span class="n">result</span><span class="p">,</span>
+            <span class="n">call_id</span><span class="o">=</span><span class="n">call_id</span><span class="p">,</span>
+            <span class="n">op_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">op_class_name</span><span class="o">=</span><span class="n">resolve_fully_qualified_name</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)),</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">get_training_mode</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span><span class="p">,</span> <span class="n">op_result</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">op_result</span>
+
+<div class="viewcode-block" id="Op.get_input_grads">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.ops.Op.get_input_grads">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_input_grads</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">get_input_grads</span><span class="p">(</span><span class="n">call_id</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, FutureHouse.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.graph.common_ops &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.graph.common_ops</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module contains commonly-used Op implementations.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Awaitable</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">lru_cache</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">overload</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">tree</span>
+<span class="kn">from</span> <span class="nn">aviary.message</span> <span class="kn">import</span> <span class="n">Message</span>
+<span class="kn">from</span> <span class="nn">aviary.tools</span> <span class="kn">import</span> <span class="n">Tool</span><span class="p">,</span> <span class="n">ToolRequestMessage</span>
+<span class="kn">from</span> <span class="nn">aviary.utils</span> <span class="kn">import</span> <span class="n">is_coroutine_callable</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span> <span class="nn">ldp.llms</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">EmbeddingModel</span><span class="p">,</span>
+    <span class="n">HybridEmbeddingModel</span><span class="p">,</span>
+    <span class="n">LiteEmbeddingModel</span><span class="p">,</span>
+    <span class="n">LLMModel</span><span class="p">,</span>
+    <span class="n">LLMResult</span><span class="p">,</span>
+    <span class="n">SparseEmbeddingModel</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.gradient_estimators</span> <span class="kn">import</span> <span class="n">assign_constant_grads</span>
+<span class="kn">from</span> <span class="nn">.memory</span> <span class="kn">import</span> <span class="n">Memory</span><span class="p">,</span> <span class="n">MemoryModel</span><span class="p">,</span> <span class="n">UIndexMemoryModel</span>
+<span class="kn">from</span> <span class="nn">.op_utils</span> <span class="kn">import</span> <span class="n">CallID</span><span class="p">,</span> <span class="n">get_call_id</span><span class="p">,</span> <span class="n">get_training_mode</span>
+<span class="kn">from</span> <span class="nn">.ops</span> <span class="kn">import</span> <span class="n">GradInType</span><span class="p">,</span> <span class="n">Op</span><span class="p">,</span> <span class="n">OpCtx</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">,</span> <span class="n">TOutput</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="logsumexp">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.logsumexp">[docs]</a>
+<span class="k">def</span> <span class="nf">logsumexp</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="n">a_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">a_max</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">a</span> <span class="o">-</span> <span class="n">a_max</span><span class="p">)))</span></div>
+
+
+
+<div class="viewcode-block" id="IdentityOp">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.IdentityOp">[docs]</a>
+<span class="k">class</span> <span class="nc">IdentityOp</span><span class="p">(</span><span class="n">Op</span><span class="p">[</span><span class="n">TOutput</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An operation that simply returns the input value.</span>
+
+<span class="sd">    NOTE: this op is equivalent to FxnOp(lambda x: x).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="IdentityOp.forward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.IdentityOp.forward">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">TOutput</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TOutput</span><span class="p">:</span>
+        <span class="c1"># We assume value already has the correct run_id from its producer</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="IdentityOp.backward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.IdentityOp.backward">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>
+        <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>
+        <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[],</span> <span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">grad_output</span><span class="p">}</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="StopGradOp">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.StopGradOp">[docs]</a>
+<span class="k">class</span> <span class="nc">StopGradOp</span><span class="p">(</span><span class="n">IdentityOp</span><span class="p">[</span><span class="n">TOutput</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pass through Op that terminates gradients in the backward pass.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StopGradOp.backward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.StopGradOp.backward">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>
+        <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>
+        <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">assign_constant_grads</span><span class="p">(</span><span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="n">TConfig</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;TConfig&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">BaseModel</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ConfigOp">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.ConfigOp">[docs]</a>
+<span class="k">class</span> <span class="nc">ConfigOp</span><span class="p">(</span><span class="n">Op</span><span class="p">[</span><span class="n">TConfig</span><span class="p">],</span> <span class="n">Generic</span><span class="p">[</span><span class="n">TConfig</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An operation that contains a configuration object.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">TConfig</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+
+<div class="viewcode-block" id="ConfigOp.forward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.ConfigOp.forward">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TConfig</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span></div>
+
+
+<div class="viewcode-block" id="ConfigOp.backward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.ConfigOp.backward">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>
+        <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>
+        <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+        <span class="c1"># Check that the grad_output structure is consistent with our config</span>
+        <span class="n">tree</span><span class="o">.</span><span class="n">assert_same_structure</span><span class="p">(</span>
+            <span class="n">grad_output</span><span class="p">,</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">check_types</span><span class="o">=</span><span class="kc">False</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Terminate here - we&#39;re a leaf since a ConfigOp takes no inputs</span>
+        <span class="k">return</span> <span class="p">[],</span> <span class="p">{}</span></div>
+</div>
+
+
+
+<span class="n">TResult</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;TResult&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Cacheable">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.Cacheable">[docs]</a>
+<span class="k">class</span> <span class="nc">Cacheable</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">TResult</span><span class="p">]):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">co</span><span class="p">:</span> <span class="n">Awaitable</span><span class="p">[</span><span class="n">TResult</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">co</span> <span class="o">=</span> <span class="n">co</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">:</span> <span class="n">TResult</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lock</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Cacheable.get_result">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.Cacheable.get_result">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_result</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TResult</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">co</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">result</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__await__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_result</span><span class="p">()</span><span class="o">.</span><span class="fm">__await__</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="async_cache">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.async_cache">[docs]</a>
+<span class="k">def</span> <span class="nf">async_cache</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1024</span><span class="p">)</span>
+    <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Cacheable</span><span class="p">(</span><span class="n">co</span><span class="o">=</span><span class="n">func</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span></div>
+
+
+
+<div class="viewcode-block" id="FxnOp">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.FxnOp">[docs]</a>
+<span class="k">class</span> <span class="nc">FxnOp</span><span class="p">(</span><span class="n">Op</span><span class="p">[</span><span class="n">TOutput</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrap a function for a straight through gradient approximation for all args/kwargs.</span>
+
+<span class="sd">    Basically, consider the fxn as a transform upon the inputs during the forward pass,</span>
+<span class="sd">    and propagating the same gradient for all inputs during the backward pass.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">fxn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">TOutput</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Awaitable</span><span class="p">[</span><span class="n">TOutput</span><span class="p">]],</span>
+        <span class="n">cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">fxn_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># useful for lambdas</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">cache</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fxn</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">async_cache</span><span class="p">(</span><span class="n">fxn</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_coroutine_callable</span><span class="p">(</span><span class="n">fxn</span><span class="p">)</span> <span class="k">else</span> <span class="n">lru_cache</span><span class="p">()(</span><span class="n">fxn</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fxn</span> <span class="o">=</span> <span class="n">fxn</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fxn_name</span> <span class="o">=</span> <span class="n">fxn_name</span> <span class="ow">or</span> <span class="n">fxn</span><span class="o">.</span><span class="vm">__name__</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>  <span class="c1"># unittest.mock.Mock or lambda</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fxn_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">fxn</span><span class="p">)</span>
+
+        <span class="c1"># override forward args with the signature of the function</span>
+        <span class="n">fwd_sig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fxn</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fwd_args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">fwd_sig</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fxn_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">id</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span>
+
+<div class="viewcode-block" id="FxnOp.forward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.FxnOp.forward">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TOutput</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_coroutine_callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fxn</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">fxn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fxn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FxnOp.backward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.FxnOp.backward">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>
+        <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>
+        <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">assign_constant_grads</span><span class="p">(</span><span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PromptOp">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.PromptOp">[docs]</a>
+<span class="k">class</span> <span class="nc">PromptOp</span><span class="p">(</span><span class="n">FxnOp</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An operation that formats kwargs into a prompt string.&quot;&quot;&quot;</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_fxn</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">prompt_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="o">**</span><span class="p">(</span><span class="n">prompt_kwargs</span> <span class="ow">or</span> <span class="p">{}),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">})</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prompt</span> <span class="o">=</span> <span class="n">prompt</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fxn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_fxn</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="c1"># we want to use Op.__repr__, not FxnOp.__repr__</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">FxnOp</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="LLMCallOp">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.LLMCallOp">[docs]</a>
+<span class="k">class</span> <span class="nc">LLMCallOp</span><span class="p">(</span><span class="n">Op</span><span class="p">[</span><span class="n">Message</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An operation for LLM calls interaction.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_samples_logprob_estimate</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_samples_partition_estimate</span> <span class="o">=</span> <span class="n">num_samples_logprob_estimate</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">msgs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span>
+        <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tool</span><span class="p">]</span> <span class="o">=</span> <span class="o">...</span><span class="p">,</span>
+        <span class="n">tool_choice</span><span class="p">:</span> <span class="n">Tool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">LLMModel</span><span class="o">.</span><span class="n">TOOL_CHOICE_REQUIRED</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ToolRequestMessage</span><span class="p">:</span> <span class="o">...</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">msgs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span>
+        <span class="n">tools</span><span class="p">:</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tool_choice</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">LLMModel</span><span class="o">.</span><span class="n">TOOL_CHOICE_REQUIRED</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Message</span><span class="p">:</span> <span class="o">...</span>
+
+<div class="viewcode-block" id="LLMCallOp.forward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.LLMCallOp.forward">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">msgs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span>
+        <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tool</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tool_choice</span><span class="p">:</span> <span class="n">Tool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">LLMModel</span><span class="o">.</span><span class="n">TOOL_CHOICE_REQUIRED</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Message</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">LLMModel</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">model</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">msgs</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span> <span class="n">tool_choice</span><span class="o">=</span><span class="n">tool_choice</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">messages</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No messages returned&quot;</span><span class="p">)</span>
+
+        <span class="c1"># if not set, assume temp = 1. TODO: when would it not be set?</span>
+        <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">config</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;temperature&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="c1"># Compute a Monte Carlo estimate of the logprob of this sequence at the given temperature.</span>
+        <span class="n">logprob</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_logprob</span><span class="p">(</span>
+            <span class="n">raw_log_p</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">logprob</span><span class="p">,</span>
+            <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">messages</span><span class="o">=</span><span class="n">msgs</span><span class="p">,</span>
+            <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span>
+            <span class="n">tool_choice</span><span class="o">=</span><span class="n">tool_choice</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">call_id</span> <span class="o">=</span> <span class="n">get_call_id</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+        <span class="c1"># This is the logprob of this sequence according to the raw model, without</span>
+        <span class="c1"># any temperature/top-p distribution shaping.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="s2">&quot;raw_logprob&quot;</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">logprob</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="s2">&quot;temperature&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="s2">&quot;logprob&quot;</span><span class="p">,</span> <span class="n">logprob</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="LLMCallOp.compute_logprob">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.LLMCallOp.compute_logprob">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">compute_logprob</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">raw_log_p</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">LLMModel</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">model_kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This method computes a Monte Carlo estimate of logprob for a given temperature.</span>
+
+<span class="sd">        It takes as input the logprob at T=1. The derivation is in Section 5.1 of the Aviary notes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">temperature</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">raw_log_p</span>
+
+        <span class="k">if</span> <span class="n">temperature</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">1.0</span>
+
+        <span class="k">if</span> <span class="n">raw_log_p</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_samples_partition_estimate</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="c1"># TODO: Try using n completions from a single API call. Need to modify LLMModel.call to do this, since</span>
+        <span class="c1"># it currently only checks completion.choices[0]. Would reduce cost for long prompts.</span>
+        <span class="c1"># TODO: think about whether sampling params besides temperature need to be accounted for, like top_p</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">[</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">temperature</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">model_kwargs</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_samples_partition_estimate</span><span class="p">)</span>
+        <span class="p">])</span>
+        <span class="n">temp_factor</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">temperature</span> <span class="o">-</span> <span class="mf">1.0</span>
+
+        <span class="c1"># Partition function estimate:</span>
+        <span class="c1"># Z_T = E_P[ e^(lnP/T - lnP) ]</span>
+        <span class="n">log_Z_T</span> <span class="o">=</span> <span class="n">logsumexp</span><span class="p">([</span>
+            <span class="n">temp_factor</span> <span class="o">*</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">logprob</span><span class="p">)</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span>
+        <span class="p">])</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_samples_partition_estimate</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">raw_log_p</span> <span class="o">/</span> <span class="n">temperature</span><span class="p">)</span> <span class="o">-</span> <span class="n">log_Z_T</span></div>
+
+
+<div class="viewcode-block" id="LLMCallOp.backward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.LLMCallOp.backward">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>
+        <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>
+        <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+        <span class="c1"># By default, we want to descend into config, but not msgs/tools/tool_choice</span>
+        <span class="c1"># Essentially: we can think of each config field as an independent parameter,</span>
+        <span class="c1"># but not necessarily each message or tool.</span>
+
+        <span class="c1"># tree.map_structure allows us to assign a gradient of 0 to all fields of config</span>
+        <span class="n">grad_config</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">])</span>
+        <span class="n">grad_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;config&quot;</span><span class="p">:</span> <span class="n">grad_config</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;msgs&quot;</span><span class="p">,</span> <span class="s2">&quot;tools&quot;</span><span class="p">,</span> <span class="s2">&quot;tool_choice&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">input_kwargs</span><span class="p">:</span>
+                <span class="n">grad_kwargs</span><span class="p">[</span><span class="n">arg</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">return</span> <span class="p">[],</span> <span class="n">grad_kwargs</span></div>
+
+
+<div class="viewcode-block" id="LLMCallOp.get_examples">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.LLMCallOp.get_examples">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_examples</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">LLMResult</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+        <span class="n">examples</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                <span class="c1"># get &#39;model&#39; kwarg from grad_input</span>
+                <span class="c1"># use default of None if not found</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;grad_input&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="p">([],</span> <span class="p">{}))[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_call_ids</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="c1"># filter out the None values</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">e</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">examples</span> <span class="k">if</span> <span class="n">e</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MemoryOp">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.MemoryOp">[docs]</a>
+<span class="k">class</span> <span class="nc">MemoryOp</span><span class="p">(</span><span class="n">Op</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Memory</span><span class="p">]]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An operation for managing memory retrieval and storage.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">memory_model</span><span class="p">:</span> <span class="n">MemoryModel</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory_model</span> <span class="o">=</span> <span class="n">memory_model</span> <span class="ow">or</span> <span class="n">UIndexMemoryModel</span><span class="p">(</span>
+            <span class="n">embedding_model</span><span class="o">=</span><span class="n">EmbeddingModel</span><span class="o">.</span><span class="n">from_name</span><span class="p">(</span><span class="s2">&quot;sparse&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="MemoryOp.forward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.MemoryOp.forward">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="nb">input</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># noqa: A002</span>
+        <span class="n">matches</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Memory</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve relevant memories based on a query.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">get_training_mode</span><span class="p">():</span>
+            <span class="n">call_id</span> <span class="o">=</span> <span class="n">get_call_id</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="s2">&quot;query&quot;</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ctx</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="s2">&quot;memory_input&quot;</span><span class="p">,</span> <span class="nb">input</span><span class="p">)</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_model</span><span class="o">.</span><span class="n">get_memory</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">matches</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MemoryOp.backward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.MemoryOp.backward">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>
+        <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>
+        <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Backward pass for memory retrieval - goes back to item.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">assign_constant_grads</span><span class="p">(</span><span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="EmbeddingOp">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.EmbeddingOp">[docs]</a>
+<span class="k">class</span> <span class="nc">EmbeddingOp</span><span class="p">(</span><span class="n">Op</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A general operation for embedding text using LiteLLM.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">dense_embedding</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;text-embedding-3-small&quot;</span><span class="p">,</span>
+        <span class="n">dense_embedding_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">512</span><span class="p">,</span>
+        <span class="n">sparse_embedding_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">embedding_model_kwargs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;timeout&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">embedding_model_kwargs</span><span class="p">:</span>
+            <span class="n">embedding_model_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;timeout&quot;</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+        <span class="n">emb_models</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">EmbeddingModel</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">dense_embedding_dim</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">emb_models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">LiteEmbeddingModel</span><span class="p">(</span>
+                    <span class="n">name</span><span class="o">=</span><span class="n">dense_embedding</span><span class="p">,</span>
+                    <span class="n">dimensions</span><span class="o">=</span><span class="n">dense_embedding_dim</span><span class="p">,</span>
+                    <span class="n">embed_kwargs</span><span class="o">=</span><span class="n">embedding_model_kwargs</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">sparse_embedding_dim</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">emb_models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SparseEmbeddingModel</span><span class="p">(</span><span class="n">dimensions</span><span class="o">=</span><span class="n">sparse_embedding_dim</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">embedding</span> <span class="o">=</span> <span class="n">HybridEmbeddingModel</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="n">emb_models</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EmbeddingOp.forward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.EmbeddingOp.forward">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string_input</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding</span><span class="o">.</span><span class="n">embed_text</span><span class="p">(</span><span class="n">string_input</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EmbeddingOp.backward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.common_ops.EmbeddingOp.backward">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>
+        <span class="n">input_args</span><span class="p">,</span>
+        <span class="n">input_kwargs</span><span class="p">,</span>
+        <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>
+        <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[],</span> <span class="p">{</span><span class="s2">&quot;string_input&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.alg.rollout &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.alg.rollout</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span><span class="p">,</span> <span class="n">nullcontext</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">TypeVar</span><span class="p">,</span> <span class="n">overload</span>
+
+<span class="kn">from</span> <span class="nn">aviary.env</span> <span class="kn">import</span> <span class="n">Environment</span>
+<span class="kn">from</span> <span class="nn">aviary.message</span> <span class="kn">import</span> <span class="n">Message</span>
+
+<span class="kn">from</span> <span class="nn">ldp.agent</span> <span class="kn">import</span> <span class="n">Agent</span>
+<span class="kn">from</span> <span class="nn">ldp.data_structures</span> <span class="kn">import</span> <span class="n">Trajectory</span><span class="p">,</span> <span class="n">Transition</span>
+
+<span class="kn">from</span> <span class="nn">.callbacks</span> <span class="kn">import</span> <span class="n">Callback</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="n">TEnv</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;TEnv&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">Environment</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="CaughtError">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.rollout.CaughtError">[docs]</a>
+<span class="k">class</span> <span class="nc">CaughtError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for reraised exceptions when catching is enabled.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">original_exc</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">original_exc</span> <span class="o">=</span> <span class="n">original_exc</span>
+
+    <span class="n">exc_type</span> <span class="o">=</span> <span class="s2">&quot;undefined&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="AgentError">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.rollout.AgentError">[docs]</a>
+<span class="k">class</span> <span class="nc">AgentError</span><span class="p">(</span><span class="n">CaughtError</span><span class="p">):</span>
+    <span class="n">exc_type</span> <span class="o">=</span> <span class="s2">&quot;agent&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="EnvError">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.rollout.EnvError">[docs]</a>
+<span class="k">class</span> <span class="nc">EnvError</span><span class="p">(</span><span class="n">CaughtError</span><span class="p">):</span>
+    <span class="n">exc_type</span> <span class="o">=</span> <span class="s2">&quot;env&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="reraise_exc_as">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.rollout.reraise_exc_as">[docs]</a>
+<span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">reraise_exc_as</span><span class="p">(</span><span class="n">reraise</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">CaughtError</span><span class="p">],</span> <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">enabled</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Caught </span><span class="si">{</span><span class="n">reraise</span><span class="o">.</span><span class="n">exc_type</span><span class="si">}</span><span class="s2"> exception.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">reraise</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+        <span class="k">raise</span></div>
+
+
+
+<div class="viewcode-block" id="RolloutManager">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.rollout.RolloutManager">[docs]</a>
+<span class="k">class</span> <span class="nc">RolloutManager</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+        <span class="n">catch_agent_failures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">catch_env_failures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">callbacks</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Callback</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">concurrency_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">agent</span> <span class="o">=</span> <span class="n">agent</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">catch_agent_failures</span> <span class="o">=</span> <span class="n">catch_agent_failures</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">catch_env_failures</span> <span class="o">=</span> <span class="n">catch_env_failures</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">concurrency_limiter</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">asyncio</span><span class="o">.</span><span class="n">Semaphore</span><span class="p">(</span><span class="n">concurrency_limit</span><span class="p">)</span> <span class="k">if</span> <span class="n">concurrency_limit</span> <span class="k">else</span> <span class="n">nullcontext</span><span class="p">()</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">traj_buffer</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Trajectory</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span> <span class="o">=</span> <span class="n">callbacks</span> <span class="ow">or</span> <span class="p">[]</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">sample_trajectories</span><span class="p">(</span>  <span class="c1"># noqa: D418</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">environment_factory</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">TEnv</span><span class="p">],</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">,</span> <span class="n">TEnv</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run rollouts in parallel, using a factory to construct environments.</span>
+
+<span class="sd">        We will construct `batch_size` environments and run rollouts on each of them.</span>
+<span class="sd">        If `max_steps` is set, rollouts will be truncated at this value. If a rollout</span>
+<span class="sd">        has fewer than `max_steps`, then a new environment will be constructed and another</span>
+<span class="sd">        rollout will be started until `max_steps` is reached.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            environment_factory: A no-argument callable that returns</span>
+<span class="sd">                an environment instance</span>
+<span class="sd">            batch_size (int, optional): Defaults to 1.</span>
+<span class="sd">            max_steps (int | None, optional): Max steps per rollout. Defaults to None (see above).</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            list[tuple[Trajectory, Environment]]: A list of (trajectory, environment) tuples: one per rollout.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="nd">@overload</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">sample_trajectories</span><span class="p">(</span>  <span class="c1"># noqa: D418</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">environments</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Environment</span><span class="p">],</span>
+        <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run rollouts in parallel on a list of provided environments.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            environments: A list of environments to run rollouts on.</span>
+<span class="sd">            max_steps: Max steps per rollout. Defaults to None, in which case the rollouts are run</span>
+<span class="sd">                until environment returns done.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="RolloutManager.sample_trajectories">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.rollout.RolloutManager.sample_trajectories">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">sample_trajectories</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s2">&quot;environment_factory&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="s2">&quot;environments&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span>
+            <span class="p">),</span> <span class="s2">&quot;Cannot use environment_factory with environments&quot;</span>
+
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_trajectories_from_env_factory</span><span class="p">(</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;environment_factory&quot;</span><span class="p">],</span>
+                <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;batch_size&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_steps&quot;</span><span class="p">),</span>
+            <span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;environments&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="s2">&quot;environment_factory&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span>
+            <span class="p">),</span> <span class="s2">&quot;Cannot use environments with environment_factory&quot;</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sample_trajectories_from_envs</span><span class="p">(</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;environments&quot;</span><span class="p">],</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_steps&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="s2">&quot;sample_trajectories() missing required &quot;</span>
+            <span class="s2">&quot;arguments &#39;environment_factory&#39; or &#39;environments&#39;&quot;</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_sample_trajectories_from_env_factory</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">environment_factory</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Environment</span><span class="p">],</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">,</span> <span class="n">Environment</span><span class="p">]]:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">traj_buffer</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+        <span class="k">async</span> <span class="k">def</span> <span class="nf">rollout_with_args</span><span class="p">(</span><span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">rollout_kwargs</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">idx</span><span class="p">,</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rollout</span><span class="p">(</span><span class="o">**</span><span class="n">rollout_kwargs</span><span class="p">),</span> <span class="n">rollout_kwargs</span>
+
+        <span class="n">accumulated_steps</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">batch_size</span>
+        <span class="c1"># submit initial batch of tasks</span>
+        <span class="n">tasks</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span>
+                <span class="n">rollout_with_args</span><span class="p">(</span>
+                    <span class="n">idx</span><span class="p">,</span>
+                    <span class="n">traj_id</span><span class="o">=</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">,</span>
+                    <span class="n">env</span><span class="o">=</span><span class="n">environment_factory</span><span class="p">(),</span>
+                    <span class="n">max_steps</span><span class="o">=</span><span class="n">max_steps</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="p">]</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="n">tasks</span><span class="p">:</span>
+            <span class="n">done</span><span class="p">,</span> <span class="n">pending</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span>
+                <span class="n">tasks</span><span class="p">,</span> <span class="n">return_when</span><span class="o">=</span><span class="n">asyncio</span><span class="o">.</span><span class="n">FIRST_COMPLETED</span>
+            <span class="p">)</span>
+            <span class="n">new_tasks</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">done</span><span class="p">:</span>
+                <span class="n">idx</span><span class="p">,</span> <span class="n">traj</span><span class="p">,</span> <span class="n">kwargs</span> <span class="o">=</span> <span class="k">await</span> <span class="n">task</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">traj</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;env&quot;</span><span class="p">]))</span>
+                <span class="n">accumulated_steps</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">traj</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">max_steps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                    <span class="ow">and</span> <span class="p">(</span><span class="n">remaining_steps</span> <span class="o">:=</span> <span class="n">max_steps</span> <span class="o">-</span> <span class="n">accumulated_steps</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span>
+                <span class="p">):</span>
+                    <span class="c1"># submit another task if we haven&#39;t reached max_steps</span>
+                    <span class="n">new_task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span>
+                        <span class="n">rollout_with_args</span><span class="p">(</span>
+                            <span class="n">idx</span><span class="p">,</span>
+                            <span class="n">traj_id</span><span class="o">=</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">,</span>
+                            <span class="n">env</span><span class="o">=</span><span class="n">environment_factory</span><span class="p">(),</span>
+                            <span class="n">max_steps</span><span class="o">=</span><span class="n">remaining_steps</span><span class="p">,</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="n">new_tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_task</span><span class="p">)</span>
+
+            <span class="n">tasks</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pending</span><span class="p">)</span> <span class="o">+</span> <span class="n">new_tasks</span>
+
+        <span class="k">return</span> <span class="n">results</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_sample_trajectories_from_envs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">environments</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Environment</span><span class="p">],</span>
+        <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">]:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">traj_buffer</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+        <span class="n">traj_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">environments</span><span class="p">))]</span>
+        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+            <span class="o">*</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_rollout</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">max_steps</span><span class="o">=</span><span class="n">max_steps</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">args</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">traj_ids</span><span class="p">,</span> <span class="n">environments</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">traj_buffer</span><span class="p">[</span><span class="n">traj_id</span><span class="p">]</span> <span class="k">for</span> <span class="n">traj_id</span> <span class="ow">in</span> <span class="n">traj_ids</span><span class="p">]</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_rollout</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">env</span><span class="p">:</span> <span class="n">Environment</span><span class="p">,</span>
+        <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Trajectory</span><span class="p">:</span>
+        <span class="n">trajectory</span> <span class="o">=</span> <span class="n">Trajectory</span><span class="p">(</span><span class="n">traj_id</span><span class="o">=</span><span class="n">traj_id</span><span class="p">)</span>
+
+        <span class="k">async</span> <span class="k">def</span> <span class="nf">store_step</span><span class="p">(</span><span class="n">step</span><span class="p">:</span> <span class="n">Transition</span><span class="p">):</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">[</span>
+                <span class="n">callback</span><span class="o">.</span><span class="n">after_transition</span><span class="p">(</span><span class="n">traj_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">callback</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span>
+            <span class="p">])</span>
+            <span class="n">trajectory</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+
+        <span class="c1"># Set default values to store in the buffer in case reset/init_state fail</span>
+        <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">agent_state</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">reraise_exc_as</span><span class="p">(</span><span class="n">EnvError</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">catch_env_failures</span><span class="p">):</span>
+                <span class="n">obs</span><span class="p">,</span> <span class="n">tools</span> <span class="o">=</span> <span class="k">await</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">[</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">after_env_reset</span><span class="p">(</span><span class="n">traj_id</span><span class="p">,</span> <span class="n">obs</span><span class="p">,</span> <span class="n">tools</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span>
+            <span class="p">])</span>
+
+            <span class="k">with</span> <span class="n">reraise_exc_as</span><span class="p">(</span><span class="n">AgentError</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">catch_agent_failures</span><span class="p">):</span>
+                <span class="n">agent_state</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">tools</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">[</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">after_agent_init_state</span><span class="p">(</span><span class="n">traj_id</span><span class="p">,</span> <span class="n">agent_state</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span>
+            <span class="p">])</span>
+
+            <span class="k">for</span> <span class="n">timestep</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">():</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_take_step</span><span class="p">(</span><span class="n">timestep</span><span class="p">,</span> <span class="n">traj_id</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">agent_state</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">timestep</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">==</span> <span class="n">max_steps</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">step</span><span class="o">.</span><span class="n">done</span><span class="p">:</span>
+                    <span class="c1"># Mark as truncated if we hit max_steps and the state is not terminal.</span>
+                    <span class="c1"># Do it before store_step(), so that callbacks can access this info</span>
+                    <span class="n">step</span><span class="o">.</span><span class="n">truncated</span> <span class="o">=</span> <span class="kc">True</span>
+
+                <span class="c1"># We assume the below won&#39;t throw a CaughtError</span>
+                <span class="k">await</span> <span class="n">store_step</span><span class="p">(</span><span class="n">step</span><span class="p">)</span>
+
+                <span class="c1"># set things up for the next iteration</span>
+                <span class="n">agent_state</span> <span class="o">=</span> <span class="n">step</span><span class="o">.</span><span class="n">next_agent_state</span>
+                <span class="n">obs</span> <span class="o">=</span> <span class="n">step</span><span class="o">.</span><span class="n">next_observation</span>
+
+                <span class="k">if</span> <span class="n">step</span><span class="o">.</span><span class="n">done</span> <span class="ow">or</span> <span class="n">step</span><span class="o">.</span><span class="n">truncated</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+        <span class="k">except</span> <span class="n">CaughtError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c1"># NOTE: This trajectory should not be used for regular training.</span>
+            <span class="c1"># We save the last transition here for debugging, etc.</span>
+            <span class="k">await</span> <span class="n">store_step</span><span class="p">(</span>
+                <span class="n">Transition</span><span class="p">(</span>
+                    <span class="n">timestep</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">trajectory</span><span class="o">.</span><span class="n">steps</span><span class="p">),</span>
+                    <span class="n">agent_state</span><span class="o">=</span><span class="n">agent_state</span><span class="p">,</span>
+                    <span class="n">next_agent_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">observation</span><span class="o">=</span><span class="n">obs</span><span class="p">,</span>
+                    <span class="n">next_observation</span><span class="o">=</span><span class="p">[],</span>
+                    <span class="n">action</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">done</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;exception&quot;</span><span class="p">:</span> <span class="nb">repr</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">original_exc</span><span class="p">)},</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">traj_buffer</span><span class="p">[</span><span class="n">traj_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">trajectory</span>
+        <span class="k">return</span> <span class="n">trajectory</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_take_step</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">timestep</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">env</span><span class="p">:</span> <span class="n">Environment</span><span class="p">,</span>
+        <span class="n">agent_state</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Transition</span><span class="p">:</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">concurrency_limiter</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">[</span>
+                <span class="n">callback</span><span class="o">.</span><span class="n">before_transition</span><span class="p">(</span><span class="n">traj_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">agent_state</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">callback</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span>
+            <span class="p">])</span>
+
+            <span class="k">with</span> <span class="n">reraise_exc_as</span><span class="p">(</span><span class="n">AgentError</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">catch_agent_failures</span><span class="p">):</span>
+                <span class="p">(</span>
+                    <span class="n">action</span><span class="p">,</span>
+                    <span class="n">next_agent_state</span><span class="p">,</span>
+                    <span class="n">value</span><span class="p">,</span>
+                <span class="p">)</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent</span><span class="o">.</span><span class="n">get_asv</span><span class="p">(</span><span class="n">agent_state</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">[</span>
+                <span class="n">callback</span><span class="o">.</span><span class="n">after_agent_get_asv</span><span class="p">(</span><span class="n">traj_id</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">next_agent_state</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">callback</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span>
+            <span class="p">])</span>
+
+            <span class="k">with</span> <span class="n">reraise_exc_as</span><span class="p">(</span><span class="n">EnvError</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">catch_env_failures</span><span class="p">):</span>
+                <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">trunc</span> <span class="o">=</span> <span class="k">await</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">[</span>
+                <span class="n">callback</span><span class="o">.</span><span class="n">after_env_step</span><span class="p">(</span><span class="n">traj_id</span><span class="p">,</span> <span class="n">next_obs</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">trunc</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">callback</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span>
+            <span class="p">])</span>
+
+            <span class="k">return</span> <span class="n">Transition</span><span class="p">(</span>
+                <span class="n">timestep</span><span class="o">=</span><span class="n">timestep</span><span class="p">,</span>
+                <span class="n">agent_state</span><span class="o">=</span><span class="n">agent_state</span><span class="p">,</span>
+                <span class="n">next_agent_state</span><span class="o">=</span><span class="n">next_agent_state</span><span class="p">,</span>
+                <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span>
+                <span class="n">reward</span><span class="o">=</span><span class="n">reward</span><span class="p">,</span>
+                <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">,</span>
+                <span class="n">observation</span><span class="o">=</span><span class="n">obs</span><span class="p">,</span>
+                <span class="n">next_observation</span><span class="o">=</span><span class="n">next_obs</span><span class="p">,</span>
+                <span class="n">done</span><span class="o">=</span><span class="n">done</span><span class="p">,</span>
+                <span class="n">truncated</span><span class="o">=</span><span class="n">trunc</span><span class="p">,</span>
+            <span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

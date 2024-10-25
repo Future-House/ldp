@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.graph.modules.thought &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.graph.modules.thought</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">aviary.message</span> <span class="kn">import</span> <span class="n">Message</span>
+<span class="kn">from</span> <span class="nn">aviary.tools</span> <span class="kn">import</span> <span class="n">ToolRequestMessage</span>
+
+<span class="kn">from</span> <span class="nn">ldp.graph</span> <span class="kn">import</span> <span class="n">FxnOp</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">,</span> <span class="n">PromptOp</span><span class="p">,</span> <span class="n">compute_graph</span>
+<span class="kn">from</span> <span class="nn">ldp.llms</span> <span class="kn">import</span> <span class="n">prepend_sys_and_append_sys</span>
+
+<span class="kn">from</span> <span class="nn">.llm_call</span> <span class="kn">import</span> <span class="n">ParsedLLMCallModule</span>
+
+
+<div class="viewcode-block" id="ThoughtModule">
+<a class="viewcode-back" href="../../../../ldp.graph.modules.html#ldp.graph.modules.thought.ThoughtModule">[docs]</a>
+<span class="k">class</span> <span class="nc">ThoughtModule</span><span class="p">:</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_downcast_to_message</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="n">Message</span> <span class="o">|</span> <span class="n">ToolRequestMessage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Message</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">ToolRequestMessage</span><span class="p">):</span>
+            <span class="c1"># Downcast into a normal Message if the LLM tried to call tools</span>
+            <span class="k">return</span> <span class="n">Message</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">role</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">message</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">llm_model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">first_sys_prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">second_sys_prompt</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">first_sys_prompt_op</span> <span class="o">=</span> <span class="n">PromptOp</span><span class="p">(</span><span class="n">first_sys_prompt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">second_sys_prompt_op</span> <span class="o">=</span> <span class="n">PromptOp</span><span class="p">(</span><span class="n">second_sys_prompt</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">package_msg_op</span> <span class="o">=</span> <span class="n">FxnOp</span><span class="p">(</span><span class="n">prepend_sys_and_append_sys</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">llm_call</span> <span class="o">=</span> <span class="n">ParsedLLMCallModule</span><span class="p">[</span><span class="n">Message</span><span class="p">](</span>
+            <span class="n">llm_model</span><span class="p">,</span> <span class="n">parser</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_downcast_to_message</span>
+        <span class="p">)</span>
+
+    <span class="nd">@compute_graph</span><span class="p">()</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">messages</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span>
+        <span class="n">first_prompt_kwargs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">second_prompt_kwargs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OpResult</span><span class="p">[</span><span class="n">Message</span><span class="p">]:</span>
+        <span class="n">packaged_msgs</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">package_msg_op</span><span class="p">(</span>
+            <span class="n">messages</span><span class="p">,</span>
+            <span class="n">initial_sys_content</span><span class="o">=</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_sys_prompt_op</span><span class="p">(</span><span class="o">**</span><span class="n">first_prompt_kwargs</span><span class="p">),</span>
+            <span class="n">final_sys_content</span><span class="o">=</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">second_sys_prompt_op</span><span class="p">(</span><span class="o">**</span><span class="n">second_prompt_kwargs</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">llm_call</span><span class="p">(</span><span class="n">packaged_msgs</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># type: ignore[arg-type]</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, FutureHouse.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

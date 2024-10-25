@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.alg.callbacks &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.alg.callbacks</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">import</span> <span class="nn">aiofiles</span>
+<span class="kn">from</span> <span class="nn">aviary.env</span> <span class="kn">import</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">TaskDataset</span>
+<span class="kn">from</span> <span class="nn">aviary.message</span> <span class="kn">import</span> <span class="n">Message</span>
+<span class="kn">from</span> <span class="nn">aviary.tools</span> <span class="kn">import</span> <span class="n">MessagesAdapter</span><span class="p">,</span> <span class="n">Tool</span><span class="p">,</span> <span class="n">ToolRequestMessage</span>
+
+<span class="kn">from</span> <span class="nn">ldp.agent</span> <span class="kn">import</span> <span class="n">Agent</span>
+<span class="kn">from</span> <span class="nn">ldp.data_structures</span> <span class="kn">import</span> <span class="n">Trajectory</span><span class="p">,</span> <span class="n">Transition</span>
+<span class="kn">from</span> <span class="nn">ldp.graph</span> <span class="kn">import</span> <span class="n">OpCtx</span><span class="p">,</span> <span class="n">OpResult</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">wandb</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">wandb</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore[assignment]</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Callback">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.Callback">[docs]</a>
+<span class="k">class</span> <span class="nc">Callback</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for callbacks used by RolloutManager/Evaluator/OnlineTrainer.</span>
+
+<span class="sd">    Pseudocode to demonstrate how callback methods are invoked (marked as *):</span>
+
+<span class="sd">    RolloutManager.sample_trajectories():</span>
+<span class="sd">        env.reset()</span>
+<span class="sd">        callback.after_env_reset() *</span>
+<span class="sd">        agent.init_state()</span>
+<span class="sd">        callback.after_agent_init_state() *</span>
+<span class="sd">        while not done:</span>
+<span class="sd">            callback.before_transition() *</span>
+<span class="sd">            agent.get_asv()</span>
+<span class="sd">            callback.after_agent_get_asv() *</span>
+<span class="sd">            env.step()</span>
+<span class="sd">            callback.after_env_step() *</span>
+<span class="sd">            callback.after_transition() *</span>
+
+<span class="sd">    Evaluator.evaluate / OnlineTrainer._eval_loop():</span>
+<span class="sd">        callback.before_eval_loop() *</span>
+<span class="sd">        for batch in eval_dataset:</span>
+<span class="sd">            rollout_manager.sample_trajectories()</span>
+<span class="sd">            callback.after_eval_step() *</span>
+<span class="sd">        callback.after_eval_loop() *</span>
+
+<span class="sd">    OfflineTrainer / OnlineTrainer.train():</span>
+<span class="sd">        for batch in train_dataset:</span>
+<span class="sd">            rollout_manager.sample_trajectories() # if online</span>
+<span class="sd">            optimizer.aggregate()</span>
+<span class="sd">            if updating_optimizer:</span>
+<span class="sd">                optimizer.update()</span>
+<span class="sd">                callback.after_update() *</span>
+<span class="sd">            callback.after_train_step() *</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Callback.before_transition">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.Callback.before_transition">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">before_transition</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+        <span class="n">env</span><span class="p">:</span> <span class="n">Environment</span><span class="p">,</span>
+        <span class="n">agent_state</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invoked by runners before each transition and after agent and env reset.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Callback.after_agent_init_state">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.Callback.after_agent_init_state">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_agent_init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">init_state</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invoked by runners after agent.init_state().&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Callback.after_agent_get_asv">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.Callback.after_agent_get_asv">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_agent_get_asv</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">OpResult</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">],</span>
+        <span class="n">next_agent_state</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invoked by runners after agent.get_asv().&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Callback.after_env_reset">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.Callback.after_env_reset">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_env_reset</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span> <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tool</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invoked by runners after env.reset().&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Callback.after_env_step">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.Callback.after_env_step">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_env_step</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span> <span class="n">reward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">done</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">trunc</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invoked by runners after env.step().&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Callback.after_transition">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.Callback.after_transition">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_transition</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">transition</span><span class="p">:</span> <span class="n">Transition</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invoked by runners after each transition.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Callback.after_train_step">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.Callback.after_train_step">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_train_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trajectories</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invoked by OnlineTrainer after each training step.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Callback.before_eval_loop">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.Callback.before_eval_loop">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">before_eval_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invoked by Evaluator and OnlineTrainer before the evaluation loop.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Callback.after_eval_step">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.Callback.after_eval_step">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_eval_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trajectories</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invoked by Evaluator and OnlineTrainer after each evaluation step.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Callback.after_eval_loop">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.Callback.after_eval_loop">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_eval_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invoked by Evaluator and OnlineTrainer after the evaluation loop.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="Callback.after_update">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.Callback.after_update">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Invoked by OnlineTrainer after each optimizer.update() call.&quot;&quot;&quot;</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TrajectoryFileCallback">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.TrajectoryFileCallback">[docs]</a>
+<span class="k">class</span> <span class="nc">TrajectoryFileCallback</span><span class="p">(</span><span class="n">Callback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Callback that writes trajectories to a file.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">|</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_files</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trajs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Trajectory</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="n">Trajectory</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_make_filename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">Environment</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the filename for the output file.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">traj_id</span><span class="si">}</span><span class="s2">.jsonl&quot;</span>
+
+<div class="viewcode-block" id="TrajectoryFileCallback.before_transition">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.TrajectoryFileCallback.before_transition">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">before_transition</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+        <span class="n">env</span><span class="p">:</span> <span class="n">Environment</span><span class="p">,</span>
+        <span class="n">agent_state</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">traj_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_files</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">out_files</span><span class="p">[</span><span class="n">traj_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_filename</span><span class="p">(</span>
+                <span class="n">traj_id</span><span class="p">,</span> <span class="n">env</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TrajectoryFileCallback.after_transition">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.TrajectoryFileCallback.after_transition">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_transition</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">Environment</span><span class="p">,</span> <span class="n">transition</span><span class="p">:</span> <span class="n">Transition</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">traj_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_files</span>
+        <span class="n">traj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajs</span><span class="p">[</span><span class="n">traj_id</span><span class="p">]</span>
+        <span class="n">traj</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transition</span><span class="p">)</span>
+        <span class="c1"># TODO: make this async?</span>
+        <span class="n">traj</span><span class="o">.</span><span class="n">to_jsonl</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">out_files</span><span class="p">[</span><span class="n">traj_id</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="TrajectoryFileCallback.cleanup">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.TrajectoryFileCallback.cleanup">[docs]</a>
+    <span class="k">def</span> <span class="nf">cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">out_file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_files</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">out_file</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+                <span class="n">out_file</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="RolloutDebugDumpCallback">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.RolloutDebugDumpCallback">[docs]</a>
+<span class="k">class</span> <span class="nc">RolloutDebugDumpCallback</span><span class="p">(</span><span class="n">Callback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dump JSONL files for each agent and environment step to a directory.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span> <span class="o">|</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            output_dir: Directory to place JSONL files.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_files</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">_get_out_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">traj_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_files</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">out_files</span><span class="p">[</span><span class="n">traj_id</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">traj_id</span><span class="si">}</span><span class="s2">.jsonl&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_files</span><span class="p">[</span><span class="n">traj_id</span><span class="p">]</span>
+
+<div class="viewcode-block" id="RolloutDebugDumpCallback.before_transition">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.RolloutDebugDumpCallback.before_transition">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">before_transition</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+        <span class="n">env</span><span class="p">:</span> <span class="n">Environment</span><span class="p">,</span>
+        <span class="n">agent_state</span><span class="p">,</span>
+        <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_get_elapsed_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span>
+        <span class="k">if</span> <span class="n">reset</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">elapsed</span>
+
+<div class="viewcode-block" id="RolloutDebugDumpCallback.after_agent_get_asv">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.RolloutDebugDumpCallback.after_agent_get_asv">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_agent_get_asv</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">OpResult</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">],</span>
+        <span class="n">next_agent_state</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">log_jsonl</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+            <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;AGENT_GET_ASV&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;elapsed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_elapsed_time</span><span class="p">(),</span>
+            <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="n">action</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span>
+            <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+        <span class="p">})</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="n">aiofiles</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_out_file</span><span class="p">(</span><span class="n">traj_id</span><span class="p">),</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">log_jsonl</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RolloutDebugDumpCallback.after_env_step">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.RolloutDebugDumpCallback.after_env_step">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_env_step</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span> <span class="n">reward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">done</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">trunc</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">log_jsonl</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+            <span class="s2">&quot;event&quot;</span><span class="p">:</span> <span class="s2">&quot;ENV_STEP&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;elapsed&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_elapsed_time</span><span class="p">(),</span>
+            <span class="s2">&quot;obs&quot;</span><span class="p">:</span> <span class="n">MessagesAdapter</span><span class="o">.</span><span class="n">dump_python</span><span class="p">(</span><span class="n">obs</span><span class="p">),</span>
+            <span class="s2">&quot;reward&quot;</span><span class="p">:</span> <span class="n">reward</span><span class="p">,</span>
+            <span class="s2">&quot;done&quot;</span><span class="p">:</span> <span class="n">done</span><span class="p">,</span>
+            <span class="s2">&quot;truncated&quot;</span><span class="p">:</span> <span class="n">trunc</span><span class="p">,</span>
+        <span class="p">})</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="n">aiofiles</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_out_file</span><span class="p">(</span><span class="n">traj_id</span><span class="p">),</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">log_jsonl</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ComputeTrajectoryMetricsMixin">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.ComputeTrajectoryMetricsMixin">[docs]</a>
+<span class="k">class</span> <span class="nc">ComputeTrajectoryMetricsMixin</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Mixin for TaskDataset classes to enable them to compute metrics.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Tools or tool names to include in trajectory metrics</span>
+    <span class="n">tools_to_track</span><span class="p">:</span> <span class="n">Collection</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="n">Tool</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ComputeTrajectoryMetricsMixin.compute_trajectory_metrics">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.ComputeTrajectoryMetricsMixin.compute_trajectory_metrics">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_trajectory_metrics</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">trajectories</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
+        <span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;reward&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="nb">sum</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">reward</span> <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">traj</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;truncation_rate&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="nb">sum</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">truncated</span> <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">traj</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;avg_value&quot;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="nb">sum</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">traj</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">traj</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span>
+            <span class="p">],</span>
+            <span class="s2">&quot;num_steps&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">traj</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">],</span>
+            <span class="s2">&quot;failures&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">traj</span><span class="o">.</span><span class="n">failed</span> <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span><span class="p">],</span>
+        <span class="p">}</span>
+        <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tools_to_track</span><span class="p">:</span>  <span class="c1"># Default of empty set means this is not run</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tool</span><span class="p">,</span> <span class="n">Tool</span><span class="p">):</span>
+                <span class="n">tool</span> <span class="o">=</span> <span class="n">tool</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">name</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;tool_</span><span class="si">{</span><span class="n">tool</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="nb">sum</span><span class="p">(</span>
+                    <span class="nb">sum</span><span class="p">(</span><span class="n">tc</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">tool</span> <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">action</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">tool_calls</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">traj</span><span class="o">.</span><span class="n">steps</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">action</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">traj</span> <span class="ow">in</span> <span class="n">trajectories</span>
+            <span class="p">]</span>
+        <span class="k">return</span> <span class="n">metrics</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TrajectoryMetricsCallback">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.TrajectoryMetricsCallback">[docs]</a>
+<span class="k">class</span> <span class="nc">TrajectoryMetricsCallback</span><span class="p">(</span><span class="n">Callback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute metrics that are defined by task datasets.</span>
+
+<span class="sd">    NOTE: evaluation portion&#39;s after_eval_step/loop() is not concurrency safe because</span>
+<span class="sd">    trajectories should be stored in the order of after_eval_step() calls.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">train_dataset</span><span class="p">:</span> <span class="n">TaskDataset</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">eval_dataset</span><span class="p">:</span> <span class="n">TaskDataset</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">track_tool_usage</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_datasets</span> <span class="o">=</span> <span class="n">train_dataset</span><span class="p">,</span> <span class="n">eval_dataset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_track_tool_usage</span> <span class="o">=</span> <span class="n">track_tool_usage</span>
+        <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datasets</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ds</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ds</span><span class="p">,</span> <span class="n">ComputeTrajectoryMetricsMixin</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Dataset </span><span class="si">{</span><span class="n">ds</span><span class="si">}</span><span class="s2"> didn&#39;t implement&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot; </span><span class="si">{</span><span class="n">ComputeTrajectoryMetricsMixin</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, which is required for&quot;</span>
+                    <span class="s2">&quot; this callback.&quot;</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_train_metrics_fn</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">train_dataset</span><span class="o">.</span><span class="n">compute_trajectory_metrics</span> <span class="k">if</span> <span class="n">train_dataset</span> <span class="k">else</span> <span class="kc">None</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eval_metrics_fn</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">eval_dataset</span><span class="o">.</span><span class="n">compute_trajectory_metrics</span> <span class="k">if</span> <span class="n">eval_dataset</span> <span class="k">else</span> <span class="kc">None</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_train_metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eval_metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+
+<div class="viewcode-block" id="TrajectoryMetricsCallback.after_env_reset">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.TrajectoryMetricsCallback.after_env_reset">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_env_reset</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span> <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tool</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ds</span> <span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_datasets</span> <span class="k">if</span> <span class="n">ds</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_track_tool_usage</span><span class="p">:</span>
+                <span class="n">cast</span><span class="p">(</span><span class="n">ComputeTrajectoryMetricsMixin</span><span class="p">,</span> <span class="n">ds</span><span class="p">)</span><span class="o">.</span><span class="n">tools_to_track</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="n">t</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tools</span>
+                <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="TrajectoryMetricsCallback.after_train_step">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.TrajectoryMetricsCallback.after_train_step">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_train_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trajectories</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_metrics_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_train_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_metrics_fn</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TrajectoryMetricsCallback.after_eval_step">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.TrajectoryMetricsCallback.after_eval_step">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_eval_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trajectories</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_metrics_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_metrics_fn</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_metrics</span><span class="p">:</span>
+                    <span class="c1"># Don&#39;t use defaultdict - error prone in user code</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_eval_metrics</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_eval_metrics</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">v</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TrajectoryMetricsCallback.after_eval_loop">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.TrajectoryMetricsCallback.after_eval_loop">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_eval_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eval_metrics</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="MeanMetricsCallback">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.MeanMetricsCallback">[docs]</a>
+<span class="k">class</span> <span class="nc">MeanMetricsCallback</span><span class="p">(</span><span class="n">TrajectoryMetricsCallback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Take a mean of all metrics.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_train_means</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eval_means</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="MeanMetricsCallback.after_train_step">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.MeanMetricsCallback.after_train_step">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_train_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trajectories</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">await</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">after_train_step</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_metrics</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># may be None if train_dataset was not provided</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_train_means</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_means</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_train_metrics</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MeanMetricsCallback.after_eval_loop">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.MeanMetricsCallback.after_eval_loop">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_eval_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_metrics</span><span class="p">:</span>
+            <span class="c1"># may be empty if eval_dataset was not provided</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_eval_means</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_means</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_eval_metrics</span><span class="p">)</span>
+        <span class="k">await</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">after_eval_loop</span><span class="p">()</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_compute_means</span><span class="p">(</span><span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">train_means</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_means</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Training means are only available after this callback is invoked.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_means</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">eval_means</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_means</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s2">&quot;Evaluation means are only available after this callback is invoked.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_means</span></div>
+
+
+
+<div class="viewcode-block" id="WandBLoggingCallback">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.WandBLoggingCallback">[docs]</a>
+<span class="k">class</span> <span class="nc">WandBLoggingCallback</span><span class="p">(</span><span class="n">TrajectoryMetricsCallback</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">wandb</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> processing requires the &#39;monitor&#39; extra for&quot;</span>
+                <span class="s2">&quot; &#39;wandb&#39;. Please: `pip install aviary-internal[monitor]`.&quot;</span>
+            <span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_train_step</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="WandBLoggingCallback.after_train_step">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.WandBLoggingCallback.after_train_step">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_train_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trajectories</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">await</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">after_train_step</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_num_train_step</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_metrics</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># Each wandb.log() increments the wandb step by 1. Log the training step here</span>
+        <span class="c1"># so we can use it as an x-axis for training metrics that are logged by different</span>
+        <span class="c1"># wandb.log() calls.</span>
+        <span class="n">wandb</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="sa">f</span><span class="s2">&quot;train/</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">_mean&quot;</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_train_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="p">}</span>
+            <span class="o">|</span> <span class="p">{</span><span class="s2">&quot;train/step&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_num_train_step</span><span class="p">}</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WandBLoggingCallback.after_eval_loop">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.WandBLoggingCallback.after_eval_loop">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_eval_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_metrics</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">wandb</span><span class="o">.</span><span class="n">log</span><span class="p">({</span>
+            <span class="sa">f</span><span class="s2">&quot;eval/</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">_mean&quot;</span><span class="p">:</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">vals</span><span class="p">)</span> <span class="k">if</span> <span class="n">vals</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">vals</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">})</span>
+
+        <span class="k">await</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">after_eval_loop</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ClearContextCallback">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.ClearContextCallback">[docs]</a>
+<span class="k">class</span> <span class="nc">ClearContextCallback</span><span class="p">(</span><span class="n">Callback</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op_names</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_op_names</span> <span class="o">=</span> <span class="n">op_names</span>
+
+<div class="viewcode-block" id="ClearContextCallback.after_eval_step">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.ClearContextCallback.after_eval_step">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_eval_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trajectories</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">OpCtx</span><span class="o">.</span><span class="n">clear_contexts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_op_names</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ClearContextCallback.after_update">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.ClearContextCallback.after_update">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_update</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">OpCtx</span><span class="o">.</span><span class="n">clear_contexts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_op_names</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LoggingCallback">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.LoggingCallback">[docs]</a>
+<span class="k">class</span> <span class="nc">LoggingCallback</span><span class="p">(</span><span class="n">MeanMetricsCallback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom callback for logging filtered metrics (e.g., pass rates) to the console.</span>
+
+<span class="sd">    This callback extends the `MeanMetricsCallback` and allows logging of user-specified metrics</span>
+<span class="sd">    after each training step and after the evaluation loop. It calculates the specified metrics</span>
+<span class="sd">    (e.g., pass rates) from the trajectories and logs the results.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">train_dataset</span><span class="p">:</span> <span class="n">TaskDataset</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">eval_dataset</span><span class="p">:</span> <span class="n">TaskDataset</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">metrics_to_log</span><span class="p">:</span> <span class="n">Collection</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the callback with a list of metric keys to log.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            train_dataset: The training dataset for computing metrics.</span>
+<span class="sd">            eval_dataset: The evaluation dataset for computing metrics.</span>
+<span class="sd">            metrics_to_log: Optional metric names (e.g., [&quot;pass&quot;]) to log.</span>
+<span class="sd">                            If left as default of None, all metrics will be logged.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">train_dataset</span><span class="p">,</span> <span class="n">eval_dataset</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">metrics_to_log</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">metrics_to_log</span> <span class="ow">or</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="p">)</span>  <span class="c1"># If no metrics provided, log all by default</span>
+
+    <span class="k">def</span> <span class="nf">_log_filtered_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">step_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to log only the specified metrics.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            metrics: Dictionary of calculated means for the current step (e.g., train or eval).</span>
+<span class="sd">            step_type: The type of step (e.g., &quot;Train&quot; or &quot;Eval&quot;) for logging purposes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics_to_log</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics_to_log</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">metric</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2"> RATE (</span><span class="si">{</span><span class="n">step_type</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">metrics</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Log all metrics if no specific ones are provided</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">step_type</span><span class="si">}</span><span class="s2"> Metrics: </span><span class="si">{</span><span class="n">metrics</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="LoggingCallback.after_train_step">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.LoggingCallback.after_train_step">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_train_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trajectories</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log metrics and pass rate after each training step.</span>
+
+<span class="sd">        This method is called after every training step, calculating and logging</span>
+<span class="sd">        the training metrics and pass rate.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            trajectories: A sequence of trajectories from the training step.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">await</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">after_train_step</span><span class="p">(</span><span class="n">trajectories</span><span class="p">)</span>  <span class="c1"># Call the parent to compute means</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_means</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log_filtered_metrics</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_means</span><span class="p">,</span> <span class="n">step_type</span><span class="o">=</span><span class="s2">&quot;Train&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="LoggingCallback.after_eval_loop">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.LoggingCallback.after_eval_loop">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_eval_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Log metrics and pass rate after the evaluation loop.</span>
+
+<span class="sd">        This method is called after the evaluation loop finishes, calculating and logging</span>
+<span class="sd">        the evaluation metrics and pass rate.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">await</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">after_eval_loop</span><span class="p">()</span>  <span class="c1"># Call the parent to compute means</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eval_means</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_log_filtered_metrics</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eval_means</span><span class="p">,</span> <span class="n">step_type</span><span class="o">=</span><span class="s2">&quot;Eval&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TerminalPrintingCallback">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.TerminalPrintingCallback">[docs]</a>
+<span class="k">class</span> <span class="nc">TerminalPrintingCallback</span><span class="p">(</span><span class="n">Callback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Callback that prints action, observation, and timing information to the terminal.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># try now, rather than start running and die</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">rich.pretty</span> <span class="kn">import</span> <span class="n">pprint</span>  <span class="c1"># noqa: F401</span>
+        <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;rich is required for </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">. Please install it with `pip install rich`.&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
+
+<div class="viewcode-block" id="TerminalPrintingCallback.before_transition">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.TerminalPrintingCallback.before_transition">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">before_transition</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+        <span class="n">env</span><span class="p">:</span> <span class="n">Environment</span><span class="p">,</span>
+        <span class="n">agent_state</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start the timer before each transition.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="TerminalPrintingCallback.after_agent_get_asv">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.TerminalPrintingCallback.after_agent_get_asv">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_agent_get_asv</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">action</span><span class="p">:</span> <span class="n">OpResult</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">],</span>
+        <span class="n">next_agent_state</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">rich.pretty</span> <span class="kn">import</span> <span class="n">pprint</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Action:&quot;</span><span class="p">)</span>
+        <span class="n">pprint</span><span class="p">(</span><span class="n">action</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">expand_all</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TerminalPrintingCallback.after_env_step">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.callbacks.TerminalPrintingCallback.after_env_step">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">after_env_step</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span> <span class="n">reward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">done</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">trunc</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">rich.pretty</span> <span class="kn">import</span> <span class="n">pprint</span>
+
+        <span class="c1"># Compute elapsed time</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">elapsed_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Reset timer</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">elapsed_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Observation:&quot;</span><span class="p">)</span>
+        <span class="n">pprint</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">expand_all</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Elapsed time: </span><span class="si">{</span><span class="n">elapsed_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> seconds&quot;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.agent.interactive_agent &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.agent.interactive_agent</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">contextlib</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">aviary.message</span> <span class="kn">import</span> <span class="n">Message</span>
+<span class="kn">from</span> <span class="nn">aviary.tools</span> <span class="kn">import</span> <span class="n">Tool</span><span class="p">,</span> <span class="n">ToolRequestMessage</span>
+<span class="kn">from</span> <span class="nn">aviary.tools.base</span> <span class="kn">import</span> <span class="n">ToolCall</span>
+
+<span class="kn">from</span> <span class="nn">ldp.graph</span> <span class="kn">import</span> <span class="n">IdentityOp</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">,</span> <span class="n">compute_graph</span>
+
+<span class="kn">from</span> <span class="nn">.agent</span> <span class="kn">import</span> <span class="n">Agent</span>
+<span class="kn">from</span> <span class="nn">.simple_agent</span> <span class="kn">import</span> <span class="n">SimpleAgentState</span>
+
+<span class="n">MISSING_DEFAULT</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+<span class="n">CLEAR</span> <span class="o">=</span> <span class="s2">&quot;CLEAR&quot;</span>  <span class="c1"># Clears the current input and allows the user to start over, e.g. if they made a mistake</span>
+<span class="n">EXIT</span> <span class="o">=</span> <span class="s2">&quot;EXIT&quot;</span>  <span class="c1"># Exits the agent by raising a RuntimeError. Makes it possible to interrupt a rollout</span>
+
+
+<div class="viewcode-block" id="InteractiveAgent">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.interactive_agent.InteractiveAgent">[docs]</a>
+<span class="k">class</span> <span class="nc">InteractiveAgent</span><span class="p">(</span><span class="n">Agent</span><span class="p">[</span><span class="n">SimpleAgentState</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An &quot;agent&quot; that provides an interface for human users to interact with environments.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">action_op</span> <span class="o">=</span> <span class="n">IdentityOp</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">]()</span>
+
+<div class="viewcode-block" id="InteractiveAgent.init_state">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.interactive_agent.InteractiveAgent.init_state">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tool</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SimpleAgentState</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">()</span>  <span class="c1"># add a newline to flush any progress bars, etc</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;AVAILABLE TOOLS:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">tools</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="n">tool</span><span class="o">.</span><span class="n">info</span>
+            <span class="n">docstring</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">info</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">(&quot;</span>
+            <span class="n">arg_docs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">pname</span><span class="p">,</span> <span class="n">pprops</span> <span class="ow">in</span> <span class="n">info</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">docstring</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_param_string</span><span class="p">(</span><span class="n">pname</span><span class="p">,</span> <span class="n">pprops</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span>
+                <span class="n">arg_doc</span> <span class="o">=</span> <span class="s2">&quot;   &quot;</span> <span class="o">+</span> <span class="n">pname</span>
+                <span class="k">if</span> <span class="s2">&quot;description&quot;</span> <span class="ow">in</span> <span class="n">pprops</span><span class="p">:</span>
+                    <span class="n">arg_doc</span> <span class="o">+=</span> <span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="n">pprops</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="n">arg_docs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">arg_doc</span><span class="p">)</span>
+
+            <span class="n">docstring</span> <span class="o">=</span> <span class="n">docstring</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;, &quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;):</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">docstring</span> <span class="o">+=</span> <span class="s2">&quot;   &quot;</span> <span class="o">+</span> <span class="n">info</span><span class="o">.</span><span class="n">description</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+            <span class="n">docstring</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">arg_docs</span><span class="p">)</span>
+            <span class="n">docstring</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">docstring</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SimpleAgentState</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="InteractiveAgent.get_asv">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.interactive_agent.InteractiveAgent.get_asv">[docs]</a>
+    <span class="nd">@compute_graph</span><span class="p">()</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_asv</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">agent_state</span><span class="p">:</span> <span class="n">SimpleAgentState</span><span class="p">,</span> <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">OpResult</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">],</span> <span class="n">SimpleAgentState</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">()</span>  <span class="c1"># add a newline to flush any progress bars, etc</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;OBSERVATIONS:</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="n">obs</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">((</span><span class="n">msg</span><span class="o">.</span><span class="n">content</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">80</span><span class="p">)</span>
+
+        <span class="n">next_agent_state</span> <span class="o">=</span> <span class="n">agent_state</span><span class="o">.</span><span class="n">get_next_state</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
+
+        <span class="n">tool</span><span class="p">:</span> <span class="n">Tool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">tool</span><span class="p">:</span>
+            <span class="n">tool_choice</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;&gt;&gt;&gt; Select tool by name: &quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">tool_choice</span> <span class="o">==</span> <span class="n">CLEAR</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">tool_choice</span> <span class="o">==</span> <span class="n">EXIT</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;User requested to kill the agent.&quot;</span><span class="p">)</span>
+
+            <span class="n">tool</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">agent_state</span><span class="o">.</span><span class="n">tools</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">tool_choice</span><span class="p">),</span> <span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">tool</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Tool &#39;</span><span class="si">{</span><span class="n">tool_choice</span><span class="si">}</span><span class="s2">&#39; not found. Please select from the above tools.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">pname</span><span class="p">,</span> <span class="n">pprops</span> <span class="ow">in</span> <span class="n">tool</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">pdefault</span> <span class="o">=</span> <span class="n">pprops</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="n">MISSING_DEFAULT</span><span class="p">)</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&gt;&gt;&gt; Enter parameter (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_param_string</span><span class="p">(</span><span class="n">pname</span><span class="p">,</span><span class="w"> </span><span class="n">pprops</span><span class="p">)</span><span class="si">}</span><span class="s2">): &quot;</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="n">CLEAR</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_asv</span><span class="p">(</span><span class="n">agent_state</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>  <span class="c1"># just start over</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="n">EXIT</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;User requested to kill the agent.&quot;</span><span class="p">)</span>
+
+                <span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">suppress</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">):</span>
+                    <span class="c1"># lets us load ints, etc. Otherwise, assume it&#39;s a string</span>
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">pdefault</span> <span class="ow">is</span> <span class="n">MISSING_DEFAULT</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Parameter is required.&quot;</span><span class="p">)</span>
+                        <span class="k">continue</span>
+
+                    <span class="n">value</span> <span class="o">=</span> <span class="n">pdefault</span>
+
+                <span class="n">params</span><span class="p">[</span><span class="n">pname</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="k">break</span>
+
+        <span class="n">tool_call</span> <span class="o">=</span> <span class="n">ToolCall</span><span class="o">.</span><span class="n">from_tool</span><span class="p">(</span><span class="n">tool</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">)</span>
+        <span class="n">action</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_op</span><span class="p">(</span><span class="n">ToolRequestMessage</span><span class="p">(</span><span class="n">tool_calls</span><span class="o">=</span><span class="p">[</span><span class="n">tool_call</span><span class="p">]))</span>
+
+        <span class="n">next_agent_state</span><span class="o">.</span><span class="n">messages</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">next_agent_state</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span> <span class="n">action</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">action</span><span class="p">,</span> <span class="n">next_agent_state</span><span class="p">,</span> <span class="mf">0.0</span></div>
+
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_get_param_string</span><span class="p">(</span><span class="n">pname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pprops</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">pstring</span> <span class="o">=</span> <span class="n">pname</span>
+        <span class="k">if</span> <span class="n">ptype</span> <span class="o">:=</span> <span class="p">(</span><span class="n">pprops</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;Any&quot;</span><span class="p">):</span>
+            <span class="n">pstring</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;: </span><span class="si">{</span><span class="n">ptype</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">pdefault</span> <span class="o">:=</span> <span class="n">pprops</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="n">MISSING_DEFAULT</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">MISSING_DEFAULT</span><span class="p">:</span>
+            <span class="n">pstring</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot; = </span><span class="si">{</span><span class="n">pdefault</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">pstring</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../agent.html">ldp.agent</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, FutureHouse.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

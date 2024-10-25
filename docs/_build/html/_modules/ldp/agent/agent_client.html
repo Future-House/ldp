@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.agent.agent_client &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.agent.agent_client</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">secrets</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">import</span> <span class="nn">httpx</span>
+<span class="kn">from</span> <span class="nn">aviary.message</span> <span class="kn">import</span> <span class="n">Message</span>
+<span class="kn">from</span> <span class="nn">aviary.tools</span> <span class="kn">import</span> <span class="n">Messages</span><span class="p">,</span> <span class="n">Tool</span><span class="p">,</span> <span class="n">ToolRequestMessage</span><span class="p">,</span> <span class="n">ToolsAdapter</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span> <span class="nn">ldp.graph</span> <span class="kn">import</span> <span class="n">OpResult</span><span class="p">,</span> <span class="n">get_training_mode</span>
+
+<span class="kn">from</span> <span class="nn">.agent</span> <span class="kn">import</span> <span class="n">Agent</span>
+<span class="kn">from</span> <span class="nn">.simple_agent</span> <span class="kn">import</span> <span class="n">SimpleAgentState</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">fastapi</span> <span class="kn">import</span> <span class="n">FastAPI</span>
+
+<span class="n">TSerializableAgentState</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;TSerializableAgentState&quot;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="HTTPAgentClient">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.agent_client.HTTPAgentClient">[docs]</a>
+<span class="k">class</span> <span class="nc">HTTPAgentClient</span><span class="p">(</span><span class="n">Agent</span><span class="p">[</span><span class="n">TSerializableAgentState</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interact with an Agent running in a server via POST requests.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">agent_state_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">TSerializableAgentState</span><span class="p">],</span>
+        <span class="n">server_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">request_headers</span><span class="p">:</span> <span class="n">httpx</span><span class="o">.</span><span class="n">_types</span><span class="o">.</span><span class="n">HeaderTypes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">request_timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_agent_state_type</span> <span class="o">=</span> <span class="n">agent_state_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_request_url</span> <span class="o">=</span> <span class="n">server_url</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_request_headers</span> <span class="o">=</span> <span class="n">request_headers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_request_timeout</span> <span class="o">=</span> <span class="n">request_timeout</span>
+
+<div class="viewcode-block" id="HTTPAgentClient.get_asv">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.agent_client.HTTPAgentClient.get_asv">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_asv</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">agent_state</span><span class="p">:</span> <span class="n">TSerializableAgentState</span><span class="p">,</span>
+        <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">OpResult</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">],</span> <span class="n">TSerializableAgentState</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="n">httpx</span><span class="o">.</span><span class="n">AsyncClient</span><span class="p">()</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_request_url</span><span class="si">}</span><span class="s2">/get_asv&quot;</span><span class="p">,</span>
+                <span class="n">json</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;agent_state&quot;</span><span class="p">:</span> <span class="n">agent_state</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span>
+                    <span class="s2">&quot;obs&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">obs</span><span class="p">],</span>
+                    <span class="s2">&quot;training&quot;</span><span class="p">:</span> <span class="n">get_training_mode</span><span class="p">(),</span>
+                <span class="p">},</span>
+                <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_request_headers</span><span class="p">,</span>
+                <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_request_timeout</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+            <span class="n">response_data</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">OpResult</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">ToolRequestMessage</span><span class="p">,</span> <span class="n">response_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_agent_state_type</span><span class="p">(</span><span class="o">**</span><span class="n">response_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+                <span class="n">response_data</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HTTPAgentClient.init_state">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.agent_client.HTTPAgentClient.init_state">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tool</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">TSerializableAgentState</span><span class="p">:</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="n">httpx</span><span class="o">.</span><span class="n">AsyncClient</span><span class="p">()</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">post</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_request_url</span><span class="si">}</span><span class="s2">/init_state&quot;</span><span class="p">,</span>
+                <span class="n">json</span><span class="o">=</span><span class="n">ToolsAdapter</span><span class="o">.</span><span class="n">dump_python</span><span class="p">(</span><span class="n">tools</span><span class="p">),</span>
+                <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_request_headers</span><span class="p">,</span>
+                <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_request_timeout</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_agent_state_type</span><span class="p">(</span><span class="o">**</span><span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">())</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="make_simple_agent_server">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.agent_client.make_simple_agent_server">[docs]</a>
+<span class="k">def</span> <span class="nf">make_simple_agent_server</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">[</span><span class="n">SimpleAgentState</span><span class="p">],</span> <span class="n">render_docs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;FastAPI&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Make a FastAPI app designed to work with the above HTTPAgentClient.</span>
+
+<span class="sd">    Here&#39;s how this works:</span>
+<span class="sd">    1. There is an entity orchestrating an Agent&#39;s interactions with an Environment.</span>
+<span class="sd">       A simple example of this is an integration test that sequentially calls</span>
+<span class="sd">       Agent.get_asv and Environment.step.</span>
+<span class="sd">    2. That entity is given the above HTTPAgentClient. Any Agent.init_state or</span>
+<span class="sd">       Agent.get_asv calls the orchestration entity makes are actually</span>
+<span class="sd">       POST requests under the hood. The agent&#39;s &quot;brains&quot; aren&#39;t local.</span>
+<span class="sd">    3. Remotely, this server code is running, and is where the actual Agent logic lives.</span>
+<span class="sd">       An example of this is a remote server containing GPU(s).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">fastapi</span> <span class="kn">import</span> <span class="n">Body</span><span class="p">,</span> <span class="n">Depends</span><span class="p">,</span> <span class="n">FastAPI</span><span class="p">,</span> <span class="n">HTTPException</span><span class="p">,</span> <span class="n">status</span>
+        <span class="kn">from</span> <span class="nn">fastapi.security</span> <span class="kn">import</span> <span class="n">HTTPAuthorizationCredentials</span><span class="p">,</span> <span class="n">HTTPBearer</span>
+    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="s2">&quot;Please install aviary with the &#39;server&#39; extra like so:&quot;</span>
+            <span class="s2">&quot; `pip install aviary[server]`.&quot;</span>
+        <span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+
+    <span class="n">asgi_app</span> <span class="o">=</span> <span class="n">FastAPI</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;aviary.Agent </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">agent</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Serve inference endpoints for an aviary.Agent with a SimpleAgentState&quot;</span><span class="p">,</span>
+        <span class="c1"># Only render Swagger docs if local since we don&#39;t have a login here</span>
+        <span class="n">docs_url</span><span class="o">=</span><span class="s2">&quot;/docs&quot;</span> <span class="k">if</span> <span class="n">render_docs</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">redoc_url</span><span class="o">=</span><span class="s2">&quot;/redoc&quot;</span> <span class="k">if</span> <span class="n">render_docs</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">auth_scheme</span> <span class="o">=</span> <span class="n">HTTPBearer</span><span class="p">()</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">validate_token</span><span class="p">(</span>
+        <span class="n">token</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">HTTPAuthorizationCredentials</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">auth_scheme</span><span class="p">)],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HTTPAuthorizationCredentials</span><span class="p">:</span>
+        <span class="c1"># NOTE: don&#39;t use os.environ.get() to avoid possible empty string matches, and</span>
+        <span class="c1"># to have clearer server failures if the AUTH_TOKEN env var isn&#39;t present</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">secrets</span><span class="o">.</span><span class="n">compare_digest</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">credentials</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;AUTH_TOKEN&quot;</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span>
+                <span class="n">status_code</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_401_UNAUTHORIZED</span><span class="p">,</span>
+                <span class="n">detail</span><span class="o">=</span><span class="s2">&quot;Incorrect bearer token&quot;</span><span class="p">,</span>
+                <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;WWW-Authenticate&quot;</span><span class="p">:</span> <span class="s2">&quot;Bearer&quot;</span><span class="p">},</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">token</span>
+
+    <span class="nd">@asgi_app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/info&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">info</span><span class="p">(</span>
+        <span class="n">_</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">HTTPAuthorizationCredentials</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">validate_token</span><span class="p">)],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get agent metadata, useful for debugging.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;agent_type&quot;</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">agent</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">}</span>
+
+    <span class="nd">@asgi_app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/get_asv&quot;</span><span class="p">)</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_asv</span><span class="p">(</span>
+        <span class="n">agent_state</span><span class="p">:</span> <span class="n">SimpleAgentState</span><span class="p">,</span>
+        <span class="n">obs</span><span class="p">:</span> <span class="n">Messages</span><span class="p">,</span>
+        <span class="n">_</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">HTTPAuthorizationCredentials</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">validate_token</span><span class="p">)],</span>
+        <span class="n">training</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">Body</span><span class="p">()]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">SimpleAgentState</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">training</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Training is not yet supported.&quot;</span><span class="p">)</span>
+        <span class="n">action</span><span class="p">,</span> <span class="n">agent_state</span><span class="p">,</span> <span class="n">vhat</span> <span class="o">=</span> <span class="k">await</span> <span class="n">agent</span><span class="o">.</span><span class="n">get_asv</span><span class="p">(</span><span class="n">agent_state</span><span class="p">,</span> <span class="n">obs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">action</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="n">agent_state</span><span class="p">,</span> <span class="n">vhat</span>
+
+    <span class="nd">@asgi_app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/init_state&quot;</span><span class="p">)</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span>
+        <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tool</span><span class="p">],</span>
+        <span class="n">_</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">HTTPAuthorizationCredentials</span><span class="p">,</span> <span class="n">Depends</span><span class="p">(</span><span class="n">validate_token</span><span class="p">)],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleAgentState</span><span class="p">:</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">agent</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">tools</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">asgi_app</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../agent.html">ldp.agent</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, FutureHouse.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

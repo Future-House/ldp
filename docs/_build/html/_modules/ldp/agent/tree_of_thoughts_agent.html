@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.agent.tree_of_thoughts_agent &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.agent.tree_of_thoughts_agent</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Module for the Tree of Thoughts agent.</span>
+
+<span class="sd">This module defines the Tree of Thoughts agent which uses a language model to generate and evaluate possible</span>
+<span class="sd">steps in a puzzle or problem-solving environment. The agent employs a tree search mechanism to explore different</span>
+<span class="sd">solutions and selects the most promising ones based on evaluations.</span>
+
+<span class="sd">This module is based on the following paper: https://openreview.net/forum?id=5Xc1ecxO1h</span>
+
+<span class="sd">Note: TreeofThoughtsAgent is currently tested as a baseline agent for Game of 24. It does not yet support tool calls</span>
+<span class="sd">that operate on the intermediate reasoning steps. This would probably entail a redefinition of the POMDP to</span>
+<span class="sd">undertake intermediate reasoning steps as environment steps.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">aviary.message</span> <span class="kn">import</span> <span class="n">Message</span>
+<span class="kn">from</span> <span class="nn">aviary.tools</span> <span class="kn">import</span> <span class="n">Tool</span><span class="p">,</span> <span class="n">ToolCall</span><span class="p">,</span> <span class="n">ToolRequestMessage</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="kn">from</span> <span class="nn">ldp.graph</span> <span class="kn">import</span> <span class="n">FxnOp</span><span class="p">,</span> <span class="n">LLMCallOp</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">,</span> <span class="n">compute_graph</span><span class="p">,</span> <span class="n">get_call_id</span><span class="p">,</span> <span class="n">op_call</span>
+<span class="kn">from</span> <span class="nn">ldp.llms</span> <span class="kn">import</span> <span class="n">prepend_sys</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">DefaultLLMModelNames</span>
+<span class="kn">from</span> <span class="nn">.agent</span> <span class="kn">import</span> <span class="n">Agent</span>
+<span class="kn">from</span> <span class="nn">.simple_agent</span> <span class="kn">import</span> <span class="n">SimpleAgentState</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="TreeofThoughtsAgent">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.tree_of_thoughts_agent.TreeofThoughtsAgent">[docs]</a>
+<span class="k">class</span> <span class="nc">TreeofThoughtsAgent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Agent</span><span class="p">[</span><span class="n">SimpleAgentState</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tree of Thoughts Agent.</span>
+
+<span class="sd">    This agent uses a tree search mechanism combined with an LLM to generate and evaluate</span>
+<span class="sd">    possible steps in a problem-solving environment. It is designed to explore different solutions</span>
+<span class="sd">    and select the most promising ones based on a heuristic evaluation function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Freeze to ensure the only mutation happens in either the agent state (which is</span>
+    <span class="c1"># passed around) or in the internal Ops</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">llm_model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">DefaultLLMModelNames</span><span class="o">.</span><span class="n">OPENAI</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">},</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Starting configuration for the LLM model.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">value_prompt_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Value prompt for input: </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, current path: </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Function to format value prompt template.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">proposal_prompt_func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Proposal prompt for input: </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">, current path: </span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Function to format proposal prompt template.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prepend_op</span> <span class="o">=</span> <span class="n">FxnOp</span><span class="p">(</span><span class="n">prepend_sys</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_llm_call_op</span> <span class="o">=</span> <span class="n">LLMCallOp</span><span class="p">()</span>
+
+<div class="viewcode-block" id="TreeofThoughtsAgent.init_state">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.tree_of_thoughts_agent.TreeofThoughtsAgent.init_state">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tool</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SimpleAgentState</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SimpleAgentState</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TreeofThoughtsAgent.get_asv">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.tree_of_thoughts_agent.TreeofThoughtsAgent.get_asv">[docs]</a>
+    <span class="nd">@compute_graph</span><span class="p">()</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_asv</span><span class="p">(</span>  <span class="c1"># type: ignore[override]</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">agent_state</span><span class="p">:</span> <span class="n">SimpleAgentState</span><span class="p">,</span>
+        <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span>
+        <span class="n">eval_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="nb">float</span><span class="p">],</span>
+        <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">n_select_samples</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">OpResult</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">],</span> <span class="n">SimpleAgentState</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate and evaluate possible steps in the problem-solving process.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            agent_state: The current state of the agent.</span>
+<span class="sd">            obs: The observations provided to the agent.</span>
+<span class="sd">            eval_function: Function to evaluate the generated paths in the tree.</span>
+<span class="sd">            n_steps: Number of steps to generate. Defaults to 0. Dictated by the environment.</span>
+<span class="sd">            n_select_samples: Number of tree nodes to select to explore in each step. Defaults to 0.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The result of the operation, the new state of the agent, and the number representing the value (0).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_state</span> <span class="o">=</span> <span class="n">agent_state</span><span class="o">.</span><span class="n">get_next_state</span><span class="p">()</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">obs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>  <span class="c1"># Current problem input</span>
+        <span class="n">current_paths</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]</span>  <span class="c1"># current candidate paths through the tree</span>
+
+        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Step </span><span class="si">{</span><span class="n">step</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># propose candidate paths</span>
+            <span class="n">candidate_paths</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">current_paths</span><span class="p">:</span>
+                <span class="n">proposal_prompt_init</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">proposal_prompt_func</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+                <span class="n">proposal_msgs</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepend_op</span><span class="p">(</span>
+                    <span class="n">new_state</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span> <span class="n">sys_content</span><span class="o">=</span><span class="n">proposal_prompt_init</span>
+                <span class="p">)</span>
+                <span class="n">proposal</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_llm_call_op</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">llm_model</span><span class="p">,</span> <span class="n">msgs</span><span class="o">=</span><span class="n">proposal_msgs</span><span class="p">)</span>
+                <span class="c1"># Append candidate paths to the current paths</span>
+                <span class="n">candidate_paths</span> <span class="o">+=</span> <span class="p">[</span>
+                    <span class="n">path</span> <span class="o">+</span> <span class="n">_</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+                    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="p">(</span><span class="n">proposal</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">content</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">_</span>
+                <span class="p">]</span>
+
+            <span class="c1"># score candidate paths</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">candidate_paths</span><span class="p">:</span>
+                <span class="n">value_prompt_init</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_prompt_func</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+                <span class="n">value_msgs</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepend_op</span><span class="p">(</span>
+                    <span class="n">new_state</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span> <span class="n">sys_content</span><span class="o">=</span><span class="n">value_prompt_init</span>
+                <span class="p">)</span>
+                <span class="n">value_outputs</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_llm_call_op</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">llm_model</span><span class="p">,</span> <span class="n">msgs</span><span class="o">=</span><span class="n">value_msgs</span><span class="p">)</span>
+                <span class="n">values</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eval_function</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="p">[</span><span class="n">value_outputs</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">content</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">]))</span>
+
+            <span class="c1"># greedy selection</span>
+            <span class="n">values_with_index</span> <span class="o">=</span> <span class="p">[(</span><span class="n">v</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">values</span><span class="p">)]</span>
+            <span class="n">sorted_values</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">values_with_index</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">select_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sorted_values</span><span class="p">[:</span><span class="n">n_select_samples</span><span class="p">]]</span>
+            <span class="n">select_new_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">candidate_paths</span><span class="p">[</span><span class="n">select_id</span><span class="p">]</span> <span class="k">for</span> <span class="n">select_id</span> <span class="ow">in</span> <span class="n">select_ids</span><span class="p">]</span>
+            <span class="n">current_paths</span> <span class="o">=</span> <span class="n">select_new_paths</span>
+
+        <span class="c1"># Generate tool calls for the selected answer</span>
+        <span class="n">tool_calls</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">ToolCall</span><span class="o">.</span><span class="n">from_tool</span><span class="p">(</span><span class="n">tool</span><span class="p">,</span> <span class="o">*</span><span class="p">[</span><span class="n">current_paths</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span> <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">new_state</span><span class="o">.</span><span class="n">tools</span>
+        <span class="p">]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">ToolRequestMessage</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">current_paths</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tool_calls</span><span class="o">=</span><span class="n">tool_calls</span><span class="p">)</span>
+
+        <span class="n">new_state</span><span class="o">.</span><span class="n">messages</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">new_state</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span> <span class="n">result</span><span class="p">]</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="n">op_call</span><span class="p">():</span>
+            <span class="n">op_result</span><span class="p">:</span> <span class="n">OpResult</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">]</span> <span class="o">=</span> <span class="n">OpResult</span><span class="p">(</span>
+                <span class="n">call_id</span><span class="o">=</span><span class="n">get_call_id</span><span class="p">(),</span>
+                <span class="n">op_name</span><span class="o">=</span><span class="s2">&quot;TreeofThoughtsAgentOp&quot;</span><span class="p">,</span>
+                <span class="n">op_class_name</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                <span class="n">value</span><span class="o">=</span><span class="n">result</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">op_result</span><span class="p">,</span> <span class="n">new_state</span><span class="p">,</span> <span class="mf">0.0</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../agent.html">ldp.agent</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, FutureHouse.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

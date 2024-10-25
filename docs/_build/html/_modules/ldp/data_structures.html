@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.data_structures &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.data_structures</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Hashable</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Self</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">from</span> <span class="nn">aviary.message</span> <span class="kn">import</span> <span class="n">Message</span><span class="p">,</span> <span class="n">join</span>
+<span class="kn">from</span> <span class="nn">aviary.tools</span> <span class="kn">import</span> <span class="n">ToolRequestMessage</span><span class="p">,</span> <span class="n">ToolResponseMessage</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">JsonValue</span><span class="p">,</span> <span class="n">field_validator</span>
+
+<span class="kn">from</span> <span class="nn">ldp.graph</span> <span class="kn">import</span> <span class="n">OpResult</span>
+<span class="kn">from</span> <span class="nn">ldp.utils</span> <span class="kn">import</span> <span class="n">discounted_returns</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Transition">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.Transition">[docs]</a>
+<span class="k">class</span> <span class="nc">Transition</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">arbitrary_types_allowed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Sentinel value for missing observation, as opposed to empty observation</span>
+    <span class="c1"># Only used for tests; a user should never use this.</span>
+    <span class="n">NO_OBSERVATION</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">timestep</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Zero-indexed MDP timestep t.&quot;</span><span class="p">)</span>
+
+    <span class="n">agent_state</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Agent.get_asv&#39;s input. This is `s_t` in RL terms. Note that `s_0` comes&quot;</span>
+            <span class="s2">&quot; from `Agent.init_state()`&quot;</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">next_agent_state</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Agent.get_asv&#39;s output. This is s_t+1 in RL terms.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">observation</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ToolResponseMessage</span> <span class="o">|</span> <span class="n">Message</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Agent.get_asv&#39;s input. This is o_t in RL terms.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">next_observation</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ToolResponseMessage</span> <span class="o">|</span> <span class="n">Message</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Environment.step output. This is o_t+1 in RL terms.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">action</span><span class="p">:</span> <span class="n">OpResult</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Agent.get_asv output. This is a_t in RL terms.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">reward</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Environment.step output. This is r_t in RL terms.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="n">truncated</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;timestep t&#39;s Environment.step output.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">done</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;timestep t&#39;s Environment.step output.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Value estimate output from timestep t&#39;s Agent.get_asv. This is v(s_t)&quot;</span>
+            <span class="s2">&quot; [state value function] or q(s_t, a_t) [state-action value].&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+    <span class="c1"># JsonValue so we can serialize</span>
+    <span class="n">metadata</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">JsonValue</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Transition.construct_action">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.Transition.construct_action">[docs]</a>
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;action&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">construct_action</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="n">OpResult</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OpResult</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">OpResult</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">ToolRequestMessage</span><span class="p">,</span> <span class="n">action</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">action</span></div>
+
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">failed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get if an exception was encountered during rollout, for convenience.</span>
+
+<span class="sd">        If True, this transition should not be trained on.</span>
+<span class="sd">        Failed transitions are for debugging purposes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;exception&quot;</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Transition.model_dump_json">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.Transition.model_dump_json">[docs]</a>
+    <span class="k">def</span> <span class="nf">model_dump_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">indent</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="c1"># The kwargs for model_dump are the same as super().model_dump_json,</span>
+        <span class="c1"># with the exception of indent.</span>
+        <span class="n">dump</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dump</span><span class="p">[</span><span class="s2">&quot;action&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">action</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">dump</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="n">indent</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="Trajectory">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.Trajectory">[docs]</a>
+<span class="k">class</span> <span class="nc">Trajectory</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
+
+    <span class="n">traj_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">steps</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Transition</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">failed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">failed</span> <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">done</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">done</span>
+
+<div class="viewcode-block" id="Trajectory.to_jsonl">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.Trajectory.to_jsonl">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_jsonl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">traj_id</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Trajectory.from_jsonl">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.Trajectory.from_jsonl">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_jsonl</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">reader</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="n">traj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">traj_id</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">reader</span><span class="p">)))</span>
+            <span class="k">for</span> <span class="n">json_line</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+                <span class="n">traj</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Transition</span><span class="p">(</span><span class="o">**</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_line</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">traj</span></div>
+
+
+<div class="viewcode-block" id="Trajectory.compute_discounted_returns">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.Trajectory.compute_discounted_returns">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_discounted_returns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">discount</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the discounted returns for each step in the trajectory.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">discounted_returns</span><span class="p">(</span>
+            <span class="n">rewards</span><span class="o">=</span><span class="p">[</span><span class="n">step</span><span class="o">.</span><span class="n">reward</span> <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">],</span>
+            <span class="n">terminated</span><span class="o">=</span><span class="p">[</span><span class="n">step</span><span class="o">.</span><span class="n">truncated</span> <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">],</span>
+            <span class="n">discount</span><span class="o">=</span><span class="n">discount</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="TransitionTree">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.TransitionTree">[docs]</a>
+<span class="k">class</span> <span class="nc">TransitionTree</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">UUID</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;A tree of transitions.</span>
+
+<span class="sd">        If A-&gt;B is an edge in this tree, then A and B are consecutive</span>
+<span class="sd">        transitions in an LDP. Any path from the root node to a terminal</span>
+<span class="sd">        node constitutes a complete LDP.</span>
+
+<span class="sd">        A node may be assigned an arbitrary weight, which will be treated</span>
+<span class="sd">        as a relative probability of sampling that node. For example, if</span>
+<span class="sd">        A(weight=1) and B(w=2) are both children of the same node,</span>
+<span class="sd">        then we treat B as twice as likely as A.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            root_id: A unique identifier for the root node of the tree.</span>
+<span class="sd">                All IDs of transitions added to this tree must begin with</span>
+<span class="sd">                the same root_id.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">root_id</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tree</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>  <span class="c1"># the actual tree</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rev_tree</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">DiGraph</span><span class="p">()</span>  <span class="c1"># the same as self.tree, but with reversed edges</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_node</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_id</span><span class="p">,</span> <span class="n">transition</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_add_node</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">step_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">transition</span><span class="p">:</span> <span class="n">Transition</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">step_id</span><span class="p">,</span> <span class="n">transition</span><span class="o">=</span><span class="n">transition</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rev_tree</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">step_id</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent_step_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">child_step_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">parent_step_id</span><span class="p">,</span> <span class="n">child_step_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rev_tree</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">child_step_id</span><span class="p">,</span> <span class="n">parent_step_id</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TransitionTree.get_transition">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.TransitionTree.get_transition">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_transition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Transition</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">step_id</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Root node has no transition.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">Transition</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">step_id</span><span class="p">][</span><span class="s2">&quot;transition&quot;</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="TransitionTree.get_weight">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.TransitionTree.get_weight">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">step_id</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="TransitionTree.add_transition">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.TransitionTree.add_transition">[docs]</a>
+    <span class="k">def</span> <span class="nf">add_transition</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">step_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="n">Transition</span><span class="p">,</span> <span class="n">weight</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a transition to the tree.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            step_id: A unique identifier for the root node of the tree.</span>
+<span class="sd">                The expected form of the step ID is &quot;{parent step ID}:{step index}&quot;.</span>
+<span class="sd">            step: The transition to add.</span>
+<span class="sd">            weight: Weight of the transition. Defaults to 1.0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">root_id</span><span class="p">,</span> <span class="o">*</span><span class="n">step_ids</span> <span class="o">=</span> <span class="n">step_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">root_id</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_id</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Step ID </span><span class="si">{</span><span class="n">step_id</span><span class="si">}</span><span class="s2"> does not start with root ID </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">root_id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="n">step_ids</span><span class="p">,</span> <span class="s2">&quot;Step ID cannot be the same as the root ID.&quot;</span>
+        <span class="c1"># TODO: maybe this should be warning?</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">step_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Step ID </span><span class="si">{</span><span class="n">step_id</span><span class="si">}</span><span class="s2"> already exists in the tree.&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_node</span><span class="p">(</span><span class="n">step_id</span><span class="p">,</span> <span class="n">transition</span><span class="o">=</span><span class="n">step</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">weight</span><span class="p">)</span>
+
+        <span class="n">parent_id</span> <span class="o">=</span> <span class="s2">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">root_id</span><span class="p">,</span> <span class="o">*</span><span class="n">step_ids</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="k">if</span> <span class="n">parent_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_add_edge</span><span class="p">(</span><span class="n">parent_id</span><span class="p">,</span> <span class="n">step_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TransitionTree.get_trajectories">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.TransitionTree.get_trajectories">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_trajectories</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Trajectory</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of trajectories.</span>
+
+<span class="sd">        Since each path from the root node to a terminal node defines</span>
+<span class="sd">        a unique trajectory, N(terminal node) trajectories will be returned.</span>
+<span class="sd">        The trajectory ID will be set to the ID of the terminal step.</span>
+
+<span class="sd">        Note that we include failed and truncated trajectories; it is up to the</span>
+<span class="sd">        caller to decide what to do them.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            All trajectories in this tree.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">trajs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">step</span><span class="p">:</span> <span class="n">Transition</span> <span class="o">|</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">step_id</span><span class="p">,</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="s2">&quot;transition&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">step</span><span class="p">:</span>
+                <span class="c1"># root node</span>
+                <span class="k">continue</span>
+
+            <span class="n">is_terminal</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="c1"># check terminal conditions in increasing order of expense</span>
+                <span class="n">step</span><span class="o">.</span><span class="n">done</span>
+                <span class="ow">or</span> <span class="n">step</span><span class="o">.</span><span class="n">truncated</span>
+                <span class="ow">or</span> <span class="n">step</span><span class="o">.</span><span class="n">failed</span>
+                <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">out_degree</span><span class="p">(</span><span class="n">step_id</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_terminal</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># set the ID to the terminal node, which uniquely identifies the path</span>
+            <span class="n">traj</span> <span class="o">=</span> <span class="n">Trajectory</span><span class="p">(</span><span class="n">traj_id</span><span class="o">=</span><span class="n">step_id</span><span class="p">)</span>
+            <span class="c1"># Build the trajectory up from a terminal node</span>
+            <span class="n">current_step</span><span class="p">:</span> <span class="n">Transition</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">step</span>
+            <span class="n">current_step_id</span> <span class="o">=</span> <span class="n">step_id</span>
+
+            <span class="c1"># Walk backwards towards the root (current_step=None)</span>
+            <span class="k">while</span> <span class="n">current_step</span><span class="p">:</span>
+                <span class="n">traj</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_step</span><span class="p">)</span>
+
+                <span class="n">parent_step_id</span><span class="p">,</span> <span class="o">*</span><span class="n">extra</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rev_tree</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">current_step_id</span><span class="p">))</span>
+                <span class="k">assert</span> <span class="ow">not</span> <span class="n">extra</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Expected a single parent, but got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">extra</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+
+                <span class="n">current_step_id</span> <span class="o">=</span> <span class="n">parent_step_id</span>
+                <span class="n">current_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">parent_step_id</span><span class="p">][</span><span class="s2">&quot;transition&quot;</span><span class="p">]</span>
+
+            <span class="c1"># would&#39;ve added things in reverse order, so fix that here</span>
+            <span class="n">traj</span><span class="o">.</span><span class="n">steps</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">timestep</span><span class="p">)</span>
+            <span class="n">trajs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">trajs</span></div>
+
+
+<div class="viewcode-block" id="TransitionTree.assign_mc_value_estimates">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.TransitionTree.assign_mc_value_estimates">[docs]</a>
+    <span class="k">def</span> <span class="nf">assign_mc_value_estimates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">discount_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assign Monte Carlo state-action value estimates to each transition (in-place).</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            discount_factor: The discount factor to use when computing cumulative</span>
+<span class="sd">                future rewards.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">step_id</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rev_tree</span><span class="p">):</span>
+            <span class="n">step</span><span class="p">:</span> <span class="n">Transition</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">step_id</span><span class="p">][</span><span class="s2">&quot;transition&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="n">children</span> <span class="o">:=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">successors</span><span class="p">(</span><span class="n">step_id</span><span class="p">)):</span>
+                <span class="c1"># V_{t+1}(s&#39;) = sum_{a&#39;} p(a&#39;|s&#39;) * Q_{t+1}(s&#39;, a&#39;)</span>
+                <span class="c1"># Here we assume p(a&#39;|s&#39;) is uniform over the sampled actions..</span>
+                <span class="c1"># TODO: don&#39;t make that assumption where a logprob is available</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_weight</span><span class="p">(</span><span class="n">child_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">child_id</span> <span class="ow">in</span> <span class="n">children</span><span class="p">]</span>
+                <span class="n">steps</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_transition</span><span class="p">(</span><span class="n">child_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">child_id</span> <span class="ow">in</span> <span class="n">children</span><span class="p">]</span>
+                <span class="n">v_tp1</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
+                    <span class="n">w</span> <span class="o">*</span> <span class="n">step</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">w</span><span class="p">,</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="p">)</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">v_tp1</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+            <span class="c1"># Q_t(s_t, a_t) = r_{t+1} + gamma * V_{t+1}(s_{t+1})</span>
+            <span class="c1"># (we are assuming the environment is deterministic)</span>
+            <span class="n">step</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">step</span><span class="o">.</span><span class="n">reward</span> <span class="o">+</span> <span class="n">discount_factor</span> <span class="o">*</span> <span class="n">v_tp1</span></div>
+
+
+<div class="viewcode-block" id="TransitionTree.merge_identical_nodes">
+<a class="viewcode-back" href="../../ldp.html#ldp.data_structures.TransitionTree.merge_identical_nodes">[docs]</a>
+    <span class="k">def</span> <span class="nf">merge_identical_nodes</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">agent_state_hash_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Hashable</span><span class="p">],</span>
+        <span class="n">observation_hash_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
+            <span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">ToolResponseMessage</span> <span class="o">|</span> <span class="n">Message</span><span class="p">]],</span> <span class="n">Hashable</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="n">join</span><span class="p">,</span>
+        <span class="n">next_observation_hash_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span>
+            <span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">ToolResponseMessage</span> <span class="o">|</span> <span class="n">Message</span><span class="p">]],</span> <span class="n">Hashable</span>
+        <span class="p">]</span> <span class="o">=</span> <span class="n">join</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TransitionTree</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Merge nodes with identical (state, observation, action)s. Returns a new tree.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            agent_state_hash_fn: A function that returns a hashable representation</span>
+<span class="sd">                of the agent state of a transition.</span>
+<span class="sd">            observation_hash_fn: A function that returns a hashable representation</span>
+<span class="sd">                of the observation messages of a transition.</span>
+<span class="sd">            next_observation_hash_fn: A function that returns a hashable representation</span>
+<span class="sd">                of the next observation messages of a transition.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">new_tree</span> <span class="o">=</span> <span class="n">TransitionTree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root_id</span><span class="p">)</span>
+
+        <span class="c1"># step hash -&gt; step ID</span>
+        <span class="n">seen_hash_to_step_id</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># old step ID -&gt; new step ID</span>
+        <span class="n">node_remap</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">root_id</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_id</span><span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">step_id</span> <span class="ow">in</span> <span class="n">nx</span><span class="o">.</span><span class="n">topological_sort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="p">):</span>
+            <span class="n">step</span><span class="p">:</span> <span class="n">Transition</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">step_id</span><span class="p">][</span><span class="s2">&quot;transition&quot;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">step</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">state_hash</span> <span class="o">=</span> <span class="n">agent_state_hash_fn</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">agent_state</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">step</span><span class="o">.</span><span class="n">action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tool_request_msg</span> <span class="o">=</span> <span class="n">step</span><span class="o">.</span><span class="n">action</span><span class="o">.</span><span class="n">value</span>
+                <span class="c1"># NOTE: we are ignoring tool call ID in the comparison of tool requests.</span>
+                <span class="c1"># Thus, the tool call ID is excluded from the hash, so we can&#39;t just</span>
+                <span class="c1"># simply call str(tool_request_msg)</span>
+                <span class="n">action_str</span> <span class="o">=</span> <span class="p">(</span><span class="n">tool_request_msg</span><span class="o">.</span><span class="n">content</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="nb">str</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span> <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">tool_request_msg</span><span class="o">.</span><span class="n">tool_calls</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">action_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+            <span class="n">step_hash</span> <span class="o">=</span> <span class="nb">hash</span><span class="p">((</span>
+                <span class="n">state_hash</span><span class="p">,</span>
+                <span class="n">action_str</span><span class="p">,</span>
+                <span class="c1"># (s, a, o): works for deterministic envs</span>
+                <span class="n">observation_hash_fn</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">observation</span><span class="p">),</span>
+                <span class="c1"># (s, a, o, o&#39;): works for both deterministic and stochastic envs</span>
+                <span class="n">next_observation_hash_fn</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">next_observation</span><span class="p">),</span>
+            <span class="p">))</span>
+            <span class="n">step_weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_weight</span><span class="p">(</span><span class="n">step_id</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">step_hash</span> <span class="ow">in</span> <span class="n">seen_hash_to_step_id</span><span class="p">:</span>  <span class="c1"># Seen: merge</span>
+                <span class="n">merged_step_id</span> <span class="o">=</span> <span class="n">node_remap</span><span class="p">[</span><span class="n">step_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">seen_hash_to_step_id</span><span class="p">[</span><span class="n">step_hash</span><span class="p">]</span>
+                <span class="c1"># Not sure if this is the fastest way to do this</span>
+                <span class="n">new_tree</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">merged_step_id</span><span class="p">][</span><span class="s2">&quot;weight&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">step_weight</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># Unseen: don&#39;t merge</span>
+                <span class="n">node_remap</span><span class="p">[</span><span class="n">step_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">seen_hash_to_step_id</span><span class="p">[</span><span class="n">step_hash</span><span class="p">]</span> <span class="o">=</span> <span class="n">step_id</span>
+                <span class="n">parent_id</span> <span class="o">=</span> <span class="n">node_remap</span><span class="p">[</span><span class="s2">&quot;:&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">step_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
+
+                <span class="c1"># manually add transitions, since the step_id substring relationship</span>
+                <span class="c1"># will be broken</span>
+                <span class="n">new_tree</span><span class="o">.</span><span class="n">_add_node</span><span class="p">(</span><span class="n">step_id</span><span class="p">,</span> <span class="n">transition</span><span class="o">=</span><span class="n">step</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="n">step_weight</span><span class="p">)</span>
+                <span class="n">new_tree</span><span class="o">.</span><span class="n">_add_edge</span><span class="p">(</span><span class="n">parent_id</span><span class="p">,</span> <span class="n">step_id</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_tree</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

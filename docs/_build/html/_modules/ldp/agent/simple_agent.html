@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.agent.simple_agent &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.agent.simple_agent</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Self</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">from</span> <span class="nn">aviary.message</span> <span class="kn">import</span> <span class="n">Message</span>
+<span class="kn">from</span> <span class="nn">aviary.tools</span> <span class="kn">import</span> <span class="n">Tool</span><span class="p">,</span> <span class="n">ToolRequestMessage</span><span class="p">,</span> <span class="n">ToolResponseMessage</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="kn">from</span> <span class="nn">ldp.graph</span> <span class="kn">import</span> <span class="n">ConfigOp</span><span class="p">,</span> <span class="n">LLMCallOp</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">,</span> <span class="n">compute_graph</span>
+<span class="kn">from</span> <span class="nn">ldp.llms</span> <span class="kn">import</span> <span class="n">prepend_sys</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">DefaultLLMModelNames</span>
+<span class="kn">from</span> <span class="nn">.agent</span> <span class="kn">import</span> <span class="n">Agent</span>
+
+
+<div class="viewcode-block" id="SimpleAgentState">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.simple_agent.SimpleAgentState">[docs]</a>
+<span class="k">class</span> <span class="nc">SimpleAgentState</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple bucket for an Agent to access tools and store messages.&quot;&quot;&quot;</span>
+
+    <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tool</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">messages</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ToolRequestMessage</span> <span class="o">|</span> <span class="n">ToolResponseMessage</span> <span class="o">|</span> <span class="n">Message</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="SimpleAgentState.get_next_state">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.simple_agent.SimpleAgentState.get_next_state">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_next_state</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tool</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the next agent state without mutating the optional prior state.</span>
+
+<span class="sd">        Do not mutate self here, just read from it.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            obs: Optional observation messages to use in creating the next state.</span>
+<span class="sd">            tools: Optional list of tools available to the agent. If unspecified, these</span>
+<span class="sd">                should be pulled from the prior_state.</span>
+<span class="sd">            kwargs: Additional keyword arguments to pass to this class&#39;s constructor.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The next agent state (which is not an in-place change to self).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)(</span>
+            <span class="n">tools</span><span class="o">=</span><span class="n">tools</span> <span class="k">if</span> <span class="n">tools</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">tools</span><span class="p">,</span>
+            <span class="n">messages</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">messages</span> <span class="o">+</span> <span class="p">(</span><span class="n">obs</span> <span class="ow">or</span> <span class="p">[]),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SimpleAgent">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.simple_agent.SimpleAgent">[docs]</a>
+<span class="k">class</span> <span class="nc">SimpleAgent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Agent</span><span class="p">[</span><span class="n">SimpleAgentState</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simple agent that can pick and invoke tools with a language model.</span>
+
+<span class="sd">    It does not have a system prompt because it&#39;s meant to be lightweight.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Freeze to ensure the only mutation happens in either the agent state (which is</span>
+    <span class="c1"># passed around) or in the internal Ops</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">llm_model</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">DefaultLLMModelNames</span><span class="o">.</span><span class="n">OPENAI</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">},</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Starting configuration for the LLM model. Trainable.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">sys_prompt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="p">(</span>
+            <span class="s2">&quot;Opt-in system prompt. If one is passed, the system prompt is not set up to&quot;</span>
+            <span class="s2">&quot; be trainable, because this class is meant to be quite simple as far as&quot;</span>
+            <span class="s2">&quot; possible hyperparameters.&quot;</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config_op</span> <span class="o">=</span> <span class="n">ConfigOp</span><span class="p">[</span><span class="nb">dict</span><span class="p">](</span><span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">llm_model</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_llm_call_op</span> <span class="o">=</span> <span class="n">LLMCallOp</span><span class="p">()</span>
+
+<div class="viewcode-block" id="SimpleAgent.init_state">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.simple_agent.SimpleAgent.init_state">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">init_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tool</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SimpleAgentState</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SimpleAgentState</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SimpleAgent.get_asv">
+<a class="viewcode-back" href="../../../ldp.agent.html#ldp.agent.simple_agent.SimpleAgent.get_asv">[docs]</a>
+    <span class="nd">@compute_graph</span><span class="p">()</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">get_asv</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">agent_state</span><span class="p">:</span> <span class="n">SimpleAgentState</span><span class="p">,</span> <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">OpResult</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">],</span> <span class="n">SimpleAgentState</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+        <span class="n">next_state</span> <span class="o">=</span> <span class="n">agent_state</span><span class="o">.</span><span class="n">get_next_state</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
+
+        <span class="n">messages</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">prepend_sys</span><span class="p">(</span><span class="n">next_state</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span> <span class="n">sys_content</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sys_prompt</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sys_prompt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">next_state</span><span class="o">.</span><span class="n">messages</span>
+        <span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">OpResult</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">],</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_llm_call_op</span><span class="p">(</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config_op</span><span class="p">(),</span> <span class="n">msgs</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="n">next_state</span><span class="o">.</span><span class="n">tools</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">next_state</span><span class="o">.</span><span class="n">messages</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">next_state</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">result</span><span class="p">,</span> <span class="n">next_state</span><span class="p">,</span> <span class="mf">0.0</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  <li><a href="../agent.html">ldp.agent</a><ul>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, FutureHouse.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
