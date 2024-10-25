@@ -18,6 +18,7 @@ from ldp.graph.modules.react import (
     ACT_DEFAULT_PROMPT_TEMPLATE,
     REACT_DEFAULT_PROMPT_TEMPLATE,
     ReActModule,
+    ReActModuleSinglePrompt,
     ToolDescriptionMethods,
 )
 
@@ -88,6 +89,16 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         default=ToolDescriptionMethods.STR,
         description="Method used to describe the tools, defaults to 'str' description.",
     )
+    single_prompt: bool = Field(
+        default=False,
+        description=(
+            "Specifies whether to use a single prompt for both reasoning and action selection, "
+            "or to use 2 sequential prompts. When set to True, a single API call is made, and ldp "
+            "handles the message parsing to extract the action. If set to False, a second API call "
+            "is made specifically to request the action, with parsing done on the API side. "
+            "Defaults to False, as it results in fewer action selection failures."
+        ),
+    )
 
     @classmethod
     def make_act_agent(cls, **kwargs) -> Self:
@@ -95,9 +106,14 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._react_module = ReActModule(
-            self.llm_model, self.sys_prompt, self.tool_description_method
-        )
+        if self.single_prompt:
+            self._react_module = ReActModuleSinglePrompt(
+                self.llm_model, self.sys_prompt, self.tool_description_method
+            )
+        else:
+            self._react_module = ReActModule(
+                self.llm_model, self.sys_prompt, self.tool_description_method
+            )
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:
         return SimpleAgentState(tools=tools)
@@ -122,19 +138,20 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
     async def get_asv(
         self, agent_state: SimpleAgentState, obs: list[Message]
     ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
-        next_state = agent_state.get_next_state(
-            obs=[
-                (
-                    Message(content=f"Observation: {m.content}")
-                    if isinstance(m, ToolResponseMessage)
-                    else m
-                )
-                for m in obs
-            ]
-        )
-
-        final_result, react_message = await self._react_module(
+        obs = obs.copy()  # Keep original obs, as we edit the content below
+        if self.single_prompt:
+            for i, m in enumerate(obs):
+                if isinstance(m, ToolResponseMessage):
+                    obs[i] = Message(content=f"Observation: {m.content}")
+        else:
+            for i, m in enumerate(obs):
+                if isinstance(m, ToolResponseMessage):
+                    obs[i] = m.model_copy(
+                        update={"content": f"Observation: {m.content}"}
+                    )
+        next_state = agent_state.get_next_state(obs=obs)
+        action_selection_result, new_messages = await self._react_module(
             messages=next_state.messages, tools=next_state.tools
         )
-        next_state.messages = [*next_state.messages, react_message]
-        return final_result, next_state, 0.0
+        next_state.messages = [*next_state.messages, *new_messages]
+        return action_selection_result, next_state, 0.0

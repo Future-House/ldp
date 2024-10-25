@@ -3,12 +3,12 @@ import re
 import textwrap
 from collections.abc import Iterable
 from enum import StrEnum
-from typing import Any
+from typing import Any, cast
 
 from aviary.message import EMPTY_CONTENT_BASE_MSG, MalformedMessageError, Message
 from aviary.tools import Tool, ToolCall, ToolRequestMessage
 
-from ldp.graph import FxnOp, OpResult, PromptOp, compute_graph
+from ldp.graph import FxnOp, LLMCallOp, OpResult, PromptOp, compute_graph
 from ldp.llms import prepend_sys
 
 from .llm_call import ParsedLLMCallModule
@@ -177,7 +177,7 @@ class ToolDescriptionMethods(StrEnum):
         return "Tools are specified with an XML schema."
 
 
-class ReActModule:
+class ReActModuleSinglePrompt:
     """An Act or ReAct module built to work with chat models.
 
     Paper: https://arxiv.org/abs/2210.03629
@@ -241,11 +241,81 @@ class ReActModule:
             llm_model=llm_model, parser=self.parse_message
         )
 
+    @property
+    def llm_call_op(self) -> LLMCallOp:
+        return self.tool_select_module.llm_call_op
+
     @compute_graph()
     async def __call__(
         self, messages: Iterable[Message], tools: list[Tool]
-    ) -> tuple[OpResult[ToolRequestMessage], Message]:
+    ) -> tuple[OpResult[ToolRequestMessage], list[Message]]:
         packaged_msgs = await self.package_msg_op(
             messages, sys_content=await self._create_system_prompt(tools)
         )
-        return await self.tool_select_module(packaged_msgs, tools=tools)  # type: ignore[arg-type]
+        final_result, react_message = await self.tool_select_module(
+            packaged_msgs,  # type: ignore[arg-type]
+            tools=tools,
+        )
+        return final_result, [react_message]
+
+
+def postprocess_and_concat_resoning_msg(
+    msgs: Iterable[Message], react_message: Message
+) -> Iterable[Message]:
+    reasoning = (react_message.content or "").removeprefix("Thought: ")
+    return [
+        *msgs,
+        Message(
+            content=f"Thought: {reasoning}. Based on this reasoning, let's select the appropriate tool!\nAction: ",
+            # Role is 'assistant' here (normally 'user') since we use the model's reasoning to ask for an action.
+            role="assistant",
+        ),
+    ]
+
+
+class ReActModule(ReActModuleSinglePrompt):
+    def __init__(
+        self,
+        llm_model: dict[str, Any],
+        sys_prompt: str = REACT_DEFAULT_PROMPT_TEMPLATE,
+        tool_description_method: ToolDescriptionMethods = ToolDescriptionMethods.STR,
+    ):
+        self._tool_description_method = tool_description_method
+        llm_model["stop"] = ["Observation:", "Action:"]
+        self.llm_config = llm_model
+        self._llm_call_op = LLMCallOp()
+        self.prompt_op = PromptOp(sys_prompt)
+        self.package_msg_op = FxnOp(prepend_sys)
+        self.postprocess_reasoning_msg_op = FxnOp(postprocess_and_concat_resoning_msg)
+
+    @property
+    def llm_call_op(self) -> LLMCallOp:
+        return self._llm_call_op
+
+    @compute_graph()
+    async def __call__(
+        self, messages: Iterable[Message], tools: list[Tool]
+    ) -> tuple[OpResult[ToolRequestMessage], list[Message]]:
+        packaged_msgs = await self.package_msg_op(
+            messages, sys_content=await self._create_system_prompt(tools)
+        )
+        # Ask the LLM to do the reasoning
+        reasoning_msg = await self.llm_call_op(
+            self.llm_config,
+            msgs=packaged_msgs,
+            tools=tools,
+            tool_choice="none",  # Reasoning shouldn't pick a tool
+        )
+        # Add the reasoning to messages. Generate the tool selection prompt
+        packaged_msgs_with_reasoning = await self.package_msg_op(
+            await self.postprocess_reasoning_msg_op(messages, reasoning_msg),
+            sys_content=await self._create_system_prompt(tools),
+        )
+        # Ask the LLM to select the tool
+        tool_selection_msg = await self.llm_call_op(
+            self.llm_config, msgs=packaged_msgs_with_reasoning, tools=tools
+        )
+        return cast(OpResult[ToolRequestMessage], tool_selection_msg), [
+            reasoning_msg.value,
+            cast(ToolRequestMessage, tool_selection_msg.value),
+        ]

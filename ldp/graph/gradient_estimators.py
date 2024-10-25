@@ -99,10 +99,9 @@ def llm_straight_through_estimator(
     )
     grad_args = [grad_output] * len(input_args)
     grad_kwargs = {"config": config_grad}
-    if "msgs" in input_kwargs:
-        grad_kwargs["msgs"] = grad_output
-    if "tools" in input_kwargs:
-        grad_kwargs["tools"] = grad_output
+    for arg in ("msgs", "tools", "tool_choice"):
+        if arg in input_kwargs:
+            grad_kwargs[arg] = grad_output
 
     return grad_args, grad_kwargs
 
