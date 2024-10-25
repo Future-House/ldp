@@ -24,7 +24,7 @@ from ldp.graph.modules.react import (
 from . import DefaultLLMModelNames
 from .agent import Agent
 from .simple_agent import SimpleAgentState
-
+from ldp.graph.common_ops import ConfigOp
 logger = logging.getLogger(__name__)
 
 
@@ -80,12 +80,13 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         },
         description="Starting configuration for the LLM model.",
     )
+
     sys_prompt: str = Field(
         default=REACT_DEFAULT_PROMPT_TEMPLATE,
         description="Learnable system prompt template, defaults to ReAct.",
     )
     tool_description_method: ToolDescriptionMethods = Field(
-        default=ToolDescriptionMethods.STR,
+        default=ToolDescriptionMethods.JSON,
         description="Method used to describe the tools, defaults to 'str' description.",
     )
 
@@ -95,6 +96,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._config_op = ConfigOp[dict](config=self.llm_model)
         self._react_module = ReActModule(
             self.llm_model, self.sys_prompt, self.tool_description_method
         )
