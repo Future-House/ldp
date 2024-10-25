@@ -350,9 +350,9 @@ class TestReActAgent:
             for m in agent_state.messages:
                 if not isinstance(m, ToolRequestMessage):
                     assert m.content
-                    assert (
-                        "Observation: Observation" not in m.content
-                    ), "Prepended duplicate observations"
+                    assert "Observation: Observation" not in m.content, (
+                        "Prepended duplicate observations"
+                    )
             obs, _, done, _ = await dummy_env.step(action.value)
             if done:
                 break
