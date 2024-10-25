@@ -177,8 +177,8 @@ class TorchParamBackwardEstimator:
     def __init__(self, module: torch.nn.Module):
         if torch is None:
             raise RuntimeError(
-                f"PyTorch library not found. Unable to use {type(self).__name__} class. "
-                "To install PyTorch dependencies, please run `pip install ldp[nn]`."
+                f"PyTorch library not found. Unable to use {type(self).__name__} class."
+                " To install PyTorch dependencies, please run `pip install ldp[nn]`."
             )
         self.params = dict(module.named_parameters())
 
@@ -210,7 +210,8 @@ class TorchParamBackwardEstimator:
 
         if output.shape != grad_output.shape:
             raise RuntimeError(
-                f"Output shape {output.shape} does not match grad_output shape {grad_output.shape}"
+                f"Output shape {output.shape} does not match grad_output shape"
+                f" {grad_output.shape}"
             )
 
         gradients = torch.autograd.grad(

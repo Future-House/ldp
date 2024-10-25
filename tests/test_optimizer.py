@@ -261,16 +261,16 @@ class TestMemoryOpt:
         opt.aggregate([trajectory])
         await opt.update()
 
-        assert (
-            len(model.mem_op.memory_model.memories) == len(x) + prior_num_memories
-        ), "Incorrect number of stored memories after optimization step."
+        assert len(model.mem_op.memory_model.memories) == len(x) + prior_num_memories, (
+            "Incorrect number of stored memories after optimization step."
+        )
         assert all(
             not cast(dict, m.metadata)["done"]
             for m in model.mem_op.memory_model.memories.values()
         )
-        assert (
-            not opt.example_buffer
-        ), "MemoryOpt buffer should be empty after applying update"
+        assert not opt.example_buffer, (
+            "MemoryOpt buffer should be empty after applying update"
+        )
 
         x_eval, y_eval = xi, yi  # pylint: disable=undefined-loop-variable
         async with compute_graph():
@@ -279,14 +279,14 @@ class TestMemoryOpt:
             assert len(msgs) > 1, "Message should have multiple memories."
             # check that Input appears a few times (from memories)
             assert msgs[-1].content, "unexpected message content"
-            assert (
-                msgs[-1].content.count("Input") > 2
-            ), "Input should appear multiple times in the response."
+            assert msgs[-1].content.count("Input") > 2, (
+                "Input should appear multiple times in the response."
+            )
             se_loss = (await SquaredErrorLoss()(y_eval, yh)).value
 
-        assert (
-            se_loss < 100
-        ), f"Loss ({se_loss:.3f}) should be less than 100 after training."
+        assert se_loss < 100, (
+            f"Loss ({se_loss:.3f}) should be less than 100 after training."
+        )
 
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
@@ -411,6 +411,6 @@ class TestMemoryOpt:
         opt.aggregate([trajectory])
         await opt.update()
 
-        assert (
-            not opt.example_buffer
-        ), "MemoryOpt buffer should be empty after applying update"
+        assert not opt.example_buffer, (
+            "MemoryOpt buffer should be empty after applying update"
+        )

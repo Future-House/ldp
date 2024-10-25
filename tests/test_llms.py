@@ -274,12 +274,12 @@ class TestMultipleCompletionLLMModel:
         )
         assert len(results) == self.NUM_COMPLETIONS
         for result in results:
-            assert (
-                result.messages is not None
-            ), "Expected messages in result, but got None"
-            assert (
-                result.messages[-1].content is not None
-            ), "Expected content in message, but got None"
+            assert result.messages is not None, (
+                "Expected messages in result, but got None"
+            )
+            assert result.messages[-1].content is not None, (
+                "Expected content in message, but got None"
+            )
             assert "red" in result.messages[-1].content.lower()
 
 

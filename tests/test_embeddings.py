@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import litellm
 import numpy as np
 import pytest
-from litellm.caching.caching import Cache, InMemoryCache
+from litellm.caching import Cache, InMemoryCache
 from pytest_subtests import SubTests
 
 from ldp.llms import (

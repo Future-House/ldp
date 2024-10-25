@@ -129,6 +129,10 @@ class TreeSearchRollout(RolloutManager):
                 # If we failed, do not extend the branch - just give up on this path
                 return
 
+            if timestep + 1 == max_depth and not step.done:
+                # Mark as truncated if we hit max_steps and the state is not terminal.
+                step.truncated = True
+
             await asyncio.gather(*[
                 callback.after_transition(step_id, self.agent, cloned_env, step)
                 for callback in self.callbacks
@@ -142,11 +146,7 @@ class TreeSearchRollout(RolloutManager):
                 self.target_reward_hit.add(tree.root_id)
                 return
 
-            if step.done:
-                return
-
-            if timestep + 1 >= max_depth:
-                step.truncated = True
+            if step.done or step.truncated:
                 return
 
             # Recurse

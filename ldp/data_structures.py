@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Hashable
 from typing import Any, ClassVar, Self, cast
 from uuid import UUID
 
@@ -190,14 +190,14 @@ class TransitionTree:
             weight: Weight of the transition. Defaults to 1.0.
         """
         root_id, *step_ids = step_id.split(":")
-        assert (
-            root_id == self.root_id
-        ), f"Step ID {step_id} does not start with root ID {self.root_id}"
+        assert root_id == self.root_id, (
+            f"Step ID {step_id} does not start with root ID {self.root_id}"
+        )
         assert step_ids, "Step ID cannot be the same as the root ID."
         # TODO: maybe this should be warning?
-        assert (
-            step_id not in self.tree
-        ), f"Step ID {step_id} already exists in the tree."
+        assert step_id not in self.tree, (
+            f"Step ID {step_id} already exists in the tree."
+        )
 
         self._add_node(step_id, transition=step, weight=weight)
 
@@ -288,17 +288,29 @@ class TransitionTree:
             step.value = step.reward + discount_factor * v_tp1
 
     def merge_identical_nodes(
-        self, agent_state_hash_fn: Callable[[Any], int]
+        self,
+        agent_state_hash_fn: Callable[[Any], Hashable],
+        observation_hash_fn: Callable[
+            [list[ToolResponseMessage | Message]], Hashable
+        ] = join,
+        next_observation_hash_fn: Callable[
+            [list[ToolResponseMessage | Message]], Hashable
+        ] = join,
     ) -> TransitionTree:
         """Merge nodes with identical (state, observation, action)s. Returns a new tree.
 
         Args:
-            agent_state_hash_fn: A function that hashes the agent state of a transition.
+            agent_state_hash_fn: A function that returns a hashable representation
+                of the agent state of a transition.
+            observation_hash_fn: A function that returns a hashable representation
+                of the observation messages of a transition.
+            next_observation_hash_fn: A function that returns a hashable representation
+                of the next observation messages of a transition.
         """
         new_tree = TransitionTree(self.root_id)
 
         # step hash -> step ID
-        seen_nodes: dict[int, str] = {}
+        seen_hash_to_step_id: dict[int, str] = {}
         # old step ID -> new step ID
         node_remap: dict[str, str] = {self.root_id: self.root_id}
 
@@ -310,24 +322,32 @@ class TransitionTree:
             state_hash = agent_state_hash_fn(step.agent_state)
 
             if step.action is not None:
-                action = step.action.value
-                # Note that the tool call ID is not included in the hash, which we'd get if we did str(action)
-                # Two actions that have different IDs but are otherwise identical should be considered identical.
-                action_str = (action.content or "") + " ".join(
-                    str(tc) for tc in action.tool_calls
+                tool_request_msg = step.action.value
+                # NOTE: we are ignoring tool call ID in the comparison of tool requests.
+                # Thus, the tool call ID is excluded from the hash, so we can't just
+                # simply call str(tool_request_msg)
+                action_str = (tool_request_msg.content or "") + " ".join(
+                    str(tc) for tc in tool_request_msg.tool_calls
                 )
             else:
                 action_str = ""
 
-            step_hash = hash((state_hash, join(step.observation), action_str))
+            step_hash = hash((
+                state_hash,
+                action_str,
+                # (s, a, o): works for deterministic envs
+                observation_hash_fn(step.observation),
+                # (s, a, o, o'): works for both deterministic and stochastic envs
+                next_observation_hash_fn(step.next_observation),
+            ))
             step_weight = self.get_weight(step_id)
 
-            if step_hash in seen_nodes:
-                merged_node_id = node_remap[step_id] = seen_nodes[step_hash]
+            if step_hash in seen_hash_to_step_id:  # Seen: merge
+                merged_step_id = node_remap[step_id] = seen_hash_to_step_id[step_hash]
                 # Not sure if this is the fastest way to do this
-                new_tree.tree.nodes[merged_node_id]["weight"] += step_weight
-            else:
-                node_remap[step_id] = seen_nodes[step_hash] = step_id
+                new_tree.tree.nodes[merged_step_id]["weight"] += step_weight
+            else:  # Unseen: don't merge
+                node_remap[step_id] = seen_hash_to_step_id[step_hash] = step_id
                 parent_id = node_remap[":".join(step_id.split(":")[:-1])]
 
                 # manually add transitions, since the step_id substring relationship

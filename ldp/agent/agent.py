@@ -91,8 +91,9 @@ class AgentConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     agent_type: str = Field(
-        description="The type of agent to be used. "
-        "This should be a subclass of Agent above.",
+        description=(
+            "The type of agent to be used. This should be a subclass of Agent above."
+        ),
     )
     agent_kwargs: dict[str, JsonValue] = Field(
         default_factory=dict,
