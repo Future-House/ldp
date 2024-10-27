@@ -17,7 +17,7 @@ classifiers = [
 dependencies = [
     "aiofiles",
     "dm-tree",
-    "fhaviary>=0.6",  # For MalformedMessageError
+    "fhaviary>=0.8",  # For from_task
     "httpx",
     "litellm>=1.40.15",  # For LITELLM_LOG addition
     "networkx[default]~=3.4",  # Pin for pydot fix
@@ -294,13 +294,14 @@ extend-select = [
     "FURB148",
     "FURB152",
     "FURB154",
+    "FURB156",
     "FURB157",
     "FURB164",
     "FURB166",
     "FURB171",
     "FURB180",
+    "FURB188",
     "FURB192",
-    "PLR6104",
     "PLR6201",
     "PLW0108",
     "RUF022",
@@ -348,6 +349,7 @@ ignore = [
     "PLC0415",  # Don't care to prevent imports outside of top-level
     "PLR0912",  # Allow us to have lots of branches
     "PLR0913",
+    "PLR6104",  # Moving to __iadd__ risks ldp graph manipulation
     "PLW2901",  # Allow modifying loop variables
     "PTH",  # Overly pedantic
     "S101",  # Don't care to prevent asserts
@@ -415,8 +417,9 @@ dev-dependencies = [
     "fhaviary[xml]",
     "ipython>=8",  # Pin to keep recent
     "ldp[monitor,nn,rich,server,typing,visualization]",
-    "litellm>=1.42.1,<1.49.3",  # Pin lower for UnsupportedParamsError fix, upper for https://github.com/BerriAI/litellm/issues/6216
+    "litellm!=1.49.4,!=1.49.5,!=1.49.6",  # For https://github.com/BerriAI/litellm/issues/6216
     "mypy>=1.8",  # Pin for mutable-override
+    "openai<1.47",  # Pin for https://github.com/BerriAI/litellm/issues/5854
     "pre-commit>=3.4",  # Pin to keep recent
     "pydantic~=2.9",  # Pydantic 2.9 changed JSON schema exports 'allOf', so ensure tests match
     "pylint-pydantic",

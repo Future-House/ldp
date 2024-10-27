@@ -1,5 +1,7 @@
 import networkx as nx
 import pytest
+from aviary.message import Message, join
+from aviary.tools import ToolResponseMessage
 
 from ldp.data_structures import Transition, TransitionTree
 
@@ -47,7 +49,7 @@ def test_tree_mc_value():
     )
 
 
-def test_tree_node_merging():
+def test_tree_node_merging() -> None:
     root_id = "dummy"
     tree = TransitionTree(root_id=root_id)
 
@@ -59,30 +61,72 @@ def test_tree_node_merging():
     }
 
     # Construct a tree with two identical nodes
-    tree.add_transition(
-        f"{root_id}:0", Transition(timestep=0, reward=0.0, agent_state=0, **kw)
-    )
-    tree.add_transition(
-        f"{root_id}:1", Transition(timestep=0, reward=0.0, agent_state=0, **kw)
-    )
-
-    # Now add a child to each of the nodes
-    for parent in ("0", "1"):
+    for child_id in ("0", "1"):
         tree.add_transition(
+            f"{root_id}:{child_id}",
+            Transition(timestep=0, reward=0.0, agent_state=0, **kw),
+        )
+    # Add some identical nodes from a stochastic environment
+    for child_id, next_o_content in zip(("2", "3"), ("stub", "stub 123"), strict=True):
+        tree.add_transition(
+            f"{root_id}:{child_id}",
+            Transition(
+                timestep=0,
+                reward=0.0,
+                agent_state=0,
+                **(kw | {"next_observation": [Message(content=next_o_content)]}),
+            ),
+        )
+
+    # Now some children nodes
+    for parent in ("0", "1"):
+        tree.add_transition(  # This tests merge of child nodes too
             f"{root_id}:{parent}:0",
             Transition(timestep=1, reward=0.0, agent_state=1, **kw),
         )
+    for parent in ("2", "3"):
+        tree.add_transition(
+            f"{root_id}:{parent}:0",
+            Transition(timestep=1, reward=0.0, agent_state=9, **kw),
+        )
 
-    # Tree at this stage is ROOT -> 0 -> 0:0; ROOT -> 1 -> 1:0
+    # Tree at this stage is:
+    # ROOT -> 0 -> 0:0; ROOT -> 1 -> 1:0; ROOT -> 2 -> 2:0; ROOT -> 3 -> 3:0
 
-    merged_tree = tree.merge_identical_nodes(lambda state: state)
-    # Tree should now be ROOT -> 0/1 -> 0:0/1:0
+    def custom_next_obs_join(obs: list[ToolResponseMessage | Message]) -> str:
+        return join(
+            type(o)(
+                content=(o.content or "").split(" ", maxsplit=1)[0],
+                **o.model_dump(exclude={"content"}),
+            )
+            for o in obs
+        )
 
-    assert len(tree.tree.nodes) == 5
-    assert len(merged_tree.tree.nodes) == 3
+    merged_tree = tree.merge_identical_nodes(
+        lambda state: state, next_observation_hash_fn=custom_next_obs_join
+    )
+    # Tree should now be ROOT -> 0/1 -> 0:0/1:0; ROOT -> 2/3 -> 2:0
 
-    node_weights = [
-        merged_tree.get_weight(step_id)
+    assert {
+        step_id: tree.get_weight(step_id) for step_id in nx.topological_sort(tree.tree)
+    } == {
+        "dummy": 1.0,  # Root
+        "dummy:0": 1.0,
+        "dummy:1": 1.0,
+        "dummy:2": 1.0,
+        "dummy:3": 1.0,
+        "dummy:0:0": 1.0,
+        "dummy:1:0": 1.0,
+        "dummy:2:0": 1.0,
+        "dummy:3:0": 1.0,
+    }
+    assert {
+        step_id: merged_tree.get_weight(step_id)
         for step_id in nx.topological_sort(merged_tree.tree)
-    ]
-    assert node_weights == [1, 2, 2]  # 1 for the root, 2 for the others
+    } == {
+        "dummy": 1.0,  # Root
+        "dummy:0": 2.0,  # Middle 0/1
+        "dummy:2": 2.0,  # Middle 2/3
+        "dummy:0:0": 2.0,  # Bottom 0 (from 0/1)
+        "dummy:2:0": 2.0,  # Bottom 0 (from 2/3)
+    }

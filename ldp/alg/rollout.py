@@ -109,9 +109,9 @@ class RolloutManager:
 
     async def sample_trajectories(self, **kwargs):
         if "environment_factory" in kwargs:
-            assert (
-                "environments" not in kwargs
-            ), "Cannot use environment_factory with environments"
+            assert "environments" not in kwargs, (
+                "Cannot use environment_factory with environments"
+            )
 
             return await self._sample_trajectories_from_env_factory(
                 kwargs["environment_factory"],
@@ -120,9 +120,9 @@ class RolloutManager:
             )
 
         if "environments" in kwargs:
-            assert (
-                "environment_factory" not in kwargs
-            ), "Cannot use environments with environment_factory"
+            assert "environment_factory" not in kwargs, (
+                "Cannot use environments with environment_factory"
+            )
             return await self._sample_trajectories_from_envs(
                 kwargs["environments"], kwargs.get("max_steps")
             )
@@ -241,6 +241,11 @@ class RolloutManager:
             for timestep in itertools.count():
                 step = await self._take_step(timestep, traj_id, env, agent_state, obs)
 
+                if timestep + 1 == max_steps and not step.done:
+                    # Mark as truncated if we hit max_steps and the state is not terminal.
+                    # Do it before store_step(), so that callbacks can access this info
+                    step.truncated = True
+
                 # We assume the below won't throw a CaughtError
                 await store_step(step)
 
@@ -248,11 +253,7 @@ class RolloutManager:
                 agent_state = step.next_agent_state
                 obs = step.next_observation
 
-                if step.done:
-                    break
-
-                if timestep + 1 == max_steps:
-                    trajectory.steps[-1].truncated = True
+                if step.done or step.truncated:
                     break
 
         except CaughtError as e:
@@ -282,7 +283,7 @@ class RolloutManager:
         agent_state: Any,
         obs: list[Message],
     ) -> Transition:
-        async with self.concurrency_limiter:  # type: ignore[attr-defined]
+        async with self.concurrency_limiter:
             await asyncio.gather(*[
                 callback.before_transition(traj_id, self.agent, env, agent_state, obs)
                 for callback in self.callbacks

@@ -100,13 +100,13 @@ class APEOpt(BaseModel, Optimizer):
         " The model sees a prompt, an input, and then generates an output."
     )
     query_prompt: str = (
-        "Here are correct example outputs that the language model and prompt should produce:"
-        "\n{good_examples}"
+        "Here are correct example outputs that the language model"
+        " and prompt should produce:\n{good_examples}"
         '\n\nThe current prompt is: "{prompt}"'
         "\n\nWhich resulted in the following incorrect input, output, and {score}:"
-        "\n{examples}"
-        "\n\nRevise the current prompt to improve the outputs."
-        " Your proposed prompt should be concise, correct, and specify the desired output format."
+        "\n{examples}\n\nRevise the current prompt to improve the outputs."
+        " Your proposed prompt should be concise, correct, and specify the desired"
+        " output format."
     )
     llm: LLMModel = Field(
         default_factory=LLMModel,
@@ -122,8 +122,10 @@ class APEOpt(BaseModel, Optimizer):
     score_fn: APEScoreFn = APEScoreFn.REWARD
     good_reward_threshold: float | None = Field(
         default=None,
-        description="If using reward as the score_fn, then a good example is defined by "
-        "reward>=good_reward_threshold.",
+        description=(
+            "If using reward as the score_fn, then a good example is defined by "
+            "reward>=good_reward_threshold."
+        ),
     )
     reward_discount: float = 1.0
 
@@ -140,7 +142,8 @@ class APEOpt(BaseModel, Optimizer):
         if self.score_fn == APEScoreFn.REWARD:
             if self.good_reward_threshold is None:
                 raise ValueError(
-                    "good_reward_threshold must be set if using reward as the score function"
+                    "good_reward_threshold must be set if using reward as the score"
+                    " function"
                 )
             self._score_str = "rewards"
         elif self.score_fn == APEScoreFn.GRADIENT:
@@ -162,7 +165,7 @@ class APEOpt(BaseModel, Optimizer):
     @classmethod
     def from_agent(cls, agent: ReActAgent, **kwargs) -> Self:
         return cls(
-            llm_call_op=agent._react_module.tool_select_module.llm_call_op,
+            llm_call_op=agent._react_module.llm_call_op,
             prompt_op=agent._react_module.prompt_op,
             **kwargs,
         )
@@ -175,22 +178,16 @@ class APEOpt(BaseModel, Optimizer):
             d_returns = trajectory.compute_discounted_returns(self.reward_discount)
 
         for i_step, step in enumerate(trajectory.steps):
-            action_call_id = cast(OpResult, step.action).call_id
-            llm_call_ids = self.llm_call_op.get_call_ids({action_call_id.run_id})
+            action = cast(OpResult, step.action)
 
             if self.score_fn == APEScoreFn.GRADIENT:
-                prompt_call_id, *extra_prompt_call_ids = self.prompt_op.get_call_ids({
-                    action_call_id.run_id
-                })
-                # TODO: loosen this restriction once grad acc/topological traversal are done
-                assert (
-                    not extra_prompt_call_ids
-                ), "APE only supports one prompt call per run"
+                prompt_op_result, *extra = action.get_upstream_results(self.prompt_op)
+                assert not extra, "APE only supports one prompt call per run"
 
-            for llm_call_id in llm_call_ids:
+            for op_result in action.get_upstream_results(self.llm_call_op):
                 result = cast(
                     LLMResult | None,
-                    self.llm_call_op.ctx.get(llm_call_id, "result"),
+                    self.llm_call_op.ctx.get(op_result.call_id, "result"),
                 )
                 if result is None or not result.messages or not result.prompt:
                     continue
@@ -202,7 +199,7 @@ class APEOpt(BaseModel, Optimizer):
 
                 if self.score_fn == APEScoreFn.GRADIENT:
                     score = self.prompt_op.ctx.get(
-                        prompt_call_id, "grad_output", default=None
+                        prompt_op_result.call_id, "grad_output", default=None
                     )
                     if score is None:
                         # backprop did not reach this op call - move on

@@ -91,9 +91,12 @@ class TestParallelism:
             await agent.init_state(tools=tools), obs
         )
         selected_tools: set[str] = {tc.function.name for tc in action.value.tool_calls}
-        assert (
-            {"move_left_hand", "move_right_hand"} <= selected_tools
-        ), f"Agent should've chosen tools in parallel, but it chose {selected_tools}"
+        assert {
+            "move_left_hand",
+            "move_right_hand",
+        } <= selected_tools, (
+            f"Agent should've chosen tools in parallel, but it chose {selected_tools}"
+        )
 
     @pytest.mark.parametrize(
         "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-4-turbo"]

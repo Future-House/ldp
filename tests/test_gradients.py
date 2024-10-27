@@ -395,7 +395,7 @@ async def test_torch_param_backward_estimator(hidden_nodes: int):
     result = await torch_op(torch.randn(4, requires_grad=True))
 
     # Backward pass
-    result.compute_grads(backward_fns={"TorchOp": estimator.backward})
+    result.compute_grads(backward_fns={torch_op.name: estimator.backward})
 
     # Check that the gradients are computed and have the correct shape
     call_ids = torch_op.get_call_ids({result.call_id.run_id})

@@ -29,11 +29,14 @@ from ldp.alg import to_network
 from ldp.graph import LLMCallOp, Memory, OpResult, eval_mode
 from ldp.graph.gradient_estimators import llm_straight_through_estimator as llm_ste
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
-from ldp.graph.modules import ReActModule, ToolDescriptionMethods
+from ldp.graph.modules import (
+    ReActModuleSinglePrompt,
+    ToolDescriptionMethods,
+)
 from ldp.llms import LLMModel
 
 from . import CILLMModelNames
-from .conftest import IN_GITHUB_ACTIONS
+from .conftest import IN_GITHUB_ACTIONS, VCR_DEFAULT_MATCH_ON
 
 HERE = Path(__file__).parent
 
@@ -99,9 +102,9 @@ class TestAgentState:
             if done:
                 break
 
-        assert (
-            agent_state_0_json == agent_state_0.model_dump_json()
-        ), "Agent state should not be mutated between calls to get_asv"
+        assert agent_state_0_json == agent_state_0.model_dump_json(), (
+            "Agent state should not be mutated between calls to get_asv"
+        )
 
     def test_serialization_deserializaton(self) -> None:
         orig_state = SimpleAgentState(
@@ -125,9 +128,9 @@ class TestSimpleAgent:
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         obs, reward, done, truncated = await dummy_env.step(action.value)
-        assert (
-            reward > 0
-        ), "Reward should be positive, indicating agent called print_story tool"
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
         assert done
 
         # Check serialization after get_asv runs to ensure private
@@ -160,24 +163,26 @@ class TestSimpleAgent:
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
         obs, reward, done, _ = await dummy_env.step(action.value)
-        assert (
-            reward > 0
-        ), "Reward should be positive, indicating agent called print_story tool"
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
         assert done
-        assert (
-            action.call_id is not None
-        ), "action is not associated with a forward pass call_id"
+        assert action.call_id is not None, (
+            "action is not associated with a forward pass call_id"
+        )
 
         # NOTE: we would not normally pass reward as a gradient, but this is a way
         # to check that gradients are flowing
+
         action.compute_grads(
             reward,
             backward_fns={"_config_op": ste, "_llm_call_op": llm_ste},
         )
+
         _, g = action.ctx.get_input_grads(action.call_id)
-        assert isinstance(
-            g["config"], dict
-        ), "compute_grads() didn't descend into config dict"
+        assert isinstance(g["config"], dict), (
+            "compute_grads() didn't descend into config dict"
+        )
         assert all(g["config"].values()), "Gradient should be non-zero"
 
         graph = to_network(action)
@@ -230,9 +235,9 @@ class TestMemoryAgent:
         new_action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert "Once there was" in str(new_action)
         obs, reward, done, truncated = await dummy_env.step(new_action.value)
-        assert (
-            reward > 0
-        ), "Reward should be positive, indicating agent called print_story tool"
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
         assert done
 
         # Check we can get the LLM results to sum cost and count tokens
@@ -255,13 +260,13 @@ class TestMemoryAgent:
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
         obs, reward, done, truncated = await dummy_env.step(action.value)
-        assert (
-            reward > 0
-        ), "Reward should be positive, indicating agent called print_story tool"
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
         assert done
-        assert (
-            action.call_id is not None
-        ), "action is not associated with a forward pass call_id"
+        assert action.call_id is not None, (
+            "action is not associated with a forward pass call_id"
+        )
 
         # NOTE: we would not normally pass reward as a gradient, but this is a way
         # to check that gradients are flowing
@@ -277,9 +282,9 @@ class TestMemoryAgent:
             },
         )
         _, g = action.ctx.get_input_grads(action.call_id)
-        assert isinstance(
-            g["config"], dict
-        ), "compute_grads() didn't descend into config dict"
+        assert isinstance(g["config"], dict), (
+            "compute_grads() didn't descend into config dict"
+        )
         assert all(g["config"].values()), "Action gradient should be non-zero"
 
         memory_op = agent._memory_op
@@ -291,19 +296,29 @@ class TestMemoryAgent:
 
 class TestReActAgent:
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-4-turbo"]
+        ("single_prompt", "model_name"),
+        [
+            (True, CILLMModelNames.ANTHROPIC.value),
+            (True, "gpt-4-turbo"),
+            (False, "gpt-4o"),
+        ],
     )
     @pytest.mark.asyncio
-    @pytest.mark.vcr
-    async def test_react_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    async def test_react_dummyenv(
+        self, dummy_env: DummyEnv, model_name: str, single_prompt: bool
+    ) -> None:
         obs, tools = await dummy_env.reset()
-        agent = ReActAgent(llm_model={"model": model_name, "temperature": 0.1})
+        agent = ReActAgent(
+            llm_model={"model": model_name, "temperature": 0.1},
+            single_prompt=single_prompt,
+        )
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         obs, reward, done, truncated = await dummy_env.step(action.value)
-        assert (
-            reward > 0
-        ), "Reward should be positive, indicating agent called print_story tool"
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
         assert done
 
         # Check we can get the LLM results to sum cost and count tokens
@@ -317,7 +332,8 @@ class TestReActAgent:
             raise RuntimeError("Could not find LLMCallOp in compute graph")
 
     @pytest.mark.asyncio
-    async def test_multi_step(self, dummy_env: DummyEnv) -> None:
+    @pytest.mark.parametrize("single_prompt", [True, False])
+    async def test_multi_step(self, dummy_env: DummyEnv, single_prompt: bool) -> None:
         obs, tools = await dummy_env.reset()
         obs = dummy_env.state.messages = [
             Message(
@@ -327,15 +343,16 @@ class TestReActAgent:
                 )
             )
         ]
-        agent = ReActAgent()
+        agent = ReActAgent(single_prompt=single_prompt)
         agent_state = await agent.init_state(tools=tools)
         for i in range(4):  # noqa: B007
             action, agent_state, _ = await agent.get_asv(agent_state, obs)
             for m in agent_state.messages:
-                assert m.content
-                assert (
-                    "Observation: Observation" not in m.content
-                ), "Prepended duplicate observations"
+                if not isinstance(m, ToolRequestMessage):
+                    assert m.content
+                    assert "Observation: Observation" not in m.content, (
+                        "Prepended duplicate observations"
+                    )
             obs, _, done, _ = await dummy_env.step(action.value)
             if done:
                 break
@@ -344,15 +361,17 @@ class TestReActAgent:
                 "Environment should have finished, with at least 2 environment steps."
             )
 
-    def test_agent_op_naming(self) -> None:
-        agent = ReActAgent()
-        for op_name in (
-            "prompt_op",
-            "package_msg_op",
-            "tool_select_module.config_op",
-            "tool_select_module.llm_call_op",
-            "tool_select_module.parse_msg_op",
-        ):
+    @pytest.mark.parametrize("single_prompt", [True, False])
+    def test_agent_op_naming(self, single_prompt: bool) -> None:
+        agent = ReActAgent(single_prompt=single_prompt)
+        ops = ["prompt_op", "package_msg_op"]
+        if single_prompt:
+            ops.extend([
+                "tool_select_module.config_op",
+                "tool_select_module.llm_call_op",
+                "tool_select_module.parse_msg_op",
+            ])
+        for op_name in ops:
             obj, expected = agent._react_module, f"_react_module.{op_name}"
             if "." in op_name:
                 op, op_name = op_name.split(".", maxsplit=1)
@@ -360,29 +379,40 @@ class TestReActAgent:
             assert getattr(obj, op_name).name == expected
 
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-4-turbo"]
+        ("single_prompt", "model_name"),
+        [
+            (True, CILLMModelNames.ANTHROPIC.value),
+            (True, "gpt-4-turbo"),
+            (False, "gpt-4o"),
+        ],
     )
     @pytest.mark.asyncio
-    @pytest.mark.vcr
-    async def test_agent_grad(self, dummy_env: DummyEnv, model_name: str) -> None:
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    async def test_agent_grad(
+        self, dummy_env: DummyEnv, model_name: str, single_prompt: bool
+    ) -> None:
         obs, tools = await dummy_env.reset()
 
-        agent = ReActAgent(llm_model={"model": model_name, "temperature": 0.1})
+        agent = ReActAgent(
+            llm_model={"model": model_name, "temperature": 0.1},
+            single_prompt=single_prompt,
+        )
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
         obs, reward, done, truncated = await dummy_env.step(action.value)
-        assert (
-            reward > 0
-        ), "Reward should be positive, indicating agent called print_story tool"
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
         assert done
-        assert (
-            action.call_id is not None
-        ), "action is not associated with a forward pass call_id"
+        assert action.call_id is not None, (
+            "action is not associated with a forward pass call_id"
+        )
 
         # NOTE: we would not normally pass reward as a gradient, but this is a way
         # to check that gradients are flowing
         ste_ = partial(ste, descend=False)
+
         action.compute_grads(
             reward,
             # Give everything a straight-through gradient approximation
@@ -390,10 +420,15 @@ class TestReActAgent:
             backward_fns={
                 "_react_module.package_msg_op": ste_,
                 "_react_module.prompt_op": ste_,
-                "_react_module.tool_select_module.llm_call_op": llm_ste,
+                "_react_module.postprocess_reasoning_msg_op": ste_,
+                "_react_module.llm_call_op": llm_ste,
+                "_react_module._llm_call_op": llm_ste,
                 "_react_module.tool_select_module.parse_msg_op": ste_,
+                "_react_module.tool_select_module.config_op": ste_,
+                "_react_module.tool_select_module.llm_call_op": llm_ste,
             },
         )
+
         _, g = action.ctx.get_input_grads(action.call_id)
         assert all(g.values()), "Gradient should be non-zero"
 
@@ -532,9 +567,11 @@ class TestReActAgent:
         user_msg = Message(content="Cast the string '5.6' to a float.")
         with (
             patch.object(LLMModel, "achat") as mock_achat,
-            patch.object(ReActModule, "parse_message"),
+            patch.object(ReActModuleSinglePrompt, "parse_message"),
         ):
-            agent = ReActAgent(tool_description_method=description_method)
+            agent = ReActAgent(
+                tool_description_method=description_method, single_prompt=True
+            )
             agent_state = await agent.init_state(tools=tools)
             if not isinstance(expected, str):
                 with pytest.raises(expected):

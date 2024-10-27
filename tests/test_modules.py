@@ -10,6 +10,7 @@ from ldp.agent import ReActAgent
 from ldp.graph import OpResult
 from ldp.graph.modules import (
     ReActModule,
+    ReActModuleSinglePrompt,
     ReflectModule,
     ReflectModuleConfig,
     parse_message,
@@ -43,9 +44,15 @@ def fixture_mock_tools() -> list[Tool]:
 
 class TestReActModule:
     @pytest.mark.asyncio
-    async def test_templating(self, dummy_env: DummyEnv) -> None:
+    @pytest.mark.parametrize("single_prompt", [True, False])
+    async def test_templating(self, dummy_env: DummyEnv, single_prompt: bool) -> None:
         obs, tools = await dummy_env.reset()
-        module = ReActModule(ReActAgent.model_fields["llm_model"].default)
+        if single_prompt:
+            module = ReActModuleSinglePrompt(
+                ReActAgent.model_fields["llm_model"].default
+            )
+        else:
+            module = ReActModule(ReActAgent.model_fields["llm_model"].default)
         with patch(
             "ldp.graph.common_ops.LLMCallOp.forward",
             return_value=ToolRequestMessage(
@@ -54,7 +61,10 @@ class TestReActModule:
             ),
         ) as mock_forward:
             await module(obs, tools=tools)
-        mock_forward.assert_awaited_once()
+        if single_prompt:
+            mock_forward.assert_awaited_once()
+        else:
+            assert mock_forward.await_count == 2
         assert mock_forward.await_args
         assert mock_forward.await_args[1]["msgs"][0] == Message(
             role="system",

@@ -112,6 +112,20 @@ class Callback:
         """Invoked by OnlineTrainer after each optimizer.update() call."""
 
 
+class StoreTrajectoriesCallback(Callback):
+    """Simple callback that stores train/eval trajectories in an in-memory list."""
+
+    def __init__(self):
+        self.train_trajectories = []
+        self.eval_trajectories = []
+
+    async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
+        self.train_trajectories.extend(trajectories)
+
+    async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
+        self.eval_trajectories.extend(trajectories)
+
+
 class TrajectoryFileCallback(Callback):
     """Callback that writes trajectories to a file."""
 
@@ -475,3 +489,56 @@ class LoggingCallback(MeanMetricsCallback):
         await super().after_eval_loop()  # Call the parent to compute means
         if self.eval_means:
             self._log_filtered_metrics(self.eval_means, step_type="Eval")
+
+
+class TerminalPrintingCallback(Callback):
+    """Callback that prints action, observation, and timing information to the terminal."""
+
+    def __init__(self):
+        self.start_time = None
+        # try now, rather than start running and die
+        try:
+            from rich.pretty import pprint  # noqa: F401
+        except ImportError as e:
+            raise ImportError(
+                f"rich is required for {type(self).__name__}. Please install it with"
+                " `pip install rich`."
+            ) from e
+
+    async def before_transition(
+        self,
+        traj_id: str,
+        agent: Agent,
+        env: Environment,
+        agent_state: Any,
+        obs: list[Message],
+    ) -> None:
+        """Start the timer before each transition."""
+        self.start_time = time.time()
+
+    async def after_agent_get_asv(
+        self,
+        traj_id: str,
+        action: OpResult[ToolRequestMessage],
+        next_agent_state: Any,
+        value: float,
+    ) -> None:
+        from rich.pretty import pprint
+
+        print("\nAction:")
+        pprint(action.value, expand_all=True)
+
+    async def after_env_step(
+        self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
+    ) -> None:
+        from rich.pretty import pprint
+
+        # Compute elapsed time
+        if self.start_time is not None:
+            elapsed_time = time.time() - self.start_time
+            self.start_time = None  # Reset timer
+        else:
+            elapsed_time = 0.0
+        print("\nObservation:")
+        pprint(obs, expand_all=True)
+        print(f"Elapsed time: {elapsed_time:.2f} seconds")

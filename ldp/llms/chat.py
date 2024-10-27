@@ -199,9 +199,11 @@ class MultipleCompletionLLMModel(BaseModel):
             )
             messages = [
                 *messages[:i],
-                system_prompt.append_text(schema_msg, inplace=False)
-                if system_prompt
-                else Message(role="system", content=schema_msg),
+                (
+                    system_prompt.append_text(schema_msg, inplace=False)
+                    if system_prompt
+                    else Message(role="system", content=schema_msg)
+                ),
                 *messages[i + 1 if system_prompt else i :],
             ]
             chat_kwargs["response_format"] = {"type": "json_object"}
@@ -213,11 +215,13 @@ class MultipleCompletionLLMModel(BaseModel):
             raise ValueError("Number of completions (n) must be >= 1.")
 
         prompt = [
-            m
-            if not isinstance(m, ToolRequestMessage) or m.tool_calls
-            # OpenAI doesn't allow for empty tool_calls lists, so downcast empty
-            # ToolRequestMessage to Message here
-            else Message(role=m.role, content=m.content)
+            (
+                m
+                if not isinstance(m, ToolRequestMessage) or m.tool_calls
+                # OpenAI doesn't allow for empty tool_calls lists, so downcast empty
+                # ToolRequestMessage to Message here
+                else Message(role=m.role, content=m.content)
+            )
             for m in messages
         ]
         results: list[LLMResult] = []

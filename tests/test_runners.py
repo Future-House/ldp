@@ -15,6 +15,7 @@ from ldp.alg import (
     OfflineTrainerConfig,
     OnlineTrainer,
     OnlineTrainerConfig,
+    StoreTrajectoriesCallback,
 )
 from ldp.alg.datasets import (  # noqa: F401  # Force TASK_DATASET_REGISTRY update
     DummyTaskDataset,
@@ -139,8 +140,8 @@ async def test_offline_trainer(clear_ctx_at_each_iter: bool) -> None:
         dataset=dataset,
         callbacks=[traj_callback],
     )
-    await evaluator.evaluate()
-    assert len(traj_callback.trajectories) == 1
+    await evaluator.run()
+    assert len(traj_callback.eval_trajectories) == 1
 
     count_callback = DummyCallback()
     metrics_callback = MeanMetricsCallback(train_dataset=dataset)
@@ -151,7 +152,7 @@ async def test_offline_trainer(clear_ctx_at_each_iter: bool) -> None:
         ),
         agent=agent,
         optimizer=opt,
-        train_trajectories=traj_callback.trajectories,
+        train_trajectories=traj_callback.eval_trajectories,
         callbacks=[count_callback, metrics_callback],
     )
     await trainer.train()
@@ -168,14 +169,6 @@ async def test_offline_trainer(clear_ctx_at_each_iter: bool) -> None:
         all(not ctx_data.data for ctx_data in OpCtx._CTX_REGISTRY.values())
     else:
         any(ctx_data.data for ctx_data in OpCtx._CTX_REGISTRY.values())
-
-
-class StoreTrajectoriesCallback(Callback):
-    def __init__(self):
-        self.trajectories = []
-
-    async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
-        self.trajectories.extend(trajectories)
 
 
 class DummyCallback(Callback):
