@@ -194,12 +194,16 @@ class RolloutManager:
         self.traj_buffer.clear()
 
         traj_ids = [uuid.uuid4().hex for _ in range(len(environments))]
-        await asyncio.gather(
+        from tqdm.asyncio import tqdm_asyncio
+
+        await tqdm_asyncio.gather(
             *(
                 self._rollout(*args, max_steps=max_steps)
                 for args in zip(traj_ids, environments, strict=True)
-            )
+            ),
+            desc="Sampling trajectories"
         )
+
         return [self.traj_buffer[traj_id] for traj_id in traj_ids]
 
     async def _rollout(
