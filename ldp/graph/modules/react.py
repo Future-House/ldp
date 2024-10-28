@@ -273,8 +273,8 @@ def postprocess_and_concat_resoning_msg(
         # We interleave a user message as required by some APIs
         Message(
             content="Continue...",
-            role="user",
-        ),
+            role="user"
+        )
     ]
 
 
