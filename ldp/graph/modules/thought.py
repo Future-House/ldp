@@ -1,8 +1,7 @@
 from collections.abc import Iterable, Mapping
 from typing import Any
 
-from aviary.message import Message
-from aviary.tools import ToolRequestMessage
+from aviary.core import Message, ToolRequestMessage
 
 from ldp.graph import FxnOp, OpResult, PromptOp, compute_graph
 from ldp.llms import prepend_sys_and_append_sys

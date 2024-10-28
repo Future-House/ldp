@@ -15,8 +15,7 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
-from aviary.message import Message
-from aviary.tools import Tool, ToolCall, ToolRequestMessage
+from aviary.core import Message, Tool, ToolCall, ToolRequestMessage
 from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.graph import FxnOp, LLMCallOp, OpResult, compute_graph, get_call_id, op_call

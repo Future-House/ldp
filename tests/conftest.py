@@ -5,7 +5,7 @@ from typing import Any
 import numpy as np
 import pytest
 import torch
-from aviary.env import DummyEnv
+from aviary.core import DummyEnv
 
 from ldp.utils import configure_log_levels
 

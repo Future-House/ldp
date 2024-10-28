@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from uuid import UUID, uuid4
 
-from aviary.utils import is_coroutine_callable
+from aviary.core import is_coroutine_callable
 from pydantic import BaseModel, field_serializer, field_validator
 
 
