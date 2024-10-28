@@ -116,6 +116,11 @@ class TreeSearchRollout(RolloutManager):
         timestep = prev_timestep + 1
 
         async def inner_descend(idx: int) -> None:
+            if tree.root_id in self.target_reward_hit:
+                # Check again in case the target reward was hit while waiting to start
+                # this step
+                return
+
             if is_coroutine_callable(self.env_clone_fn):
                 cloned_env = await self.env_clone_fn(env)
             else:
