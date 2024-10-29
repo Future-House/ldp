@@ -270,7 +270,7 @@ def postprocess_and_concat_resoning_msg(
             # Role is 'assistant' here (normally 'user') since we use the model's reasoning to ask for an action.
             role="assistant",
         ),
-        # We interleave a user message as required by some APIs
+        # We interleave a user message as required by Anthropic's API
         Message(content="Continue..."),
     ]
 
