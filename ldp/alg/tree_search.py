@@ -5,6 +5,7 @@ from collections.abc import Awaitable, Callable, Sequence
 from typing import Any
 
 from aviary.core import Message, is_coroutine_callable
+from tqdm.asyncio import tqdm
 
 from ldp.agent import Agent
 from ldp.data_structures import TransitionTree
@@ -51,13 +52,12 @@ class TreeSearchRollout(RolloutManager):
         self.env_clone_fn = env_clone_fn
 
     async def sample_trees(
-        self,
-        environments: Sequence[TEnv],
-        max_depth: int | None = None,
+        self, environments: Sequence[TEnv], max_depth: int | None = None
     ) -> list[TransitionTree]:
-        return await asyncio.gather(*[
-            self.sample_tree(env, max_depth) for env in environments
-        ])
+        return await tqdm.gather(
+            *[self.sample_tree(env, max_depth) for env in environments],
+            desc="Sampling Trees",
+        )
 
     async def sample_tree(self, env: TEnv, max_depth: int | None) -> TransitionTree:
         max_depth_f = max_depth if max_depth is not None else float("inf")
