@@ -6,7 +6,7 @@ from enum import StrEnum
 from typing import Any, cast
 
 from aviary.message import EMPTY_CONTENT_BASE_MSG, MalformedMessageError, Message
-from aviary.tools import Tool, ToolCall, ToolRequestMessage
+from aviary.tools import Messages, Tool, ToolCall, ToolRequestMessage
 
 from ldp.graph import FxnOp, LLMCallOp, OpResult, PromptOp, compute_graph
 from ldp.llms import prepend_sys
@@ -261,7 +261,7 @@ class ReActModuleSinglePrompt:
 
 def postprocess_and_concat_resoning_msg(
     msgs: Iterable[Message], react_message: Message
-) -> Iterable[Message]:
+) -> Messages:
     reasoning = (react_message.content or "").removeprefix("Thought: ")
     return [
         *msgs,
@@ -297,7 +297,7 @@ class ReActModule(ReActModuleSinglePrompt):
     @compute_graph()
     async def __call__(
         self, messages: Iterable[Message], tools: list[Tool]
-    ) -> tuple[OpResult[ToolRequestMessage], list[Message]]:
+    ) -> tuple[OpResult[ToolRequestMessage], Messages]:
         packaged_msgs = await self.package_msg_op(
             messages, sys_content=await self._create_system_prompt(tools)
         )
@@ -318,6 +318,8 @@ class ReActModule(ReActModuleSinglePrompt):
             self.llm_config, msgs=packaged_msgs_with_reasoning, tools=tools
         )
         return cast(OpResult[ToolRequestMessage], tool_selection_msg), [
+            # We return the 3 new messages: reasoning, the "continue..." message from user
             *packaged_msgs_with_reasoning.value[-2:],
-            cast(ToolRequestMessage, tool_selection_msg.value),
+            # and tool selection message
+            tool_selection_msg.value,
         ]
