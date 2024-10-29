@@ -325,8 +325,9 @@ class ReActModule(ReActModuleSinglePrompt):
             self.llm_config, msgs=packaged_msgs_with_reasoning, tools=tools
         )
         return cast(OpResult[ToolRequestMessage], tool_selection_msg), [
-            # We return the 3 new messages: reasoning, the "continue..." message from user
+            # We return the 3 new messages: reasoning (assistant) message,
+            # the "continue..." (user) message from user,
+            # and tool selection (assistant) message
             *packaged_msgs_with_reasoning.value[-2:],
-            # and tool selection message
             tool_selection_msg.value,
         ]
