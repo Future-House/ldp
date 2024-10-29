@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Self, cast
 
-from aviary.message import Message
-from aviary.tools import Tool, ToolRequestMessage, ToolResponseMessage
+from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
 from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.graph import ConfigOp, LLMCallOp, OpResult, compute_graph

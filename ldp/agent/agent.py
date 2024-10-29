@@ -6,8 +6,7 @@ from collections.abc import Collection, Iterable, Mapping, Sequence
 from typing import Any, Generic, TypeVar
 
 import numpy as np
-from aviary.message import Message
-from aviary.tools import Tool, ToolRequestMessage
+from aviary.core import Message, Tool, ToolRequestMessage
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 from ldp.graph import Op, OpResult

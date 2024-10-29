@@ -4,8 +4,7 @@ import uuid
 from collections.abc import Awaitable, Callable, Sequence
 from typing import Any
 
-from aviary.message import Message
-from aviary.utils import is_coroutine_callable
+from aviary.core import Message, is_coroutine_callable
 
 from ldp.agent import Agent
 from ldp.data_structures import TransitionTree
