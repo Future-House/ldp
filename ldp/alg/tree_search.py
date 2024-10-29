@@ -2,7 +2,7 @@ import asyncio
 import logging
 import uuid
 from collections.abc import Awaitable, Callable, Sequence
-from typing import Any
+from typing import Any, TypeAlias
 
 from aviary.core import Message, is_coroutine_callable
 from tqdm.asyncio import tqdm
@@ -22,13 +22,15 @@ from .rollout import (
 
 logger = logging.getLogger(__name__)
 
+TEnvCloneFn: TypeAlias = Callable[[TEnv], Awaitable[TEnv]] | Callable[[TEnv], TEnv]
+
 
 class TreeSearchRollout(RolloutManager):
     def __init__(
         self,
         agent: Agent,
         branching_factor: int,
-        env_clone_fn: Callable[[TEnv], Awaitable[TEnv]] | Callable[[TEnv], TEnv],
+        env_clone_fn: TEnvCloneFn,
         catch_agent_failures: bool = True,
         catch_env_failures: bool = True,
         callbacks: Sequence[Callback] | None = None,
@@ -118,10 +120,15 @@ class TreeSearchRollout(RolloutManager):
         timestep = prev_timestep + 1
 
         async def inner_descend(idx: int) -> None:
+            if tree.root_id in self.target_reward_hit:
+                # Check again in case the target reward was hit while waiting to start
+                # this step
+                return
+
             if is_coroutine_callable(self.env_clone_fn):
-                cloned_env = await self.env_clone_fn(env)  # type: ignore[arg-type, misc]
+                cloned_env = await self.env_clone_fn(env)
             else:
-                cloned_env = self.env_clone_fn(env)  # type: ignore[arg-type]
+                cloned_env = self.env_clone_fn(env)
 
             # Descend one step
             step_id = f"{prev_step_id}:{idx}"

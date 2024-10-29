@@ -21,7 +21,7 @@ from .runners import (
     OnlineTrainer,
     OnlineTrainerConfig,
 )
-from .tree_search import TreeSearchRollout
+from .tree_search import TEnvCloneFn, TreeSearchRollout
 
 __all__ = [
     "Beam",
@@ -40,6 +40,7 @@ __all__ = [
     "RolloutDebugDumpCallback",
     "RolloutManager",
     "StoreTrajectoriesCallback",
+    "TEnvCloneFn",
     "TrajectoryFileCallback",
     "TrajectoryMetricsCallback",
     "TreeSearchRollout",
