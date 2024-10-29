@@ -57,6 +57,7 @@ class TreeSearchRollout(RolloutManager):
         return await tqdm.gather(
             *[self.sample_tree(env, max_depth) for env in environments],
             desc="Sampling Trees",
+            ncols=0,
         )
 
     async def sample_tree(self, env: TEnv, max_depth: int | None) -> TransitionTree:
