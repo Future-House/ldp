@@ -5,7 +5,7 @@ from contextlib import suppress
 from os import PathLike
 from pathlib import Path
 
-from aviary.env import Environment
+from aviary.core import Environment
 
 from ldp.agent import Agent
 from ldp.alg.callbacks import TerminalPrintingCallback

@@ -6,7 +6,7 @@ import random
 from collections.abc import Sequence
 from typing import Any, cast
 
-from aviary.env import Environment, TaskDataset
+from aviary.core import Environment, TaskDataset
 from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.agent import Agent

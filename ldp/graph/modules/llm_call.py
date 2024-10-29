@@ -1,7 +1,7 @@
 from collections.abc import Callable, Iterable
 from typing import Any, Generic, TypeVar
 
-from aviary.message import Message
+from aviary.core import Message
 
 from ldp.graph import ConfigOp, FxnOp, LLMCallOp, OpResult, compute_graph
 

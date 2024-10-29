@@ -1,9 +1,7 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from aviary.env import DummyEnv
-from aviary.message import Message
-from aviary.tools import Tool, ToolRequestMessage
+from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
 from pytest_subtests import SubTests
 
 from ldp.agent import ReActAgent

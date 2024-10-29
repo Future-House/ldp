@@ -1,5 +1,5 @@
 import pytest
-from aviary.env import DummyEnv
+from aviary.core import DummyEnv
 
 from ldp.agent import SimpleAgent
 from ldp.utils import discounted_returns

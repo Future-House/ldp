@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import litellm
 import pytest
-from aviary.env import DummyEnv, TaskDataset
+from aviary.core import DummyEnv, TaskDataset
 
 from ldp.agent import MemoryAgent, SimpleAgent
 from ldp.alg import (
