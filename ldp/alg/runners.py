@@ -82,7 +82,7 @@ class EvaluatorConfig(BaseModel):
     catch_agent_failures: bool = True
     catch_env_failures: bool = True
     clear_ctx_at_each_iter: bool = False
-    shuffle: bool = False
+    shuffle: bool = Field(default=False, description="Shuffles the evaluation dataset.")
 
     def make_rollout_manager(
         self, agent: Agent, callbacks: Sequence[Callback]
