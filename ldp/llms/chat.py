@@ -6,9 +6,13 @@ from typing import Any, ClassVar, Self, cast
 from uuid import UUID, uuid4
 
 import litellm
-from aviary.message import Message
-from aviary.tools import Tool, ToolRequestMessage, ToolsAdapter
-from aviary.utils import is_coroutine_callable
+from aviary.core import (
+    Message,
+    Tool,
+    ToolRequestMessage,
+    ToolsAdapter,
+    is_coroutine_callable,
+)
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 

@@ -2,7 +2,7 @@
 
 from collections.abc import Collection, Iterable
 
-from aviary.message import Message
+from aviary.core import Message
 
 
 def append_to_messages(messages: list[Message], new_message: Message) -> list[Message]:
