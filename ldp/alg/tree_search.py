@@ -52,12 +52,16 @@ class TreeSearchRollout(RolloutManager):
         self.env_clone_fn = env_clone_fn
 
     async def sample_trees(
-        self, environments: Sequence[TEnv], max_depth: int | None = None
+        self,
+        environments: Sequence[TEnv],
+        max_depth: int | None = None,
+        disable_pbar: bool = False,
     ) -> list[TransitionTree]:
         return await tqdm.gather(
             *[self.sample_tree(env, max_depth) for env in environments],
             desc="Sampling Trees",
             ncols=0,
+            disable=disable_pbar,
         )
 
     async def sample_tree(self, env: TEnv, max_depth: int | None) -> TransitionTree:
