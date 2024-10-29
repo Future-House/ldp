@@ -297,6 +297,7 @@ class TestReActAgent:
         ("single_prompt", "model_name"),
         [
             (True, CILLMModelNames.ANTHROPIC.value),
+            (False, CILLMModelNames.ANTHROPIC.value),
             (True, "gpt-4-turbo"),
             (False, "gpt-4o"),
         ],
@@ -380,6 +381,7 @@ class TestReActAgent:
         ("single_prompt", "model_name"),
         [
             (True, CILLMModelNames.ANTHROPIC.value),
+            (False, CILLMModelNames.ANTHROPIC.value),
             (True, "gpt-4-turbo"),
             (False, "gpt-4o"),
         ],

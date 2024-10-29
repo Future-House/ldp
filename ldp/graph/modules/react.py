@@ -8,6 +8,7 @@ from typing import Any, cast
 from aviary.core import (
     MalformedMessageError,
     Message,
+    Messages,
     Tool,
     ToolCall,
     ToolRequestMessage,
@@ -267,7 +268,7 @@ class ReActModuleSinglePrompt:
 
 def postprocess_and_concat_resoning_msg(
     msgs: Iterable[Message], react_message: Message
-) -> Iterable[Message]:
+) -> Messages:
     reasoning = (react_message.content or "").removeprefix("Thought: ")
     return [
         *msgs,
@@ -276,6 +277,8 @@ def postprocess_and_concat_resoning_msg(
             # Role is 'assistant' here (normally 'user') since we use the model's reasoning to ask for an action.
             role="assistant",
         ),
+        # We interleave a user message as required by Anthropic's API
+        Message(content="Continue..."),
     ]
 
 
@@ -301,7 +304,7 @@ class ReActModule(ReActModuleSinglePrompt):
     @compute_graph()
     async def __call__(
         self, messages: Iterable[Message], tools: list[Tool]
-    ) -> tuple[OpResult[ToolRequestMessage], list[Message]]:
+    ) -> tuple[OpResult[ToolRequestMessage], Messages]:
         packaged_msgs = await self.package_msg_op(
             messages, sys_content=await self._create_system_prompt(tools)
         )
@@ -322,6 +325,9 @@ class ReActModule(ReActModuleSinglePrompt):
             self.llm_config, msgs=packaged_msgs_with_reasoning, tools=tools
         )
         return cast(OpResult[ToolRequestMessage], tool_selection_msg), [
-            reasoning_msg.value,
-            cast(ToolRequestMessage, tool_selection_msg.value),
+            # We return the 3 new messages: reasoning (assistant) message,
+            # the "continue..." (user) message from user,
+            # and tool selection (assistant) message
+            *packaged_msgs_with_reasoning.value[-2:],
+            tool_selection_msg.value,
         ]
