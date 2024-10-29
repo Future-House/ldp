@@ -8,9 +8,7 @@ from unittest.mock import patch
 
 import networkx as nx
 import pytest
-from aviary.env import DummyEnv
-from aviary.message import Message
-from aviary.tools import Tool, ToolCall, ToolRequestMessage
+from aviary.core import DummyEnv, Message, Tool, ToolCall, ToolRequestMessage
 from httpx import ASGITransport, AsyncClient
 from pydantic import BaseModel, Field
 

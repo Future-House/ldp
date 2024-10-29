@@ -3,8 +3,7 @@ from collections.abc import Sequence
 from typing import Any
 
 import networkx as nx
-from aviary.message import Message, join
-from aviary.tools import Tool, ToolRequestMessage
+from aviary.core import Message, Tool, ToolRequestMessage, join
 
 from ldp.graph import OpResult
 from ldp.graph.ops import GradOutType

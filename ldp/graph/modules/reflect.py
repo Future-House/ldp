@@ -1,6 +1,6 @@
 from typing import Any
 
-from aviary.message import Message
+from aviary.core import Message
 from pydantic import BaseModel, Field
 
 from ldp.graph import ConfigOp, FxnOp, LLMCallOp, PromptOp, compute_graph
