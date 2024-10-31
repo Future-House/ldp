@@ -67,7 +67,7 @@ ACT_DEFAULT_SINGLE_PROMPT_TEMPLATE = _DEFAULT_SINGLE_PROMPT_TEMPLATE.format(
 
 # And these with ReActModule
 _DEFAULT_PROMPT_TEMPLATE = textwrap.dedent(
-    """    Answer the following questions as best you can.
+    """    Answer the following questions as best you can, using the provided tools.
 
     Use the following format:
 
