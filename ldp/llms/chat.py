@@ -100,8 +100,12 @@ def validate_json_completion(
             if not hasattr(choice, "message") or not choice.message.content:
                 continue
             # make sure it is a JSON completion, even if None
-            content = choice.message.content.split("```json")[-1].split("```")[0] or ""
-            output_type.model_validate_json(content)
+            # We do want to modify the underlying message
+            # so that users of it can just parse it as expected
+            choice.message.content = (
+                choice.message.content.split("```json")[-1].split("```")[0] or ""
+            )
+            output_type.model_validate_json(choice.message.content)
     except ValidationError as err:
         raise JSONSchemaValidationError(
             "The completion does not match the specified schema."
