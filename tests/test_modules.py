@@ -66,7 +66,7 @@ class TestReActModule:
         assert mock_forward.await_args
 
         if single_prompt:
-            assert mock_forward.await_args[1]["msgs"][0] == Message(
+            expected_message = Message(
                 role="system",
                 content=(
                     "Answer the following questions as best you can. You have access to the"
@@ -103,7 +103,8 @@ class TestReActModule:
                     " 7)\nObservation: The 7 day forecast for New York is [...]"
                 ),
             )
-            assert mock_forward.await_args[1]["msgs"][0] == expected_message
+
+        assert mock_forward.await_args[1]["msgs"][0] == expected_message
 
     @pytest.mark.asyncio
     async def test_react_parse(self, subtests: SubTests) -> None:  # noqa: PLR0915, C901
