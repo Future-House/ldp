@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+    <title>ldp.alg.optimizer package &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="ldp.graph package" href="ldp.graph.html" />
+    <link rel="prev" title="ldp.alg package" href="ldp.alg.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="ldp-alg-optimizer-package">
+<h1>ldp.alg.optimizer package<a class="headerlink" href="#ldp-alg-optimizer-package" title="Link to this heading">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
+</section>
+<section id="module-ldp.alg.optimizer.ape">
+<span id="ldp-alg-optimizer-ape-module"></span><h2>ldp.alg.optimizer.ape module<a class="headerlink" href="#module-ldp.alg.optimizer.ape" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.ape.</span></span><span class="sig-name descname"><span class="pre">APEOpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_examples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'We</span> <span class="pre">are</span> <span class="pre">optimizing</span> <span class="pre">prompts</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">language</span> <span class="pre">model.</span> <span class="pre">The</span> <span class="pre">model</span> <span class="pre">sees</span> <span class="pre">a</span> <span class="pre">prompt,</span> <span class="pre">an</span> <span class="pre">input,</span> <span class="pre">and</span> <span class="pre">then</span> <span class="pre">generates</span> <span class="pre">an</span> <span class="pre">output.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Here</span> <span class="pre">are</span> <span class="pre">correct</span> <span class="pre">example</span> <span class="pre">outputs</span> <span class="pre">that</span> <span class="pre">the</span> <span class="pre">language</span> <span class="pre">model</span> <span class="pre">and</span> <span class="pre">prompt</span> <span class="pre">should</span> <span class="pre">produce:\n{good_examples}\n\nThe</span> <span class="pre">current</span> <span class="pre">prompt</span> <span class="pre">is:</span> <span class="pre">&quot;{prompt}&quot;\n\nWhich</span> <span class="pre">resulted</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">following</span> <span class="pre">incorrect</span> <span class="pre">input,</span> <span class="pre">output,</span> <span class="pre">and</span> <span class="pre">{score}:\n{examples}\n\nRevise</span> <span class="pre">the</span> <span class="pre">current</span> <span class="pre">prompt</span> <span class="pre">to</span> <span class="pre">improve</span> <span class="pre">the</span> <span class="pre">outputs.</span> <span class="pre">Your</span> <span class="pre">proposed</span> <span class="pre">prompt</span> <span class="pre">should</span> <span class="pre">be</span> <span class="pre">concise,</span> <span class="pre">correct,</span> <span class="pre">and</span> <span class="pre">specify</span> <span class="pre">the</span> <span class="pre">desired</span> <span class="pre">output</span> <span class="pre">format.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.llms.html#ldp.llms.chat.LLMModel" title="ldp.llms.chat.LLMModel"><span class="pre">LLMModel</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prompt_op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.graph.html#ldp.graph.common_ops.PromptOp" title="ldp.graph.common_ops.PromptOp"><span class="pre">PromptOp</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm_call_op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.graph.html#ldp.graph.common_ops.LLMCallOp" title="ldp.graph.common_ops.LLMCallOp"><span class="pre">LLMCallOp</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ldp.alg.optimizer.ape.APEScoreFn" title="ldp.alg.optimizer.ape.APEScoreFn"><span class="pre">APEScoreFn</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">APEScoreFn.REWARD</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">good_reward_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward_discount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">examples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ldp.alg.optimizer.ape.Example" title="ldp.alg.optimizer.ape.Example"><span class="pre">Example</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">good_examples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ldp.alg.optimizer.ape.Example" title="ldp.alg.optimizer.ape.Example"><span class="pre">Example</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEOpt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code>, <a class="reference internal" href="#ldp.alg.optimizer.opt.Optimizer" title="ldp.alg.optimizer.opt.Optimizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimizer</span></code></a></p>
+<p>Basic optimizer that acts as an Automatic Prompt Engineer (APE).</p>
+<p>Paper: <a class="reference external" href="https://openreview.net/pdf?id=92gvk82DE">https://openreview.net/pdf?id=92gvk82DE</a>-</p>
+<p>Details:
+- This implements the “forward mode generation” strategy.
+- The score function used is the gradient (float) at the output of the</p>
+<blockquote>
+<div><p>PromptOp being optimized. A zero gradient means the prompt was “good”,
+and a non-zero gradient means we can learn from the prompt.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Possible improvements include:</dt><dd><ul>
+<li><p>Extending the score function to the LLM result’s logprobs</p></li>
+<li><p>Iterating with Monte Carlo Search</p></li>
+<li><p>Use of memory for further example augmentation</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.aggregate_trajectory">
+<span class="sig-name descname"><span class="pre">aggregate_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trajectory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.html#ldp.data_structures.Trajectory" title="ldp.data_structures.Trajectory"><span class="pre">Trajectory</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEOpt.aggregate_trajectory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.aggregate_trajectory" title="Link to this definition">¶</a></dt>
+<dd><p>Aggregate transitions from a single trajectory to construct training samples.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.examples">
+<span class="sig-name descname"><span class="pre">examples</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ldp.alg.optimizer.ape.Example" title="ldp.alg.optimizer.ape.Example"><span class="pre">Example</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.examples" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.from_agent">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.agent.html#ldp.agent.react_agent.ReActAgent" title="ldp.agent.react_agent.ReActAgent"><span class="pre">ReActAgent</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEOpt.from_agent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.from_agent" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.good_examples">
+<span class="sig-name descname"><span class="pre">good_examples</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ldp.alg.optimizer.ape.Example" title="ldp.alg.optimizer.ape.Example"><span class="pre">Example</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.good_examples" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.good_reward_threshold">
+<span class="sig-name descname"><span class="pre">good_reward_threshold</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.good_reward_threshold" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.llm">
+<span class="sig-name descname"><span class="pre">llm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ldp.llms.html#ldp.llms.chat.LLMModel" title="ldp.llms.chat.LLMModel"><span class="pre">LLMModel</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.llm" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.llm_call_op">
+<span class="sig-name descname"><span class="pre">llm_call_op</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.common_ops.LLMCallOp" title="ldp.graph.common_ops.LLMCallOp"><span class="pre">LLMCallOp</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.llm_call_op" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.max_examples">
+<span class="sig-name descname"><span class="pre">max_examples</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.max_examples" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.model_computed_fields">
+<span class="sig-name descname"><span class="pre">model_computed_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ComputedFieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.model_computed_fields" title="Link to this definition">¶</a></dt>
+<dd><p>A dictionary of computed field names and their corresponding <cite>ComputedFieldInfo</cite> objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'arbitrary_types_allowed':</span> <span class="pre">True}</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.model_fields">
+<span class="sig-name descname"><span class="pre">model_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'examples':</span> <span class="pre">FieldInfo(annotation=list[Example],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=list),</span> <span class="pre">'good_examples':</span> <span class="pre">FieldInfo(annotation=list[Example],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=list),</span> <span class="pre">'good_reward_threshold':</span> <span class="pre">FieldInfo(annotation=Union[float,</span> <span class="pre">NoneType],</span> <span class="pre">required=False,</span> <span class="pre">default=None,</span> <span class="pre">description='If</span> <span class="pre">using</span> <span class="pre">reward</span> <span class="pre">as</span> <span class="pre">the</span> <span class="pre">score_fn,</span> <span class="pre">then</span> <span class="pre">a</span> <span class="pre">good</span> <span class="pre">example</span> <span class="pre">is</span> <span class="pre">defined</span> <span class="pre">by</span> <span class="pre">reward&gt;=good_reward_threshold.'),</span> <span class="pre">'llm':</span> <span class="pre">FieldInfo(annotation=LLMModel,</span> <span class="pre">required=False,</span> <span class="pre">default_factory=LLMModel,</span> <span class="pre">description='LLM</span> <span class="pre">used</span> <span class="pre">to</span> <span class="pre">update</span> <span class="pre">the</span> <span class="pre">prompt</span> <span class="pre">inside</span> <span class="pre">the</span> <span class="pre">PromptOp.</span> <span class="pre">The</span> <span class="pre">paper</span> <span class="pre">mentions</span> <span class="pre">that</span> <span class="pre">larger</span> <span class="pre">models</span> <span class="pre">produce</span> <span class="pre">better</span> <span class="pre">prompt</span> <span class="pre">proposals.'),</span> <span class="pre">'llm_call_op':</span> <span class="pre">FieldInfo(annotation=LLMCallOp,</span> <span class="pre">required=True,</span> <span class="pre">description='LLMCallOp</span> <span class="pre">to</span> <span class="pre">be</span> <span class="pre">optimized.'),</span> <span class="pre">'max_examples':</span> <span class="pre">FieldInfo(annotation=Union[int,</span> <span class="pre">NoneType],</span> <span class="pre">required=False,</span> <span class="pre">default=50,</span> <span class="pre">description='Max</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">examples</span> <span class="pre">to</span> <span class="pre">include</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">below</span> <span class="pre">query_prompt,</span> <span class="pre">or</span> <span class="pre">None</span> <span class="pre">for</span> <span class="pre">no</span> <span class="pre">limit.</span> <span class="pre">The</span> <span class="pre">paper</span> <span class="pre">mentions</span> <span class="pre">that</span> <span class="pre">more</span> <span class="pre">examples</span> <span class="pre">produce</span> <span class="pre">better</span> <span class="pre">prompt</span> <span class="pre">proposals.'),</span> <span class="pre">'prompt_op':</span> <span class="pre">FieldInfo(annotation=PromptOp,</span> <span class="pre">required=True,</span> <span class="pre">description='PromptOp</span> <span class="pre">to</span> <span class="pre">be</span> <span class="pre">optimized.'),</span> <span class="pre">'query_prompt':</span> <span class="pre">FieldInfo(annotation=str,</span> <span class="pre">required=False,</span> <span class="pre">default='Here</span> <span class="pre">are</span> <span class="pre">correct</span> <span class="pre">example</span> <span class="pre">outputs</span> <span class="pre">that</span> <span class="pre">the</span> <span class="pre">language</span> <span class="pre">model</span> <span class="pre">and</span> <span class="pre">prompt</span> <span class="pre">should</span> <span class="pre">produce:\n{good_examples}\n\nThe</span> <span class="pre">current</span> <span class="pre">prompt</span> <span class="pre">is:</span> <span class="pre">&quot;{prompt}&quot;\n\nWhich</span> <span class="pre">resulted</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">following</span> <span class="pre">incorrect</span> <span class="pre">input,</span> <span class="pre">output,</span> <span class="pre">and</span> <span class="pre">{score}:\n{examples}\n\nRevise</span> <span class="pre">the</span> <span class="pre">current</span> <span class="pre">prompt</span> <span class="pre">to</span> <span class="pre">improve</span> <span class="pre">the</span> <span class="pre">outputs.</span> <span class="pre">Your</span> <span class="pre">proposed</span> <span class="pre">prompt</span> <span class="pre">should</span> <span class="pre">be</span> <span class="pre">concise,</span> <span class="pre">correct,</span> <span class="pre">and</span> <span class="pre">specify</span> <span class="pre">the</span> <span class="pre">desired</span> <span class="pre">output</span> <span class="pre">format.'),</span> <span class="pre">'reward_discount':</span> <span class="pre">FieldInfo(annotation=float,</span> <span class="pre">required=False,</span> <span class="pre">default=1.0),</span> <span class="pre">'score_fn':</span> <span class="pre">FieldInfo(annotation=APEScoreFn,</span> <span class="pre">required=False,</span> <span class="pre">default=&lt;APEScoreFn.REWARD:</span> <span class="pre">'reward'&gt;),</span> <span class="pre">'steps':</span> <span class="pre">FieldInfo(annotation=int,</span> <span class="pre">required=False,</span> <span class="pre">default=0),</span> <span class="pre">'system_prompt':</span> <span class="pre">FieldInfo(annotation=str,</span> <span class="pre">required=False,</span> <span class="pre">default='We</span> <span class="pre">are</span> <span class="pre">optimizing</span> <span class="pre">prompts</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">language</span> <span class="pre">model.</span> <span class="pre">The</span> <span class="pre">model</span> <span class="pre">sees</span> <span class="pre">a</span> <span class="pre">prompt,</span> <span class="pre">an</span> <span class="pre">input,</span> <span class="pre">and</span> <span class="pre">then</span> <span class="pre">generates</span> <span class="pre">an</span> <span class="pre">output.'),</span> <span class="pre">'trace':</span> <span class="pre">FieldInfo(annotation=list[str],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=list,</span> <span class="pre">description='History</span> <span class="pre">of</span> <span class="pre">prompts</span> <span class="pre">used.')}</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.model_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Metadata about the fields defined on the model,
+mapping of field names to [<cite>FieldInfo</cite>][pydantic.fields.FieldInfo].</p>
+<p>This replaces <cite>Model.__fields__</cite> from Pydantic V1.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.model_post_init">
+<span class="sig-name descname"><span class="pre">model_post_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_APEOpt__context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEOpt.model_post_init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.model_post_init" title="Link to this definition">¶</a></dt>
+<dd><p>Override this method to perform additional initialization after <cite>__init__</cite> and <cite>model_construct</cite>.
+This is useful if you want to do some validation that requires the entire model to be initialized.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.prompt_op">
+<span class="sig-name descname"><span class="pre">prompt_op</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.common_ops.PromptOp" title="ldp.graph.common_ops.PromptOp"><span class="pre">PromptOp</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.prompt_op" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.query_prompt">
+<span class="sig-name descname"><span class="pre">query_prompt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.query_prompt" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.reward_discount">
+<span class="sig-name descname"><span class="pre">reward_discount</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.reward_discount" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.score_fn">
+<span class="sig-name descname"><span class="pre">score_fn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#ldp.alg.optimizer.ape.APEScoreFn" title="ldp.alg.optimizer.ape.APEScoreFn"><span class="pre">APEScoreFn</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.score_fn" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.steps">
+<span class="sig-name descname"><span class="pre">steps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.steps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.system_prompt">
+<span class="sig-name descname"><span class="pre">system_prompt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.system_prompt" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.trace">
+<span class="sig-name descname"><span class="pre">trace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.trace" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.update">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEOpt.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.update" title="Link to this definition">¶</a></dt>
+<dd><p>Update the model based on the aggregated samples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEOpt.validate_score_fn">
+<span class="sig-name descname"><span class="pre">validate_score_fn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEOpt.validate_score_fn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.ape.APEOpt.validate_score_fn" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEScoreFn">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.ape.</span></span><span class="sig-name descname"><span class="pre">APEScoreFn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEScoreFn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.ape.APEScoreFn" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">StrEnum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEScoreFn.GRADIENT">
+<span class="sig-name descname"><span class="pre">GRADIENT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'gradient'</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEScoreFn.GRADIENT" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.APEScoreFn.REWARD">
+<span class="sig-name descname"><span class="pre">REWARD</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'reward'</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.APEScoreFn.REWARD" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.Example">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.ape.</span></span><span class="sig-name descname"><span class="pre">Example</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">JsonValue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">JsonValue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#Example"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.ape.Example" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.Example.input">
+<span class="sig-name descname"><span class="pre">input</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">JsonValue</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.Example.input" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.Example.model_computed_fields">
+<span class="sig-name descname"><span class="pre">model_computed_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ComputedFieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.Example.model_computed_fields" title="Link to this definition">¶</a></dt>
+<dd><p>A dictionary of computed field names and their corresponding <cite>ComputedFieldInfo</cite> objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.Example.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.Example.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.Example.model_fields">
+<span class="sig-name descname"><span class="pre">model_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'input':</span> <span class="pre">FieldInfo(annotation=JsonValue,</span> <span class="pre">required=True),</span> <span class="pre">'output':</span> <span class="pre">FieldInfo(annotation=JsonValue,</span> <span class="pre">required=True),</span> <span class="pre">'score':</span> <span class="pre">FieldInfo(annotation=float,</span> <span class="pre">required=True)}</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.Example.model_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Metadata about the fields defined on the model,
+mapping of field names to [<cite>FieldInfo</cite>][pydantic.fields.FieldInfo].</p>
+<p>This replaces <cite>Model.__fields__</cite> from Pydantic V1.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.Example.output">
+<span class="sig-name descname"><span class="pre">output</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">JsonValue</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.Example.output" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.Example.score">
+<span class="sig-name descname"><span class="pre">score</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.Example.score" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.OutputPrompt">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.ape.</span></span><span class="sig-name descname"><span class="pre">OutputPrompt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#OutputPrompt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.ape.OutputPrompt" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.OutputPrompt.model_computed_fields">
+<span class="sig-name descname"><span class="pre">model_computed_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ComputedFieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.OutputPrompt.model_computed_fields" title="Link to this definition">¶</a></dt>
+<dd><p>A dictionary of computed field names and their corresponding <cite>ComputedFieldInfo</cite> objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.OutputPrompt.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.OutputPrompt.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.OutputPrompt.model_fields">
+<span class="sig-name descname"><span class="pre">model_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'prompt':</span> <span class="pre">FieldInfo(annotation=str,</span> <span class="pre">required=True,</span> <span class="pre">description='Prompt</span> <span class="pre">for</span> <span class="pre">language</span> <span class="pre">model')}</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.OutputPrompt.model_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Metadata about the fields defined on the model,
+mapping of field names to [<cite>FieldInfo</cite>][pydantic.fields.FieldInfo].</p>
+<p>This replaces <cite>Model.__fields__</cite> from Pydantic V1.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.OutputPrompt.prompt">
+<span class="sig-name descname"><span class="pre">prompt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#ldp.alg.optimizer.ape.OutputPrompt.prompt" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ape.get_formatted_variables">
+<span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.ape.</span></span><span class="sig-name descname"><span class="pre">get_formatted_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#get_formatted_variables"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.ape.get_formatted_variables" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the set of variables implied by the format string.</p>
+</dd></dl>
+
+</section>
+<section id="module-ldp.alg.optimizer.memory">
+<span id="ldp-alg-optimizer-memory-module"></span><h2>ldp.alg.optimizer.memory module<a class="headerlink" href="#module-ldp.alg.optimizer.memory" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryFactory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.memory.</span></span><span class="sig-name descname"><span class="pre">MemoryFactory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/memory.html#MemoryFactory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryFactory" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.memory.</span></span><span class="sig-name descname"><span class="pre">MemoryOpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_op:</span> <span class="pre">~ldp.graph.common_ops.MemoryOp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_op:</span> <span class="pre">~ldp.graph.ops.Op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward_discount:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_factory:</span> <span class="pre">~ldp.alg.optimizer.memory.MemoryFactory</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">_default_memory_factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_template:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'Input:</span> <span class="pre">{input}\nOutput:</span> <span class="pre">{output}\nReward:</span> <span class="pre">{value}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_buffer:</span> <span class="pre">list[tuple[~ldp.graph.op_utils.CallID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~ldp.graph.op_utils.CallID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">JsonValue]]</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/memory.html#MemoryOpt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code>, <a class="reference internal" href="#ldp.alg.optimizer.opt.Optimizer" title="ldp.alg.optimizer.opt.Optimizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimizer</span></code></a></p>
+<p>Trainer for memory agents. By default it is a minimizer.</p>
+<p>This optimizer simply adds memories to the MemoryOp using a memory factory.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.aggregate_trajectory">
+<span class="sig-name descname"><span class="pre">aggregate_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trajectory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.html#ldp.data_structures.Trajectory" title="ldp.data_structures.Trajectory"><span class="pre">Trajectory</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/memory.html#MemoryOpt.aggregate_trajectory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.aggregate_trajectory" title="Link to this definition">¶</a></dt>
+<dd><p>Aggregate transitions from a single trajectory to construct training samples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.default_memory_factory">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">default_memory_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.graph.html#ldp.graph.ops.Op" title="ldp.graph.ops.Op"><span class="pre">Op</span></a><span class="p"><span class="pre">[</span></span><span class="pre">TOutput</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_buffer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="ldp.graph.html#ldp.graph.op_utils.CallID" title="ldp.graph.op_utils.CallID"><span class="pre">CallID</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.op_utils.CallID" title="ldp.graph.op_utils.CallID"><span class="pre">CallID</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">JsonValue</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="ldp.graph.html#ldp.graph.memory.Memory" title="ldp.graph.memory.Memory"><span class="pre">Memory</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.default_memory_factory" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.example_buffer">
+<span class="sig-name descname"><span class="pre">example_buffer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="ldp.graph.html#ldp.graph.op_utils.CallID" title="ldp.graph.op_utils.CallID"><span class="pre">CallID</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.op_utils.CallID" title="ldp.graph.op_utils.CallID"><span class="pre">CallID</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">JsonValue</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.example_buffer" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.from_agent">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.agent.html#ldp.agent.memory_agent.MemoryAgent" title="ldp.agent.memory_agent.MemoryAgent"><span class="pre">MemoryAgent</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/memory.html#MemoryOpt.from_agent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.from_agent" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.memory_factory">
+<span class="sig-name descname"><span class="pre">memory_factory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#ldp.alg.optimizer.memory.MemoryFactory" title="ldp.alg.optimizer.memory.MemoryFactory"><span class="pre">MemoryFactory</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.memory_factory" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.memory_op">
+<span class="sig-name descname"><span class="pre">memory_op</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.common_ops.MemoryOp" title="ldp.graph.common_ops.MemoryOp"><span class="pre">MemoryOp</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.memory_op" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.memory_template">
+<span class="sig-name descname"><span class="pre">memory_template</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.memory_template" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.model_computed_fields">
+<span class="sig-name descname"><span class="pre">model_computed_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ComputedFieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.model_computed_fields" title="Link to this definition">¶</a></dt>
+<dd><p>A dictionary of computed field names and their corresponding <cite>ComputedFieldInfo</cite> objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'arbitrary_types_allowed':</span> <span class="pre">True}</span></em><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.model_fields">
+<span class="sig-name descname"><span class="pre">model_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'example_buffer':</span> <span class="pre">FieldInfo(annotation=list[tuple[CallID,</span> <span class="pre">CallID,</span> <span class="pre">float,</span> <span class="pre">JsonValue]],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=list),</span> <span class="pre">'memory_factory':</span> <span class="pre">FieldInfo(annotation=MemoryFactory,</span> <span class="pre">required=False,</span> <span class="pre">default=&lt;function</span> <span class="pre">_default_memory_factory&gt;,</span> <span class="pre">description=&quot;Async</span> <span class="pre">function</span> <span class="pre">to</span> <span class="pre">make</span> <span class="pre">Memories</span> <span class="pre">from</span> <span class="pre">an</span> <span class="pre">example</span> <span class="pre">buffer.</span> <span class="pre">It's</span> <span class="pre">async</span> <span class="pre">so</span> <span class="pre">this</span> <span class="pre">can</span> <span class="pre">involve</span> <span class="pre">an</span> <span class="pre">LLM</span> <span class="pre">completion</span> <span class="pre">if</span> <span class="pre">desired.&quot;,</span> <span class="pre">exclude=True),</span> <span class="pre">'memory_op':</span> <span class="pre">FieldInfo(annotation=MemoryOp,</span> <span class="pre">required=True),</span> <span class="pre">'memory_template':</span> <span class="pre">FieldInfo(annotation=str,</span> <span class="pre">required=False,</span> <span class="pre">default='Input:</span> <span class="pre">{input}\nOutput:</span> <span class="pre">{output}\nReward:</span> <span class="pre">{value}',</span> <span class="pre">description=&quot;Template</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">Memory's</span> <span class="pre">string</span> <span class="pre">representation.&quot;),</span> <span class="pre">'output_op':</span> <span class="pre">FieldInfo(annotation=Op,</span> <span class="pre">required=True),</span> <span class="pre">'reward_discount':</span> <span class="pre">FieldInfo(annotation=float,</span> <span class="pre">required=False,</span> <span class="pre">default=1.0),</span> <span class="pre">'steps':</span> <span class="pre">FieldInfo(annotation=int,</span> <span class="pre">required=False,</span> <span class="pre">default=0)}</span></em><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.model_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Metadata about the fields defined on the model,
+mapping of field names to [<cite>FieldInfo</cite>][pydantic.fields.FieldInfo].</p>
+<p>This replaces <cite>Model.__fields__</cite> from Pydantic V1.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.output_op">
+<span class="sig-name descname"><span class="pre">output_op</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.ops.Op" title="ldp.graph.ops.Op"><span class="pre">Op</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.output_op" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.reward_discount">
+<span class="sig-name descname"><span class="pre">reward_discount</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.reward_discount" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.steps">
+<span class="sig-name descname"><span class="pre">steps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.steps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.MemoryOpt.update">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/memory.html#MemoryOpt.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.memory.MemoryOpt.update" title="Link to this definition">¶</a></dt>
+<dd><p>Create new memories from the example buffer and add them to MemoryOp.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.PositiveMemoryOpt">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.memory.</span></span><span class="sig-name descname"><span class="pre">PositiveMemoryOpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_op:</span> <span class="pre">~ldp.graph.common_ops.MemoryOp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_op:</span> <span class="pre">~ldp.graph.ops.Op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward_discount:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_factory:</span> <span class="pre">~ldp.alg.optimizer.memory.MemoryFactory</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">_default_memory_factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_template:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'Input:</span> <span class="pre">{input}\nOutput:</span> <span class="pre">{output}\nReward:</span> <span class="pre">{value}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_buffer:</span> <span class="pre">list[tuple[~ldp.graph.op_utils.CallID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~ldp.graph.op_utils.CallID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">JsonValue]]</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/memory.html#PositiveMemoryOpt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.memory.PositiveMemoryOpt" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ldp.alg.optimizer.memory.MemoryOpt" title="ldp.alg.optimizer.memory.MemoryOpt"><code class="xref py py-class docutils literal notranslate"><span class="pre">MemoryOpt</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.PositiveMemoryOpt.model_computed_fields">
+<span class="sig-name descname"><span class="pre">model_computed_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ComputedFieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ldp.alg.optimizer.memory.PositiveMemoryOpt.model_computed_fields" title="Link to this definition">¶</a></dt>
+<dd><p>A dictionary of computed field names and their corresponding <cite>ComputedFieldInfo</cite> objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.PositiveMemoryOpt.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'arbitrary_types_allowed':</span> <span class="pre">True}</span></em><a class="headerlink" href="#ldp.alg.optimizer.memory.PositiveMemoryOpt.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.memory.PositiveMemoryOpt.model_fields">
+<span class="sig-name descname"><span class="pre">model_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'example_buffer':</span> <span class="pre">FieldInfo(annotation=list[tuple[CallID,</span> <span class="pre">CallID,</span> <span class="pre">float,</span> <span class="pre">JsonValue]],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=list),</span> <span class="pre">'memory_factory':</span> <span class="pre">FieldInfo(annotation=MemoryFactory,</span> <span class="pre">required=False,</span> <span class="pre">default=&lt;function</span> <span class="pre">_default_memory_factory&gt;,</span> <span class="pre">description=&quot;Async</span> <span class="pre">function</span> <span class="pre">to</span> <span class="pre">make</span> <span class="pre">Memories</span> <span class="pre">from</span> <span class="pre">an</span> <span class="pre">example</span> <span class="pre">buffer.</span> <span class="pre">It's</span> <span class="pre">async</span> <span class="pre">so</span> <span class="pre">this</span> <span class="pre">can</span> <span class="pre">involve</span> <span class="pre">an</span> <span class="pre">LLM</span> <span class="pre">completion</span> <span class="pre">if</span> <span class="pre">desired.&quot;,</span> <span class="pre">exclude=True),</span> <span class="pre">'memory_op':</span> <span class="pre">FieldInfo(annotation=MemoryOp,</span> <span class="pre">required=True),</span> <span class="pre">'memory_template':</span> <span class="pre">FieldInfo(annotation=str,</span> <span class="pre">required=False,</span> <span class="pre">default='Input:</span> <span class="pre">{input}\nOutput:</span> <span class="pre">{output}\nReward:</span> <span class="pre">{value}',</span> <span class="pre">description=&quot;Template</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">Memory's</span> <span class="pre">string</span> <span class="pre">representation.&quot;),</span> <span class="pre">'output_op':</span> <span class="pre">FieldInfo(annotation=Op,</span> <span class="pre">required=True),</span> <span class="pre">'reward_discount':</span> <span class="pre">FieldInfo(annotation=float,</span> <span class="pre">required=False,</span> <span class="pre">default=1.0),</span> <span class="pre">'steps':</span> <span class="pre">FieldInfo(annotation=int,</span> <span class="pre">required=False,</span> <span class="pre">default=0)}</span></em><a class="headerlink" href="#ldp.alg.optimizer.memory.PositiveMemoryOpt.model_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Metadata about the fields defined on the model,
+mapping of field names to [<cite>FieldInfo</cite>][pydantic.fields.FieldInfo].</p>
+<p>This replaces <cite>Model.__fields__</cite> from Pydantic V1.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-ldp.alg.optimizer.opt">
+<span id="ldp-alg-optimizer-opt-module"></span><h2>ldp.alg.optimizer.opt module<a class="headerlink" href="#module-ldp.alg.optimizer.opt" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.opt.ChainedOptimizer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.opt.</span></span><span class="sig-name descname"><span class="pre">ChainedOptimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">optimizers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ldp.alg.optimizer.opt.Optimizer" title="ldp.alg.optimizer.opt.Optimizer"><span class="pre">Optimizer</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#ChainedOptimizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.opt.ChainedOptimizer" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ldp.alg.optimizer.opt.Optimizer" title="ldp.alg.optimizer.opt.Optimizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimizer</span></code></a></p>
+<p>An optimizer that runs a sequence of sub-optimizers in the order they are provided.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.opt.ChainedOptimizer.aggregate">
+<span class="sig-name descname"><span class="pre">aggregate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trajectories</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="ldp.html#ldp.data_structures.Trajectory" title="ldp.data_structures.Trajectory"><span class="pre">Trajectory</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_pbar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#ChainedOptimizer.aggregate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.opt.ChainedOptimizer.aggregate" title="Link to this definition">¶</a></dt>
+<dd><p>Aggregate trajectories to construct training samples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.opt.ChainedOptimizer.update">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#ChainedOptimizer.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.opt.ChainedOptimizer.update" title="Link to this definition">¶</a></dt>
+<dd><p>Update the model based on the aggregated samples.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.opt.Optimizer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.opt.</span></span><span class="sig-name descname"><span class="pre">Optimizer</span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#Optimizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.opt.Optimizer" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>Base class for all optimizers.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.opt.Optimizer.aggregate">
+<span class="sig-name descname"><span class="pre">aggregate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trajectories</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="ldp.html#ldp.data_structures.Trajectory" title="ldp.data_structures.Trajectory"><span class="pre">Trajectory</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_pbar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#Optimizer.aggregate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.opt.Optimizer.aggregate" title="Link to this definition">¶</a></dt>
+<dd><p>Aggregate trajectories to construct training samples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.opt.Optimizer.aggregate_trajectory">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">aggregate_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trajectory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.html#ldp.data_structures.Trajectory" title="ldp.data_structures.Trajectory"><span class="pre">Trajectory</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#Optimizer.aggregate_trajectory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.opt.Optimizer.aggregate_trajectory" title="Link to this definition">¶</a></dt>
+<dd><p>Aggregate transitions from a single trajectory to construct training samples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.opt.Optimizer.update">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#Optimizer.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.opt.Optimizer.update" title="Link to this definition">¶</a></dt>
+<dd><p>Update the model based on the aggregated samples.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-ldp.alg.optimizer.replay_buffers">
+<span id="ldp-alg-optimizer-replay-buffers-module"></span><h2>ldp.alg.optimizer.replay_buffers module<a class="headerlink" href="#module-ldp.alg.optimizer.replay_buffers" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.replay_buffers.CircularReplayBuffer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.replay_buffers.</span></span><span class="sig-name descname"><span class="pre">CircularReplayBuffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/replay_buffers.html#CircularReplayBuffer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.replay_buffers.CircularReplayBuffer" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">UserList</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code>]</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.replay_buffers.CircularReplayBuffer.batched_iter">
+<span class="sig-name descname"><span class="pre">batched_iter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">infinite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/replay_buffers.html#CircularReplayBuffer.batched_iter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.replay_buffers.CircularReplayBuffer.batched_iter" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.replay_buffers.CircularReplayBuffer.resize">
+<span class="sig-name descname"><span class="pre">resize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/replay_buffers.html#CircularReplayBuffer.resize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.replay_buffers.CircularReplayBuffer.resize" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-ldp.alg.optimizer">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-ldp.alg.optimizer" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.</span></span><span class="sig-name descname"><span class="pre">APEOpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_examples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'We</span> <span class="pre">are</span> <span class="pre">optimizing</span> <span class="pre">prompts</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">language</span> <span class="pre">model.</span> <span class="pre">The</span> <span class="pre">model</span> <span class="pre">sees</span> <span class="pre">a</span> <span class="pre">prompt,</span> <span class="pre">an</span> <span class="pre">input,</span> <span class="pre">and</span> <span class="pre">then</span> <span class="pre">generates</span> <span class="pre">an</span> <span class="pre">output.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Here</span> <span class="pre">are</span> <span class="pre">correct</span> <span class="pre">example</span> <span class="pre">outputs</span> <span class="pre">that</span> <span class="pre">the</span> <span class="pre">language</span> <span class="pre">model</span> <span class="pre">and</span> <span class="pre">prompt</span> <span class="pre">should</span> <span class="pre">produce:\n{good_examples}\n\nThe</span> <span class="pre">current</span> <span class="pre">prompt</span> <span class="pre">is:</span> <span class="pre">&quot;{prompt}&quot;\n\nWhich</span> <span class="pre">resulted</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">following</span> <span class="pre">incorrect</span> <span class="pre">input,</span> <span class="pre">output,</span> <span class="pre">and</span> <span class="pre">{score}:\n{examples}\n\nRevise</span> <span class="pre">the</span> <span class="pre">current</span> <span class="pre">prompt</span> <span class="pre">to</span> <span class="pre">improve</span> <span class="pre">the</span> <span class="pre">outputs.</span> <span class="pre">Your</span> <span class="pre">proposed</span> <span class="pre">prompt</span> <span class="pre">should</span> <span class="pre">be</span> <span class="pre">concise,</span> <span class="pre">correct,</span> <span class="pre">and</span> <span class="pre">specify</span> <span class="pre">the</span> <span class="pre">desired</span> <span class="pre">output</span> <span class="pre">format.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.llms.html#ldp.llms.chat.LLMModel" title="ldp.llms.chat.LLMModel"><span class="pre">LLMModel</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prompt_op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.graph.html#ldp.graph.common_ops.PromptOp" title="ldp.graph.common_ops.PromptOp"><span class="pre">PromptOp</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">llm_call_op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.graph.html#ldp.graph.common_ops.LLMCallOp" title="ldp.graph.common_ops.LLMCallOp"><span class="pre">LLMCallOp</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_fn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ldp.alg.optimizer.ape.APEScoreFn" title="ldp.alg.optimizer.ape.APEScoreFn"><span class="pre">APEScoreFn</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">APEScoreFn.REWARD</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">good_reward_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward_discount</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">examples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ldp.alg.optimizer.ape.Example" title="ldp.alg.optimizer.ape.Example"><span class="pre">Example</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">good_examples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ldp.alg.optimizer.ape.Example" title="ldp.alg.optimizer.ape.Example"><span class="pre">Example</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEOpt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.APEOpt" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code>, <a class="reference internal" href="#ldp.alg.optimizer.opt.Optimizer" title="ldp.alg.optimizer.opt.Optimizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimizer</span></code></a></p>
+<p>Basic optimizer that acts as an Automatic Prompt Engineer (APE).</p>
+<p>Paper: <a class="reference external" href="https://openreview.net/pdf?id=92gvk82DE">https://openreview.net/pdf?id=92gvk82DE</a>-</p>
+<p>Details:
+- This implements the “forward mode generation” strategy.
+- The score function used is the gradient (float) at the output of the</p>
+<blockquote>
+<div><p>PromptOp being optimized. A zero gradient means the prompt was “good”,
+and a non-zero gradient means we can learn from the prompt.</p>
+</div></blockquote>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Possible improvements include:</dt><dd><ul>
+<li><p>Extending the score function to the LLM result’s logprobs</p></li>
+<li><p>Iterating with Monte Carlo Search</p></li>
+<li><p>Use of memory for further example augmentation</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.aggregate_trajectory">
+<span class="sig-name descname"><span class="pre">aggregate_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trajectory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.html#ldp.data_structures.Trajectory" title="ldp.data_structures.Trajectory"><span class="pre">Trajectory</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEOpt.aggregate_trajectory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.aggregate_trajectory" title="Link to this definition">¶</a></dt>
+<dd><p>Aggregate transitions from a single trajectory to construct training samples.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.examples">
+<span class="sig-name descname"><span class="pre">examples</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ldp.alg.optimizer.ape.Example" title="ldp.alg.optimizer.ape.Example"><span class="pre">Example</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.examples" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.from_agent">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.agent.html#ldp.agent.react_agent.ReActAgent" title="ldp.agent.react_agent.ReActAgent"><span class="pre">ReActAgent</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEOpt.from_agent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.from_agent" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.good_examples">
+<span class="sig-name descname"><span class="pre">good_examples</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ldp.alg.optimizer.ape.Example" title="ldp.alg.optimizer.ape.Example"><span class="pre">Example</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.good_examples" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.good_reward_threshold">
+<span class="sig-name descname"><span class="pre">good_reward_threshold</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.good_reward_threshold" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.llm">
+<span class="sig-name descname"><span class="pre">llm</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ldp.llms.html#ldp.llms.chat.LLMModel" title="ldp.llms.chat.LLMModel"><span class="pre">LLMModel</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.llm" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.llm_call_op">
+<span class="sig-name descname"><span class="pre">llm_call_op</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.common_ops.LLMCallOp" title="ldp.graph.common_ops.LLMCallOp"><span class="pre">LLMCallOp</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.llm_call_op" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.max_examples">
+<span class="sig-name descname"><span class="pre">max_examples</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.max_examples" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.model_computed_fields">
+<span class="sig-name descname"><span class="pre">model_computed_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ComputedFieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.model_computed_fields" title="Link to this definition">¶</a></dt>
+<dd><p>A dictionary of computed field names and their corresponding <cite>ComputedFieldInfo</cite> objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'arbitrary_types_allowed':</span> <span class="pre">True}</span></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.model_fields">
+<span class="sig-name descname"><span class="pre">model_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'examples':</span> <span class="pre">FieldInfo(annotation=list[Example],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=list),</span> <span class="pre">'good_examples':</span> <span class="pre">FieldInfo(annotation=list[Example],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=list),</span> <span class="pre">'good_reward_threshold':</span> <span class="pre">FieldInfo(annotation=Union[float,</span> <span class="pre">NoneType],</span> <span class="pre">required=False,</span> <span class="pre">default=None,</span> <span class="pre">description='If</span> <span class="pre">using</span> <span class="pre">reward</span> <span class="pre">as</span> <span class="pre">the</span> <span class="pre">score_fn,</span> <span class="pre">then</span> <span class="pre">a</span> <span class="pre">good</span> <span class="pre">example</span> <span class="pre">is</span> <span class="pre">defined</span> <span class="pre">by</span> <span class="pre">reward&gt;=good_reward_threshold.'),</span> <span class="pre">'llm':</span> <span class="pre">FieldInfo(annotation=LLMModel,</span> <span class="pre">required=False,</span> <span class="pre">default_factory=LLMModel,</span> <span class="pre">description='LLM</span> <span class="pre">used</span> <span class="pre">to</span> <span class="pre">update</span> <span class="pre">the</span> <span class="pre">prompt</span> <span class="pre">inside</span> <span class="pre">the</span> <span class="pre">PromptOp.</span> <span class="pre">The</span> <span class="pre">paper</span> <span class="pre">mentions</span> <span class="pre">that</span> <span class="pre">larger</span> <span class="pre">models</span> <span class="pre">produce</span> <span class="pre">better</span> <span class="pre">prompt</span> <span class="pre">proposals.'),</span> <span class="pre">'llm_call_op':</span> <span class="pre">FieldInfo(annotation=LLMCallOp,</span> <span class="pre">required=True,</span> <span class="pre">description='LLMCallOp</span> <span class="pre">to</span> <span class="pre">be</span> <span class="pre">optimized.'),</span> <span class="pre">'max_examples':</span> <span class="pre">FieldInfo(annotation=Union[int,</span> <span class="pre">NoneType],</span> <span class="pre">required=False,</span> <span class="pre">default=50,</span> <span class="pre">description='Max</span> <span class="pre">number</span> <span class="pre">of</span> <span class="pre">examples</span> <span class="pre">to</span> <span class="pre">include</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">below</span> <span class="pre">query_prompt,</span> <span class="pre">or</span> <span class="pre">None</span> <span class="pre">for</span> <span class="pre">no</span> <span class="pre">limit.</span> <span class="pre">The</span> <span class="pre">paper</span> <span class="pre">mentions</span> <span class="pre">that</span> <span class="pre">more</span> <span class="pre">examples</span> <span class="pre">produce</span> <span class="pre">better</span> <span class="pre">prompt</span> <span class="pre">proposals.'),</span> <span class="pre">'prompt_op':</span> <span class="pre">FieldInfo(annotation=PromptOp,</span> <span class="pre">required=True,</span> <span class="pre">description='PromptOp</span> <span class="pre">to</span> <span class="pre">be</span> <span class="pre">optimized.'),</span> <span class="pre">'query_prompt':</span> <span class="pre">FieldInfo(annotation=str,</span> <span class="pre">required=False,</span> <span class="pre">default='Here</span> <span class="pre">are</span> <span class="pre">correct</span> <span class="pre">example</span> <span class="pre">outputs</span> <span class="pre">that</span> <span class="pre">the</span> <span class="pre">language</span> <span class="pre">model</span> <span class="pre">and</span> <span class="pre">prompt</span> <span class="pre">should</span> <span class="pre">produce:\n{good_examples}\n\nThe</span> <span class="pre">current</span> <span class="pre">prompt</span> <span class="pre">is:</span> <span class="pre">&quot;{prompt}&quot;\n\nWhich</span> <span class="pre">resulted</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">following</span> <span class="pre">incorrect</span> <span class="pre">input,</span> <span class="pre">output,</span> <span class="pre">and</span> <span class="pre">{score}:\n{examples}\n\nRevise</span> <span class="pre">the</span> <span class="pre">current</span> <span class="pre">prompt</span> <span class="pre">to</span> <span class="pre">improve</span> <span class="pre">the</span> <span class="pre">outputs.</span> <span class="pre">Your</span> <span class="pre">proposed</span> <span class="pre">prompt</span> <span class="pre">should</span> <span class="pre">be</span> <span class="pre">concise,</span> <span class="pre">correct,</span> <span class="pre">and</span> <span class="pre">specify</span> <span class="pre">the</span> <span class="pre">desired</span> <span class="pre">output</span> <span class="pre">format.'),</span> <span class="pre">'reward_discount':</span> <span class="pre">FieldInfo(annotation=float,</span> <span class="pre">required=False,</span> <span class="pre">default=1.0),</span> <span class="pre">'score_fn':</span> <span class="pre">FieldInfo(annotation=APEScoreFn,</span> <span class="pre">required=False,</span> <span class="pre">default=&lt;APEScoreFn.REWARD:</span> <span class="pre">'reward'&gt;),</span> <span class="pre">'steps':</span> <span class="pre">FieldInfo(annotation=int,</span> <span class="pre">required=False,</span> <span class="pre">default=0),</span> <span class="pre">'system_prompt':</span> <span class="pre">FieldInfo(annotation=str,</span> <span class="pre">required=False,</span> <span class="pre">default='We</span> <span class="pre">are</span> <span class="pre">optimizing</span> <span class="pre">prompts</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">language</span> <span class="pre">model.</span> <span class="pre">The</span> <span class="pre">model</span> <span class="pre">sees</span> <span class="pre">a</span> <span class="pre">prompt,</span> <span class="pre">an</span> <span class="pre">input,</span> <span class="pre">and</span> <span class="pre">then</span> <span class="pre">generates</span> <span class="pre">an</span> <span class="pre">output.'),</span> <span class="pre">'trace':</span> <span class="pre">FieldInfo(annotation=list[str],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=list,</span> <span class="pre">description='History</span> <span class="pre">of</span> <span class="pre">prompts</span> <span class="pre">used.')}</span></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.model_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Metadata about the fields defined on the model,
+mapping of field names to [<cite>FieldInfo</cite>][pydantic.fields.FieldInfo].</p>
+<p>This replaces <cite>Model.__fields__</cite> from Pydantic V1.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.model_post_init">
+<span class="sig-name descname"><span class="pre">model_post_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">_APEOpt__context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEOpt.model_post_init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.model_post_init" title="Link to this definition">¶</a></dt>
+<dd><p>Override this method to perform additional initialization after <cite>__init__</cite> and <cite>model_construct</cite>.
+This is useful if you want to do some validation that requires the entire model to be initialized.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.prompt_op">
+<span class="sig-name descname"><span class="pre">prompt_op</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.common_ops.PromptOp" title="ldp.graph.common_ops.PromptOp"><span class="pre">PromptOp</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.prompt_op" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.query_prompt">
+<span class="sig-name descname"><span class="pre">query_prompt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.query_prompt" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.reward_discount">
+<span class="sig-name descname"><span class="pre">reward_discount</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.reward_discount" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.score_fn">
+<span class="sig-name descname"><span class="pre">score_fn</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#ldp.alg.optimizer.APEScoreFn" title="ldp.alg.optimizer.APEScoreFn"><span class="pre">APEScoreFn</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.score_fn" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.steps">
+<span class="sig-name descname"><span class="pre">steps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.steps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.system_prompt">
+<span class="sig-name descname"><span class="pre">system_prompt</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.system_prompt" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.trace">
+<span class="sig-name descname"><span class="pre">trace</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.trace" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.update">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEOpt.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.update" title="Link to this definition">¶</a></dt>
+<dd><p>Update the model based on the aggregated samples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEOpt.validate_score_fn">
+<span class="sig-name descname"><span class="pre">validate_score_fn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEOpt.validate_score_fn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.APEOpt.validate_score_fn" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEScoreFn">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.</span></span><span class="sig-name descname"><span class="pre">APEScoreFn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/ape.html#APEScoreFn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.APEScoreFn" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">StrEnum</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEScoreFn.GRADIENT">
+<span class="sig-name descname"><span class="pre">GRADIENT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'gradient'</span></em><a class="headerlink" href="#ldp.alg.optimizer.APEScoreFn.GRADIENT" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.APEScoreFn.REWARD">
+<span class="sig-name descname"><span class="pre">REWARD</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'reward'</span></em><a class="headerlink" href="#ldp.alg.optimizer.APEScoreFn.REWARD" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ChainedOptimizer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.</span></span><span class="sig-name descname"><span class="pre">ChainedOptimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">optimizers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#ldp.alg.optimizer.opt.Optimizer" title="ldp.alg.optimizer.opt.Optimizer"><span class="pre">Optimizer</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#ChainedOptimizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.ChainedOptimizer" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ldp.alg.optimizer.opt.Optimizer" title="ldp.alg.optimizer.opt.Optimizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimizer</span></code></a></p>
+<p>An optimizer that runs a sequence of sub-optimizers in the order they are provided.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ChainedOptimizer.aggregate">
+<span class="sig-name descname"><span class="pre">aggregate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trajectories</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="ldp.html#ldp.data_structures.Trajectory" title="ldp.data_structures.Trajectory"><span class="pre">Trajectory</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_pbar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#ChainedOptimizer.aggregate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.ChainedOptimizer.aggregate" title="Link to this definition">¶</a></dt>
+<dd><p>Aggregate trajectories to construct training samples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.ChainedOptimizer.update">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#ChainedOptimizer.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.ChainedOptimizer.update" title="Link to this definition">¶</a></dt>
+<dd><p>Update the model based on the aggregated samples.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryFactory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.</span></span><span class="sig-name descname"><span class="pre">MemoryFactory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/memory.html#MemoryFactory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.MemoryFactory" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.</span></span><span class="sig-name descname"><span class="pre">MemoryOpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_op:</span> <span class="pre">~ldp.graph.common_ops.MemoryOp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_op:</span> <span class="pre">~ldp.graph.ops.Op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward_discount:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_factory:</span> <span class="pre">~ldp.alg.optimizer.memory.MemoryFactory</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">_default_memory_factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_template:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'Input:</span> <span class="pre">{input}\nOutput:</span> <span class="pre">{output}\nReward:</span> <span class="pre">{value}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_buffer:</span> <span class="pre">list[tuple[~ldp.graph.op_utils.CallID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~ldp.graph.op_utils.CallID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">JsonValue]]</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/memory.html#MemoryOpt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code>, <a class="reference internal" href="#ldp.alg.optimizer.opt.Optimizer" title="ldp.alg.optimizer.opt.Optimizer"><code class="xref py py-class docutils literal notranslate"><span class="pre">Optimizer</span></code></a></p>
+<p>Trainer for memory agents. By default it is a minimizer.</p>
+<p>This optimizer simply adds memories to the MemoryOp using a memory factory.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.aggregate_trajectory">
+<span class="sig-name descname"><span class="pre">aggregate_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trajectory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.html#ldp.data_structures.Trajectory" title="ldp.data_structures.Trajectory"><span class="pre">Trajectory</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/memory.html#MemoryOpt.aggregate_trajectory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.aggregate_trajectory" title="Link to this definition">¶</a></dt>
+<dd><p>Aggregate transitions from a single trajectory to construct training samples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.default_memory_factory">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">default_memory_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_op</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.graph.html#ldp.graph.ops.Op" title="ldp.graph.ops.Op"><span class="pre">Op</span></a><span class="p"><span class="pre">[</span></span><span class="pre">TOutput</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_buffer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="ldp.graph.html#ldp.graph.op_utils.CallID" title="ldp.graph.op_utils.CallID"><span class="pre">CallID</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.op_utils.CallID" title="ldp.graph.op_utils.CallID"><span class="pre">CallID</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">JsonValue</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="ldp.graph.html#ldp.graph.memory.Memory" title="ldp.graph.memory.Memory"><span class="pre">Memory</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.default_memory_factory" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.example_buffer">
+<span class="sig-name descname"><span class="pre">example_buffer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="ldp.graph.html#ldp.graph.op_utils.CallID" title="ldp.graph.op_utils.CallID"><span class="pre">CallID</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.op_utils.CallID" title="ldp.graph.op_utils.CallID"><span class="pre">CallID</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">JsonValue</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.example_buffer" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.from_agent">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_agent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.agent.html#ldp.agent.memory_agent.MemoryAgent" title="ldp.agent.memory_agent.MemoryAgent"><span class="pre">MemoryAgent</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Self</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/memory.html#MemoryOpt.from_agent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.from_agent" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.memory_factory">
+<span class="sig-name descname"><span class="pre">memory_factory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#ldp.alg.optimizer.MemoryFactory" title="ldp.alg.optimizer.MemoryFactory"><span class="pre">MemoryFactory</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.memory_factory" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.memory_op">
+<span class="sig-name descname"><span class="pre">memory_op</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.common_ops.MemoryOp" title="ldp.graph.common_ops.MemoryOp"><span class="pre">MemoryOp</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.memory_op" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.memory_template">
+<span class="sig-name descname"><span class="pre">memory_template</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.memory_template" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.model_computed_fields">
+<span class="sig-name descname"><span class="pre">model_computed_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ComputedFieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.model_computed_fields" title="Link to this definition">¶</a></dt>
+<dd><p>A dictionary of computed field names and their corresponding <cite>ComputedFieldInfo</cite> objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'arbitrary_types_allowed':</span> <span class="pre">True}</span></em><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.model_fields">
+<span class="sig-name descname"><span class="pre">model_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'example_buffer':</span> <span class="pre">FieldInfo(annotation=list[tuple[CallID,</span> <span class="pre">CallID,</span> <span class="pre">float,</span> <span class="pre">JsonValue]],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=list),</span> <span class="pre">'memory_factory':</span> <span class="pre">FieldInfo(annotation=MemoryFactory,</span> <span class="pre">required=False,</span> <span class="pre">default=&lt;function</span> <span class="pre">_default_memory_factory&gt;,</span> <span class="pre">description=&quot;Async</span> <span class="pre">function</span> <span class="pre">to</span> <span class="pre">make</span> <span class="pre">Memories</span> <span class="pre">from</span> <span class="pre">an</span> <span class="pre">example</span> <span class="pre">buffer.</span> <span class="pre">It's</span> <span class="pre">async</span> <span class="pre">so</span> <span class="pre">this</span> <span class="pre">can</span> <span class="pre">involve</span> <span class="pre">an</span> <span class="pre">LLM</span> <span class="pre">completion</span> <span class="pre">if</span> <span class="pre">desired.&quot;,</span> <span class="pre">exclude=True),</span> <span class="pre">'memory_op':</span> <span class="pre">FieldInfo(annotation=MemoryOp,</span> <span class="pre">required=True),</span> <span class="pre">'memory_template':</span> <span class="pre">FieldInfo(annotation=str,</span> <span class="pre">required=False,</span> <span class="pre">default='Input:</span> <span class="pre">{input}\nOutput:</span> <span class="pre">{output}\nReward:</span> <span class="pre">{value}',</span> <span class="pre">description=&quot;Template</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">Memory's</span> <span class="pre">string</span> <span class="pre">representation.&quot;),</span> <span class="pre">'output_op':</span> <span class="pre">FieldInfo(annotation=Op,</span> <span class="pre">required=True),</span> <span class="pre">'reward_discount':</span> <span class="pre">FieldInfo(annotation=float,</span> <span class="pre">required=False,</span> <span class="pre">default=1.0),</span> <span class="pre">'steps':</span> <span class="pre">FieldInfo(annotation=int,</span> <span class="pre">required=False,</span> <span class="pre">default=0)}</span></em><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.model_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Metadata about the fields defined on the model,
+mapping of field names to [<cite>FieldInfo</cite>][pydantic.fields.FieldInfo].</p>
+<p>This replaces <cite>Model.__fields__</cite> from Pydantic V1.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.output_op">
+<span class="sig-name descname"><span class="pre">output_op</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.ops.Op" title="ldp.graph.ops.Op"><span class="pre">Op</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.output_op" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.reward_discount">
+<span class="sig-name descname"><span class="pre">reward_discount</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.reward_discount" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.steps">
+<span class="sig-name descname"><span class="pre">steps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.steps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.MemoryOpt.update">
+<em class="property"><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/memory.html#MemoryOpt.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.MemoryOpt.update" title="Link to this definition">¶</a></dt>
+<dd><p>Create new memories from the example buffer and add them to MemoryOp.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.Optimizer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.</span></span><span class="sig-name descname"><span class="pre">Optimizer</span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#Optimizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.Optimizer" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>Base class for all optimizers.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.Optimizer.aggregate">
+<span class="sig-name descname"><span class="pre">aggregate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trajectories</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="ldp.html#ldp.data_structures.Trajectory" title="ldp.data_structures.Trajectory"><span class="pre">Trajectory</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_pbar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#Optimizer.aggregate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.Optimizer.aggregate" title="Link to this definition">¶</a></dt>
+<dd><p>Aggregate trajectories to construct training samples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.Optimizer.aggregate_trajectory">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">aggregate_trajectory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trajectory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.html#ldp.data_structures.Trajectory" title="ldp.data_structures.Trajectory"><span class="pre">Trajectory</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#Optimizer.aggregate_trajectory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.Optimizer.aggregate_trajectory" title="Link to this definition">¶</a></dt>
+<dd><p>Aggregate transitions from a single trajectory to construct training samples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.Optimizer.update">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer/opt.html#Optimizer.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.Optimizer.update" title="Link to this definition">¶</a></dt>
+<dd><p>Update the model based on the aggregated samples.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.OptimizerConfig">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.</span></span><span class="sig-name descname"><span class="pre">OptimizerConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer.html#OptimizerConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.OptimizerConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.OptimizerConfig.model_computed_fields">
+<span class="sig-name descname"><span class="pre">model_computed_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ComputedFieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ldp.alg.optimizer.OptimizerConfig.model_computed_fields" title="Link to this definition">¶</a></dt>
+<dd><p>A dictionary of computed field names and their corresponding <cite>ComputedFieldInfo</cite> objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.OptimizerConfig.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'forbid'}</span></em><a class="headerlink" href="#ldp.alg.optimizer.OptimizerConfig.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.OptimizerConfig.model_fields">
+<span class="sig-name descname"><span class="pre">model_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'optimizer_kwargs':</span> <span class="pre">FieldInfo(annotation=dict[str,</span> <span class="pre">Any],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=dict),</span> <span class="pre">'optimizer_type':</span> <span class="pre">FieldInfo(annotation=Union[str,</span> <span class="pre">NoneType],</span> <span class="pre">required=False,</span> <span class="pre">default=None)}</span></em><a class="headerlink" href="#ldp.alg.optimizer.OptimizerConfig.model_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Metadata about the fields defined on the model,
+mapping of field names to [<cite>FieldInfo</cite>][pydantic.fields.FieldInfo].</p>
+<p>This replaces <cite>Model.__fields__</cite> from Pydantic V1.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.OptimizerConfig.optimizer_kwargs">
+<span class="sig-name descname"><span class="pre">optimizer_kwargs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ldp.alg.optimizer.OptimizerConfig.optimizer_kwargs" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.OptimizerConfig.optimizer_type">
+<span class="sig-name descname"><span class="pre">optimizer_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#ldp.alg.optimizer.OptimizerConfig.optimizer_type" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.PositiveMemoryOpt">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.</span></span><span class="sig-name descname"><span class="pre">PositiveMemoryOpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_op:</span> <span class="pre">~ldp.graph.common_ops.MemoryOp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_op:</span> <span class="pre">~ldp.graph.ops.Op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reward_discount:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_factory:</span> <span class="pre">~ldp.alg.optimizer.memory.MemoryFactory</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">_default_memory_factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_template:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'Input:</span> <span class="pre">{input}\nOutput:</span> <span class="pre">{output}\nReward:</span> <span class="pre">{value}'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_buffer:</span> <span class="pre">list[tuple[~ldp.graph.op_utils.CallID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~ldp.graph.op_utils.CallID</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">JsonValue]]</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/ldp/alg/optimizer/memory.html#PositiveMemoryOpt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.PositiveMemoryOpt" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#ldp.alg.optimizer.memory.MemoryOpt" title="ldp.alg.optimizer.memory.MemoryOpt"><code class="xref py py-class docutils literal notranslate"><span class="pre">MemoryOpt</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.PositiveMemoryOpt.example_buffer">
+<span class="sig-name descname"><span class="pre">example_buffer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="ldp.graph.html#ldp.graph.op_utils.CallID" title="ldp.graph.op_utils.CallID"><span class="pre">CallID</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.op_utils.CallID" title="ldp.graph.op_utils.CallID"><span class="pre">CallID</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">JsonValue</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#ldp.alg.optimizer.PositiveMemoryOpt.example_buffer" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.PositiveMemoryOpt.memory_factory">
+<span class="sig-name descname"><span class="pre">memory_factory</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#ldp.alg.optimizer.MemoryFactory" title="ldp.alg.optimizer.MemoryFactory"><span class="pre">MemoryFactory</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.PositiveMemoryOpt.memory_factory" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.PositiveMemoryOpt.memory_op">
+<span class="sig-name descname"><span class="pre">memory_op</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.common_ops.MemoryOp" title="ldp.graph.common_ops.MemoryOp"><span class="pre">MemoryOp</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.PositiveMemoryOpt.memory_op" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.PositiveMemoryOpt.memory_template">
+<span class="sig-name descname"><span class="pre">memory_template</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#ldp.alg.optimizer.PositiveMemoryOpt.memory_template" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.PositiveMemoryOpt.model_computed_fields">
+<span class="sig-name descname"><span class="pre">model_computed_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ComputedFieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#ldp.alg.optimizer.PositiveMemoryOpt.model_computed_fields" title="Link to this definition">¶</a></dt>
+<dd><p>A dictionary of computed field names and their corresponding <cite>ComputedFieldInfo</cite> objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.PositiveMemoryOpt.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">ConfigDict</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'arbitrary_types_allowed':</span> <span class="pre">True}</span></em><a class="headerlink" href="#ldp.alg.optimizer.PositiveMemoryOpt.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.PositiveMemoryOpt.model_fields">
+<span class="sig-name descname"><span class="pre">model_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">FieldInfo</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'example_buffer':</span> <span class="pre">FieldInfo(annotation=list[tuple[CallID,</span> <span class="pre">CallID,</span> <span class="pre">float,</span> <span class="pre">JsonValue]],</span> <span class="pre">required=False,</span> <span class="pre">default_factory=list),</span> <span class="pre">'memory_factory':</span> <span class="pre">FieldInfo(annotation=MemoryFactory,</span> <span class="pre">required=False,</span> <span class="pre">default=&lt;function</span> <span class="pre">_default_memory_factory&gt;,</span> <span class="pre">description=&quot;Async</span> <span class="pre">function</span> <span class="pre">to</span> <span class="pre">make</span> <span class="pre">Memories</span> <span class="pre">from</span> <span class="pre">an</span> <span class="pre">example</span> <span class="pre">buffer.</span> <span class="pre">It's</span> <span class="pre">async</span> <span class="pre">so</span> <span class="pre">this</span> <span class="pre">can</span> <span class="pre">involve</span> <span class="pre">an</span> <span class="pre">LLM</span> <span class="pre">completion</span> <span class="pre">if</span> <span class="pre">desired.&quot;,</span> <span class="pre">exclude=True),</span> <span class="pre">'memory_op':</span> <span class="pre">FieldInfo(annotation=MemoryOp,</span> <span class="pre">required=True),</span> <span class="pre">'memory_template':</span> <span class="pre">FieldInfo(annotation=str,</span> <span class="pre">required=False,</span> <span class="pre">default='Input:</span> <span class="pre">{input}\nOutput:</span> <span class="pre">{output}\nReward:</span> <span class="pre">{value}',</span> <span class="pre">description=&quot;Template</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">Memory's</span> <span class="pre">string</span> <span class="pre">representation.&quot;),</span> <span class="pre">'output_op':</span> <span class="pre">FieldInfo(annotation=Op,</span> <span class="pre">required=True),</span> <span class="pre">'reward_discount':</span> <span class="pre">FieldInfo(annotation=float,</span> <span class="pre">required=False,</span> <span class="pre">default=1.0),</span> <span class="pre">'steps':</span> <span class="pre">FieldInfo(annotation=int,</span> <span class="pre">required=False,</span> <span class="pre">default=0)}</span></em><a class="headerlink" href="#ldp.alg.optimizer.PositiveMemoryOpt.model_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Metadata about the fields defined on the model,
+mapping of field names to [<cite>FieldInfo</cite>][pydantic.fields.FieldInfo].</p>
+<p>This replaces <cite>Model.__fields__</cite> from Pydantic V1.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.PositiveMemoryOpt.output_op">
+<span class="sig-name descname"><span class="pre">output_op</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="ldp.graph.html#ldp.graph.ops.Op" title="ldp.graph.ops.Op"><span class="pre">Op</span></a></em><a class="headerlink" href="#ldp.alg.optimizer.PositiveMemoryOpt.output_op" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.PositiveMemoryOpt.reward_discount">
+<span class="sig-name descname"><span class="pre">reward_discount</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#ldp.alg.optimizer.PositiveMemoryOpt.reward_discount" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.PositiveMemoryOpt.steps">
+<span class="sig-name descname"><span class="pre">steps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#ldp.alg.optimizer.PositiveMemoryOpt.steps" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="ldp.alg.optimizer.default_optimizer_factory">
+<span class="sig-prename descclassname"><span class="pre">ldp.alg.optimizer.</span></span><span class="sig-name descname"><span class="pre">default_optimizer_factory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">agent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ldp.agent.html#ldp.agent.agent.Agent" title="ldp.agent.agent.Agent"><span class="pre">Agent</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer_cls</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#ldp.alg.optimizer.opt.Optimizer" title="ldp.alg.optimizer.opt.Optimizer"><span class="pre">Optimizer</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">optimizer_kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#ldp.alg.optimizer.opt.Optimizer" title="ldp.alg.optimizer.opt.Optimizer"><span class="pre">Optimizer</span></a></span></span><a class="reference internal" href="_modules/ldp/alg/optimizer.html#default_optimizer_factory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#ldp.alg.optimizer.default_optimizer_factory" title="Link to this definition">¶</a></dt>
+<dd><p>A method that constructs a default optimizer for commonly-used agents.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>agent</strong> – Agent to construct the optimizer for.</p></li>
+<li><p><strong>optimizer_cls</strong> – The optimizer class to use. If not specified, we will try a
+default based on the provided agent.</p></li>
+<li><p><strong>optimizer_kwargs</strong> – Arguments forwarded to optimizer_cls.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Instantiated optimizer.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">ldp</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="ldp.html">ldp package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="ldp.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="ldp.agent.html">ldp.agent package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="ldp.alg.html">ldp.alg package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ldp.graph.html">ldp.graph package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ldp.llms.html">ldp.llms package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ldp.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ldp.html#module-ldp.data_structures">ldp.data_structures module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ldp.html#module-ldp.main">ldp.main module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ldp.html#module-ldp.shims">ldp.shims module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ldp.html#module-ldp.utils">ldp.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ldp.html#module-ldp">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">ldp</a><ul>
+  <li><a href="ldp.html">ldp package</a><ul>
+  <li><a href="ldp.alg.html">ldp.alg package</a><ul>
+      <li>Previous: <a href="ldp.alg.html" title="previous chapter">ldp.alg package</a></li>
+      <li>Next: <a href="ldp.graph.html" title="next chapter">ldp.graph package</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="_sources/ldp.alg.optimizer.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

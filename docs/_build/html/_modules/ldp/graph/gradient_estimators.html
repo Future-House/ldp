@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.graph.gradient_estimators &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.graph.gradient_estimators</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This module defines various gradient estimators that can be patched in during backward passes.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">tree</span>
+
+<span class="kn">from</span> <span class="nn">.op_utils</span> <span class="kn">import</span> <span class="n">CallID</span>
+<span class="kn">from</span> <span class="nn">.ops</span> <span class="kn">import</span> <span class="n">GradInType</span><span class="p">,</span> <span class="n">OpCtx</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">,</span> <span class="n">ResultOrValue</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">torch</span>
+
+    <span class="kn">from</span> <span class="nn">.torch_ops</span> <span class="kn">import</span> <span class="n">TorchOp</span>
+
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">torch</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore[assignment]</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="assign_constant_grads">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.gradient_estimators.assign_constant_grads">[docs]</a>
+<span class="k">def</span> <span class="nf">assign_constant_grads</span><span class="p">(</span>
+    <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+    <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">descend</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">descend</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_args</span><span class="p">),</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">input_kwargs</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="c1"># descend into nested objects</span>
+    <span class="n">arg_grads</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span> <span class="n">OpResult</span><span class="o">.</span><span class="n">unwrap_value</span><span class="p">(</span><span class="n">arg</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">input_args</span>
+    <span class="p">]</span>
+    <span class="n">kwarg_grads</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">k</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span> <span class="n">OpResult</span><span class="o">.</span><span class="n">unwrap_value</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">input_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">arg_grads</span><span class="p">,</span> <span class="n">kwarg_grads</span></div>
+
+
+
+<div class="viewcode-block" id="straight_through_estimator">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.gradient_estimators.straight_through_estimator">[docs]</a>
+<span class="k">def</span> <span class="nf">straight_through_estimator</span><span class="p">(</span>
+    <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>  <span class="c1"># noqa: ARG001</span>
+    <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+    <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+    <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>
+    <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>  <span class="c1"># noqa: ARG001</span>
+    <span class="n">descend</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">assign_constant_grads</span><span class="p">(</span><span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">,</span> <span class="n">grad_output</span><span class="p">,</span> <span class="n">descend</span><span class="o">=</span><span class="n">descend</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="stop_grad">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.gradient_estimators.stop_grad">[docs]</a>
+<span class="k">def</span> <span class="nf">stop_grad</span><span class="p">(</span>
+    <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>  <span class="c1"># noqa: ARG001</span>
+    <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+    <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+    <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>  <span class="c1"># noqa: ARG001</span>
+    <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>  <span class="c1"># noqa: ARG001</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+    <span class="c1"># don&#39;t descend - want gradients to stop at the OpResult level</span>
+    <span class="k">return</span> <span class="n">assign_constant_grads</span><span class="p">(</span><span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">descend</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="zero_estimator">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.gradient_estimators.zero_estimator">[docs]</a>
+<span class="k">def</span> <span class="nf">zero_estimator</span><span class="p">(</span>
+    <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>  <span class="c1"># noqa: ARG001</span>
+    <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+    <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+    <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>  <span class="c1"># noqa: ARG001</span>
+    <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>  <span class="c1"># noqa: ARG001</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets the gradient of all inputs to zero.</span>
+
+<span class="sd">    Note that this is not the same as truncating the compute graph (stop_grad),</span>
+<span class="sd">    since upstream nodes can still optimize their logprobs. The zero estimator</span>
+<span class="sd">    the unbiased choice if we have no information about the gradient.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">assign_constant_grads</span><span class="p">(</span><span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="llm_straight_through_estimator">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.gradient_estimators.llm_straight_through_estimator">[docs]</a>
+<span class="k">def</span> <span class="nf">llm_straight_through_estimator</span><span class="p">(</span>
+    <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>  <span class="c1"># noqa: ARG001</span>
+    <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+    <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+    <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>
+    <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>  <span class="c1"># noqa: ARG001</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Straight-through for an LLM: descend into the config, but not msgs/tools/tool_calls.</span>
+
+<span class="sd">    See LLMCallOp.backward() for more details on this choice.</span>
+<span class="sd">    Don&#39;t bother checking that input_args/input_kwargs have the right structure,</span>
+<span class="sd">    since compute_grads() will raise if not.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">config_grad</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">_</span><span class="p">:</span> <span class="n">grad_output</span><span class="p">,</span> <span class="n">OpResult</span><span class="o">.</span><span class="n">unwrap_value</span><span class="p">(</span><span class="n">input_kwargs</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">])</span>
+    <span class="p">)</span>
+    <span class="n">grad_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">grad_output</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_args</span><span class="p">)</span>
+    <span class="n">grad_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;config&quot;</span><span class="p">:</span> <span class="n">config_grad</span><span class="p">}</span>
+    <span class="k">if</span> <span class="s2">&quot;msgs&quot;</span> <span class="ow">in</span> <span class="n">input_kwargs</span><span class="p">:</span>
+        <span class="n">grad_kwargs</span><span class="p">[</span><span class="s2">&quot;msgs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grad_output</span>
+    <span class="k">if</span> <span class="s2">&quot;tools&quot;</span> <span class="ow">in</span> <span class="n">input_kwargs</span><span class="p">:</span>
+        <span class="n">grad_kwargs</span><span class="p">[</span><span class="s2">&quot;tools&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grad_output</span>
+
+    <span class="k">return</span> <span class="n">grad_args</span><span class="p">,</span> <span class="n">grad_kwargs</span></div>
+
+
+
+<div class="viewcode-block" id="assign_default_grads">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.gradient_estimators.assign_default_grads">[docs]</a>
+<span class="k">def</span> <span class="nf">assign_default_grads</span><span class="p">(</span>
+    <span class="n">input_grads</span><span class="p">:</span> <span class="n">GradInType</span><span class="p">,</span>
+    <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+    <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+    <span class="n">default_grad_val</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sets a default value of default_grad_val for every element in input_grads.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">    - input_kwargs = {&quot;a&quot;: {&quot;b&quot;: 1, &quot;c&quot;: 2}},</span>
+<span class="sd">    - input_grad_kwargs = {&quot;a&quot;: {&quot;b&quot;: 0.1}}</span>
+<span class="sd">    Output: input_grads[1] = {&quot;a&quot;: {&quot;b&quot;: 0.1, &quot;c&quot;: default_grad_val}}</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        GradInType: A tuple containing the updated input_grad_args and</span>
+<span class="sd">            input_grad_kwargs with default values assigned where necessary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">get_nested_value</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Traverse given path over data and return the value at the end of the path.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">current_value</span> <span class="o">=</span> <span class="n">data</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
+                <span class="n">current_value</span> <span class="o">=</span> <span class="n">current_value</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># If path not found, return None (than default_grad_val will be assigned)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">current_value</span>
+
+    <span class="k">def</span> <span class="nf">assign_default_gradients</span><span class="p">(</span>
+        <span class="n">input_grads</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">_value</span><span class="p">:</span> <span class="n">Any</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assign default_grad_val where grads are missing.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">get_nested_value</span><span class="p">(</span><span class="n">input_grads</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span> <span class="ow">or</span> <span class="n">default_grad_val</span>
+
+    <span class="n">input_args_kwargs</span> <span class="o">=</span> <span class="p">(</span><span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span><span class="p">)</span>
+    <span class="n">input_grads</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">map_structure_with_path</span><span class="p">(</span>
+        <span class="n">partial</span><span class="p">(</span><span class="n">assign_default_gradients</span><span class="p">,</span> <span class="n">input_grads</span><span class="p">),</span>
+        <span class="n">input_args_kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">tree</span><span class="o">.</span><span class="n">assert_same_structure</span><span class="p">(</span><span class="n">input_grads</span><span class="p">,</span> <span class="n">input_args_kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">input_grads</span></div>
+
+
+
+<div class="viewcode-block" id="TorchParamBackwardEstimator">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.gradient_estimators.TorchParamBackwardEstimator">[docs]</a>
+<span class="k">class</span> <span class="nc">TorchParamBackwardEstimator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gradient estimator for `TorchOp` internal parameters.</span>
+
+<span class="sd">    This estimator computes gradients with respect to the internal parameters of a</span>
+<span class="sd">    `torch.nn.Module` by calling the `backward` method of the estimator instead of the default</span>
+<span class="sd">    `backward` method of `TorchOp`. Computed gradients are stored in the context of the operation</span>
+<span class="sd">    under the key `&quot;grad_params&quot;`.</span>
+
+<span class="sd">    Examples:</span>
+<span class="sd">        &gt;&gt;&gt; torch_module = torch.nn.Sequential(</span>
+<span class="sd">        ...     torch.nn.Linear(4, 4),</span>
+<span class="sd">        ...     torch.nn.Linear(4, 1),</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; torch_op = TorchOp(torch_module)</span>
+<span class="sd">        &gt;&gt;&gt; estimator = TorchParamBackwardEstimator(torch_module)</span>
+<span class="sd">        &gt;&gt;&gt; result = await torch_op(torch.randn(4, requires_grad=True))</span>
+<span class="sd">        &gt;&gt;&gt; result.compute_grads(backward_fns={&quot;TorchOp&quot;: estimator.backward})</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        This estimator is only compatible with `TorchOp` operations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">torch</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;PyTorch library not found. Unable to use </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> class. &quot;</span>
+                <span class="s2">&quot;To install PyTorch dependencies, please run `pip install ldp[nn]`.&quot;</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">())</span>
+
+<div class="viewcode-block" id="TorchParamBackwardEstimator.backward">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.gradient_estimators.TorchParamBackwardEstimator.backward">[docs]</a>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ctx</span><span class="p">:</span> <span class="n">OpCtx</span><span class="p">,</span>
+        <span class="n">input_args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">input_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ResultOrValue</span><span class="p">],</span>
+        <span class="n">grad_output</span><span class="p">:</span> <span class="n">tree</span><span class="o">.</span><span class="n">Structure</span><span class="p">,</span>
+        <span class="n">call_id</span><span class="p">:</span> <span class="n">CallID</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GradInType</span><span class="p">:</span>
+        <span class="n">tensor_args</span><span class="p">,</span> <span class="n">tensor_kwargs</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="n">TorchOp</span><span class="o">.</span><span class="n">CTX_TENSOR_INPUT_KEY</span><span class="p">)</span>
+        <span class="n">n_pos_args</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensor_args</span><span class="p">)</span>
+        <span class="n">n_pos_kwargs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensor_kwargs</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">call_id</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">grad_output</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">grad_output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+                <span class="n">grad_output</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="n">output</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">grad_output</span> <span class="o">=</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&lt;</span> <span class="n">output</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
+            <span class="c1"># Assume we can broadcast, so expand dims</span>
+            <span class="c1"># e.g. if output.shape = (2, 1, 1) and grad_output is a scalar</span>
+            <span class="c1"># then we want to expand to (1, 1, 1) and then broadcast</span>
+            <span class="n">grad_output</span> <span class="o">=</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">grad_output</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Output shape </span><span class="si">{</span><span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2"> does not match grad_output shape </span><span class="si">{</span><span class="n">grad_output</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">gradients</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span>
+            <span class="n">output</span><span class="p">,</span>
+            <span class="p">[</span><span class="o">*</span><span class="n">tensor_args</span><span class="p">,</span> <span class="o">*</span><span class="n">tensor_kwargs</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">values</span><span class="p">()],</span>
+            <span class="n">grad_outputs</span><span class="o">=</span><span class="n">grad_output</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">grad_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">grad</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="k">for</span> <span class="n">grad</span> <span class="ow">in</span> <span class="n">gradients</span><span class="p">[:</span><span class="n">n_pos_args</span><span class="p">]]</span>
+        <span class="n">grad_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">grad</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">grad</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="n">tensor_kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">gradients</span><span class="p">[</span><span class="n">n_pos_args</span><span class="p">:</span><span class="n">n_pos_kwargs</span><span class="p">],</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+        <span class="p">}</span>
+        <span class="n">grad_params</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">name</span><span class="p">:</span> <span class="n">grad</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">grad</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">gradients</span><span class="p">[</span><span class="n">n_pos_kwargs</span><span class="p">:],</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+        <span class="p">}</span>
+
+        <span class="n">ctx</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">call_id</span><span class="o">=</span><span class="n">call_id</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;grad_params&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">grad_params</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">grad_args</span><span class="p">,</span> <span class="n">grad_kwargs</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, FutureHouse.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

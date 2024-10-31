@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.alg.algorithms &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.alg.algorithms</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">from</span> <span class="nn">aviary.message</span> <span class="kn">import</span> <span class="n">Message</span><span class="p">,</span> <span class="n">join</span>
+<span class="kn">from</span> <span class="nn">aviary.tools</span> <span class="kn">import</span> <span class="n">Tool</span><span class="p">,</span> <span class="n">ToolRequestMessage</span>
+
+<span class="kn">from</span> <span class="nn">ldp.graph</span> <span class="kn">import</span> <span class="n">OpResult</span>
+<span class="kn">from</span> <span class="nn">ldp.graph.ops</span> <span class="kn">import</span> <span class="n">GradOutType</span>
+
+
+<div class="viewcode-block" id="to_network">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.algorithms.to_network">[docs]</a>
+<span class="k">def</span> <span class="nf">to_network</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
+    <span class="n">op_result</span><span class="p">:</span> <span class="n">OpResult</span><span class="p">,</span>
+    <span class="n">max_label_height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_label_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">G</span><span class="p">:</span> <span class="s2">&quot;nx.MultiDiGraph | None&quot;</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;nx.MultiDiGraph&quot;</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Populate a NetworkX graph from the input op result&#39;s computation graph.</span>
+
+<span class="sd">    How to export Graphviz .dot file: nx.drawing.nx_pydot.write_dot(G, &quot;file.dot&quot;)</span>
+<span class="sd">    How to render with Graphviz: nx.drawing.nx_pydot.to_pydot(G).write_png(&quot;file.png&quot;)</span>
+<span class="sd">    Online Graphviz renderer: https://dreampuf.github.io/GraphvizOnline/</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        op_result: Starting op result to recurse parent op calls and results.</span>
+<span class="sd">        max_label_height: Optional max label height (lines).</span>
+<span class="sd">        max_label_width: Optional max label width (chars).</span>
+<span class="sd">        G: Optional graph to add nodes/edges to. Allows this to be a recursive function.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Populated a NetworkX multi-edge directed graph.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">gvizify</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stringify and then escape colons for Graphviz labels.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Message</span><span class="p">):</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">join</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Tool</span><span class="p">):</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tool </span><span class="si">{</span><span class="n">t</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">x</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">ToolRequestMessage</span><span class="p">):</span>
+            <span class="c1"># reformatting tool calls to make them easier to read</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; for tool calls: &quot;</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;; &quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="c1"># Replace double quotes since they can interfere with colon escapes</span>
+                <span class="c1"># Strip here to avoid trailing spaces in the labels</span>
+                <span class="n">x_line</span><span class="p">[:</span><span class="n">max_label_width</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x_line</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">))</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">max_label_height</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">max_label_height</span>
+            <span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>  <span class="c1"># Remove trailing newlines</span>
+        <span class="k">return</span> <span class="n">result</span> <span class="k">if</span> <span class="s2">&quot;:&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">result</span> <span class="k">else</span> <span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s1">&quot;&#39;</span>  <span class="c1"># Escape colons</span>
+
+    <span class="n">call_id</span> <span class="o">=</span> <span class="n">op_result</span><span class="o">.</span><span class="n">call_id</span>
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="n">call_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">),</span> <span class="s2">&quot;to_network currently assumes a compute graph is available&quot;</span>
+    <span class="n">ctx</span> <span class="o">=</span> <span class="n">op_result</span><span class="o">.</span><span class="n">ctx</span>
+
+    <span class="n">op_result_str</span> <span class="o">=</span> <span class="n">gvizify</span><span class="p">(</span><span class="n">op_result</span><span class="p">)</span>
+    <span class="n">op_result_node</span> <span class="o">=</span> <span class="n">gvizify</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">op_result_str</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">call_id</span><span class="o">.</span><span class="n">fwd_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">G</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># TODO: figure out a way to use OpResult.get_compute_graph(), which builds</span>
+        <span class="c1"># a nx.DiGraph.</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">MultiDiGraph</span><span class="p">()</span>
+
+    <span class="n">op_call_str</span> <span class="o">=</span> <span class="n">gvizify</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ctx</span><span class="o">.</span><span class="n">op_name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">call_id</span><span class="o">.</span><span class="n">fwd_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">op_call_str</span> <span class="ow">in</span> <span class="n">G</span><span class="p">:</span>
+        <span class="c1"># We have already visited this node - can skip.</span>
+        <span class="k">return</span> <span class="n">G</span>
+
+    <span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">op_result_node</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;dotted&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">op_result_str</span><span class="p">)</span>
+    <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">op_call_str</span><span class="p">,</span> <span class="n">op_result_node</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">result_grad</span> <span class="o">:=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;grad_output&quot;</span><span class="p">,</span> <span class="n">call_id</span><span class="o">=</span><span class="n">call_id</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span>
+            <span class="n">op_result_node</span><span class="p">,</span>
+            <span class="n">op_call_str</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="n">gvizify</span><span class="p">(</span><span class="n">result_grad</span><span class="p">),</span>
+            <span class="n">style</span><span class="o">=</span><span class="s2">&quot;dotted&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">input_args</span><span class="p">,</span> <span class="n">input_kwargs</span> <span class="o">=</span> <span class="n">op_result</span><span class="o">.</span><span class="n">inputs</span>
+    <span class="n">grads</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;grad_input&quot;</span><span class="p">,</span> <span class="n">call_id</span><span class="o">=</span><span class="n">call_id</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">grads</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">arg_grads</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">GradOutType</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_args</span><span class="p">)</span>
+        <span class="n">kwarg_grads</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">GradOutType</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">input_kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">arg_grads</span><span class="p">,</span> <span class="n">kwarg_grads</span> <span class="o">=</span> <span class="n">grads</span>
+
+    <span class="n">args_and_grads</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span>
+        <span class="nb">zip</span><span class="p">(</span><span class="n">input_args</span><span class="p">,</span> <span class="n">arg_grads</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="p">((</span><span class="n">arg</span><span class="p">,</span> <span class="n">kwarg_grads</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">input_kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()),</span>
+    <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">arg</span><span class="p">,</span> <span class="n">grad</span> <span class="ow">in</span> <span class="n">args_and_grads</span><span class="p">:</span>
+        <span class="n">arg_str</span> <span class="o">=</span> <span class="n">gvizify</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">OpResult</span><span class="p">):</span>
+            <span class="n">G</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">arg_str</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;dotted&quot;</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">arg_str</span> <span class="o">=</span> <span class="n">gvizify</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">arg_str</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">arg</span><span class="o">.</span><span class="n">call_id</span><span class="o">.</span><span class="n">fwd_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">G</span> <span class="o">=</span> <span class="n">to_network</span><span class="p">(</span>
+                <span class="n">arg</span><span class="p">,</span>
+                <span class="n">max_label_height</span><span class="o">=</span><span class="n">max_label_height</span><span class="p">,</span>
+                <span class="n">max_label_width</span><span class="o">=</span><span class="n">max_label_width</span><span class="p">,</span>
+                <span class="n">G</span><span class="o">=</span><span class="n">G</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">arg_str</span><span class="p">,</span> <span class="n">op_call_str</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">grad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">op_call_str</span><span class="p">,</span> <span class="n">arg_str</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">gvizify</span><span class="p">(</span><span class="n">grad</span><span class="p">),</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;dotted&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">G</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, FutureHouse.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

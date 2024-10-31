@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.graph.op_utils &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.graph.op_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">contextvars</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">AsyncIterator</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">asynccontextmanager</span>
+<span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span><span class="p">,</span> <span class="n">uuid4</span>
+
+<span class="kn">from</span> <span class="nn">aviary.utils</span> <span class="kn">import</span> <span class="n">is_coroutine_callable</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_serializer</span><span class="p">,</span> <span class="n">field_validator</span>
+
+
+<div class="viewcode-block" id="CallID">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.op_utils.CallID">[docs]</a>
+<span class="k">class</span> <span class="nc">CallID</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">run_id</span><span class="p">:</span> <span class="n">UUID</span>
+    <span class="n">fwd_id</span><span class="p">:</span> <span class="n">UUID</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fwd_id</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__hash__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">hash</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">run_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fwd_id</span><span class="p">))</span>
+
+<div class="viewcode-block" id="CallID.validate_uuid">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.op_utils.CallID.validate_uuid">[docs]</a>
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s2">&quot;run_id&quot;</span><span class="p">,</span> <span class="s2">&quot;fwd_id&quot;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">validate_uuid</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">UUID</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UUID</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">UUID</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="CallID.serialize_uuid">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.op_utils.CallID.serialize_uuid">[docs]</a>
+    <span class="nd">@field_serializer</span><span class="p">(</span><span class="s2">&quot;run_id&quot;</span><span class="p">,</span> <span class="s2">&quot;fwd_id&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">serialize_uuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">UUID</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">UUID</span><span class="p">,</span> <span class="n">fwd_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">UUID</span><span class="p">):</span>
+        <span class="c1"># Convenience so we can use positional arguments</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">fwd_id</span><span class="o">=</span><span class="n">fwd_id</span><span class="p">)</span></div>
+
+
+
+<span class="n">_RUN_ID</span> <span class="o">=</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span><span class="p">[</span><span class="n">UUID</span><span class="p">](</span><span class="s2">&quot;run_id&quot;</span><span class="p">)</span>
+<span class="n">_CALL_ID</span> <span class="o">=</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span><span class="p">[</span><span class="n">CallID</span><span class="p">](</span><span class="s2">&quot;call_id&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="compute_graph">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.op_utils.compute_graph">[docs]</a>
+<span class="nd">@asynccontextmanager</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">compute_graph</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">UUID</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialize a compute graph by setting a run ID.</span>
+
+<span class="sd">    If a run ID is already set (i.e. we are already inside a</span>
+<span class="sd">    get_run_id() context), then the existing run ID is returned.</span>
+<span class="sd">    Otherwise, a new UUID is created.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># If a run ID is set, return it.</span>
+        <span class="n">run_id</span> <span class="o">=</span> <span class="n">_RUN_ID</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="n">token</span><span class="p">:</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">Token</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="ne">LookupError</span><span class="p">:</span>
+        <span class="c1"># If not, make a new run ID.</span>
+        <span class="n">run_id</span> <span class="o">=</span> <span class="n">uuid4</span><span class="p">()</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="n">_RUN_ID</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">run_id</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">run_id</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">token</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># token is not None if we made a new run ID. In that case,</span>
+            <span class="c1"># reset the context to its previous state.</span>
+            <span class="n">_RUN_ID</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">token</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_run_id">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.op_utils.get_run_id">[docs]</a>
+<span class="k">def</span> <span class="nf">get_run_id</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">UUID</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the current run ID.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_RUN_ID</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">LookupError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;Attempting to access run ID, but not inside compute graph context.&quot;</span>
+        <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="op_call">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.op_utils.op_call">[docs]</a>
+<span class="nd">@asynccontextmanager</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">op_call</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">AsyncIterator</span><span class="p">[</span><span class="n">CallID</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorate an op call with a call ID.</span>
+
+<span class="sd">    If a call ID is already set (i.e. we are already inside an op call),</span>
+<span class="sd">    then the existing call ID is returned.</span>
+<span class="sd">    Otherwise, a new UUID is created.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get run_id in case we need to construct a CallID, but this also serves</span>
+    <span class="c1"># as a check that we&#39;re inside compute_graph()</span>
+    <span class="n">run_id</span> <span class="o">=</span> <span class="n">get_run_id</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">call_id</span> <span class="o">=</span> <span class="n">_CALL_ID</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="n">token</span><span class="p">:</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">Token</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="ne">LookupError</span><span class="p">:</span>
+        <span class="n">fwd_id</span> <span class="o">=</span> <span class="n">uuid4</span><span class="p">()</span>
+        <span class="n">call_id</span> <span class="o">=</span> <span class="n">CallID</span><span class="p">(</span><span class="n">run_id</span><span class="p">,</span> <span class="n">fwd_id</span><span class="p">)</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="n">_CALL_ID</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">call_id</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">call_id</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">token</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># token is not None if we made a new call ID. In that case,</span>
+            <span class="c1"># reset the context to its previous state.</span>
+            <span class="n">_CALL_ID</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">token</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_call_id">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.op_utils.get_call_id">[docs]</a>
+<span class="k">def</span> <span class="nf">get_call_id</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">CallID</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the current call ID.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_CALL_ID</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">LookupError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;Attempting to access call ID, but not inside op call context.&quot;</span>
+        <span class="p">)</span> <span class="kn">from</span> <span class="kc">None</span></div>
+
+
+
+<span class="n">_TRAINING_MODE</span> <span class="o">=</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">](</span><span class="s2">&quot;training_mode&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_training_mode">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.op_utils.get_training_mode">[docs]</a>
+<span class="k">def</span> <span class="nf">get_training_mode</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the current training mode.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_TRAINING_MODE</span><span class="o">.</span><span class="n">get</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="set_training_mode">
+<a class="viewcode-back" href="../../../ldp.graph.html#ldp.graph.op_utils.set_training_mode">[docs]</a>
+<span class="k">def</span> <span class="nf">set_training_mode</span><span class="p">(</span><span class="n">training_mode</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the training mode.&quot;&quot;&quot;</span>
+    <span class="n">_TRAINING_MODE</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">training_mode</span><span class="p">)</span></div>
+
+
+
+<span class="k">class</span> <span class="nc">_TrainingModeContext</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Automatically set and reset the training_mode with a context manager.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training_mode</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">training_mode</span> <span class="o">=</span> <span class="n">training_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prev_training_mode</span> <span class="o">=</span> <span class="n">get_training_mode</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">fn</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+        <span class="k">if</span> <span class="n">is_coroutine_callable</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+
+            <span class="k">async</span> <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="k">await</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">with</span> <span class="bp">self</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">wrapper</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prev_training_mode</span> <span class="o">=</span> <span class="n">get_training_mode</span><span class="p">()</span>
+        <span class="n">set_training_mode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_mode</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">set_training_mode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prev_training_mode</span><span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="fm">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__enter__</span><span class="p">()</span>
+
+    <span class="k">async</span> <span class="k">def</span> <span class="fm">__aexit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="fm">__exit__</span><span class="p">(</span><span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span>
+
+
+<span class="n">train_mode</span> <span class="o">=</span> <span class="n">_TrainingModeContext</span><span class="p">(</span><span class="n">training_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">eval_mode</span> <span class="o">=</span> <span class="n">_TrainingModeContext</span><span class="p">(</span><span class="n">training_mode</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.llms.chat &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.llms.chat</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">AsyncGenerator</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Self</span><span class="p">,</span> <span class="n">cast</span>
+<span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span><span class="p">,</span> <span class="n">uuid4</span>
+
+<span class="kn">import</span> <span class="nn">litellm</span>
+<span class="kn">from</span> <span class="nn">aviary.message</span> <span class="kn">import</span> <span class="n">Message</span>
+<span class="kn">from</span> <span class="nn">aviary.tools</span> <span class="kn">import</span> <span class="n">Tool</span><span class="p">,</span> <span class="n">ToolRequestMessage</span><span class="p">,</span> <span class="n">ToolsAdapter</span>
+<span class="kn">from</span> <span class="nn">aviary.utils</span> <span class="kn">import</span> <span class="n">is_coroutine_callable</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">model_validator</span>
+
+
+<div class="viewcode-block" id="JSONSchemaValidationError">
+<a class="viewcode-back" href="../../../ldp.llms.html#ldp.llms.chat.JSONSchemaValidationError">[docs]</a>
+<span class="k">class</span> <span class="nc">JSONSchemaValidationError</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raised when the completion does not match the specified schema.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="LLMResult">
+<a class="viewcode-back" href="../../../ldp.llms.html#ldp.llms.chat.LLMResult">[docs]</a>
+<span class="k">class</span> <span class="nc">LLMResult</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A class to hold the result of a LLM completion.&quot;&quot;&quot;</span>
+
+    <span class="nb">id</span><span class="p">:</span> <span class="n">UUID</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">uuid4</span><span class="p">)</span>
+    <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">prompt</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Messages sent to the LLM.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">messages</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Messages received from the LLM.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">prompt_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Count of prompt tokens.&quot;</span><span class="p">)</span>
+    <span class="n">completion_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Count of completion tokens.&quot;</span><span class="p">)</span>
+    <span class="n">model</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">date</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">)</span>
+    <span class="n">seconds_to_first_token</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">seconds_to_last_token</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">logprob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Sum of logprobs in the completion.&quot;</span>
+    <span class="p">)</span>
+    <span class="n">system_fingerprint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;System fingerprint received from the LLM.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">prompt_and_completion_costs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a two-tuple of prompt tokens cost and completion tokens cost, in USD.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">litellm</span><span class="o">.</span><span class="n">cost_per_token</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">prompt_tokens</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt_count</span><span class="p">,</span>
+            <span class="n">completion_tokens</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">completion_count</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">provider</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the model provider&#39;s name (e.g. &quot;openai&quot;, &quot;mistral&quot;).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">litellm</span><span class="o">.</span><span class="n">get_llm_provider</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+<div class="viewcode-block" id="LLMResult.get_supported_openai_params">
+<a class="viewcode-back" href="../../../ldp.llms.html#ldp.llms.chat.LLMResult.get_supported_openai_params">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_supported_openai_params</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the supported OpenAI parameters for the model.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">litellm</span><span class="o">.</span><span class="n">get_supported_openai_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="sum_logprobs">
+<a class="viewcode-back" href="../../../ldp.llms.html#ldp.llms.chat.sum_logprobs">[docs]</a>
+<span class="k">def</span> <span class="nf">sum_logprobs</span><span class="p">(</span><span class="n">choice</span><span class="p">:</span> <span class="n">litellm</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">Choices</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the sum of the log probabilities of an LLM completion (a Choices object).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        choice: A sequence of choices from the completion.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The sum of the log probabilities of the choice.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logprob_obj</span> <span class="o">=</span> <span class="n">choice</span><span class="o">.</span><span class="n">logprobs</span>
+    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">logprob_obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">logprob_obj</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span>
+                <span class="n">logprob_info</span><span class="p">[</span><span class="s2">&quot;logprob&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">logprob_info</span> <span class="ow">in</span> <span class="n">logprob_obj</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">choice</span><span class="o">.</span><span class="n">logprobs</span><span class="o">.</span><span class="n">content</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">logprob_info</span><span class="o">.</span><span class="n">logprob</span> <span class="k">for</span> <span class="n">logprob_info</span> <span class="ow">in</span> <span class="n">choice</span><span class="o">.</span><span class="n">logprobs</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="validate_json_completion">
+<a class="viewcode-back" href="../../../ldp.llms.html#ldp.llms.chat.validate_json_completion">[docs]</a>
+<span class="k">def</span> <span class="nf">validate_json_completion</span><span class="p">(</span>
+    <span class="n">completion</span><span class="p">:</span> <span class="n">litellm</span><span class="o">.</span><span class="n">ModelResponse</span><span class="p">,</span> <span class="n">output_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate a completion against a JSON schema.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        completion: The completion to validate.</span>
+<span class="sd">        output_type: The Pydantic model to validate the completion against.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">completion</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+            <span class="n">output_type</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+    <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">JSONSchemaValidationError</span><span class="p">(</span>
+            <span class="s2">&quot;The completion does not match the specified schema.&quot;</span>
+        <span class="p">)</span> <span class="kn">from</span> <span class="nn">err</span></div>
+
+
+
+<div class="viewcode-block" id="MultipleCompletionLLMModel">
+<a class="viewcode-back" href="../../../ldp.llms.html#ldp.llms.chat.MultipleCompletionLLMModel">[docs]</a>
+<span class="k">class</span> <span class="nc">MultipleCompletionLLMModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run n completions at once, all starting from the same messages.&quot;&quot;&quot;</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s2">&quot;forbid&quot;</span><span class="p">)</span>
+
+    <span class="c1"># this should keep the original model</span>
+    <span class="c1"># if fine-tuned, this should still refer to the base model</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+    <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">default</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="s2">&quot;gpt-3.5-turbo&quot;</span><span class="p">,</span>  <span class="c1"># Default model should have cheap input/output for testing</span>
+            <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+    <span class="n">encoding</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<div class="viewcode-block" id="MultipleCompletionLLMModel.set_model_name">
+<a class="viewcode-back" href="../../../ldp.llms.html#ldp.llms.chat.MultipleCompletionLLMModel.set_model_name">[docs]</a>
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">set_model_name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;gpt-3.5-turbo&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">}</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;unknown&quot;</span>
+            <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;unknown&quot;</span>
+            <span class="ow">and</span> <span class="s2">&quot;model&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">elif</span> <span class="s2">&quot;model&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;unknown&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+        <span class="c1"># note we do not consider case where both are set</span>
+        <span class="c1"># because that could be true if the model is fine-tuned</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="MultipleCompletionLLMModel.achat">
+<a class="viewcode-back" href="../../../ldp.llms.html#ldp.llms.chat.MultipleCompletionLLMModel.achat">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">achat</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">litellm</span><span class="o">.</span><span class="n">ModelResponse</span><span class="p">:</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">litellm</span><span class="o">.</span><span class="n">acompletion</span><span class="p">(</span>
+            <span class="n">messages</span><span class="o">=</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">],</span>
+            <span class="o">**</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">|</span> <span class="n">kwargs</span><span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MultipleCompletionLLMModel.achat_iter">
+<a class="viewcode-back" href="../../../ldp.llms.html#ldp.llms.chat.MultipleCompletionLLMModel.achat_iter">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">achat_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncGenerator</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">AsyncGenerator</span><span class="p">,</span>
+            <span class="k">await</span> <span class="n">litellm</span><span class="o">.</span><span class="n">acompletion</span><span class="p">(</span>
+                <span class="n">messages</span><span class="o">=</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">],</span>
+                <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">stream_options</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;include_usage&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>  <span class="c1"># Included to get prompt token counts</span>
+                <span class="p">},</span>
+                <span class="o">**</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">|</span> <span class="n">kwargs</span><span class="p">),</span>
+            <span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+    <span class="c1"># SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice</span>
+    <span class="c1"># &gt; `required` means the model must call one or more tools.</span>
+    <span class="n">TOOL_CHOICE_REQUIRED</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;required&quot;</span>
+
+<div class="viewcode-block" id="MultipleCompletionLLMModel.call">
+<a class="viewcode-back" href="../../../ldp.llms.html#ldp.llms.chat.MultipleCompletionLLMModel.call">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">call</span><span class="p">(</span>  <span class="c1"># noqa: C901, PLR0915</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">messages</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span>
+        <span class="n">callbacks</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">output_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tools</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tool</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tool_choice</span><span class="p">:</span> <span class="n">Tool</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">TOOL_CHOICE_REQUIRED</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">chat_kwargs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">LLMResult</span><span class="p">]:</span>
+        <span class="n">start_clock</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_running_loop</span><span class="p">()</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="c1"># Deal with tools. OpenAI throws an error if tool list is empty,</span>
+        <span class="c1"># so skip this block if tools in (None, [])</span>
+        <span class="k">if</span> <span class="n">tools</span><span class="p">:</span>
+            <span class="n">chat_kwargs</span><span class="p">[</span><span class="s2">&quot;tools&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ToolsAdapter</span><span class="o">.</span><span class="n">dump_python</span><span class="p">(</span>
+                <span class="n">tools</span><span class="p">,</span> <span class="n">exclude_none</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">tool_choice</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">chat_kwargs</span><span class="p">[</span><span class="s2">&quot;tool_choice&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;function&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">tool_choice</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">name</span><span class="p">},</span>
+                    <span class="p">}</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tool_choice</span><span class="p">,</span> <span class="n">Tool</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="n">tool_choice</span>
+                <span class="p">)</span>
+
+        <span class="c1"># deal with specifying output type</span>
+        <span class="k">if</span> <span class="n">output_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">schema</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+                <span class="n">output_type</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;serialization&quot;</span><span class="p">),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span>
+            <span class="p">)</span>
+            <span class="n">schema_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Respond following this JSON schema:</span><span class="se">\n\n</span><span class="si">{</span><span class="n">schema</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="c1"># Get the system prompt and its index, or the index to add it</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">system_prompt</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+                <span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span> <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="s2">&quot;system&quot;</span><span class="p">),</span>
+                <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="o">*</span><span class="n">messages</span><span class="p">[:</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">system_prompt</span><span class="o">.</span><span class="n">append_text</span><span class="p">(</span><span class="n">schema_msg</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">system_prompt</span>
+                <span class="k">else</span> <span class="n">Message</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">schema_msg</span><span class="p">),</span>
+                <span class="o">*</span><span class="n">messages</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">system_prompt</span> <span class="k">else</span> <span class="n">i</span> <span class="p">:],</span>
+            <span class="p">]</span>
+            <span class="n">chat_kwargs</span><span class="p">[</span><span class="s2">&quot;response_format&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;json_object&quot;</span><span class="p">}</span>
+
+        <span class="c1"># add static configuration to kwargs</span>
+        <span class="n">chat_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">|</span> <span class="n">chat_kwargs</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">chat_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># number of completions</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Number of completions (n) must be &gt;= 1.&quot;</span><span class="p">)</span>
+
+        <span class="n">prompt</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">m</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">ToolRequestMessage</span><span class="p">)</span> <span class="ow">or</span> <span class="n">m</span><span class="o">.</span><span class="n">tool_calls</span>
+            <span class="c1"># OpenAI doesn&#39;t allow for empty tool_calls lists, so downcast empty</span>
+            <span class="c1"># ToolRequestMessage to Message here</span>
+            <span class="k">else</span> <span class="n">Message</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="n">m</span><span class="o">.</span><span class="n">role</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">m</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">messages</span>
+        <span class="p">]</span>
+        <span class="n">results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">LLMResult</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">callbacks</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">completion</span><span class="p">:</span> <span class="n">litellm</span><span class="o">.</span><span class="n">ModelResponse</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">achat</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="o">**</span><span class="n">chat_kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">output_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">validate_json_completion</span><span class="p">(</span><span class="n">completion</span><span class="p">,</span> <span class="n">output_type</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">completion</span><span class="o">.</span><span class="n">choices</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="n">litellm</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">StreamingChoices</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Streaming is not yet supported.&quot;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="n">tools</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="c1"># Allows for empty tools list</span>
+                    <span class="ow">or</span> <span class="n">choice</span><span class="o">.</span><span class="n">finish_reason</span> <span class="o">==</span> <span class="s2">&quot;tool_calls&quot;</span>
+                    <span class="ow">or</span> <span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="s2">&quot;tool_calls&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="p">):</span>
+                    <span class="n">serialized_choice_message</span> <span class="o">=</span> <span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span>
+                    <span class="n">serialized_choice_message</span><span class="p">[</span><span class="s2">&quot;tool_calls&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">serialized_choice_message</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tool_calls&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
+                    <span class="p">)</span>
+                    <span class="n">output_messages</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span> <span class="o">|</span> <span class="n">ToolRequestMessage</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+                        <span class="n">ToolRequestMessage</span><span class="p">(</span><span class="o">**</span><span class="n">serialized_choice_message</span><span class="p">)</span>
+                    <span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">output_messages</span> <span class="o">=</span> <span class="p">[</span><span class="n">Message</span><span class="p">(</span><span class="o">**</span><span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())]</span>
+
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">LLMResult</span><span class="p">(</span>
+                        <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                        <span class="n">config</span><span class="o">=</span><span class="n">chat_kwargs</span><span class="p">,</span>
+                        <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span>
+                        <span class="n">messages</span><span class="o">=</span><span class="n">output_messages</span><span class="p">,</span>
+                        <span class="n">logprob</span><span class="o">=</span><span class="n">sum_logprobs</span><span class="p">(</span><span class="n">choice</span><span class="p">),</span>
+                        <span class="n">system_fingerprint</span><span class="o">=</span><span class="n">completion</span><span class="o">.</span><span class="n">system_fingerprint</span><span class="p">,</span>
+                        <span class="c1"># Note that these counts are aggregated over all choices</span>
+                        <span class="n">completion_count</span><span class="o">=</span><span class="n">completion</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">completion_tokens</span><span class="p">,</span>  <span class="c1"># type: ignore[attr-defined,unused-ignore]</span>
+                        <span class="n">prompt_count</span><span class="o">=</span><span class="n">completion</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">prompt_tokens</span><span class="p">,</span>  <span class="c1"># type: ignore[attr-defined,unused-ignore]</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">tools</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Using tools with callbacks is not supported&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                    <span class="s2">&quot;Multiple completions with callbacks is not supported&quot;</span>
+                <span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">LLMResult</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">chat_kwargs</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">)</span>
+
+            <span class="n">sync_callbacks</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">callbacks</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">is_coroutine_callable</span><span class="p">(</span><span class="n">f</span><span class="p">)]</span>
+            <span class="n">async_callbacks</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">callbacks</span> <span class="k">if</span> <span class="n">is_coroutine_callable</span><span class="p">(</span><span class="n">f</span><span class="p">)]</span>
+            <span class="n">stream_completion</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">achat_iter</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="o">**</span><span class="n">chat_kwargs</span><span class="p">)</span>
+            <span class="n">text_result</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">role</span> <span class="o">=</span> <span class="s2">&quot;assistant&quot;</span>
+
+            <span class="k">async</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">stream_completion</span><span class="p">:</span>
+                <span class="n">delta</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">delta</span>
+                <span class="n">role</span> <span class="o">=</span> <span class="n">delta</span><span class="o">.</span><span class="n">role</span> <span class="ow">or</span> <span class="n">role</span>
+                <span class="k">if</span> <span class="n">delta</span><span class="o">.</span><span class="n">content</span><span class="p">:</span>
+                    <span class="n">s</span> <span class="o">=</span> <span class="n">delta</span><span class="o">.</span><span class="n">content</span>
+                    <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">seconds_to_first_token</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">seconds_to_first_token</span> <span class="o">=</span> <span class="p">(</span>
+                            <span class="n">asyncio</span><span class="o">.</span><span class="n">get_running_loop</span><span class="p">()</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_clock</span>
+                        <span class="p">)</span>
+                    <span class="n">text_result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+                    <span class="p">[</span><span class="k">await</span> <span class="n">f</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">async_callbacks</span><span class="p">]</span>
+                    <span class="p">[</span><span class="n">f</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">sync_callbacks</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="s2">&quot;usage&quot;</span><span class="p">):</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">prompt_count</span> <span class="o">=</span> <span class="n">chunk</span><span class="o">.</span><span class="n">usage</span><span class="o">.</span><span class="n">prompt_tokens</span>
+
+            <span class="n">output</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text_result</span><span class="p">)</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">completion_count</span> <span class="o">=</span> <span class="n">litellm</span><span class="o">.</span><span class="n">token_counter</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">text</span><span class="o">=</span><span class="n">output</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="c1"># TODO: figure out how tools stream, and log probs</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">messages</span> <span class="o">=</span> <span class="p">[</span><span class="n">Message</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="n">role</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">output</span><span class="p">)]</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
+            <span class="c1"># This happens in unit tests. We should probably not keep this block around</span>
+            <span class="c1"># long-term. Previously, we would emit an empty ToolRequestMessage if</span>
+            <span class="c1"># completion.choices were empty, so  I am replicating that here.</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">LLMResult</span><span class="p">(</span>
+                    <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="n">config</span><span class="o">=</span><span class="n">chat_kwargs</span><span class="p">,</span>
+                    <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span>
+                    <span class="n">messages</span><span class="o">=</span><span class="p">[</span><span class="n">ToolRequestMessage</span><span class="p">(</span><span class="n">tool_calls</span><span class="o">=</span><span class="p">[])],</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">end_clock</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_running_loop</span><span class="p">()</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+            <span class="c1"># Manually update prompt count if not set, which can</span>
+            <span class="c1"># happen if the target model doesn&#39;t support &#39;include_usage&#39;</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="o">.</span><span class="n">prompt_count</span><span class="p">:</span>
+                <span class="n">result</span><span class="o">.</span><span class="n">prompt_count</span> <span class="o">=</span> <span class="n">litellm</span><span class="o">.</span><span class="n">token_counter</span><span class="p">(</span>
+                    <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                    <span class="n">messages</span><span class="o">=</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">messages</span><span class="p">],</span>  <span class="c1"># type: ignore[union-attr]</span>
+                <span class="p">)</span>
+
+            <span class="c1"># update with server-side counts</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">seconds_to_last_token</span> <span class="o">=</span> <span class="n">end_clock</span> <span class="o">-</span> <span class="n">start_clock</span>
+
+        <span class="k">return</span> <span class="n">results</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="LLMModel">
+<a class="viewcode-back" href="../../../ldp.llms.html#ldp.llms.chat.LLMModel">[docs]</a>
+<span class="k">class</span> <span class="nc">LLMModel</span><span class="p">(</span><span class="n">MultipleCompletionLLMModel</span><span class="p">):</span>
+<div class="viewcode-block" id="LLMModel.call">
+<a class="viewcode-back" href="../../../ldp.llms.html#ldp.llms.chat.LLMModel.call">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LLMResult</span><span class="p">:</span>  <span class="c1"># type: ignore[override]</span>
+        <span class="k">return</span> <span class="p">(</span><span class="k">await</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, FutureHouse.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

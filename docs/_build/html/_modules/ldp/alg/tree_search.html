@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ldp.alg.tree_search &#8212; ldp  documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=61cd365c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for ldp.alg.tree_search</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Awaitable</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">aviary.message</span> <span class="kn">import</span> <span class="n">Message</span>
+<span class="kn">from</span> <span class="nn">aviary.utils</span> <span class="kn">import</span> <span class="n">is_coroutine_callable</span>
+
+<span class="kn">from</span> <span class="nn">ldp.agent</span> <span class="kn">import</span> <span class="n">Agent</span>
+<span class="kn">from</span> <span class="nn">ldp.data_structures</span> <span class="kn">import</span> <span class="n">TransitionTree</span>
+
+<span class="kn">from</span> <span class="nn">.callbacks</span> <span class="kn">import</span> <span class="n">Callback</span>
+<span class="kn">from</span> <span class="nn">.rollout</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AgentError</span><span class="p">,</span>
+    <span class="n">CaughtError</span><span class="p">,</span>
+    <span class="n">EnvError</span><span class="p">,</span>
+    <span class="n">RolloutManager</span><span class="p">,</span>
+    <span class="n">TEnv</span><span class="p">,</span>
+    <span class="n">reraise_exc_as</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="TreeSearchRollout">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.tree_search.TreeSearchRollout">[docs]</a>
+<span class="k">class</span> <span class="nc">TreeSearchRollout</span><span class="p">(</span><span class="n">RolloutManager</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">agent</span><span class="p">:</span> <span class="n">Agent</span><span class="p">,</span>
+        <span class="n">branching_factor</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">env_clone_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">TEnv</span><span class="p">],</span> <span class="n">Awaitable</span><span class="p">[</span><span class="n">TEnv</span><span class="p">]]</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">TEnv</span><span class="p">],</span> <span class="n">TEnv</span><span class="p">],</span>
+        <span class="n">catch_agent_failures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">catch_env_failures</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">callbacks</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Callback</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">concurrency_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">target_reward</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">agent</span><span class="p">,</span>
+            <span class="n">catch_agent_failures</span><span class="o">=</span><span class="n">catch_agent_failures</span><span class="p">,</span>
+            <span class="n">catch_env_failures</span><span class="o">=</span><span class="n">catch_env_failures</span><span class="p">,</span>
+            <span class="n">callbacks</span><span class="o">=</span><span class="n">callbacks</span><span class="p">,</span>
+            <span class="n">concurrency_limit</span><span class="o">=</span><span class="n">concurrency_limit</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">branching_factor</span> <span class="o">=</span> <span class="n">branching_factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_reward</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">target_reward</span> <span class="k">if</span> <span class="n">target_reward</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_reward_hit</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">env_clone_fn</span> <span class="o">=</span> <span class="n">env_clone_fn</span>
+
+<div class="viewcode-block" id="TreeSearchRollout.sample_trees">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.tree_search.TreeSearchRollout.sample_trees">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">sample_trees</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">environments</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">TEnv</span><span class="p">],</span>
+        <span class="n">max_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">TransitionTree</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sample_tree</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">max_depth</span><span class="p">)</span> <span class="k">for</span> <span class="n">env</span> <span class="ow">in</span> <span class="n">environments</span>
+        <span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="TreeSearchRollout.sample_tree">
+<a class="viewcode-back" href="../../../ldp.alg.html#ldp.alg.tree_search.TreeSearchRollout.sample_tree">[docs]</a>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">sample_tree</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">:</span> <span class="n">TEnv</span><span class="p">,</span> <span class="n">max_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TransitionTree</span><span class="p">:</span>
+        <span class="n">max_depth_f</span> <span class="o">=</span> <span class="n">max_depth</span> <span class="k">if</span> <span class="n">max_depth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">TransitionTree</span><span class="p">(</span><span class="n">root_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()))</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">reraise_exc_as</span><span class="p">(</span><span class="n">EnvError</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">catch_env_failures</span><span class="p">):</span>
+                <span class="n">obs</span><span class="p">,</span> <span class="n">tools</span> <span class="o">=</span> <span class="k">await</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">[</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">after_env_reset</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">root_id</span><span class="p">,</span> <span class="n">obs</span><span class="p">,</span> <span class="n">tools</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span>
+            <span class="p">])</span>
+
+            <span class="k">with</span> <span class="n">reraise_exc_as</span><span class="p">(</span><span class="n">AgentError</span><span class="p">,</span> <span class="n">enabled</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">catch_agent_failures</span><span class="p">):</span>
+                <span class="n">agent_state</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent</span><span class="o">.</span><span class="n">init_state</span><span class="p">(</span><span class="n">tools</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">[</span>
+                <span class="n">c</span><span class="o">.</span><span class="n">after_agent_init_state</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">root_id</span><span class="p">,</span> <span class="n">agent_state</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span>
+            <span class="p">])</span>
+        <span class="k">except</span> <span class="n">CaughtError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">tree</span>
+
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descend</span><span class="p">(</span>
+            <span class="n">tree</span><span class="o">=</span><span class="n">tree</span><span class="p">,</span>
+            <span class="n">prev_step_id</span><span class="o">=</span><span class="n">tree</span><span class="o">.</span><span class="n">root_id</span><span class="p">,</span>
+            <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+            <span class="n">agent_state</span><span class="o">=</span><span class="n">agent_state</span><span class="p">,</span>
+            <span class="n">obs</span><span class="o">=</span><span class="n">obs</span><span class="p">,</span>
+            <span class="n">prev_timestep</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">prev_cumulative_reward</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+            <span class="n">max_depth</span><span class="o">=</span><span class="n">max_depth_f</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">tree</span></div>
+
+
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_descend</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">tree</span><span class="p">:</span> <span class="n">TransitionTree</span><span class="p">,</span>
+        <span class="n">prev_step_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">env</span><span class="p">:</span> <span class="n">TEnv</span><span class="p">,</span>
+        <span class="n">agent_state</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">obs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">],</span>
+        <span class="n">prev_timestep</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">prev_cumulative_reward</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">max_depth</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Descend one level in the tree, by adding branching_factor children to the branch</span>
+        <span class="c1"># Then, recurse on each child</span>
+
+        <span class="k">if</span> <span class="n">tree</span><span class="o">.</span><span class="n">root_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_reward_hit</span><span class="p">:</span>
+            <span class="c1"># If at least one branch hit the target reward, stop descending</span>
+            <span class="k">return</span>
+
+        <span class="n">timestep</span> <span class="o">=</span> <span class="n">prev_timestep</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">async</span> <span class="k">def</span> <span class="nf">inner_descend</span><span class="p">(</span><span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_coroutine_callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_clone_fn</span><span class="p">):</span>
+                <span class="n">cloned_env</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_clone_fn</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type, misc]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cloned_env</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env_clone_fn</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>
+
+            <span class="c1"># Descend one step</span>
+            <span class="n">step_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prev_step_id</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">step</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_take_step</span><span class="p">(</span>
+                    <span class="n">timestep</span><span class="p">,</span> <span class="n">step_id</span><span class="p">,</span> <span class="n">cloned_env</span><span class="p">,</span> <span class="n">agent_state</span><span class="p">,</span> <span class="n">obs</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="n">CaughtError</span><span class="p">:</span>
+                <span class="c1"># If we failed, do not extend the branch - just give up on this path</span>
+                <span class="k">return</span>
+
+            <span class="k">if</span> <span class="n">timestep</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">==</span> <span class="n">max_depth</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">step</span><span class="o">.</span><span class="n">done</span><span class="p">:</span>
+                <span class="c1"># Mark as truncated if we hit max_steps and the state is not terminal.</span>
+                <span class="n">step</span><span class="o">.</span><span class="n">truncated</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">[</span>
+                <span class="n">callback</span><span class="o">.</span><span class="n">after_transition</span><span class="p">(</span><span class="n">step_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent</span><span class="p">,</span> <span class="n">cloned_env</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">callback</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span>
+            <span class="p">])</span>
+
+            <span class="n">tree</span><span class="o">.</span><span class="n">add_transition</span><span class="p">(</span><span class="n">step_id</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+
+            <span class="n">cumulative_reward</span> <span class="o">=</span> <span class="n">prev_cumulative_reward</span> <span class="o">+</span> <span class="n">step</span><span class="o">.</span><span class="n">reward</span>
+            <span class="k">if</span> <span class="n">cumulative_reward</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_reward</span><span class="p">:</span>
+                <span class="c1"># signal other descents to stop too</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">target_reward_hit</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">root_id</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="k">if</span> <span class="n">step</span><span class="o">.</span><span class="n">done</span> <span class="ow">or</span> <span class="n">step</span><span class="o">.</span><span class="n">truncated</span><span class="p">:</span>
+                <span class="k">return</span>
+
+            <span class="c1"># Recurse</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descend</span><span class="p">(</span>
+                <span class="n">tree</span><span class="o">=</span><span class="n">tree</span><span class="p">,</span>
+                <span class="n">prev_step_id</span><span class="o">=</span><span class="n">step_id</span><span class="p">,</span>
+                <span class="n">env</span><span class="o">=</span><span class="n">cloned_env</span><span class="p">,</span>
+                <span class="n">agent_state</span><span class="o">=</span><span class="n">step</span><span class="o">.</span><span class="n">next_agent_state</span><span class="p">,</span>
+                <span class="n">obs</span><span class="o">=</span><span class="n">step</span><span class="o">.</span><span class="n">next_observation</span><span class="p">,</span>
+                <span class="n">prev_timestep</span><span class="o">=</span><span class="n">timestep</span><span class="p">,</span>
+                <span class="n">prev_cumulative_reward</span><span class="o">=</span><span class="n">cumulative_reward</span><span class="p">,</span>
+                <span class="n">max_depth</span><span class="o">=</span><span class="n">max_depth</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Add branching_factor children</span>
+        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">[</span>
+            <span class="n">inner_descend</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">branching_factor</span><span class="p">)</span>
+        <span class="p">])</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">ldp</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">ldp</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.3.7</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
