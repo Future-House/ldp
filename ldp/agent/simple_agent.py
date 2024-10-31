@@ -42,6 +42,7 @@ class SimpleAgentState(BaseModel):
             tools: Optional list of tools available to the agent. If unspecified, these
                 should be pulled from the prior_state.
             hide_old_env_states: Whether to hide old environment states in the messages.
+                This is useful for reducing context window usage.
             kwargs: Additional keyword arguments to pass to this class's constructor.
 
         Returns:
