@@ -6,9 +6,13 @@ from typing import Any, ClassVar, Self, cast
 from uuid import UUID, uuid4
 
 import litellm
-from aviary.message import Message
-from aviary.tools import Tool, ToolRequestMessage, ToolsAdapter
-from aviary.utils import is_coroutine_callable
+from aviary.core import (
+    Message,
+    Tool,
+    ToolRequestMessage,
+    ToolsAdapter,
+    is_coroutine_callable,
+)
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 
@@ -93,7 +97,15 @@ def validate_json_completion(
     """
     try:
         for choice in completion.choices:
-            output_type.model_validate_json(choice.message.content or "")  # type: ignore[union-attr]
+            if not hasattr(choice, "message") or not choice.message.content:
+                continue
+            # make sure it is a JSON completion, even if None
+            # We do want to modify the underlying message
+            # so that users of it can just parse it as expected
+            choice.message.content = (
+                choice.message.content.split("```json")[-1].split("```")[0] or ""
+            )
+            output_type.model_validate_json(choice.message.content)
     except ValidationError as err:
         raise JSONSchemaValidationError(
             "The completion does not match the specified schema."
@@ -188,9 +200,7 @@ class MultipleCompletionLLMModel(BaseModel):
 
         # deal with specifying output type
         if output_type is not None:
-            schema = json.dumps(
-                output_type.model_json_schema(mode="serialization"), indent=2
-            )
+            schema = json.dumps(output_type.model_json_schema(mode="serialization"))
             schema_msg = f"Respond following this JSON schema:\n\n{schema}"
             # Get the system prompt and its index, or the index to add it
             i, system_prompt = next(

@@ -4,9 +4,9 @@ import asyncio
 import math
 import random
 from collections.abc import Sequence
-from typing import cast
+from typing import Any, cast
 
-from aviary.env import Environment, TaskDataset
+from aviary.core import Environment, TaskDataset
 from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.agent import Agent
@@ -82,6 +82,7 @@ class EvaluatorConfig(BaseModel):
     catch_agent_failures: bool = True
     catch_env_failures: bool = True
     clear_ctx_at_each_iter: bool = False
+    shuffle: bool = Field(default=False, description="Shuffles the evaluation dataset.")
 
     def make_rollout_manager(
         self, agent: Agent, callbacks: Sequence[Callback]
@@ -119,17 +120,23 @@ class Evaluator:
     async def run(self, **kwargs) -> None:
         """Run the agent over the provided dataset.
 
+        **kwargs can be used to override config settings.
+
         This method does not set training mode, so it can be used to collect
         trajectories for offline training.
         """
+        eval_kwargs: dict[str, Any] = {
+            "batch_size": self.config.batch_size,
+            "num_iterations": self.config.num_eval_iterations,
+            "max_rollout_steps": self.config.max_rollout_steps,
+            "shuffle": self.config.shuffle,
+        }
+        eval_kwargs |= kwargs
         await _run_eval_loop(
             dataset=self.dataset,
             rollout_manager=self.rollout_manager,
-            batch_size=self.config.batch_size,
-            num_iterations=self.config.num_eval_iterations,
-            max_rollout_steps=self.config.max_rollout_steps,
             callbacks=self.callbacks,
-            **kwargs,
+            **eval_kwargs,
         )
 
 

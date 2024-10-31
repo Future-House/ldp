@@ -1,5 +1,5 @@
-from aviary.env import TASK_DATASET_REGISTRY
-from aviary.env import DummyTaskDataset as _DummyTaskDataset
+from aviary.core import TASK_DATASET_REGISTRY
+from aviary.core import DummyTaskDataset as _DummyTaskDataset
 
 from .callbacks import ComputeTrajectoryMetricsMixin
 

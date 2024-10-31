@@ -6,7 +6,7 @@ import litellm
 import pytest
 import tenacity
 import tree
-from aviary.message import Message
+from aviary.core import Message
 from pydantic import BaseModel, Field, JsonValue
 
 from ldp.agent import Agent, MemoryAgent, ReActAgent

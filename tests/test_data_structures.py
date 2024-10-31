@@ -1,7 +1,6 @@
 import networkx as nx
 import pytest
-from aviary.message import Message, join
-from aviary.tools import ToolResponseMessage
+from aviary.core import Message, ToolResponseMessage, join
 
 from ldp.data_structures import Transition, TransitionTree
 
