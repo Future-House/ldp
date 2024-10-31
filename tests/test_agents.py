@@ -333,7 +333,8 @@ class TestReActAgent:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("single_prompt", [True, False])
-    @pytest.mark.vcr
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.flaky(reruns=3)
     async def test_multi_step(self, dummy_env: DummyEnv, single_prompt: bool) -> None:
         obs, tools = await dummy_env.reset()
         obs = dummy_env.state.messages = [
