@@ -20,7 +20,8 @@ from ldp.llms import prepend_sys
 
 from .llm_call import ParsedLLMCallModule
 
-_DEFAULT_PROMPT_TEMPLATE = textwrap.dedent(
+# These prompts are meant to be used with ReActModuleSinglePrompt
+_DEFAULT_SINGLE_PROMPT_TEMPLATE = textwrap.dedent(
     """    Answer the following questions as best you can. You have access to the following tools:
 
     {{tools}}
@@ -34,7 +35,7 @@ _DEFAULT_PROMPT_TEMPLATE = textwrap.dedent(
 
     {example}"""
 )
-REACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
+REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE = _DEFAULT_SINGLE_PROMPT_TEMPLATE.format(
     fields=(
         "Thought: you should always think about what to do"
         "\nAction: the action to take, should be one of [{tool_names}]"
@@ -49,7 +50,7 @@ REACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
         "\nObservation: The 7 day forecast for New York is [...]"
     ),
 )
-ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
+ACT_DEFAULT_SINGLE_PROMPT_TEMPLATE = _DEFAULT_SINGLE_PROMPT_TEMPLATE.format(
     fields=(
         "Action: the action to take, should be one of [{tool_names}]"
         "\nAction Input: comma separated list of inputs to action as python tuple"
@@ -59,6 +60,45 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
     example=(
         "Action: get_weather"
         '\nAction Input: "New York", 7'
+        "\nObservation: The 7 day forecast for New York is [...]"
+    ),
+)
+
+
+# And these with ReActModule
+_DEFAULT_PROMPT_TEMPLATE = textwrap.dedent(
+    """    Answer the following questions as best you can.
+
+    Use the following format:
+
+    {fields}
+    ... (this {fields_description} can repeat N times)
+
+    Example:
+
+    {example}"""
+)
+REACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
+    fields=(
+        "Thought: you should always think about what to do"
+        "\nAction: the action to take, should be one of the provided tools with necessary arguments"
+        "\nObservation: the result of the action"
+    ),
+    fields_description="Thought/Action/Observation",
+    example=(
+        "Thought: I need to use the get_weather tool"
+        '\nAction: get_weather("New York", 7)'
+        "\nObservation: The 7 day forecast for New York is [...]"
+    ),
+)
+ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
+    fields=(
+        "Action: the action to take, should be one of the provided tools with necessary arguments"
+        "\nObservation: the result of the action"
+    ),
+    fields_description="Action/Observation",
+    example=(
+        'Action: get_weather("New York", 7)'
         "\nObservation: The 7 day forecast for New York is [...]"
     ),
 )
@@ -237,7 +277,7 @@ class ReActModuleSinglePrompt:
     def __init__(
         self,
         llm_model: dict[str, Any],
-        sys_prompt: str = REACT_DEFAULT_PROMPT_TEMPLATE,
+        sys_prompt: str = REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
         tool_description_method: ToolDescriptionMethods = ToolDescriptionMethods.STR,
     ):
         self.prompt_op = PromptOp(sys_prompt)
@@ -297,6 +337,13 @@ class ReActModule(ReActModuleSinglePrompt):
         self.package_msg_op = FxnOp(prepend_sys)
         self.postprocess_reasoning_msg_op = FxnOp(postprocess_and_concat_resoning_msg)
 
+    async def _create_system_prompt(self, tools: list[Tool]) -> OpResult[str]:
+        raise NotImplementedError(
+            "ReActModule does not implement _create_system_prompt, "
+            "since tool descriptions are passed to the API directly "
+            "instead of via prompt. Use self.prompt_op instead."
+        )
+
     @property
     def llm_call_op(self) -> LLMCallOp:
         return self._llm_call_op
@@ -305,9 +352,9 @@ class ReActModule(ReActModuleSinglePrompt):
     async def __call__(
         self, messages: Iterable[Message], tools: list[Tool]
     ) -> tuple[OpResult[ToolRequestMessage], Messages]:
-        packaged_msgs = await self.package_msg_op(
-            messages, sys_content=await self._create_system_prompt(tools)
-        )
+        sys_prompt = await self.prompt_op()
+
+        packaged_msgs = await self.package_msg_op(messages, sys_content=sys_prompt)
         # Ask the LLM to do the reasoning
         reasoning_msg = await self.llm_call_op(
             self.llm_config,
@@ -318,7 +365,7 @@ class ReActModule(ReActModuleSinglePrompt):
         # Add the reasoning to messages. Generate the tool selection prompt
         packaged_msgs_with_reasoning = await self.package_msg_op(
             await self.postprocess_reasoning_msg_op(messages, reasoning_msg),
-            sys_content=await self._create_system_prompt(tools),
+            sys_content=sys_prompt,
         )
         # Ask the LLM to select the tool
         tool_selection_msg = await self.llm_call_op(

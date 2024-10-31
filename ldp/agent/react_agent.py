@@ -20,8 +20,8 @@ from tenacity import (
 
 from ldp.graph import OpResult, compute_graph
 from ldp.graph.modules.react import (
-    ACT_DEFAULT_PROMPT_TEMPLATE,
-    REACT_DEFAULT_PROMPT_TEMPLATE,
+    ACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
+    REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
     ReActModule,
     ReActModuleSinglePrompt,
     ToolDescriptionMethods,
@@ -87,7 +87,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         description="Starting configuration for the LLM model.",
     )
     sys_prompt: str = Field(
-        default=REACT_DEFAULT_PROMPT_TEMPLATE,
+        default=REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
         description="Learnable system prompt template, defaults to ReAct.",
     )
     tool_description_method: ToolDescriptionMethods = Field(
@@ -107,7 +107,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
 
     @classmethod
     def make_act_agent(cls, **kwargs) -> Self:
-        return cls(sys_prompt=ACT_DEFAULT_PROMPT_TEMPLATE, **kwargs)
+        return cls(sys_prompt=ACT_DEFAULT_SINGLE_PROMPT_TEMPLATE, **kwargs)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
