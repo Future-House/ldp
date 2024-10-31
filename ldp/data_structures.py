@@ -303,6 +303,7 @@ class TransitionTree:
 
             step: Transition | None = self.tree.nodes[step_id]["transition"]
             if step is None:
+                state_values[step_id] = 0.0
                 continue
 
             # First, update V_t so that we can compute A_{t+1} for children
@@ -317,11 +318,9 @@ class TransitionTree:
                 ) / sum(weights)
 
             # Now compute A_t and replace Q_t with it in-place
-            parent_ids = list(self.rev_tree.successors(step_id))
-            if not parent_ids:
-                # root node
-                continue
-            parent_id, *extra = parent_ids
+            # Note that we are guaranteed at least one parent, since the `step is None`
+            # check above should have caught the root node.
+            parent_id, *extra = list(self.rev_tree.successors(step_id))
             assert not extra, "self.tree is not a tree!"
             step.value -= state_values[parent_id]
             # TODO: switch to the following
