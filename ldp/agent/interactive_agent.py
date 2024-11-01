@@ -1,12 +1,13 @@
 import contextlib
 import json
-from typing import Any
+import sys
+from typing import Any, Coroutine
 
 from aviary.core import Message, Tool, ToolCall, ToolRequestMessage
 
 from ldp.graph import IdentityOp, OpResult, compute_graph
 
-from .agent import Agent
+from .agent import Agent, TAgentState
 from .simple_agent import SimpleAgentState
 
 MISSING_DEFAULT = object()
@@ -113,3 +114,36 @@ class InteractiveAgent(Agent[SimpleAgentState]):
         if (pdefault := pprops.get("default", MISSING_DEFAULT)) is not MISSING_DEFAULT:
             pstring += f" = {pdefault}"
         return pstring
+
+
+@contextlib.contextmanager
+def trace_function(target_func):
+    """A context manager that injects a breakpoint in the target function."""
+
+    def trace_calls(frame, event, arg):
+        if event == "call" and frame.f_code == target_func.__code__:
+            sys.breakpointhook(frame)
+        return trace_calls
+
+    sys.settrace(trace_calls)
+    try:
+        yield
+    finally:
+        sys.settrace(None)
+
+
+class DebugAgent(Agent[TAgentState]):
+    """An "agent" that wraps another agent and injects breakpoints in init_state and get_asv."""
+
+    def __init__(self, agent: Agent[TAgentState]):
+        self.agent = agent
+
+    async def init_state(self, tools: list[Tool]) -> TAgentState:
+        with trace_function(self.agent.init_state):
+            return await self.agent.init_state(tools)
+
+    async def get_asv(
+        self, agent_state: TAgentState, obs: list[Message]
+    ) -> tuple[OpResult[ToolRequestMessage], TAgentState, float]:
+        with trace_function(self.agent.get_asv):
+            return await self.agent.get_asv(agent_state, obs)

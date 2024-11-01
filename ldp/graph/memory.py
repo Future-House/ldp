@@ -27,30 +27,23 @@ if TYPE_CHECKING:
 
 
 class Memory(BaseModel):
-    """A single memory about an input, output, and value tuple.
+    """A single memory of a state and action.
 
-    A memory is a record of an input, output, and resulting value. Typically used
-    for prompting a language model. Or, it could be about a whole forward pass where
-    the input is the observation and the output is the action taken.
-    The query is optionally different and used for
-    retrieving the memory. For example, it could be much larger because it won't
-    be formatted in the resulting prompt.
+    A memory consists of the following things:
+    - An agent state
+    - The action taken by the agent at that state
+    - The (estimated) value of the action taken at that state
+    - A key used to retrieve the memory (defaults to state if not provided)
     """
 
-    query: str = Field(
-        description="String to be embedded into a retrieval key for a memory index."
+    key: str = Field(
+        description="String representation of this memory, to be used for retrieval. "
+        "If not provided, `state` will be used."
     )
-    input: str | None = Field(
-        default=None,
-        description=(
-            "Some input (e.g. prompt to LLM, observation). If None (default), the input"
-            " is set to match the query."
-        ),
-    )
-    output: str = Field(description="Some output (e.g. tool selection).")
-    value: float | str = Field(
-        description="Measure of the output's quality (e.g. loss)."
-    )
+    state: str = Field(description="String representation of state.")
+    action: str = Field(description="String representation of the action taken.")
+    value: float | str = Field(description="State-action value.")
+
     metadata: JsonValue = Field(
         default_factory=dict,
         description=(
@@ -58,6 +51,7 @@ class Memory(BaseModel):
             " information an optimizer can use at training time."
         ),
     )
+
     run_id: UUID | None = Field(
         default=None,
         description=(
@@ -65,14 +59,15 @@ class Memory(BaseModel):
             "which forward pass generated the memory."
         ),
     )
+
     template: str = "Input: {input}\nOutput: {output}\nValue: {value}"
 
     @model_validator(mode="before")
     @classmethod
-    def ensure_query(cls, data: Any) -> Any:
-        """Copy input to match the query if input is None."""
-        if isinstance(data, dict) and data.get("input") is None:
-            data["input"] = data["query"]
+    def ensure_key(cls, data: Any) -> Any:
+        """Key defaults to state if not provided."""
+        if isinstance(data, dict) and data.get("key") is None:
+            data["key"] = data["state"]
         return data
 
     def __str__(self) -> str:
@@ -89,6 +84,7 @@ class Memory(BaseModel):
         **kwargs,
     ) -> Self:
         """Create from a MemoryOp, output Op, and their call IDs."""
+        raise NotImplementedError("I need to circle back to this.")
         query: str = mem_op.ctx.get(mem_call_id, "query")
         memory_input: str | None = mem_op.ctx.get(mem_call_id, "memory_input")
         output_result: OpResult[TOutput] = output_op.ctx.get(output_call_id, "output")
@@ -127,10 +123,10 @@ class MemoryModel(BaseModel, Generic[TIndex], ABC):
         return v
 
     async def add_memory(self, memory: Memory) -> None:
-        key = await self._add_to_index(
-            embedding=await self.embedding_model.embed_text(memory.query)
+        index_key = await self._add_to_index(
+            embedding=await self.embedding_model.embed_text(memory.key)
         )
-        self.memories[key] = memory
+        self.memories[index_key] = memory
 
     DEFAULT_MEMORY_MATCHES: ClassVar[int] = 3
 

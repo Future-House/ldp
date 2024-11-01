@@ -9,6 +9,7 @@ from typing import ClassVar, cast
 
 from aviary.core import Message, ToolRequestMessage
 from pydantic import ConfigDict, Field
+from textwrap import indent
 
 from ldp.graph import (
     FxnOp,
@@ -24,7 +25,7 @@ from ldp.llms.prompts import indent_xml
 from .simple_agent import SimpleAgent, SimpleAgentState
 
 
-async def _default_query_factory(messages: Iterable[Message]) -> str:
+async def _default_key_factory(messages: Iterable[Message]) -> str:
     return "\n\n".join([str(m) for m in messages if m.role != "system"])
 
 
@@ -38,32 +39,34 @@ class MemoryAgent(SimpleAgent):
     """
 
     # Working around https://github.com/pydantic/pydantic/issues/10551
-    default_query_factory: ClassVar[Callable[[Iterable[Message]], Awaitable[str]]] = (
-        _default_query_factory
+    default_key_factory: ClassVar[Callable[[Iterable[Message]], Awaitable[str]]] = (
+        _default_key_factory
     )
 
     prompt: str = Field(
         default=(
-            "<episode-memories>\n<description>"
-            "\nThese are relevant memories from previous attempts at similar tasks,"
-            " along with the action taken"
-            " and the discounted cumulative reward from that action."
-            " A negative reward is failure, a positive reward is success."
-            "\n</description>{memories}</episode-memories>"
-            "\n\nConsidering the memories, choose the next action."
+            "<episode-memories>\n  <description>\n"
+            + indent(
+                "Consider the following memories when choosing the next action.\n"
+                "These memories arise from previous successful actions taken in similar "
+                "situations. Each memory consists of a state and action.",
+                prefix="     ",
+            )
+            + "\n  </description>\n{memories}\n</episode-memories>"
+            "\n\nConsidering these memories, choose the next action."
         ),
         description="Prompt that includes the memories.",
     )
-    query_factory: Callable[[Iterable[Message]], Awaitable[str]] = Field(
-        default=default_query_factory,
+    key_factory: Callable[[Iterable[Message]], Awaitable[str]] = Field(
+        default=default_key_factory,
         description=(
-            "Async function to generate a Memory query string from messages. It's async"
+            "Async function to generate a Memory key string from messages. It's async"
             " so this can involve an LLM completion if desired."
         ),
         exclude=True,
     )
     memory_prompt: str = Field(
-        default="<memory><obs>{input}</obs><action>{output}</action><reward>{value}</reward></memory>",
+        default="<memory><state>{input}</state><action>{output}</action></memory>",
         description=(
             "Prompt for formatting an individual memory. "
             "Use XML instead of JSON to avoid potential escaping issues."
@@ -96,7 +99,7 @@ class MemoryAgent(SimpleAgent):
 
     def __init__(self, memory_model: MemoryModel | None = None, **kwargs):
         super().__init__(**kwargs)
-        self._query_factory_op = FxnOp[str](self.query_factory)
+        self._query_factory_op = FxnOp[str](self.key_factory)
         self._memory_op = MemoryOp(memory_model)
         self._format_memory_op = FxnOp(self._format_memories)
         self._prompt_op = PromptOp(self.prompt)

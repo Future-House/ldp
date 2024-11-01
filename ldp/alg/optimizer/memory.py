@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import asyncio
+from contextlib import nullcontext
 import logging
-from collections.abc import Iterable
+from collections.abc import Awaitable, Callable, Iterable, Sequence
 from typing import ClassVar, Protocol, Self, cast, runtime_checkable
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue
+from aviary.core import Message, Messages, ToolRequestMessage
+from aviary_internal.utils.config import ConfigModel
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
 
 from ldp.agent import MemoryAgent
 from ldp.alg.optimizer.opt import Optimizer
 from ldp.data_structures import Trajectory
 from ldp.graph import CallID, Memory, MemoryOp, Op, OpResult
+from ldp.graph.common_ops import LLMCallOp
 from ldp.graph.ops import TOutput
 
 logger = logging.getLogger(__name__)
@@ -156,3 +161,133 @@ class PositiveMemoryOpt(MemoryOpt):
     ) -> bool:
         # only keep positive memories
         return d_return > 0 and super()._memory_filter(call_id, memory_op, d_return)
+
+
+# TODO: put these somewhere more accessible - could be of general utility
+def tool_request_to_str(tool_request: ToolRequestMessage) -> str:
+    # Represent the ToolRequestMessage as a hashable string. Do not include
+    # the tool call IDs.
+
+    return (tool_request.content or "") + " ".join(
+        str(tc) for tc in tool_request.tool_calls
+    )
+
+
+async def join_messages(messages: Sequence[Message]) -> str:
+    return "\n".join(
+        f"{m.role}: {tool_request_to_str(m)}"
+        if isinstance(m, ToolRequestMessage)
+        else f"{m.role}: {m.content}"
+        for m in messages
+    )
+
+
+class MemoryOptConfig(ConfigModel):
+    reward_discount: float = 1.0
+    return_threshold: float = Field(
+        default=0.0,
+        description="Only keep memories with a return above this threshold.",
+    )
+    concurrency_limit: int | None = Field(
+        default=None,
+        description="If set, imposes a concurrency limit on memory construction. "
+        "Can be useful if using an LLM to construct memories and the buffer is very large.",
+    )
+
+
+class MemoryOptBufferElement(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    state: Messages
+    action: ToolRequestMessage
+    d_return: float
+
+
+class MemoryOpt2(BaseModel, Optimizer):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    config: MemoryOptConfig = Field(default_factory=MemoryOptConfig)
+    memory_op: MemoryOp = Field(
+        description="A memory Op that lives upstream of action_op in the compute graph."
+    )
+    action_op: LLMCallOp = Field(
+        description="The Op that produces the action of the compute graph. "
+        "This is typically going to be a terminal Op (i.e. no children)."
+    )
+
+    state_repr_fn: Callable[[Messages], Awaitable[str]] = Field(
+        default=join_messages,
+        description="How we represent state in the memory. "
+        "Defaults to simply concatenating the contents of all messages.",
+    )
+    action_repr_fn: Callable[[ToolRequestMessage], Awaitable[str]] = Field(
+        default=tool_request_to_str,
+        description="How we represent the action in the memory. "
+        "Defaults to simply concatenating tool calls.",
+    )
+    key_fn: Callable[[Messages], Awaitable[str]] = Field(
+        description="How we extract a key from the state. "
+        "Defaults to None, n which case state_repr_fn is used."
+    )
+
+    ### Optimizer state
+    example_buffer: list[MemoryOptBufferElement] = Field(
+        default_factory=list, description="Buffer of memories to add to the MemoryOp."
+    )
+
+    def aggregate_trajectory(self, trajectory: Trajectory) -> None:
+        if trajectory.failed:
+            return
+
+        d_returns = trajectory.compute_discounted_returns(self.config.reward_discount)
+
+        for step, d_return in zip(trajectory.steps, d_returns, strict=True):
+            if d_return < self.config.return_threshold:
+                continue
+
+            # Note that we don't really need to traverse the compute graph here, since we
+            # only need the inputs to action_op, which is terminal
+            action = cast(OpResult[ToolRequestMessage], step.action)
+            _, input_kwargs = action.ctx.get(action.call_id, "inputs")
+            state = cast(Messages, input_kwargs["msgs"])
+
+            self.example_buffer.append(
+                MemoryOptBufferElement(
+                    state=state, action=action.value, d_return=d_return
+                )
+            )
+
+    async def update(self):
+        await asyncio.gather(*[self._add_memory(el) for el in self.example_buffer])
+        self.example_buffer.clear()
+
+    async def _add_memory(self, el: MemoryOptBufferElement):
+        async with self._concurrency_limiter:
+            state = await self.state_repr_fn(el.state)
+            key = await self.key_fn(el.state) if self.key_fn else state
+            action = await self.action_repr_fn(el.action)
+
+            mem = Memory(
+                key=key,
+                state=state,
+                action=action,
+                value=el.d_return,
+            )
+
+            await self.memory_op.memory_model.add_memory(mem)
+
+    @model_validator(mode="before")
+    @classmethod
+    def set_key_fn(cls, data):
+        if isinstance(data, dict) and "key_fn" not in data and "state_repr_fn" in data:
+            data["key_fn"] = data["state_repr_fn"]
+
+        return data
+
+    @model_validator(mode="after")
+    def set_concurrency_limit(self):
+        self._concurrency_limiter = (
+            asyncio.Semaphore(self.config.concurrency_limit)
+            if self.config.concurrency_limit
+            else nullcontext()
+        )
