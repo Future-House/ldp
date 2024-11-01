@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ldp.graph import ConfigOp, LLMCallOp, OpResult, compute_graph
 from ldp.llms import prepend_sys
 
-from . import DefaultLLMModelNames
+from . import DEFAULT_LLM_COMPLETION_TIMEOUT, DefaultLLMModelNames
 from .agent import Agent
 
 
@@ -73,7 +73,11 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
     model_config = ConfigDict(frozen=True)
 
     llm_model: dict[str, Any] = Field(
-        default={"model": DefaultLLMModelNames.OPENAI.value, "temperature": 0.1},
+        default={
+            "model": DefaultLLMModelNames.OPENAI.value,
+            "temperature": 0.1,
+            "timeout": DEFAULT_LLM_COMPLETION_TIMEOUT,
+        },
         description="Starting configuration for the LLM model. Trainable.",
     )
     sys_prompt: str | None = Field(

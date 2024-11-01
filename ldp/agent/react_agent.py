@@ -29,7 +29,7 @@ from ldp.graph.modules.react import (
     ToolDescriptionMethods,
 )
 
-from . import DefaultLLMModelNames
+from . import DEFAULT_LLM_COMPLETION_TIMEOUT, DefaultLLMModelNames
 from .agent import Agent
 from .simple_agent import SimpleAgentState
 
@@ -85,6 +85,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
             "temperature": 0.1,
             "logprobs": True,
             "top_logprobs": 1,
+            "timeout": DEFAULT_LLM_COMPLETION_TIMEOUT,
         },
         description="Starting configuration for the LLM model.",
     )
