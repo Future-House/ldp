@@ -7,6 +7,9 @@ class DefaultLLMModelNames(StrEnum):
     OPENAI = "gpt-4o-2024-08-06"  # Cheap, fast, and decent
 
 
+# Lower than LiteLLM's 10-min default: https://github.com/BerriAI/litellm/blob/v1.48.10/litellm/main.py#L859
+DEFAULT_LLM_COMPLETION_TIMEOUT = 120  # seconds
+
 # ruff: noqa: E402  # Avoid circular imports
 
 from .agent import Agent, AgentConfig

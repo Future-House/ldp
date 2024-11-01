@@ -3,13 +3,18 @@ from __future__ import annotations
 from typing import Any, Self, cast
 
 from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
+from aviary.message import EnvStateMessage
 from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.graph import ConfigOp, LLMCallOp, OpResult, compute_graph
 from ldp.llms import prepend_sys
 
-from . import DefaultLLMModelNames
+from . import DEFAULT_LLM_COMPLETION_TIMEOUT, DefaultLLMModelNames
 from .agent import Agent
+
+
+class HiddenEnvStateMessage(EnvStateMessage):
+    content: str = "[Previous environment state - hidden]"
 
 
 class SimpleAgentState(BaseModel):
@@ -24,6 +29,7 @@ class SimpleAgentState(BaseModel):
         self,
         obs: list[Message] | None = None,
         tools: list[Tool] | None = None,
+        hide_old_env_states: bool = False,
         **kwargs,
     ) -> Self:
         """
@@ -35,14 +41,23 @@ class SimpleAgentState(BaseModel):
             obs: Optional observation messages to use in creating the next state.
             tools: Optional list of tools available to the agent. If unspecified, these
                 should be pulled from the prior_state.
+            hide_old_env_states: Whether to hide old environment states in the messages.
+                This is useful for reducing context window usage.
             kwargs: Additional keyword arguments to pass to this class's constructor.
 
         Returns:
             The next agent state (which is not an in-place change to self).
         """
+        old_messages = self.messages
+        if hide_old_env_states:
+            old_messages = [
+                HiddenEnvStateMessage() if isinstance(m, EnvStateMessage) else m
+                for m in old_messages
+            ]
+
         return type(self)(
             tools=tools if tools is not None else self.tools,
-            messages=self.messages + (obs or []),
+            messages=old_messages + (obs or []),
             **kwargs,
         )
 
@@ -58,7 +73,11 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
     model_config = ConfigDict(frozen=True)
 
     llm_model: dict[str, Any] = Field(
-        default={"model": DefaultLLMModelNames.OPENAI.value, "temperature": 0.1},
+        default={
+            "model": DefaultLLMModelNames.OPENAI.value,
+            "temperature": 0.1,
+            "timeout": DEFAULT_LLM_COMPLETION_TIMEOUT,
+        },
         description="Starting configuration for the LLM model. Trainable.",
     )
     sys_prompt: str | None = Field(
