@@ -2,18 +2,11 @@ interactions:
   - request:
       body:
         '{"messages": [{"role": "system", "content": "Answer the following questions
-        as best you can. You have access to the following tools:\n\nNAME: print_story\n\nSYNOPSIS:\n    print_story(string
-        story)\n\nDESCRIPTION:\n    Print a story.\n\nPARAMETERS:\n    story (string):
-        Story to print.\n\nNAME: cast_float\n\nSYNOPSIS:\n    cast_float(string x)\n\nDESCRIPTION:\n    Cast
-        the input argument x to a float.\n\nPARAMETERS:\n    x (string): No description
-        provided.\n\nNAME: cast_int\n\nSYNOPSIS:\n    cast_int(number x)\n\nDESCRIPTION:\n    Cast
-        the input argument x to an integer.\n\nPARAMETERS:\n    x (number): No description
-        provided.\n\nUse the following format:\n\nThought: you should always think about
-        what to do\nAction: the action to take, should be one of [print_story, cast_float,
-        cast_int]\nAction Input: comma separated list of inputs to action as python
-        tuple\nObservation: the result of the action\n... (this Thought/Action/Action
-        Input/Observation can repeat N times)\n\nExample:\n\nThought: I need to use
-        the get_weather tool\nAction: get_weather\nAction Input: \"New York\", 7\nObservation:
+        as best you can, using the provided tools.\n\nUse the following format:\n\nThought:
+        you should always think about what to do\nAction: the action to take, should
+        be one of the provided tools with necessary arguments\nObservation: the result
+        of the action\n... (this Thought/Action/Observation can repeat N times)\n\nExample:\n\nThought:
+        I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
         The 7 day forecast for New York is [...]"}, {"role": "user", "content": "Write
         a 5 word story via print_story"}], "model": "gpt-4o", "stop": ["Observation:",
         "Action:"], "temperature": 0.1, "tool_choice": "none", "tools": [{"type": "function",
@@ -34,46 +27,48 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "2020"
+          - "1413"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.46.1
+          - AsyncOpenAI/Python 1.52.2
         x-stainless-arch:
-          - arm64
+          - x64
         x-stainless-async:
           - async:asyncio
         x-stainless-lang:
           - python
         x-stainless-os:
-          - MacOS
+          - Linux
         x-stainless-package-version:
-          - 1.46.1
+          - 1.52.2
         x-stainless-raw-response:
           - "true"
+        x-stainless-retry-count:
+          - "1"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.7
+          - 3.11.0rc1
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA2yQzU7DMBCE73kKa88NStK0RbnBBQQSQvwcAKHIcTaJqWNbtitKq747cpK2qdqL
-          DzOeb2d3GxACvISMAGuoY60W4c3T22b9eMs26W8VfyynpX14N5/3ycvz8u4VJj6hih9kbp+6YqrV
-          Ah1XsreZQerQU+PFNIrnUZLEndGqEoWP1dqFqQqTKEnD6DqM5kOwUZyhhYx8BYQQsu1eX1GWuIaM
-          RJO90qK1tEbIDp8IAaOEV4Bay62j0sHkaDIlHcqu9Vg2WK0s9a3kSohB3x3mCFVrowo7+Ae94pLb
-          JjdIrZKeaZ3S0Lm7gJDvbp/VSUXQRrXa5U4tUXrgdDbreXC84NEddgWnHBWXQie4vERHubCjgwCj
-          rMFyRAxGu53PvITo9+OyPqMEAwnsn3XY5hWXNRpteH/iSueLpCgqOo/iFIJd8A8AAP//AwAeMH9D
-          awIAAA==
+          H4sIAAAAAAAAA2yQS2/CMBCE7/kV1p5JZQJNaG5UPcCJExKiqiLH2SRu/aptpFaI/17lUR6Ciw8z
+          nm9n9xgRAqKCnABvWeDKyni52VK3fHtV+3W1U5vqe1ouynW22q+2dAeTLmHKT+ThP/XEjbISgzB6
+          sLlDFrCjTrMZnb0sUvrcG8pUKLtYY0M8N3FCk3lMFzFNx2BrBEcPOXmPCCHk2L9dRV3hD+SETv4V
+          hd6zBiE/fyIEnJGdAsx74QPTASYXkxsdUPetr2WH9cGzrpU+SDnqp/McaRrrTOlH/6zXQgvfFg6Z
+          N7pj+mAs9O4pIuSj3+dwUxGsM8qGIpgv1B0wmaYDDy4XvLjjrhBMYPJR6AZXVBiYkP7qIMAZb7G6
+          IkZXu93PfIQY9hO6uaNEIwn8rw+oilroBp11YjhxbQuWVTTFecIyiE7RHwAAAP//AwDyR23sawIA
+          AA==
       headers:
         CF-Cache-Status:
           - DYNAMIC
         CF-RAY:
-          - 8d9ee7646dbe16a6-SJC
+          - 8db5a355786b9657-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -81,7 +76,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 29 Oct 2024 00:03:41 GMT
+          - Thu, 31 Oct 2024 18:16:46 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -95,7 +90,7 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "132"
+          - "303"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -107,31 +102,24 @@ interactions:
         x-ratelimit-remaining-requests:
           - "9999"
         x-ratelimit-remaining-tokens:
-          - "29999709"
+          - "29999853"
         x-ratelimit-reset-requests:
           - 6ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_abc694e99af0e7fb93e33d5f28bc555a
+          - req_1aa1cb98d3fb2f0fb548bc9d156de2a1
       status:
         code: 200
         message: OK
   - request:
       body:
         '{"messages": [{"role": "system", "content": "Answer the following questions
-        as best you can. You have access to the following tools:\n\nNAME: print_story\n\nSYNOPSIS:\n    print_story(string
-        story)\n\nDESCRIPTION:\n    Print a story.\n\nPARAMETERS:\n    story (string):
-        Story to print.\n\nNAME: cast_float\n\nSYNOPSIS:\n    cast_float(string x)\n\nDESCRIPTION:\n    Cast
-        the input argument x to a float.\n\nPARAMETERS:\n    x (string): No description
-        provided.\n\nNAME: cast_int\n\nSYNOPSIS:\n    cast_int(number x)\n\nDESCRIPTION:\n    Cast
-        the input argument x to an integer.\n\nPARAMETERS:\n    x (number): No description
-        provided.\n\nUse the following format:\n\nThought: you should always think about
-        what to do\nAction: the action to take, should be one of [print_story, cast_float,
-        cast_int]\nAction Input: comma separated list of inputs to action as python
-        tuple\nObservation: the result of the action\n... (this Thought/Action/Action
-        Input/Observation can repeat N times)\n\nExample:\n\nThought: I need to use
-        the get_weather tool\nAction: get_weather\nAction Input: \"New York\", 7\nObservation:
+        as best you can, using the provided tools.\n\nUse the following format:\n\nThought:
+        you should always think about what to do\nAction: the action to take, should
+        be one of the provided tools with necessary arguments\nObservation: the result
+        of the action\n... (this Thought/Action/Observation can repeat N times)\n\nExample:\n\nThought:
+        I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
         The 7 day forecast for New York is [...]"}, {"role": "user", "content": "Write
         a 5 word story via print_story"}, {"role": "assistant", "content": "Thought:
         . Based on this reasoning, let''s select the appropriate tool!\nAction: "},
@@ -154,48 +142,50 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "2186"
+          - "1579"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.46.1
+          - AsyncOpenAI/Python 1.52.2
         x-stainless-arch:
-          - arm64
+          - x64
         x-stainless-async:
           - async:asyncio
         x-stainless-lang:
           - python
         x-stainless-os:
-          - MacOS
+          - Linux
         x-stainless-package-version:
-          - 1.46.1
+          - 1.52.2
         x-stainless-raw-response:
           - "true"
+        x-stainless-retry-count:
+          - "0"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.7
+          - 3.11.0rc1
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA2xSXWvbQBB816849tkKkiw7QW8pIQRKAiUtbVMXcT6vpEtOd+J21do1/u9F8odk
-          J3oQx87NzN7sbgMhQK8gE6AqyapuTHj79PXfmu5+fo7px3zDT8XDy1TTrPjy3fxJYNIx3PIVFR9Z
-          V8rVjUHWzu5h5VEydqrx9TSK51GSxD1QuxWajlY2HKYuTKIkDaObMJofiJXTCgky8SsQQoht/+9a
-          tCtcQyaiybFSI5EsEbLTJSHAO9NVQBJpYmkZJgOonGW0Xde2NWYEsHMmV9KYwXj/bUfnISdpTJ6+
-          PN5y+7hefqo35YOavc7u5Tf39jzy20tvmr6horXqlM8IP9WzCzMhwMq65zZeW86Jnd9c0IUA6cu2
-          Rstd67BdQH9tAdkCnltLyOJvpalBT4JQeWQS7ITVZcVXC9jBmdwu+Oj8e5SUx6IlaQ4RHuq700yM
-          KxvvlnQRMRTaaqpyj5L6p44TD45uvQ+0Z0OFxru64ZzdG9pOdnoT71Vh2LkBTQ7rAexYmqGeRkfW
-          mV6+Qpa6n/pp0ZRUFa4GahSMnvje9COJ/TO1Ld+pBAcloA0x1nmhbYm+n2+/JE1+nSyXhZxHcQrB
-          LvgPAAD//wMAh1UC3J4DAAA=
+          H4sIAAAAAAAAA2xSYW+bMBD9zq+w7nOoCMlYwrd1mqZKqaooyqZ2mZBrDvBmbGYf67Io/70CEiBp
+          +YCse37vnd/dwWMMZAoxA1FwEmWl/E8P28C9TMvbe/x8txIr+/C0XP8331Yz3E5h0jDM8y8UdGbd
+          CFNWCkka3cHCIidsVKcfZ8FsuYiCqAVKk6JqaHlF/tz4YRDO/WDhB9GJWBgp0EHMfniMMXZo/02L
+          OsV/ELNgcq6U6BzPEeL+EmNgjWoqwJ2TjrgmmAygMJpQN13rWqkRQMaoRHClBuPuO4zOQ05cqWR9
+          +2ejN1+nwerx8e7v9jtG9OX+aZ2O/DrpfdU2lNVa9PmM8L4eX5kxBpqXLbeyUlPiyNj9FZ0x4Dav
+          S9TUtA6HHbTXdhDvYFNrh8ReCukqtI45FBbJMTJMy7ygmx0c4ULu6L13/jlKymJWO65OEZ7qx34m
+          yuSVNc/uKmLIpJauSCxy1z51nLh3dmt9oL4YKlTWlBUlZH6jbmTDedipwrBzI/S0HkCGuBrVozPr
+          Qi9Jkbhsp94vmuCiwHSgBt7oiW9N35Ponil1/kbFOymB2zvCMsmkztG2822XpEqWwezDPAoXWQje
+          0XsFAAD//wMAE6F8TZ4DAAA=
       headers:
         CF-Cache-Status:
           - DYNAMIC
         CF-RAY:
-          - 8d9ee7689a0f16a6-SJC
+          - 8db5a3583ac39657-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -203,7 +193,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 29 Oct 2024 00:03:42 GMT
+          - Thu, 31 Oct 2024 18:16:46 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -217,7 +207,7 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "575"
+          - "516"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -229,13 +219,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "9999"
         x-ratelimit-remaining-tokens:
-          - "29910995"
+          - "29999828"
         x-ratelimit-reset-requests:
           - 6ms
         x-ratelimit-reset-tokens:
-          - 178ms
+          - 0s
         x-request-id:
-          - req_2dbedb2bbb0150b225cec3c48d57ed1a
+          - req_5959d412ab4a8044ba99b80c0b992bb0
       status:
         code: 200
         message: OK
