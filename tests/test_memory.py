@@ -7,9 +7,7 @@ from ldp.llms import EmbeddingModel
 
 @pytest.fixture(name="sample_memory")
 def fixture_sample_memory() -> Memory:
-    return Memory(
-        query="sample string representation", output="observation", value=42.0
-    )
+    return Memory(state="sample string representation", action="action", value=42.0)
 
 
 @pytest.mark.asyncio
@@ -35,7 +33,7 @@ async def test_add_then_get_memory(sample_memory: Memory) -> None:
     async with memory_model.safe_access_index() as index:
         assert len(index) == 1, "Should have one memory"
     assert memory_model.memories[0] == sample_memory
-    result = await memory_model.get_memory("sample query", matches=1)
+    result = await memory_model.get_memories("sample query", matches=1)
     assert len(result) == 1
     assert result[0] == sample_memory
 

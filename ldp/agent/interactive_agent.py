@@ -120,7 +120,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
 def trace_function(target_func):
     """A context manager that injects a breakpoint in the target function."""
 
-    def trace_calls(frame, event, arg):
+    def trace_calls(frame, event, arg):  # noqa: ARG001
         if event == "call" and frame.f_code == target_func.__code__:
             sys.breakpointhook(frame)
         return trace_calls
@@ -133,7 +133,15 @@ def trace_function(target_func):
 
 
 class DebugAgent(Agent[TAgentState]):
-    """An "agent" that wraps another agent and injects breakpoints in init_state and get_asv."""
+    """An "agent" that wraps another agent and injects breakpoints in init_state and get_asv.
+
+    Usage:
+    ```pycon
+    >>> agent = DebugAgent(SomeOtherAgent())
+    >>> agent_state = await agent.init_state(tools)
+    (Pdb) # get dropped into a breakpoint inside SomeOtherAgent.init_state
+    ```
+    """
 
     def __init__(self, agent: Agent[TAgentState]):
         self.agent = agent

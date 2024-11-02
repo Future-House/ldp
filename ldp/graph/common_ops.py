@@ -357,7 +357,7 @@ class MemoryOp(Op[list[Memory]]):
             call_id = get_call_id()
             self.ctx.update(call_id, "query", query)
             self.ctx.update(call_id, "memory_input", input)
-        return await self.memory_model.get_memory(query, matches)
+        return await self.memory_model.get_memories(query, matches)
 
     @classmethod
     def backward(
