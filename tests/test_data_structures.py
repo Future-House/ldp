@@ -48,7 +48,7 @@ def test_tree_mc_value():
     )
 
     # Check we can compute advantages w/o crashing for now. TODO: test the assigned
-    # values after the TODO re: metadata in compute_advantages() is addressed.
+    # advantages. Will do so after the TODO in compute_advantages() is resolved.
     tree.compute_advantages()
 
 

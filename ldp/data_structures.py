@@ -323,7 +323,8 @@ class TransitionTree:
             parent_id, *extra = list(self.rev_tree.successors(step_id))
             assert not extra, "self.tree is not a tree!"
             step.value -= state_values[parent_id]
-            # TODO: switch to the following
+            # TODO: switch to the following, instead of overwriting step.value.
+            # See docstring for explanation.
             # step.metadata["advantage"] = step.value - state_values[parent_id]
 
     def merge_identical_nodes(
