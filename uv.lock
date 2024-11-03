@@ -1003,7 +1003,7 @@ wheels = [
 
 [[package]]
 name = "ldp"
-version = "0.13.1.dev2+g82b2ba6"
+version = "0.13.1.dev5+gb25e6b3.d20241104"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -1023,6 +1023,35 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+dev = [
+    { name = "fastapi" },
+    { name = "fhaviary", extra = ["xml"] },
+    { name = "ipython" },
+    { name = "litellm" },
+    { name = "mypy" },
+    { name = "openai" },
+    { name = "pre-commit" },
+    { name = "pydantic" },
+    { name = "pydot" },
+    { name = "pylint" },
+    { name = "pylint-pydantic" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "pytest-rerunfailures" },
+    { name = "pytest-subtests" },
+    { name = "pytest-sugar" },
+    { name = "pytest-timer", extra = ["colorama"] },
+    { name = "pytest-xdist" },
+    { name = "refurb" },
+    { name = "rich" },
+    { name = "torch" },
+    { name = "tqdm" },
+    { name = "types-aiofiles" },
+    { name = "types-tqdm" },
+    { name = "wandb" },
+]
 monitor = [
     { name = "wandb" },
 ]
@@ -1045,8 +1074,37 @@ visualization = [
 ]
 
 [package.dev-dependencies]
-dev = [
+codeflash = [
     { name = "codeflash" },
+    { name = "fastapi" },
+    { name = "fhaviary", extra = ["xml"] },
+    { name = "ipython" },
+    { name = "litellm" },
+    { name = "mypy" },
+    { name = "openai" },
+    { name = "pre-commit" },
+    { name = "pydantic" },
+    { name = "pydot" },
+    { name = "pylint" },
+    { name = "pylint-pydantic" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "pytest-rerunfailures" },
+    { name = "pytest-subtests" },
+    { name = "pytest-sugar" },
+    { name = "pytest-timer", extra = ["colorama"] },
+    { name = "pytest-xdist" },
+    { name = "refurb" },
+    { name = "rich" },
+    { name = "torch" },
+    { name = "tqdm" },
+    { name = "types-aiofiles" },
+    { name = "types-tqdm" },
+    { name = "wandb" },
+]
+dev = [
     { name = "fastapi" },
     { name = "fhaviary", extra = ["xml"] },
     { name = "ipython" },
@@ -1082,13 +1140,33 @@ requires-dist = [
     { name = "dm-tree" },
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.109" },
     { name = "fhaviary", specifier = ">=0.8.2" },
+    { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'" },
     { name = "httpx" },
+    { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "ldp", extras = ["monitor", "nn", "rich", "server", "typing", "visualization"], marker = "extra == 'dev'" },
     { name = "litellm", specifier = ">=1.40.15" },
+    { name = "litellm", marker = "extra == 'dev'", specifier = "!=1.49.4,!=1.49.5,!=1.49.6" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
     { name = "networkx", extras = ["default"], specifier = "~=3.4" },
     { name = "numpy", specifier = ">=1.20" },
     { name = "openai", specifier = ">=1" },
+    { name = "openai", marker = "extra == 'dev'", specifier = "<1.47" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.4" },
     { name = "pydantic", specifier = "~=2.0" },
+    { name = "pydantic", marker = "extra == 'dev'", specifier = "~=2.9" },
     { name = "pydot", marker = "extra == 'visualization'", specifier = ">=3.0.1" },
+    { name = "pylint", marker = "extra == 'dev'", specifier = ">=3.2" },
+    { name = "pylint-pydantic", marker = "extra == 'dev'" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'" },
+    { name = "pytest-mock", marker = "extra == 'dev'" },
+    { name = "pytest-recording", marker = "extra == 'dev'" },
+    { name = "pytest-rerunfailures", marker = "extra == 'dev'" },
+    { name = "pytest-subtests", marker = "extra == 'dev'" },
+    { name = "pytest-sugar", marker = "extra == 'dev'" },
+    { name = "pytest-timer", extras = ["colorama"], marker = "extra == 'dev'" },
+    { name = "pytest-xdist", marker = "extra == 'dev'" },
+    { name = "refurb", marker = "extra == 'dev'", specifier = ">=2" },
     { name = "rich", marker = "extra == 'rich'" },
     { name = "tenacity" },
     { name = "tiktoken" },
@@ -1103,29 +1181,11 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "codeflash" },
-    { name = "fhaviary", extras = ["xml"] },
-    { name = "ipython", specifier = ">=8" },
-    { name = "ldp", extras = ["monitor", "nn", "rich", "server", "typing", "visualization"] },
-    { name = "litellm", specifier = "!=1.49.4,!=1.49.5,!=1.49.6" },
-    { name = "mypy", specifier = ">=1.8" },
-    { name = "openai", specifier = "<1.47" },
-    { name = "pre-commit", specifier = ">=3.4" },
-    { name = "pydantic", specifier = "~=2.9" },
-    { name = "pylint", specifier = ">=3.2" },
-    { name = "pylint-pydantic" },
-    { name = "pytest", specifier = ">=8" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-mock" },
-    { name = "pytest-recording" },
-    { name = "pytest-rerunfailures" },
-    { name = "pytest-subtests" },
-    { name = "pytest-sugar" },
-    { name = "pytest-timer", extras = ["colorama"] },
-    { name = "pytest-xdist" },
-    { name = "refurb", specifier = ">=2" },
+codeflash = [
+    { name = "codeflash", specifier = ">=0.7" },
+    { name = "ldp", extras = ["dev"] },
 ]
+dev = [{ name = "ldp", extras = ["dev"] }]
 
 [[package]]
 name = "libcst"
