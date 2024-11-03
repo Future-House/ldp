@@ -1,8 +1,13 @@
 import logging
 from typing import Any, Self, cast
 
-from aviary.message import MalformedMessageError, Message
-from aviary.tools import Tool, ToolRequestMessage, ToolResponseMessage
+from aviary.core import (
+    MalformedMessageError,
+    Message,
+    Tool,
+    ToolRequestMessage,
+    ToolResponseMessage,
+)
 from pydantic import BaseModel, ConfigDict, Field
 from tenacity import (
     Future,
@@ -16,13 +21,15 @@ from tenacity import (
 from ldp.graph import OpResult, compute_graph
 from ldp.graph.modules.react import (
     ACT_DEFAULT_PROMPT_TEMPLATE,
+    ACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
     REACT_DEFAULT_PROMPT_TEMPLATE,
+    REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
     ReActModule,
     ReActModuleSinglePrompt,
     ToolDescriptionMethods,
 )
 
-from . import DefaultLLMModelNames
+from . import DEFAULT_LLM_COMPLETION_TIMEOUT, DefaultLLMModelNames
 from .agent import Agent
 from .simple_agent import SimpleAgentState
 
@@ -78,12 +85,13 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
             "temperature": 0.1,
             "logprobs": True,
             "top_logprobs": 1,
+            "timeout": DEFAULT_LLM_COMPLETION_TIMEOUT,
         },
         description="Starting configuration for the LLM model.",
     )
     sys_prompt: str = Field(
-        default=REACT_DEFAULT_PROMPT_TEMPLATE,
-        description="Learnable system prompt template, defaults to ReAct.",
+        description="Learnable system prompt template. If not provided, a default ReAct prompt "
+        "template will be assigned, depending on the single_prompt setting.",
     )
     tool_description_method: ToolDescriptionMethods = Field(
         default=ToolDescriptionMethods.STR,
@@ -102,9 +110,24 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
 
     @classmethod
     def make_act_agent(cls, **kwargs) -> Self:
-        return cls(sys_prompt=ACT_DEFAULT_PROMPT_TEMPLATE, **kwargs)
+        single_prompt = kwargs.pop("single_prompt", False)
+        return cls(
+            sys_prompt=ACT_DEFAULT_SINGLE_PROMPT_TEMPLATE
+            if single_prompt
+            else ACT_DEFAULT_PROMPT_TEMPLATE,
+            **kwargs,
+        )
 
     def __init__(self, **kwargs):
+        # set sys_prompt if not provided
+        if "sys_prompt" not in kwargs:
+            single_prompt = kwargs.get("single_prompt", False)
+            kwargs["sys_prompt"] = (
+                REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE
+                if single_prompt
+                else REACT_DEFAULT_PROMPT_TEMPLATE
+            )
+
         super().__init__(**kwargs)
         if self.single_prompt:
             self._react_module = ReActModuleSinglePrompt(

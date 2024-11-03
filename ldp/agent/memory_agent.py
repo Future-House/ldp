@@ -7,8 +7,7 @@ memories, formatted using specified prompts. A memory is typically a set of prev
 from collections.abc import Awaitable, Callable, Iterable
 from typing import ClassVar, cast
 
-from aviary.message import Message
-from aviary.tools import ToolRequestMessage
+from aviary.core import Message, ToolRequestMessage
 from pydantic import ConfigDict, Field
 
 from ldp.graph import (

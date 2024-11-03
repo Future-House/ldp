@@ -1,0 +1,175 @@
+interactions:
+  - request:
+      body:
+        '{"messages": [{"role": "user", "content": [{"type": "text", "text": "Write
+        a 5 word story via print_story"}]}], "temperature": 0.1, "stop_sequences": ["Observation:",
+        "Action:"], "tools": [{"name": "print_story", "description": "Print a story.",
+        "input_schema": {"type": "object", "properties": {"story": {"description": "Story
+        to print.", "title": "Story", "type": "string"}}, "required": ["story"]}}, {"name":
+        "cast_float", "description": "Cast the input argument x to a float.", "input_schema":
+        {"type": "object", "properties": {"x": {"title": "X", "type": "string"}}, "required":
+        ["x"]}}, {"name": "cast_int", "description": "Cast the input argument x to an
+        integer.", "input_schema": {"type": "object", "properties": {"x": {"title":
+        "X", "type": "number"}}, "required": ["x"]}}], "system": [{"type": "text", "text":
+        "Answer the following questions as best you can, using the provided tools.\n\nUse
+        the following format:\n\nThought: you should always think about what to do\nAction:
+        the action to take, should be one of the provided tools with necessary arguments\nObservation:
+        the result of the action\n... (this Thought/Action/Observation can repeat N
+        times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction: get_weather(\"New
+        York\", 7)\nObservation: The 7 day forecast for New York is [...]"}], "max_tokens":
+        4096, "model": "claude-3-haiku-20240307"}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "1376"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.51.0
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAA1SPUUvEMBCE/0qY51R6vStq3kRQFAURBUGkxHZpw/WyNdnQO0r/u7Qi6NPyzcwu
+          OxNcA4NDbKt8c9s8PL9e8P3m+unxM4w3b8fd2LbQkNNAS4pitC1BI3C/CDZGF8V6gcaBG+phUPc2
+          NZRts866fcqKvNjl2/wcGjV7IS8w79PvRaHjsrsOg5eOU9uJUXfKEzVKWKVISjpSQ3BeqigcTkqY
+          +8UbgxNSVpVq5NCo1TzD/KERhYcqkI3sYX4o0lciXy/P/2eDq1ocewONtNYzE5wfklTCe/IRprws
+          NDjJX60o5/kbAAD//wMAsTCisT0BAAA=
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 8db59e82ce95234f-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Thu, 31 Oct 2024 18:13:28 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Robots-Tag:
+          - none
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2024-10-31T18:14:12Z"
+        anthropic-ratelimit-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2024-10-31T18:13:28Z"
+        request-id:
+          - req_01L3o3AG5oy37haM5sPWEZ4w
+        via:
+          - 1.1 google
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"messages": [{"role": "user", "content": [{"type": "text", "text": "Write
+        a 5 word story via print_story"}]}, {"role": "assistant", "content": [{"type":
+        "text", "text": "Thought: I need to use the print_story tool to write a 5 word
+        story.. Based on this reasoning, let''s select the appropriate tool!\nAction:
+        "}]}, {"role": "user", "content": [{"type": "text", "text": "Continue..."}]}],
+        "temperature": 0.1, "stop_sequences": ["Observation:", "Action:"], "tools":
+        [{"name": "print_story", "description": "Print a story.", "input_schema": {"type":
+        "object", "properties": {"story": {"description": "Story to print.", "title":
+        "Story", "type": "string"}}, "required": ["story"]}}, {"name": "cast_float",
+        "description": "Cast the input argument x to a float.", "input_schema": {"type":
+        "object", "properties": {"x": {"title": "X", "type": "string"}}, "required":
+        ["x"]}}, {"name": "cast_int", "description": "Cast the input argument x to an
+        integer.", "input_schema": {"type": "object", "properties": {"x": {"title":
+        "X", "type": "number"}}, "required": ["x"]}}], "tool_choice": {"type": "any"},
+        "system": [{"type": "text", "text": "Answer the following questions as best
+        you can, using the provided tools.\n\nUse the following format:\n\nThought:
+        you should always think about what to do\nAction: the action to take, should
+        be one of the provided tools with necessary arguments\nObservation: the result
+        of the action\n... (this Thought/Action/Observation can repeat N times)\n\nExample:\n\nThought:
+        I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
+        The 7 day forecast for New York is [...]"}], "max_tokens": 4096, "model": "claude-3-haiku-20240307"}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "1685"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.51.0
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAA1SQXUvDQBBF/0qY563ko6VlX1s/QAsiKlSRsGanydrNbLI7Wywh/13SIujj3Jl7
+          OMwARoOENtRlmt1X/UOxMl/NenvT4N3bk9pkugYBfOpwusIQVI0gwDs7BSoEE1gRg4DWabQgobIq
+          apwVs0aZQ5zlaT5Pi3QJAipHjMQg34dfIjtnyxgm5NljmmOZZo/P3rn1sS8Wt5vtbn7i7LrfvYIA
+          Uu3U67whLgM7f5qq1EUGOcAlkPBC+N1hxagTpY9IHD2KJNLe+RqZ1afFpMXWeYNBJNbs0Tqqk703
+          SDo0pruCcfwQE68rParg6L/seRGwj0gVgqRorYB4fo4cLj4luwNSALnMVwJc5L/ZIhvHHwAAAP//
+          AwCjKAJRewEAAA==
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 8db59e86aa3a234f-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Thu, 31 Oct 2024 18:13:29 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Robots-Tag:
+          - none
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2024-10-31T18:14:12Z"
+        anthropic-ratelimit-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2024-10-31T18:13:29Z"
+        request-id:
+          - req_011KMRYVtTetk59EAj7mce7n
+        via:
+          - 1.1 google
+      status:
+        code: 200
+        message: OK
+version: 1

@@ -23,7 +23,7 @@ class Optimizer(ABC):
         return super().__init_subclass__()
 
     def aggregate(
-        self, trajectories: Iterable[Trajectory], show_pbar: bool = False
+        self, trajectories: Iterable[Trajectory], show_pbar: bool = False, **kwargs
     ) -> None:
         """Aggregate trajectories to construct training samples."""
         trajectories_with_pbar = tqdm(
@@ -34,7 +34,7 @@ class Optimizer(ABC):
             disable=not show_pbar,
         )
         for trajectory in trajectories_with_pbar:
-            self.aggregate_trajectory(trajectory)
+            self.aggregate_trajectory(trajectory, **kwargs)
 
     @abstractmethod
     def aggregate_trajectory(self, trajectory: Trajectory) -> None:
@@ -52,10 +52,10 @@ class ChainedOptimizer(Optimizer):
         self.optimizers = optimizers
 
     def aggregate(
-        self, trajectories: Iterable[Trajectory], show_pbar: bool = False
+        self, trajectories: Iterable[Trajectory], show_pbar: bool = False, **kwargs
     ) -> None:
         for optimizer in self.optimizers:
-            optimizer.aggregate(trajectories, show_pbar=show_pbar)
+            optimizer.aggregate(trajectories, show_pbar=show_pbar, **kwargs)
 
     async def update(self) -> None:
         for optimizer in self.optimizers:

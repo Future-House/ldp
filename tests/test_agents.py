@@ -8,15 +8,14 @@ from unittest.mock import patch
 
 import networkx as nx
 import pytest
-from aviary.env import DummyEnv
-from aviary.message import Message
-from aviary.tools import Tool, ToolCall, ToolRequestMessage
+from aviary.core import DummyEnv, Message, Tool, ToolCall, ToolRequestMessage
 from httpx import ASGITransport, AsyncClient
 from pydantic import BaseModel, Field
 
 from ldp.agent import (
     Agent,
     AgentConfig,
+    DefaultLLMModelNames,
     HTTPAgentClient,
     MemoryAgent,
     ReActAgent,
@@ -299,6 +298,7 @@ class TestReActAgent:
         ("single_prompt", "model_name"),
         [
             (True, CILLMModelNames.ANTHROPIC.value),
+            (False, CILLMModelNames.ANTHROPIC.value),
             (True, "gpt-4-turbo"),
             (False, "gpt-4o"),
         ],
@@ -333,6 +333,8 @@ class TestReActAgent:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("single_prompt", [True, False])
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.flaky(reruns=3)
     async def test_multi_step(self, dummy_env: DummyEnv, single_prompt: bool) -> None:
         obs, tools = await dummy_env.reset()
         obs = dummy_env.state.messages = [
@@ -343,7 +345,17 @@ class TestReActAgent:
                 )
             )
         ]
-        agent = ReActAgent(single_prompt=single_prompt)
+        agent = ReActAgent(
+            single_prompt=single_prompt,
+            llm_model={
+                "model": DefaultLLMModelNames.OPENAI.value,
+                # If tools are provided, don't allow it to make parallel tool calls, since
+                # we want to force longer trajectories. In single_prompt mode, parallel tool
+                # calling is not possible, and OpenAI requires parallel_tool_calls=None
+                # if no tools are provided.
+                "parallel_tool_calls": (None if single_prompt else False),
+            },
+        )
         agent_state = await agent.init_state(tools=tools)
         for i in range(4):  # noqa: B007
             action, agent_state, _ = await agent.get_asv(agent_state, obs)
@@ -382,6 +394,7 @@ class TestReActAgent:
         ("single_prompt", "model_name"),
         [
             (True, CILLMModelNames.ANTHROPIC.value),
+            (False, CILLMModelNames.ANTHROPIC.value),
             (True, "gpt-4-turbo"),
             (False, "gpt-4o"),
         ],

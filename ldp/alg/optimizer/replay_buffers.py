@@ -32,3 +32,9 @@ class CircularReplayBuffer(UserList[dict]):
 
             if not infinite:
                 break
+
+
+class RandomizedReplayBuffer(CircularReplayBuffer):
+    def resize(self, size: int):
+        if len(self) > size:
+            self.data = random.sample(self.data, size)
