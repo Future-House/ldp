@@ -35,12 +35,14 @@ def configure_log_levels() -> None:
 
 
 def configure_stdout_logs(
+    name: str = "root",
     level: int | str = logging.INFO,
     fmt: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 ) -> None:
     """Configure root logger to log to stdout.
 
     Args:
+        name: Optional logger name, if unspecified the 'root' logger is configured.
         level: Log level to be emitted to stdout.
         fmt: Optional format string.
     """
@@ -56,7 +58,7 @@ def configure_stdout_logs(
                 "stream": "ext://sys.stdout",
             },
         },
-        "root": {"level": level, "handlers": ["stdout"]},
+        name: {"level": level, "handlers": ["stdout"]},  # type: ignore[misc]
     })
 
 
