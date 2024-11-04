@@ -2,6 +2,7 @@ import asyncio
 import itertools
 import logging
 import uuid
+from tqdm.asyncio import tqdm_asyncio
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager, nullcontext
 from typing import Any, TypeVar, overload
@@ -193,7 +194,6 @@ class RolloutManager:
         self.traj_buffer.clear()
 
         traj_ids = [uuid.uuid4().hex for _ in range(len(environments))]
-        from tqdm.asyncio import tqdm_asyncio
 
         await tqdm_asyncio.gather(
             *(
