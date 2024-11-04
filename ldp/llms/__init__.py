@@ -1,7 +1,6 @@
 from .chat import (
     JSONSchemaValidationError,
     LLMModel,
-    LLMResult,
     MultipleCompletionLLMModel,
     sum_logprobs,
     validate_json_completion,
@@ -26,7 +25,6 @@ __all__ = [
     "HybridEmbeddingModel",
     "JSONSchemaValidationError",
     "LLMModel",
-    "LLMResult",
     "LiteEmbeddingModel",
     "MultipleCompletionLLMModel",
     "SparseEmbeddingModel",

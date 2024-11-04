@@ -10,13 +10,13 @@ from pydantic import BaseModel, Field
 from ldp.llms import (
     JSONSchemaValidationError,
     LLMModel,
-    LLMResult,
     MultipleCompletionLLMModel,
     validate_json_completion,
 )
 
 from . import CILLMModelNames
 
+from llmclient.result import LLMResult
 
 def test_json_schema_validation() -> None:
     # Invalid JSON

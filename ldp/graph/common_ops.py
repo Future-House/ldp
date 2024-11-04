@@ -20,7 +20,6 @@ from ldp.llms import (
     HybridEmbeddingModel,
     LiteEmbeddingModel,
     LLMModel,
-    LLMResult,
     SparseEmbeddingModel,
 )
 
@@ -28,6 +27,8 @@ from .gradient_estimators import assign_constant_grads
 from .memory import Memory, MemoryModel, UIndexMemoryModel
 from .op_utils import CallID, get_call_id, get_training_mode
 from .ops import GradInType, Op, OpCtx, ResultOrValue, TOutput
+
+from llmclient.result import LLMResult
 
 logger = logging.getLogger(__name__)
 

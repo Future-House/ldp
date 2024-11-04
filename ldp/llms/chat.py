@@ -1,9 +1,7 @@
 import asyncio
 import json
 from collections.abc import AsyncGenerator, Callable, Iterable
-from datetime import datetime
 from typing import Any, ClassVar, Self, cast
-from uuid import UUID, uuid4
 
 import litellm
 from aviary.core import (
@@ -15,53 +13,10 @@ from aviary.core import (
 )
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from llmclient.result import LLMResult
 
 class JSONSchemaValidationError(ValueError):
     """Raised when the completion does not match the specified schema."""
-
-
-class LLMResult(BaseModel):
-    """A class to hold the result of a LLM completion."""
-
-    id: UUID = Field(default_factory=uuid4)
-    config: dict | None = None
-    prompt: list[Message] | None = Field(
-        default=None, description="Messages sent to the LLM."
-    )
-    messages: list[Message] | None = Field(
-        default=None, description="Messages received from the LLM."
-    )
-    prompt_count: int = Field(default=0, description="Count of prompt tokens.")
-    completion_count: int = Field(default=0, description="Count of completion tokens.")
-    model: str
-    date: str = Field(default_factory=datetime.now().isoformat)
-    seconds_to_first_token: float | None = None
-    seconds_to_last_token: float = 0
-    logprob: float | None = Field(
-        default=None, description="Sum of logprobs in the completion."
-    )
-    system_fingerprint: str | None = Field(
-        default=None, description="System fingerprint received from the LLM."
-    )
-
-    @property
-    def prompt_and_completion_costs(self) -> tuple[float, float]:
-        """Get a two-tuple of prompt tokens cost and completion tokens cost, in USD."""
-        return litellm.cost_per_token(
-            self.model,
-            prompt_tokens=self.prompt_count,
-            completion_tokens=self.completion_count,
-        )
-
-    @property
-    def provider(self) -> str:
-        """Get the model provider's name (e.g. "openai", "mistral")."""
-        return litellm.get_llm_provider(self.model)[1]
-
-    def get_supported_openai_params(self) -> list[str] | None:
-        """Get the supported OpenAI parameters for the model."""
-        return litellm.get_supported_openai_params(self.model)
-
 
 def sum_logprobs(choice: litellm.utils.Choices) -> float | None:
     """Calculate the sum of the log probabilities of an LLM completion (a Choices object).
