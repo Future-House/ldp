@@ -6,14 +6,20 @@ import asyncio
 import functools
 import inspect
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from functools import lru_cache
 from typing import Generic, TypeVar, cast, overload
 
 import numpy as np
 import tree
-from aviary.core import Message, Tool, ToolRequestMessage, is_coroutine_callable
-from pydantic import BaseModel
+from aviary.core import (
+    Message,
+    Messages,
+    Tool,
+    ToolRequestMessage,
+    is_coroutine_callable,
+)
+from pydantic import BaseModel, Field, model_validator
 
 from ldp.llms import (
     EmbeddingModel,
@@ -337,26 +343,72 @@ class LLMCallOp(Op[Message]):
         return [(e, w) for e, w in examples if e is not None]
 
 
+# TODO: put these somewhere more accessible - could be of general utility
+# Alternatively, replace __str__ and __repr__ as discussed offline.
+async def msg_to_str(msg: Message) -> str:
+    if isinstance(msg, ToolRequestMessage):
+        # Represent the ToolRequestMessage as a hashable string. Do not include
+        # the tool call IDs.
+        return (msg.content or "") + " ".join(str(tc) for tc in msg.tool_calls)
+
+    return msg.content or ""
+
+
+async def join_messages(messages: Sequence[Message]) -> str:
+    return "\n".join([f"{m.role}: {await msg_to_str(m)}" for m in messages])
+
+
 class MemoryOp(Op[list[Memory]]):
     """An operation for managing memory retrieval and storage."""
 
-    def __init__(self, memory_model: MemoryModel | None = None):
+    def __init__(
+        self,
+        memory_model: MemoryModel | None = None,
+        state_repr_fn: Callable[[Messages], Awaitable[str]] = join_messages,
+        action_repr_fn: Callable[[ToolRequestMessage], Awaitable[str]] = msg_to_str,
+        key_repr_fn: Callable[[Messages], Awaitable[str]] = join_messages,
+    ):
+        """Initialize a MemoryOp.
+
+        Args:
+            memory_model: The memory model.
+            state_repr_fn: How we represent state in the memory. Defaults to
+                simply concatenating the contents of all messages.
+            action_repr_fn: How we represent the action in the memory. Defaults to
+                simply concatenating tool call signatures, i.e.
+                `tool_a(arg1=val2) tool_b(arg2=val2)`.
+            key_repr_fn: How we extract a key from the state. Defaults to simply
+                concatenating the contents of all messages.
+        """
         super().__init__()
+
         self.memory_model = memory_model or UIndexMemoryModel(
             embedding_model=EmbeddingModel.from_name("sparse")
         )
+        self.state_repr_fn = state_repr_fn
+        self.action_repr_fn = action_repr_fn
+        self.key_repr_fn = key_repr_fn
 
-    async def forward(
-        self,
-        query: str,
-        input: str | None = None,  # noqa: A002
-        matches: int = 3,
-    ) -> list[Memory]:
+    async def add_memory(
+        self, state: Messages, action: ToolRequestMessage, value: float
+    ):
+        """Add a memory to the memory model."""
+        key, state_str, action_str = await asyncio.gather(
+            self.key_repr_fn(state),
+            self.state_repr_fn(state),
+            self.action_repr_fn(action),
+        )
+        memory = Memory(key=key, state=state_str, action=action_str, value=float)
+        await self.memory_model.add_memory(memory)
+
+    async def forward(self, query: str | Messages, matches: int = 3) -> list[Memory]:
         """Retrieve relevant memories based on a query."""
         if get_training_mode():
             call_id = get_call_id()
             self.ctx.update(call_id, "query", query)
-            self.ctx.update(call_id, "memory_input", input)
+        if not isinstance(query, str):
+            # Can't do isinstance(..., Messages) bc Messages is a parameterized generic.
+            query = await self.key_repr_fn(query)
         return await self.memory_model.get_memories(query, matches)
 
     @classmethod

@@ -225,8 +225,8 @@ class TestMemoryAgent:
         memory = agent._memory_op.memory_model
         await memory.add_memory(
             Memory(
-                query="Write a 5 word story and call print",
-                output=str(action),
+                state="Write a 5 word story and call print",
+                action=str(action),
                 value=1000.0,
             )
         )

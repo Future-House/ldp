@@ -60,13 +60,13 @@ class Memory(BaseModel):
         ),
     )
 
-    template: str = "Input: {input}\nOutput: {output}\nValue: {value}"
+    template: str = "State: {state}\nAction: {action}\nValue: {value}"
 
     @model_validator(mode="before")
     @classmethod
     def ensure_key(cls, data: Any) -> Any:
         """Key defaults to state if not provided."""
-        if isinstance(data, dict) and data.get("key") is None:
+        if isinstance(data, dict) and data.get("key") is None and "state" in data:
             data["key"] = data["state"]
         return data
 

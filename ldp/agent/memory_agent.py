@@ -5,11 +5,11 @@ memories, formatted using specified prompts. A memory is typically a set of prev
 """
 
 from collections.abc import Awaitable, Callable, Iterable
+from textwrap import indent
 from typing import ClassVar, cast
 
 from aviary.core import Message, ToolRequestMessage
 from pydantic import ConfigDict, Field
-from textwrap import indent
 
 from ldp.graph import (
     FxnOp,
@@ -49,24 +49,17 @@ class MemoryAgent(SimpleAgent):
             + indent(
                 "Consider the following memories when choosing the next action.\n"
                 "These memories arise from previous successful actions taken in similar "
-                "situations. Each memory consists of a state and action.",
-                prefix="     ",
+                "situations. Each memory consists of a state, an action, and the "
+                "corresponding state-action value.",
+                prefix="  ",
             )
             + "\n  </description>\n{memories}\n</episode-memories>"
             "\n\nConsidering these memories, choose the next action."
         ),
         description="Prompt that includes the memories.",
     )
-    key_factory: Callable[[Iterable[Message]], Awaitable[str]] = Field(
-        default=default_key_factory,
-        description=(
-            "Async function to generate a Memory key string from messages. It's async"
-            " so this can involve an LLM completion if desired."
-        ),
-        exclude=True,
-    )
     memory_prompt: str = Field(
-        default="<memory><state>{input}</state><action>{output}</action></memory>",
+        default="<memory><state>{state}</state><action>{action}</action><value>{value}</value></memory>",
         description=(
             "Prompt for formatting an individual memory. "
             "Use XML instead of JSON to avoid potential escaping issues."
@@ -99,8 +92,8 @@ class MemoryAgent(SimpleAgent):
 
     def __init__(self, memory_model: MemoryModel | None = None, **kwargs):
         super().__init__(**kwargs)
-        self._query_factory_op = FxnOp[str](self.key_factory)
         self._memory_op = MemoryOp(memory_model)
+        self._query_repr_op = FxnOp[str](self._memory_op.key_repr_fn)
         self._format_memory_op = FxnOp(self._format_memories)
         self._prompt_op = PromptOp(self.prompt)
         self._package_op = FxnOp(self._package_messages)
@@ -112,7 +105,7 @@ class MemoryAgent(SimpleAgent):
         next_state = agent_state.get_next_state(obs)
 
         memories = await self._memory_op(
-            query=await self._query_factory_op(next_state.messages),
+            query=await self._query_repr_op(next_state.messages),
             matches=self.num_memories,
         )
         packaged_messages = await self._package_op(
