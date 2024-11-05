@@ -32,10 +32,11 @@ from ldp.graph.modules import (
     ReActModuleSinglePrompt,
     ToolDescriptionMethods,
 )
-from ldp.llms import LLMModel
 
 from . import CILLMModelNames
 from .conftest import IN_GITHUB_ACTIONS, VCR_DEFAULT_MATCH_ON
+
+from llmclient.model import LLMModel
 
 HERE = Path(__file__).parent
 

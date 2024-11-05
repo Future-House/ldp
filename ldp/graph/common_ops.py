@@ -19,7 +19,6 @@ from ldp.llms import (
     EmbeddingModel,
     HybridEmbeddingModel,
     LiteEmbeddingModel,
-    LLMModel,
     SparseEmbeddingModel,
 )
 
@@ -28,6 +27,7 @@ from .memory import Memory, MemoryModel, UIndexMemoryModel
 from .op_utils import CallID, get_call_id, get_training_mode
 from .ops import GradInType, Op, OpCtx, ResultOrValue, TOutput
 
+from llmclient.model import LLMModel
 from llmclient.result import LLMResult
 
 logger = logging.getLogger(__name__)
