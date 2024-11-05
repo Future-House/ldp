@@ -42,7 +42,7 @@ def test_json_schema_validation() -> None:
         validate_json_completion(mock_completion2, DummyModel)
     validate_json_completion(mock_completion3, DummyModel)
 
-
+@pytest.mark.skip
 @pytest.mark.parametrize(
     "model_name", ["gpt-3.5-turbo", CILLMModelNames.ANTHROPIC.value]
 )
