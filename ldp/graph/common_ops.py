@@ -305,8 +305,8 @@ class LLMCallOp(Op[Message]):
         if raw_log_p is None or self.num_samples_partition_estimate == 0:
             return None
 
-        # TODO: Try using n completions from a single API call. Need to modify LLMModel.call to do this, since
-        # it currently only checks completion.choices[0]. Would reduce cost for long prompts.
+        # TODO: possibly move to MultipleCompletionLLMModel here, though we need to check that the estimates
+        # are consistent - not sure we'd be sampling from the same distribution as N independent samples.
         # TODO: think about whether sampling params besides temperature need to be accounted for, like top_p
         results = await asyncio.gather(*[
             model.call(temperature=1, **model_kwargs)
