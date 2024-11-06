@@ -245,11 +245,8 @@ class LLMCallOp(Op[Message]):
                 https://platform.openai.com/docs/guides/function-calling#configuring-function-calling-behavior-using-the-tool_choice-parameter
                 NOTE: if `tools` is None or empty, this parameter is ignored.
 
-        Raises:
-            ValueError: _description_
-
         Returns:
-            Message: _description_
+            Output message from the model.
         """
         model = LLMModel(config=config)
 
