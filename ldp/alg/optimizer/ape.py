@@ -22,7 +22,7 @@ from ldp.alg.optimizer.opt import Optimizer
 from ldp.data_structures import Trajectory
 from ldp.graph import LLMCallOp, OpResult, PromptOp
 
-from llmclient.model import LLMModel
+from ldp.llms.chat import LLMModel
 from llmclient.result import LLMResult
 
 logger = logging.getLogger(__name__)

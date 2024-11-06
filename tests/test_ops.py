@@ -28,8 +28,8 @@ from ldp.graph import (
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
 from ldp.graph.ops import GradInType, ResultOrValue, TOutput
 from ldp.llms import append_to_sys
+from ldp.llms.chat import LLMModel
 
-from llmclient.model import LLMModel
 
 class StatefulFxnOp(FxnOp[TOutput]):
     async def forward(self, *args, **kwargs) -> TOutput:

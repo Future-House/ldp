@@ -39,10 +39,10 @@ from ldp.graph.gradient_estimators import (
 )
 from ldp.graph.ops import GradInType
 from ldp.llms import append_to_sys
+from ldp.llms.chat import LLMModel
 from tests import CILLMModelNames
 from tests.conftest import VCR_DEFAULT_MATCH_ON
 
-from llmclient.model import LLMModel
 
 @pytest.mark.parametrize(
     ("agent_cls", "optimizer_cls", "optimizer_kwargs"),

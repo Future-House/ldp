@@ -9,13 +9,12 @@ from pydantic import BaseModel, Field
 
 from ldp.llms import (
     JSONSchemaValidationError,
-    MultipleCompletionLLMModel,
     validate_json_completion,
 )
+from ldp.llms.chat import LLMModel
 
 from . import CILLMModelNames
 
-from llmclient.model import LLMModel
 from llmclient.result import LLMResult
 
 def test_json_schema_validation() -> None:
@@ -157,13 +156,13 @@ class DummyOutputSchema(BaseModel):
     age: int
 
 
-class TestMultipleCompletionLLMModel:
+class TestLLMModel:
     NUM_COMPLETIONS: ClassVar[int] = 2
     DEFAULT_CONFIG: ClassVar[dict] = {"n": NUM_COMPLETIONS}
-    MODEL_CLS: ClassVar[type[MultipleCompletionLLMModel]] = MultipleCompletionLLMModel
+    MODEL_CLS: ClassVar[type[LLMModel]] = LLMModel
 
     async def call_model(
-        self, model: MultipleCompletionLLMModel, *args, **kwargs
+        self, model: LLMModel, *args, **kwargs
     ) -> list[LLMResult]:
         return await model.call(*args, **kwargs)
 
@@ -281,21 +280,13 @@ class TestMultipleCompletionLLMModel:
             assert "red" in result.messages[-1].content.lower()
 
 
-class TestLLMModel(TestMultipleCompletionLLMModel):
+class TestLLMModel:
     NUM_COMPLETIONS: ClassVar[int] = 1
     DEFAULT_CONFIG: ClassVar[dict] = {}
-    MODEL_CLS: ClassVar[type[MultipleCompletionLLMModel]] = LLMModel
+    MODEL_CLS: ClassVar[type[LLMModel]] = LLMModel
 
     async def call_model(self, model: LLMModel, *args, **kwargs) -> list[LLMResult]:  # type: ignore[override]
         return [await model.call(*args, **kwargs)]
-
-    @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-3.5-turbo"]
-    )
-    @pytest.mark.asyncio
-    @pytest.mark.vcr
-    async def test_model(self, model_name: str) -> None:
-        await super().test_model(model_name)
 
     @pytest.mark.vcr
     @pytest.mark.parametrize(
@@ -317,11 +308,6 @@ class TestLLMModel(TestMultipleCompletionLLMModel):
         assert result.completion_count > 0
         assert content
 
-    @pytest.mark.vcr
-    @pytest.mark.asyncio
-    async def test_parameterizing_tool_from_arg_union(self) -> None:
-        await super().test_parameterizing_tool_from_arg_union()
-
     @pytest.mark.asyncio
     async def test_output_type_rejected_validation(self) -> None:
         class InstructionList(BaseModel):
@@ -336,12 +322,3 @@ class TestLLMModel(TestMultipleCompletionLLMModel):
                 [Message(content="What are three things I should do today?")],
                 output_type=InstructionList,
             )
-
-    @pytest.mark.parametrize(
-        "model_name",
-        [CILLMModelNames.ANTHROPIC.value, "gpt-4-turbo", CILLMModelNames.OPENAI.value],
-    )
-    @pytest.mark.asyncio
-    @pytest.mark.vcr
-    async def test_text_image_message(self, model_name: str) -> None:
-        await super().test_text_image_message(model_name)
