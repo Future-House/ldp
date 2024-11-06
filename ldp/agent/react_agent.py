@@ -108,6 +108,11 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         ),
     )
 
+    hide_old_env_states: bool = Field(
+        default=False,
+        description="See SimpleAgentState.hide_old_env_states.",
+    )
+
     @classmethod
     def make_act_agent(cls, **kwargs) -> Self:
         single_prompt = kwargs.pop("single_prompt", False)
@@ -139,7 +144,9 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
             )
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:
-        return SimpleAgentState(tools=tools)
+        return SimpleAgentState(
+            tools=tools, hide_old_env_states=self.hide_old_env_states
+        )
 
     @staticmethod
     def after_retry_failure_log(retry_state: RetryCallState):

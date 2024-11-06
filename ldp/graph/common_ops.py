@@ -234,7 +234,25 @@ class LLMCallOp(Op[Message]):
         tools: list[Tool] | None = None,
         tool_choice: Tool | str | None = LLMModel.TOOL_CHOICE_REQUIRED,
     ) -> Message:
+        """Calls the LLM.
+
+        Args:
+            config: Configuration passed to LLMModel.
+            msgs: Input messages to prompt model with.
+            tools: A list of Tools that the model may call, if supported.
+            tool_choice: Configures how the model should choose a tool.
+                Can be a Tool or a string; see here for string options:
+                https://platform.openai.com/docs/guides/function-calling#configuring-function-calling-behavior-using-the-tool_choice-parameter
+                NOTE: if `tools` is None or empty, this parameter is ignored.
+
+        Returns:
+            Output message from the model.
+        """
         model = LLMModel(config=config)
+
+        if not tools:
+            # if no tools are provided, tool_choice must be 'none'
+            tool_choice = "none"
 
         result = await model.call(messages=msgs, tools=tools, tool_choice=tool_choice)
         if result.messages is None:
@@ -284,8 +302,8 @@ class LLMCallOp(Op[Message]):
         if raw_log_p is None or self.num_samples_partition_estimate == 0:
             return None
 
-        # TODO: Try using n completions from a single API call. Need to modify LLMModel.call to do this, since
-        # it currently only checks completion.choices[0]. Would reduce cost for long prompts.
+        # TODO: possibly move to MultipleCompletionLLMModel here, though we need to check that the estimates
+        # are consistent - not sure we'd be sampling from the same distribution as N independent samples.
         # TODO: think about whether sampling params besides temperature need to be accounted for, like top_p
         results = await asyncio.gather(*[
             model.call(temperature=1, **model_kwargs)

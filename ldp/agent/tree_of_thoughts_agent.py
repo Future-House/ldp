@@ -56,6 +56,10 @@ class TreeofThoughtsAgent(BaseModel, Agent[SimpleAgentState]):
         default=lambda x, y: f"Proposal prompt for input: {x}, current path: {y}",
         description="Function to format proposal prompt template.",
     )
+    hide_old_env_states: bool = Field(
+        default=False,
+        description="See SimpleAgentState.hide_old_env_states.",
+    )
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -63,7 +67,9 @@ class TreeofThoughtsAgent(BaseModel, Agent[SimpleAgentState]):
         self._llm_call_op = LLMCallOp()
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:
-        return SimpleAgentState(tools=tools)
+        return SimpleAgentState(
+            tools=tools, hide_old_env_states=self.hide_old_env_states
+        )
 
     @compute_graph()
     async def get_asv(  # type: ignore[override]
