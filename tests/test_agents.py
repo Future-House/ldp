@@ -137,6 +137,7 @@ class TestSimpleAgent:
         # Check serialization after get_asv runs to ensure private
         # Ops aren't included
         assert agent.model_dump() == {
+            "hiode_old_env_states": False,
             "llm_model": {"model": model_name, "temperature": 0.1},
             "sys_prompt": None,
         }
