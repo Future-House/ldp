@@ -24,12 +24,16 @@ class SimpleAgentState(BaseModel):
     messages: list[ToolRequestMessage | ToolResponseMessage | Message] = Field(
         default_factory=list
     )
+    hide_old_env_states: bool = Field(
+        default=False,
+        description="Whether to hide old EnvStateMessages.",
+    )
 
     def get_next_state(
         self,
         obs: list[Message] | None = None,
         tools: list[Tool] | None = None,
-        hide_old_env_states: bool = False,
+        hide_old_env_states: bool | None = None,
         **kwargs,
     ) -> Self:
         """
@@ -41,14 +45,19 @@ class SimpleAgentState(BaseModel):
             obs: Optional observation messages to use in creating the next state.
             tools: Optional list of tools available to the agent. If unspecified, these
                 should be pulled from the prior_state.
-            hide_old_env_states: Whether to hide old environment states in the messages.
-                This is useful for reducing context window usage.
+            hide_old_env_states: Optional override of self.hide_old_env_states.
             kwargs: Additional keyword arguments to pass to this class's constructor.
 
         Returns:
             The next agent state (which is not an in-place change to self).
         """
         old_messages = self.messages
+
+        hide_old_env_states = (
+            hide_old_env_states
+            if hide_old_env_states is not None
+            else self.hide_old_env_states
+        )
         if hide_old_env_states:
             old_messages = [
                 HiddenEnvStateMessage() if isinstance(m, EnvStateMessage) else m
@@ -58,6 +67,7 @@ class SimpleAgentState(BaseModel):
         return type(self)(
             tools=tools if tools is not None else self.tools,
             messages=old_messages + (obs or []),
+            hide_old_env_states=hide_old_env_states,
             **kwargs,
         )
 
@@ -89,13 +99,20 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
         ),
     )
 
+    hide_old_env_states: bool = Field(
+        default=False,
+        description="See SimpleAgentState.hide_old_env_states.",
+    )
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._config_op = ConfigOp[dict](config=self.llm_model)
         self._llm_call_op = LLMCallOp()
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:
-        return SimpleAgentState(tools=tools)
+        return SimpleAgentState(
+            tools=tools, hide_old_env_states=self.hide_old_env_states
+        )
 
     @compute_graph()
     async def get_asv(

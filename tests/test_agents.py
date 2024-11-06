@@ -9,6 +9,7 @@ from unittest.mock import patch
 import networkx as nx
 import pytest
 from aviary.core import DummyEnv, Message, Tool, ToolCall, ToolRequestMessage
+from aviary.message import EnvStateMessage
 from httpx import ASGITransport, AsyncClient
 from pydantic import BaseModel, Field
 
@@ -24,6 +25,7 @@ from ldp.agent import (
     make_simple_agent_server,
 )
 from ldp.agent.interactive_agent import InteractiveAgent
+from ldp.agent.simple_agent import HiddenEnvStateMessage
 from ldp.alg import to_network
 from ldp.graph import LLMCallOp, Memory, OpResult, eval_mode
 from ldp.graph.gradient_estimators import llm_straight_through_estimator as llm_ste
@@ -200,6 +202,31 @@ class TestSimpleAgent:
                     f.name,
                     output_dir / f"TestSimpleAgent.test_agent_grad.{model_name}.png",
                 )
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_hide_old_env_states(self) -> None:
+        agent = SimpleAgent(hide_old_env_states=True)
+        agent_state_0 = await agent.init_state(tools=[])
+
+        _, agent_state_1, _ = await agent.get_asv(
+            agent_state_0, [EnvStateMessage(content="")]
+        )
+        _, agent_state_2, _ = await agent.get_asv(
+            agent_state_1, [EnvStateMessage(content="")]
+        )
+
+        # EnvStateMessage, model response
+        assert len(agent_state_1.messages) == 2
+        # as above + EnvStateMessage, model response
+        assert len(agent_state_2.messages) == 4
+
+        assert isinstance(agent_state_2.messages[0], HiddenEnvStateMessage)
+        assert agent_state_1.messages[1].content == agent_state_2.messages[1].content
+
+        # Check that the second EnvStateMessage didn't get hidden
+        assert isinstance(agent_state_2.messages[2], EnvStateMessage)
+        assert not isinstance(agent_state_2.messages[2], HiddenEnvStateMessage)
 
 
 class TestMemoryAgent:

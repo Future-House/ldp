@@ -234,7 +234,28 @@ class LLMCallOp(Op[Message]):
         tools: list[Tool] | None = None,
         tool_choice: Tool | str | None = LLMModel.TOOL_CHOICE_REQUIRED,
     ) -> Message:
+        """Calls the LLM.
+
+        Args:
+            config: Configuration passed to LLMModel.
+            msgs: Input messages to prompt model with.
+            tools: A list of Tools that the model may call, if supported.
+            tool_choice: Configures how the model should choose a tool.
+                Can be a Tool or a string; see here for string options:
+                https://platform.openai.com/docs/guides/function-calling#configuring-function-calling-behavior-using-the-tool_choice-parameter
+                NOTE: if `tools` is None or empty, this parameter is ignored.
+
+        Raises:
+            ValueError: _description_
+
+        Returns:
+            Message: _description_
+        """
         model = LLMModel(config=config)
+
+        if not tools:
+            # if no tools are provided, tool_choice must be 'none'
+            tool_choice = "none"
 
         result = await model.call(messages=msgs, tools=tools, tool_choice=tool_choice)
         if result.messages is None:
