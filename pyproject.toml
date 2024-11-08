@@ -29,7 +29,6 @@ dependencies = [
     "litellm>=1.40.15",  # For LITELLM_LOG addition
     "networkx[default]~=3.4",  # Pin for pydot fix
     "numpy>=1.20",  # For numpy.typing
-    "openai>=1",
     "pydantic~=2.0",
     "tenacity",
     "tiktoken",
@@ -51,7 +50,6 @@ dev = [
     "ldp[monitor,nn,rich,server,typing,visualization]",
     "litellm!=1.49.4,!=1.49.5,!=1.49.6",  # For https://github.com/BerriAI/litellm/issues/6216
     "mypy>=1.8",  # Pin for mutable-override
-    "openai<1.47",  # Pin for https://github.com/BerriAI/litellm/issues/5854
     "pre-commit>=3.4",  # Pin to keep recent
     "pydantic~=2.9",  # Pydantic 2.9 changed JSON schema exports 'allOf', so ensure tests match
     "pylint-pydantic",
@@ -261,6 +259,8 @@ min-similarity-lines = 12
 # Add the specified OPTS to the set of command line arguments as if they had been
 # specified by the user.
 addopts = "--doctest-modules"
+# Set to avoid https://github.com/BerriAI/litellm/issues/5854
+asyncio_default_fixture_loop_scope = "session"
 # Sets a list of filters and actions that should be taken for matched warnings.
 # By default all warnings emitted during the test session will be displayed in
 # a summary at the end of the test session.

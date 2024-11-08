@@ -19,7 +19,7 @@ interactions:
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.44.1
+          - AsyncOpenAI/Python 1.54.3
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -29,29 +29,32 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.44.1
+          - 1.54.3
         x-stainless-raw-response:
           - "true"
+        x-stainless-retry-count:
+          - "1"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.5
+          - 3.12.7
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA9SSy2rDMBBF9/4KMeu42K6TON7lC1Ia6INSgmKPbbWyRkgTaBvy70WO86Jf0I0W
-          9+iOjpD2kRCgaigFVJ3kqrc6Xs4e5q/L5/VPkqpVu6q9vufkpVt31BZPMAkN2n5gxafWXUW91ciK
-          zBFXDiVjmJrOs1lSLIrFbAA91ahDrbUc5xT3yqg4S7I8TuZxWoztjlSFHkrxFgkhxH5Yg6ep8QtK
-          kUxOSY/eyxahPG8SAhzpkID0XnmWhmFygRUZRjOoP2J9TRw2Oy+DndlpPeaH81GaWuto60d+zhtl
-          lO82DqUnE8Z6JgvRVfmPf/pf/CMh3ocn2d1YgnXUW94wfaIJA4tpNr4JXL7CBWcjY2Kpb1pZNCqC
-          //aM/aZRpkVnnTpesbGbaY5Zkxf5FiE6RL8AAAD//wMAIMaR3bACAAA=
+          H4sIAAAAAAAAA9STP0/DMBDF93wKy3ODmtA/IRszWxkQQihy7GticHyWz5WKqn535DRtUhUkVpYM
+          97v38nxnHxLGuFa8ZFy2IsjOmfRx86xyp572+FL715pq7ZCKtqOVssRnUYH1B8hwVt1J7JyBoNGe
+          sPQgAkTXbH2fZfMiXxU96FCBibLGhXSBaaetTvN5vkjn6zQrBnWLWgLxkr0ljDF26L8xp1Ww5yWb
+          z86VDohEA7y8NDHGPZpY4YJIUxA28NkIJdoAto++ATUlHrY7EjGd3Rkz1I+XXxlsnMeaBn6pb7XV
+          1FYeBKGNthTQ8WQivsmf/Zf8CWPv/Up2Vym589i5UAX8BBsNi2U+7ISPV2HE+cACBmGuVGdyZVgp
+          CEIbmkyFSyFbUKN2vAJipzROwHTyt2l+8j4dXdvmL/YjkBJcAFU5D0rL6xOPbR7iS/mt7TLmPjCn
+          LwrQVVttG/DO69Oet656qNdFvcrkMufJMfkGAAD//wMAhyjYPLUDAAA=
       headers:
         CF-Cache-Status:
           - DYNAMIC
         CF-RAY:
-          - 8c1aba3908cdcfed-SJC
+          - 8df9510e7fa3172e-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -59,7 +62,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Wed, 11 Sep 2024 21:24:57 GMT
+          - Fri, 08 Nov 2024 23:24:29 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -73,25 +76,31 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "1107"
+          - "1964"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
-          - max-age=15552000; includeSubDomains; preload
+          - max-age=31536000; includeSubDomains; preload
+        x-ratelimit-limit-input-images:
+          - "50000"
         x-ratelimit-limit-requests:
           - "30000"
         x-ratelimit-limit-tokens:
           - "150000000"
+        x-ratelimit-remaining-input-images:
+          - "49999"
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
           - "149999187"
+        x-ratelimit-reset-input-images:
+          - 1ms
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_157e90ed4d9d67bdf5b00544b0abd92c
+          - req_7823d27f0ca9fc3fefbc0261333d26e3
       status:
         code: 200
         message: OK
