@@ -363,7 +363,6 @@ async def test_branching_compute_graph():
     assert op_a.get_input_grads(a.call_id)[1]["x"] == loss_grad * 2
 
 
-@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_clear_contexts():
     """Test that we can clear the contexts of Ops."""
