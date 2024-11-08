@@ -87,12 +87,18 @@ class InteractiveAgent(Agent[SimpleAgentState]):
                 with contextlib.suppress(json.JSONDecodeError):
                     # lets us load ints, etc. Otherwise, assume it's a string
                     value = json.loads(value)
-                if not value:
+                if value == "":
+                    # don't do `not value`, since 0, False, and None are all valid inputs
                     if pdefault is MISSING_DEFAULT:
                         print("Parameter is required.")
                         continue
 
-                    value = pdefault
+                    # don't set value = pdefault, for two reasons:
+                    # 1. Since it's a default, the function will use it anyway
+                    # 2. If the function is argref_by_name'd, the default may not be accurate
+                    #    via reference OR the default is specified by value. Either way, letting
+                    #    (1) take over avoids the issue.
+                    break
 
                 params[pname] = value
                 break

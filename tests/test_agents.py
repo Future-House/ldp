@@ -705,7 +705,6 @@ async def test_interactive(dummy_env: DummyEnv, mocker):
 
     obs, tools = await dummy_env.reset()
     agent_state = await agent.init_state(tools=tools)
-    done = False
 
     mock_input = mocker.patch(
         "builtins.input", side_effect=["print_story", "A cat wore a hat."]
