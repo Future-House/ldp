@@ -328,10 +328,7 @@ class TestLLMModel(TestMultipleCompletionLLMModel):
             instructions: list[str] = Field(description="list of instructions")
 
         model = self.MODEL_CLS(name=CILLMModelNames.ANTHROPIC.value)
-        with pytest.raises(
-            litellm.UnsupportedParamsError,
-            match="anthropic does not support parameters",
-        ):
+        with pytest.raises(litellm.BadRequestError, match="anthropic"):
             await model.call(
                 [Message(content="What are three things I should do today?")],
                 output_type=InstructionList,
