@@ -259,6 +259,8 @@ min-similarity-lines = 12
 # Add the specified OPTS to the set of command line arguments as if they had been
 # specified by the user.
 addopts = "--doctest-modules"
+# Set to avoid https://github.com/BerriAI/litellm/issues/5854
+asyncio_default_fixture_loop_scope = "session"
 # Sets a list of filters and actions that should be taken for matched warnings.
 # By default all warnings emitted during the test session will be displayed in
 # a summary at the end of the test session.
