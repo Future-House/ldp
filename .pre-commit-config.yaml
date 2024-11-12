@@ -57,13 +57,13 @@ repos:
       - id: nb-clean
         args: [--preserve-cell-outputs, --remove-empty-cells]
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.22
+    rev: v0.23
     hooks:
       - id: validate-pyproject
         additional_dependencies:
           - "validate-pyproject-schema-store[all]>=2024.08.19" # For Ruff renaming RUF025 to C420
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.4.29
+    rev: 0.5.1
     hooks:
       - id: uv-lock
   - repo: https://github.com/pre-commit/mirrors-mypy
