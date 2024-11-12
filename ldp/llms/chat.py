@@ -182,8 +182,10 @@ class MultipleCompletionLLMModel(BaseModel):
     ) -> list[LLMResult]:
         start_clock = asyncio.get_running_loop().time()
 
-        # Deal with tools. OpenAI throws an error if tool list is empty,
-        # so skip this block if tools in (None, [])
+        # Deal with tools. Note OpenAI throws a 400 response if tools is empty:
+        # > Invalid 'tools': empty array. Expected an array with minimum length 1,
+        # > but got an empty array instead.
+        # So, circumvent this behavior if tools in (None, [])
         if tools:
             chat_kwargs["tools"] = ToolsAdapter.dump_python(
                 tools, exclude_none=True, by_alias=True
