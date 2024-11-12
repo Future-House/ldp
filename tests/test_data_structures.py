@@ -47,6 +47,10 @@ def test_tree_mc_value():
         0.0 + 0.9 * ((1.9 - 1) / 2), rel=0.001
     )
 
+    # Check we can compute advantages w/o crashing for now. TODO: test the assigned
+    # advantages. Will do so after the TODO in compute_advantages() is resolved.
+    tree.compute_advantages()
+
 
 def test_tree_node_merging() -> None:
     root_id = "dummy"
