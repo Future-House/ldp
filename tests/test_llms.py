@@ -322,6 +322,7 @@ class TestLLMModel(TestMultipleCompletionLLMModel):
     async def test_parameterizing_tool_from_arg_union(self) -> None:
         await super().test_parameterizing_tool_from_arg_union()
 
+    @pytest.mark.vcr
     @pytest.mark.asyncio
     async def test_output_type_rejected_validation(self) -> None:
         class InstructionList(BaseModel):
