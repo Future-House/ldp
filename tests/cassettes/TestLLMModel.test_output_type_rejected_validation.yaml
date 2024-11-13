@@ -1,0 +1,64 @@
+interactions:
+  - request:
+      body:
+        '{"messages": [{"role": "user", "content": [{"type": "text", "text": "What
+        are three things I should do today?"}]}], "temperature": 0.1, "tools": [{"name":
+        "json_tool_call", "input_schema": {"type": "object", "properties": {"values":
+        null}}}], "tool_choice": {"name": "json_tool_call", "type": "tool"}, "system":
+        [{"type": "text", "text": "Respond following this JSON schema:\n\n{\"properties\":
+        {\"instructions\": {\"description\": \"list of instructions\", \"items\": {\"type\":
+        \"string\"}, \"title\": \"Instructions\", \"type\": \"array\"}}, \"required\":
+        [\"instructions\"], \"title\": \"InstructionList\", \"type\": \"object\"}"}],
+        "max_tokens": 4096, "model": "claude-3-haiku-20240307"}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "692"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.52.5
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string:
+          '{"type":"error","error":{"type":"invalid_request_error","message":"tools.0.input_schema:
+          JSON schema is invalid - please consult https://json-schema.org or our documentation
+          at https://docs.anthropic.com/en/docs/tool-use"}}'
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 8e20db182b2d644d-SJC
+        Connection:
+          - keep-alive
+        Content-Length:
+          - "223"
+        Content-Type:
+          - application/json
+        Date:
+          - Wed, 13 Nov 2024 18:34:26 GMT
+        Server:
+          - cloudflare
+        X-Robots-Tag:
+          - none
+        request-id:
+          - req_01Ma1cK27HCaupfNBiwTjUFo
+        via:
+          - 1.1 google
+        x-should-retry:
+          - "false"
+      status:
+        code: 400
+        message: Bad Request
+version: 1
