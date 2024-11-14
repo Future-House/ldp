@@ -46,20 +46,25 @@ def configure_stdout_logs(
         level: Log level to be emitted to stdout.
         fmt: Optional format string.
     """
-    logging.config.dictConfig({
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {"standard": {"format": fmt}},
-        "handlers": {
-            "stdout": {
-                "level": "INFO",
-                "formatter": "standard",
-                "class": "logging.StreamHandler",
-                "stream": "ext://sys.stdout",
+    config: dict[str, Any] = {name: {"level": level, "handlers": ["stdout"]}}
+    if name != "root":  # Non-root loggers need to be in a "loggers" key
+        config["loggers"] = config
+    logging.config.dictConfig(
+        {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {"standard": {"format": fmt}},
+            "handlers": {
+                "stdout": {
+                    "level": "INFO",
+                    "formatter": "standard",
+                    "class": "logging.StreamHandler",
+                    "stream": "ext://sys.stdout",
+                },
             },
-        },
-        name: {"level": level, "handlers": ["stdout"]},  # type: ignore[misc]
-    })
+        }
+        | config
+    )
 
 
 def discounted_returns(
