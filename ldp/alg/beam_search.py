@@ -88,6 +88,10 @@ class BeamSearchRollout:
             self.traj_buffer[traj_id] = beams[0].traj
             self.search_buffer[traj_id] = []
 
+            await asyncio.gather(*[
+                c.before_rollout(traj_id, env) for c in self.callbacks
+            ])
+
             with reraise_exc_as(EnvError, self.catch_env_failures):
                 init_obs, tools = await env.reset()
             await asyncio.gather(*[
