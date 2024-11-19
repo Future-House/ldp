@@ -89,7 +89,7 @@ class BeamSearchRollout:
             self.search_buffer[traj_id] = []
 
             await asyncio.gather(*[
-                c.before_trajectory(traj_id, env) for c in self.callbacks
+                c.before_rollout(traj_id, env) for c in self.callbacks
             ])
 
             with reraise_exc_as(EnvError, self.catch_env_failures):
