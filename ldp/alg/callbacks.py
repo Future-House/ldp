@@ -35,6 +35,7 @@ class Callback:
     Pseudocode to demonstrate how callback methods are invoked (marked as *):
 
     RolloutManager.sample_trajectories():
+        callback.before_trajectory() *
         env.reset()
         callback.after_env_reset() *
         agent.init_state()
@@ -63,6 +64,9 @@ class Callback:
                 callback.after_update() *
             callback.after_train_step() *
     """
+
+    async def before_trajectory(self, traj_id: str, env: Environment) -> None:
+        """Invoked by runners when each rollout starts (at trajectory start)."""
 
     async def before_transition(
         self,

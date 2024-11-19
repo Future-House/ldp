@@ -221,6 +221,10 @@ class RolloutManager:
         agent_state: Any = None
 
         try:
+            await asyncio.gather(*[
+                c.before_trajectory(traj_id, env) for c in self.callbacks
+            ])
+
             with reraise_exc_as(EnvError, enabled=self.catch_env_failures):
                 obs, tools = await env.reset()
             await asyncio.gather(*[

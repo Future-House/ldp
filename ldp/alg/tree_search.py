@@ -71,6 +71,10 @@ class TreeSearchRollout(RolloutManager):
         tree = TransitionTree(root_id=str(uuid.uuid4()))
 
         try:
+            await asyncio.gather(*[
+                c.before_trajectory(tree.root_id, env) for c in self.callbacks
+            ])
+
             with reraise_exc_as(EnvError, enabled=self.catch_env_failures):
                 obs, tools = await env.reset()
             await asyncio.gather(*[
