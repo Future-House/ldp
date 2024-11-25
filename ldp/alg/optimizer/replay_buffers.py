@@ -162,7 +162,7 @@ class PrioritizedReplayBuffer(CircularReplayBuffer):
             buffer = [self.data[i] for i in sampled_idcs]
 
             # DEBUG
-            selected_priorities = prio[sampled_idcs]
-            logger.debug(f"Average priority: {selected_priorities.mean()}")
+            sampled_priorities = prio[sampled_idcs]
+            logger.debug(f"Average priority: {sampled_priorities.mean()}")
 
         return self._batched_iter(buffer, batch_size, shuffle, infinite)
