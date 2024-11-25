@@ -1,7 +1,7 @@
 import asyncio
 import random
 from collections import UserList
-from collections.abc import Callable, Iterator
+from collections.abc import Awaitable, Callable, Iterator
 
 import numpy as np
 from litellm import cast
@@ -78,7 +78,9 @@ class PrioritizedReplayBuffer(CircularReplayBuffer):
     the binary heap implementation and just do a linear scan.
     """
 
-    def __init__(self, alpha: float, ranked: bool, q_function: Callable):
+    def __init__(
+        self, alpha: float, ranked: bool, q_function: Callable[..., Awaitable]
+    ):
         super().__init__()
         self.alpha = alpha
         self.ranked = ranked
@@ -90,7 +92,10 @@ class PrioritizedReplayBuffer(CircularReplayBuffer):
         self.buf_size = size
 
     @staticmethod
-    async def _call_q(q_function: Callable, pbar: tqdm, *args, **kwargs) -> float:
+    async def _call_q(
+        q_function: Callable[..., Awaitable], pbar: tqdm, *args, **kwargs
+    ) -> float:
+        # TODO: clean up this branching and force user to specify a Callable[..., Awaitable[float]]
         if isinstance(q_function, AsyncTorchModule):
             _, result = await q_function(*args, **kwargs)
             result + result.item()
