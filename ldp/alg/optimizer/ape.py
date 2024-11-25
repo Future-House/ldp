@@ -155,7 +155,7 @@ class APEOpt(BaseModel, Optimizer):
 
         return self
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, __context: Any) -> None:  # noqa: PYI063
         if self.prompt_op.prompt not in self.trace:
             self.trace.append(self.prompt_op.prompt)
 
