@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import random
 from collections import UserList
 from collections.abc import Awaitable, Callable, Iterator
@@ -9,6 +10,8 @@ from tqdm import tqdm
 
 from ldp.graph import eval_mode
 from ldp.graph.async_torch import AsyncTorchModule
+
+logger = logging.getLogger(__name__)
 
 
 class CircularReplayBuffer(UserList[dict]):
@@ -160,6 +163,6 @@ class PrioritizedReplayBuffer(CircularReplayBuffer):
 
             # DEBUG
             selected_priorities = prio[sampled_idcs]
-            print(f"Average priority: {selected_priorities.mean()}")
+            logger.debug(f"Average priority: {selected_priorities.mean()}")
 
         return self._batched_iter(buffer, batch_size, shuffle, infinite)
