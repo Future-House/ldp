@@ -133,15 +133,12 @@ class MultipleCompletionLLMModel(BaseModel):
 
     @model_validator(mode="after")
     def set_model_name(self) -> Self:
-        if (
-            self.config.get("model") in {"gpt-3.5-turbo", None}
-            and self.name != "unknown"
-        ) or (self.name != "unknown" and "model" not in self.config):
-            self.config["model"] = self.name
-        elif "model" in self.config and self.name == "unknown":
-            self.name = self.config["model"]
-        # note we do not consider case where both are set
-        # because that could be true if the model is fine-tuned
+        model_in_config = self.config.get("model")
+        if self.name != "unknown":
+            if model_in_config in {"gpt-3.5-turbo", None} or model_in_config is None:
+                self.config["model"] = self.name
+        elif model_in_config:
+            self.name = model_in_config
         return self
 
     async def achat(
