@@ -153,7 +153,8 @@ async def test_with_kwargs():
 async def test_torch_op_composition() -> None:
     # Define our ops
     config_op = ConfigOp(config={"scale": 2.0})
-    fxn_op = FxnOp(lambda x: x["scale"])
+    # Don't use FURB118 here because we assert on kwargs below
+    fxn_op = FxnOp(lambda x: x["scale"])  # noqa: FURB118
 
     class ScaleSum(nn.Module):
         def forward(self, x, y):

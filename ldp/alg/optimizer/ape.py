@@ -86,7 +86,7 @@ class APEOpt(BaseModel, Optimizer):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    ### Configuration
+    # Configuration
     max_examples: int | None = Field(
         default=50,  # Comes from APE paper section 5.2
         description=(
@@ -129,7 +129,7 @@ class APEOpt(BaseModel, Optimizer):
     )
     reward_discount: float = 1.0
 
-    ### State
+    # State
     examples: list[Example] = Field(default_factory=list)
     good_examples: list[Example] = Field(default_factory=list)
     steps: int = 0

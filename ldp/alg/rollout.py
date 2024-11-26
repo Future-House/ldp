@@ -42,7 +42,7 @@ def reraise_exc_as(reraise: type[CaughtError], enabled: bool) -> Iterator[None]:
         yield
     except Exception as e:
         if enabled:
-            logging.exception(f"Caught {reraise.exc_type} exception.")
+            logger.exception(f"Caught {reraise.exc_type} exception.")
             raise reraise(e) from e
         raise
 

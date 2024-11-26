@@ -12,6 +12,7 @@ undertake intermediate reasoning steps as environment steps.
 """
 
 import logging
+import operator
 from collections.abc import Callable
 from typing import Any
 
@@ -127,7 +128,9 @@ class TreeofThoughtsAgent(BaseModel, Agent[SimpleAgentState]):
 
             # greedy selection
             values_with_index = [(v, i) for i, v in enumerate(values)]
-            sorted_values = sorted(values_with_index, key=lambda x: x[0], reverse=True)
+            sorted_values = sorted(
+                values_with_index, key=operator.itemgetter(0), reverse=True
+            )
             select_ids = [i for _, i in sorted_values[:n_select_samples]]
             select_new_paths = [candidate_paths[select_id] for select_id in select_ids]
             current_paths = select_new_paths

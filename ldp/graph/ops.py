@@ -372,7 +372,7 @@ class OpCtx(BaseModel):
         return value
 
     def update(self, call_id: CallID, key: str, value: Any):
-        self.data[call_id.run_id][(call_id.fwd_id, key)] = value
+        self.data[call_id.run_id][call_id.fwd_id, key] = value
 
     def get_input_grads(self, call_id: CallID) -> GradInType:
         # TODO: this function name is confusing. Let's deprecate it. We only use it

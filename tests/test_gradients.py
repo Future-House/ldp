@@ -303,10 +303,11 @@ async def test_args_missing_or_extra_grad():
 
 
 @pytest.mark.asyncio
-async def test_kwargs_missing_or_extra_grad():
+async def test_kwargs_missing_or_extra_grad() -> None:
     _input1 = 1
     _input2 = 2
-    op = FxnOp[int](lambda _input1, _input2: _input1 + _input2)
+    # Don't use FURB118 here because we assert on kwargs below
+    op = FxnOp[int](lambda _input1, _input2: _input1 + _input2)  # noqa: FURB118
     op.set_name("op")
 
     def backward_with_missing_kwarg(input_args, input_kwargs):

@@ -105,7 +105,7 @@ class Memory(BaseModel):
 TIndex = TypeVar("TIndex")
 
 
-class MemoryModel(BaseModel, Generic[TIndex], ABC):
+class MemoryModel(BaseModel, ABC, Generic[TIndex]):
     """A collection of memories with retrieval."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

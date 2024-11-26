@@ -1,4 +1,5 @@
 import asyncio
+import operator
 import random
 from typing import TypeVar, cast
 from uuid import UUID
@@ -417,7 +418,7 @@ async def test_op_lookup():
     # don't set name on these two to make sure default names
     # still map uniquely
     op_b = FxnOp[int](lambda x: 2 * x)
-    op_c = FxnOp[int](lambda x: -x)
+    op_c = FxnOp[int](operator.neg)
 
     async with compute_graph():
         a = await op_a()
