@@ -101,7 +101,7 @@ class PrioritizedReplayBuffer(CircularReplayBuffer):
         # TODO: clean up this branching and force user to specify a Callable[..., Awaitable[float]]
         if isinstance(q_function, AsyncTorchModule):
             _, result = await q_function(*args, **kwargs)
-            result + result.item()
+            result = result.item()
         else:
             result = await q_function(*args, **kwargs)
 
