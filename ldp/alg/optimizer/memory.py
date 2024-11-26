@@ -72,7 +72,7 @@ class MemoryOpt(BaseModel, Optimizer):
     # Working around https://github.com/pydantic/pydantic/issues/10551
     default_memory_factory: ClassVar[MemoryFactory] = _default_memory_factory
 
-    ### Configuration
+    # Configuration
     memory_op: MemoryOp
     output_op: Op
     reward_discount: float = 1.0
@@ -89,7 +89,7 @@ class MemoryOpt(BaseModel, Optimizer):
         description="Template for a Memory's string representation.",
     )
 
-    ### State
+    # State
     steps: int = 0
     example_buffer: list[tuple[CallID, CallID, float, JsonValue]] = Field(
         default_factory=list

@@ -52,7 +52,7 @@ class Memory(BaseModel):
         description="Measure of the output's quality (e.g. loss)."
     )
     metadata: JsonValue = Field(
-        default_factory=dict,
+        default_factory=dict,  # type: ignore[arg-type] # SEE: https://github.com/pydantic/pydantic/issues/10950
         description=(
             "Optional JSON metadata to store with the memory. An example is storing"
             " information an optimizer can use at training time."
@@ -105,7 +105,7 @@ class Memory(BaseModel):
 TIndex = TypeVar("TIndex")
 
 
-class MemoryModel(BaseModel, Generic[TIndex], ABC):
+class MemoryModel(BaseModel, ABC, Generic[TIndex]):
     """A collection of memories with retrieval."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

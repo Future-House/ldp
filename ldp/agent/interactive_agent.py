@@ -87,7 +87,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
                 with contextlib.suppress(json.JSONDecodeError):
                     # lets us load ints, etc. Otherwise, assume it's a string
                     value = json.loads(value)
-                if value == "":
+                if value == "":  # noqa: PLC1901
                     # don't do `not value`, since 0, False, and None are all valid inputs
                     if pdefault is MISSING_DEFAULT:
                         print("Parameter is required.")
