@@ -363,14 +363,15 @@ class OfflineTrainer:
 
 
 async def _close_envs(envs: Sequence[Environment], catch_env_failures: bool):
-    """Close a batch of environments.
+    # Note that the reraise happens per-env, not over the whole batch, so one env failing
+    # to close won't affect the others
+    await asyncio.gather(*[safe_close_env(env, catch_env_failures) for env in envs])
 
-    If catch_env_failures is set, do not raise exceptions if an environment fails to close.
+
+async def safe_close_env(env: Environment, catch_env_failures: bool):
+    """Close an environment.
+
+    If catch_env_failures is set, will not raise exceptions.
     """
-    await asyncio.gather(*[_close_env(env, catch_env_failures) for env in envs])
-
-
-async def _close_env(env: Environment, catch_env_failures: bool):
-    # Note we have a worker function so the reraise happens per-env, not over all envs in the gather
     with suppress(EnvError), reraise_exc_as(EnvError, enabled=catch_env_failures):
         await env.close()
