@@ -4,6 +4,7 @@ import asyncio
 import math
 import random
 from collections.abc import Sequence
+from contextlib import suppress
 from typing import Any, cast
 
 from aviary.core import Environment, TaskDataset
@@ -16,7 +17,7 @@ from ldp.graph import OpResult, eval_mode, train_mode
 from ldp.shims import tqdm, trange
 
 from .callbacks import Callback, ClearContextCallback
-from .rollout import RolloutManager
+from .rollout import EnvError, RolloutManager, reraise_exc_as
 
 
 async def _run_eval_loop(
@@ -53,7 +54,7 @@ async def _run_eval_loop(
 
                 # Close the environment after we have sampled from it,
                 # in case it needs to tear down resources.
-                await asyncio.gather(*(env.close() for env in batch))
+                await _close_envs(batch, rollout_manager.catch_env_failures)
 
                 await asyncio.gather(*[
                     callback.after_eval_step(trajectories) for callback in callbacks
@@ -251,7 +252,7 @@ class OnlineTrainer:
             )
 
             # Close the environments after we have sampled from them, in case they need to tear down resources.
-            await asyncio.gather(*[env.close() for env in envs])
+            await _close_envs(envs, self.config.catch_env_failures)
 
             training_batch.extend(traj for traj in trajectories if not traj.failed)
 
@@ -359,3 +360,12 @@ class OfflineTrainer:
                 await asyncio.gather(*[
                     callback.after_train_step(batch) for callback in self.callbacks
                 ])
+
+
+async def _close_envs(envs: Sequence[Environment], catch_env_failures: bool):
+    """Close a batch of environments.
+
+    If catch_env_failures is set, do not raise exceptions if an environment fails to close.
+    """
+    with suppress(EnvError), reraise_exc_as(EnvError, enabled=catch_env_failures):
+        await asyncio.gather(*[env.close() for env in envs])
