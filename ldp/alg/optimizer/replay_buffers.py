@@ -5,6 +5,7 @@ from collections import UserList
 from collections.abc import Awaitable, Callable, Iterator
 
 import numpy as np
+import torch
 from litellm import cast
 from tqdm import tqdm
 
@@ -101,9 +102,11 @@ class PrioritizedReplayBuffer(CircularReplayBuffer):
         # TODO: clean up this branching and force user to specify a Callable[..., Awaitable[float]]
         if isinstance(q_function, AsyncTorchModule):
             _, result = await q_function(*args, **kwargs)
-            result = result.item()
         else:
             result = await q_function(*args, **kwargs)
+
+        if isinstance(result, torch.Tensor):
+            result = result.item()
 
         pbar.update()
         return cast(float, result)
