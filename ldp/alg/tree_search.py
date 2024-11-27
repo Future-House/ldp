@@ -19,6 +19,7 @@ from .rollout import (
     TEnv,
     reraise_exc_as,
 )
+from .runners import safe_close_env
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,9 @@ class TreeSearchRollout(RolloutManager):
             ])
         except CaughtError:
             return tree
+        finally:
+            # Tear down env resources if necessary
+            await safe_close_env(env, self.catch_env_failures)
 
         await self._descend(
             tree=tree,
