@@ -367,5 +367,10 @@ async def _close_envs(envs: Sequence[Environment], catch_env_failures: bool):
 
     If catch_env_failures is set, do not raise exceptions if an environment fails to close.
     """
+    await asyncio.gather(*[_close_env(env, catch_env_failures) for env in envs])
+
+
+async def _close_env(env: Environment, catch_env_failures: bool):
+    # Note we have a worker function so the reraise happens per-env, not over all envs in the gather
     with suppress(EnvError), reraise_exc_as(EnvError, enabled=catch_env_failures):
-        await asyncio.gather(*[env.close() for env in envs])
+        await env.close()
