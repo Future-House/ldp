@@ -40,6 +40,7 @@ async def test_online_trainer(clear_ctx_at_each_iter: bool) -> None:
         num_train_iterations=1,
         max_rollout_steps=1,
         num_eval_iterations=1,
+        num_rollouts_per_env=2,
         eval_every=1,
         clear_ctx_at_each_iter=clear_ctx_at_each_iter,
     )
@@ -53,9 +54,16 @@ async def test_online_trainer(clear_ctx_at_each_iter: bool) -> None:
     )
     await trainer.train()
 
-    for k, v in dummy_callback.fn_invocations.items():
-        # eval is run 3 times: before training, during training, after training
-        assert v == (3 if "eval" in k else 1)
+    for k, v in dummy_callback.counters.items():
+        if k == "num_train_trajectories":
+            # because num_rollouts_per_env==2
+            assert v == 2
+        elif "eval" in k:
+            # eval is run 3 times: before training, during training, after training
+            assert v == 3
+        else:
+            # after_{train_step,update} should be called once each
+            assert v == 1
     assert metrics_callback.train_means["failures"] < 1, "Training should work"
     assert "tool_print_story" in metrics_callback.train_means
 
@@ -90,7 +98,7 @@ async def test_evaluator(clear_ctx_at_each_iter) -> None:
     assert isinstance(metrics_callback.eval_means["reward"], float)
     assert "tool_print_story" not in metrics_callback.eval_means
 
-    for k, v in count_callback.fn_invocations.items():
+    for k, v in count_callback.counters.items():
         assert v == (1 if "eval" in k else 0)
 
     if clear_ctx_at_each_iter:
@@ -157,11 +165,12 @@ async def test_offline_trainer(clear_ctx_at_each_iter: bool) -> None:
     )
     await trainer.train()
 
-    assert count_callback.fn_invocations == {
+    assert count_callback.counters == {
         "after_train_step": 1,
         "after_eval_step": 0,
         "after_eval_loop": 0,
         "after_update": 1,
+        "num_train_trajectories": 1,
     }
     assert metrics_callback.train_means["failures"] < 1, "Training should work"
 
@@ -173,21 +182,23 @@ async def test_offline_trainer(clear_ctx_at_each_iter: bool) -> None:
 
 class DummyCallback(Callback):
     def __init__(self):
-        self.fn_invocations = {
+        self.counters = {
             "after_train_step": 0,
             "after_eval_step": 0,
             "after_eval_loop": 0,
             "after_update": 0,
+            "num_train_trajectories": 0,
         }
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
-        self.fn_invocations["after_train_step"] += 1
+        self.counters["after_train_step"] += 1
+        self.counters["num_train_trajectories"] += len(trajectories)
 
     async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
-        self.fn_invocations["after_eval_step"] += 1
+        self.counters["after_eval_step"] += 1
 
     async def after_eval_loop(self) -> None:
-        self.fn_invocations["after_eval_loop"] += 1
+        self.counters["after_eval_loop"] += 1
 
     async def after_update(self) -> None:
-        self.fn_invocations["after_update"] += 1
+        self.counters["after_update"] += 1

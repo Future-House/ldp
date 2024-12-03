@@ -28,27 +28,27 @@ class Transition(BaseModel):
 
     agent_state: Any = Field(
         description=(
-            "Agent.get_asv's input. This is `s_t` in RL terms. Note that `s_0` comes"
+            "Agent.get_asv's input. This is `s_t` in the POMDP. Note that `s_0` comes"
             " from `Agent.init_state()`"
         )
     )
     next_agent_state: Any = Field(
-        description="Agent.get_asv's output. This is s_t+1 in RL terms."
+        description="Agent.get_asv's output. This is s_t+1 in the POMDP."
     )
 
     observation: list[ToolResponseMessage | Message] = Field(
-        description="Agent.get_asv's input. This is o_t in RL terms."
+        description="Agent.get_asv's input. This is o_t in the POMDP."
     )
     next_observation: list[ToolResponseMessage | Message] = Field(
-        description="Environment.step output. This is o_t+1 in RL terms."
+        description="Environment.step output. This is o_t+1 in the POMDP."
     )
 
     action: OpResult[ToolRequestMessage] | None = Field(
-        default=None, description="Agent.get_asv output. This is a_t in RL terms."
+        default=None, description="Agent.get_asv output. This is a_t in the POMDP."
     )
 
     reward: float = Field(
-        default=0.0, description="Environment.step output. This is r_t in RL terms."
+        default=0.0, description="Environment.step output. This is r_t in the POMDP."
     )
 
     truncated: bool = Field(
