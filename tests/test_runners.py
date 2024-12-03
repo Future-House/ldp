@@ -62,6 +62,7 @@ async def test_online_trainer(clear_ctx_at_each_iter: bool) -> None:
             # eval is run 3 times: before training, during training, after training
             assert v == 3
         else:
+            # after_{train_step,update} should be called once each
             assert v == 1
     assert metrics_callback.train_means["failures"] < 1, "Training should work"
     assert "tool_print_story" in metrics_callback.train_means
