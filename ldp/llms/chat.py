@@ -1,8 +1,8 @@
 import asyncio
 import json
-from collections.abc import AsyncGenerator, Callable, Iterable
+from collections.abc import AsyncGenerator, Callable, Iterable, Mapping
 from datetime import datetime
-from typing import Any, ClassVar, Self, cast
+from typing import Any, ClassVar, Self, TypeAlias, cast
 from uuid import UUID, uuid4
 
 import litellm
@@ -14,6 +14,10 @@ from aviary.core import (
     is_coroutine_callable,
 )
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+
+# Yes, this is a hack, it mostly matches
+# https://github.com/python-jsonschema/referencing/blob/v0.35.1/referencing/jsonschema.py#L20-L21
+JSONSchema: TypeAlias = Mapping[str, Any]
 
 
 class JSONSchemaValidationError(ValueError):
@@ -87,7 +91,7 @@ def sum_logprobs(choice: litellm.utils.Choices) -> float | None:
 
 
 def validate_json_completion(
-    completion: litellm.ModelResponse, output_type: type[BaseModel] | dict[str, Any]
+    completion: litellm.ModelResponse, output_type: type[BaseModel] | JSONSchema
 ) -> None:
     """Validate a completion against a JSON schema.
 
@@ -105,9 +109,9 @@ def validate_json_completion(
             choice.message.content = (
                 choice.message.content.split("```json")[-1].split("```")[0] or ""
             )
-            if isinstance(output_type, dict):  # JSON schema
+            if isinstance(output_type, Mapping):  # JSON schema
                 litellm.litellm_core_utils.json_validation_rule.validate_schema(
-                    schema=output_type, response=choice.message.content
+                    schema=dict(output_type), response=choice.message.content
                 )
             else:
                 output_type.model_validate_json(choice.message.content)
@@ -178,7 +182,7 @@ class MultipleCompletionLLMModel(BaseModel):
         self,
         messages: list[Message],
         callbacks: list[Callable] | None = None,
-        output_type: type[BaseModel] | dict[str, Any] | None = None,
+        output_type: type[BaseModel] | JSONSchema | None = None,
         tools: list[Tool] | None = None,
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
         **chat_kwargs,
@@ -203,13 +207,13 @@ class MultipleCompletionLLMModel(BaseModel):
                     else tool_choice
                 )
 
-        if isinstance(output_type, dict):  # Use structured outputs
+        if isinstance(output_type, Mapping):  # Use structured outputs
             chat_kwargs["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {
                     "strict": True,
                     # SEE: https://platform.openai.com/docs/guides/structured-outputs#additionalproperties-false-must-always-be-set-in-objects
-                    "schema": output_type | {"additionalProperties": False},
+                    "schema": dict(output_type) | {"additionalProperties": False},
                     "name": output_type["title"],  # Required by OpenAI as of 12/3/2024
                 },
             }
