@@ -87,13 +87,13 @@ def sum_logprobs(choice: litellm.utils.Choices) -> float | None:
 
 
 def validate_json_completion(
-    completion: litellm.ModelResponse, output_type: type[BaseModel]
+    completion: litellm.ModelResponse, output_type: type[BaseModel] | dict[str, Any]
 ) -> None:
     """Validate a completion against a JSON schema.
 
     Args:
         completion: The completion to validate.
-        output_type: The Pydantic model to validate the completion against.
+        output_type: A JSON schema or a Pydantic model to validate the completion.
     """
     try:
         for choice in completion.choices:
@@ -105,7 +105,12 @@ def validate_json_completion(
             choice.message.content = (
                 choice.message.content.split("```json")[-1].split("```")[0] or ""
             )
-            output_type.model_validate_json(choice.message.content)
+            if isinstance(output_type, dict):  # JSON schema
+                litellm.litellm_core_utils.json_validation_rule.validate_schema(
+                    schema=output_type, response=choice.message.content
+                )
+            else:
+                output_type.model_validate_json(choice.message.content)
     except ValidationError as err:
         raise JSONSchemaValidationError(
             "The completion does not match the specified schema."
@@ -173,7 +178,7 @@ class MultipleCompletionLLMModel(BaseModel):
         self,
         messages: list[Message],
         callbacks: list[Callable] | None = None,
-        output_type: type[BaseModel] | None = None,
+        output_type: type[BaseModel] | dict[str, Any] | None = None,
         tools: list[Tool] | None = None,
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
         **chat_kwargs,
@@ -198,8 +203,17 @@ class MultipleCompletionLLMModel(BaseModel):
                     else tool_choice
                 )
 
-        # deal with specifying output type
-        if output_type is not None:
+        if isinstance(output_type, dict):  # Use structured outputs
+            chat_kwargs["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "strict": True,
+                    # SEE: https://platform.openai.com/docs/guides/structured-outputs#additionalproperties-false-must-always-be-set-in-objects
+                    "schema": output_type | {"additionalProperties": False},
+                    "name": output_type["title"],  # Required by OpenAI as of 12/3/2024
+                },
+            }
+        elif output_type is not None:  # Use JSON mode
             schema = json.dumps(output_type.model_json_schema(mode="serialization"))
             schema_msg = f"Respond following this JSON schema:\n\n{schema}"
             # Get the system prompt and its index, or the index to add it
