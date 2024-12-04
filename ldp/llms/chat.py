@@ -175,8 +175,14 @@ class MultipleCompletionLLMModel(BaseModel):
         )
 
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
+    # > `none` means the model will not call any tool and instead generates a message.
+    # > `auto` means the model can pick between generating a message or calling one or more tools.
     # > `required` means the model must call one or more tools.
+    NO_TOOL_CHOICE: ClassVar[str] = "none"
+    MODEL_CHOOSES_TOOL: ClassVar[str] = "auto"
     TOOL_CHOICE_REQUIRED: ClassVar[str] = "required"
+    # None means we won't provide a tool_choice to the LLM API
+    UNSPECIFIED_TOOL_CHOICE: ClassVar[None] = None
 
     async def call(  # noqa: C901, PLR0915
         self,
