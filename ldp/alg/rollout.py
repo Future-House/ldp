@@ -47,6 +47,9 @@ def reraise_exc_as(reraise: type[CaughtError], enabled: bool) -> Iterator[None]:
         raise
 
 
+UNSET_AGENT_STATE = object()  # sentinel
+
+
 class RolloutManager:
     def __init__(
         self,
@@ -85,8 +88,8 @@ class RolloutManager:
         Args:
             environment_factory: A no-argument callable that returns
                 an environment instance
-            batch_size (int, optional): Defaults to 1.
-            max_steps (int | None, optional): Max steps per rollout. Defaults to None (see above).
+            batch_size: Defaults to 1.
+            max_steps: Max steps per rollout. Defaults to None (see above).
 
         Returns:
             list[tuple[Trajectory, Environment]]: A list of (trajectory, environment) tuples: one per rollout.
@@ -97,6 +100,8 @@ class RolloutManager:
         self,
         environments: Sequence[Environment],
         max_steps: int | None = None,
+        init_observations: Sequence[list[Message] | None] | None = None,
+        init_agent_states: Any = UNSET_AGENT_STATE,
     ) -> list[Trajectory]:
         """Run rollouts in parallel on a list of provided environments.
 
@@ -104,27 +109,27 @@ class RolloutManager:
             environments: A list of environments to run rollouts on.
             max_steps: Max steps per rollout. Defaults to None, in which case the rollouts are run
                 until environment returns done.
+            init_observations: Initial observations to start the rollouts with. Defaults to None.
+                If not provided, each environment will be reset.
+            init_agent_states: Initial agent states to start the rollouts with. If not provided, will
+                call init_state() on the agent. NOTE: we currently require init_observations and
+                init_agent_states to be both set or both unset.
         """
 
     async def sample_trajectories(self, **kwargs):
         if "environment_factory" in kwargs:
-            assert "environments" not in kwargs, (
-                "Cannot use environment_factory with environments"
-            )
+            if "environments" in kwargs:
+                raise ValueError("Cannot use environment_factory with environments")
+            if "init_obs" in kwargs:
+                raise ValueError("Cannot set init_obs if using an environment factory.")
 
-            return await self._sample_trajectories_from_env_factory(
-                kwargs["environment_factory"],
-                kwargs.get("batch_size", 1),
-                kwargs.get("max_steps"),
-            )
+            return await self._sample_trajectories_from_env_factory(**kwargs)
 
         if "environments" in kwargs:
             assert "environment_factory" not in kwargs, (
                 "Cannot use environments with environment_factory"
             )
-            return await self._sample_trajectories_from_envs(
-                kwargs["environments"], kwargs.get("max_steps")
-            )
+            return await self._sample_trajectories_from_envs(**kwargs)
 
         raise TypeError(
             "sample_trajectories() missing required "
@@ -140,7 +145,7 @@ class RolloutManager:
         self.traj_buffer.clear()
 
         async def rollout_with_args(idx: int, **rollout_kwargs):
-            return idx, await self._rollout(**rollout_kwargs), rollout_kwargs
+            return idx, await self.rollout(**rollout_kwargs), rollout_kwargs
 
         accumulated_steps = [0] * batch_size
         # submit initial batch of tasks
@@ -189,23 +194,35 @@ class RolloutManager:
         self,
         environments: Sequence[Environment],
         max_steps: int | None = None,
+        init_obs: Sequence[list[Message] | None] | None = None,
+        init_agent_state: Any = UNSET_AGENT_STATE,
     ) -> list[Trajectory]:
         self.traj_buffer.clear()
+
+        if init_obs is None:
+            init_obs = [None] * len(environments)
+
+        if init_agent_state is UNSET_AGENT_STATE:
+            init_agent_state = [UNSET_AGENT_STATE] * len(environments)
 
         traj_ids = [uuid.uuid4().hex for _ in range(len(environments))]
         await asyncio.gather(
             *(
-                self._rollout(*args, max_steps=max_steps)
-                for args in zip(traj_ids, environments, strict=True)
+                self.rollout(*args, max_steps=max_steps)
+                for args in zip(
+                    traj_ids, environments, init_obs, init_agent_state, strict=True
+                )
             )
         )
         return [self.traj_buffer[traj_id] for traj_id in traj_ids]
 
-    async def _rollout(
+    async def rollout(
         self,
         traj_id: str,
         env: Environment,
-        max_steps: int | None,
+        init_obs: list[Message] | None = None,
+        init_agent_state: Any = UNSET_AGENT_STATE,
+        max_steps: int | None = None,
     ) -> Trajectory:
         trajectory = Trajectory(traj_id=traj_id)
 
@@ -219,23 +236,38 @@ class RolloutManager:
         # Set default values to store in the buffer in case reset/init_state fail
         obs: list[Message] = []
         agent_state: Any = None
+        if (init_obs is None) != (init_agent_state is UNSET_AGENT_STATE):
+            # NOTE: perhaps we can relax this? Can imagine a case where we want to keep the
+            # agent alive but apply it to a new environment. But maybe that would make the
+            # POMDP super confusing.
+            raise ValueError(
+                "Either both or neither of init_obs and init_agent_state can be supplied."
+            )
 
         try:
+            # TODO: Decide if before_rollout ought to be run if init_obs is provided. More fundamentally,
+            # do we treat this as a new trajectory or a continuation of one? I am leaning towards the former
             await asyncio.gather(*[
                 c.before_rollout(traj_id, env) for c in self.callbacks
             ])
 
-            with reraise_exc_as(EnvError, enabled=self.catch_env_failures):
-                obs, tools = await env.reset()
-            await asyncio.gather(*[
-                c.after_env_reset(traj_id, obs, tools) for c in self.callbacks
-            ])
+            if init_obs is not None:
+                obs = init_obs
+                agent_state = init_agent_state
+            else:
+                # If we didn't get initial obs/state, call reset and init_state.
+                with reraise_exc_as(EnvError, enabled=self.catch_env_failures):
+                    obs, tools = await env.reset()
+                await asyncio.gather(*[
+                    c.after_env_reset(traj_id, obs, tools) for c in self.callbacks
+                ])
 
-            with reraise_exc_as(AgentError, enabled=self.catch_agent_failures):
-                agent_state = await self.agent.init_state(tools)
-            await asyncio.gather(*[
-                c.after_agent_init_state(traj_id, agent_state) for c in self.callbacks
-            ])
+                with reraise_exc_as(AgentError, enabled=self.catch_agent_failures):
+                    agent_state = await self.agent.init_state(tools)
+                await asyncio.gather(*[
+                    c.after_agent_init_state(traj_id, agent_state)
+                    for c in self.callbacks
+                ])
 
             for timestep in itertools.count():
                 step = await self._take_step(timestep, traj_id, env, agent_state, obs)
