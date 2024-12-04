@@ -62,10 +62,10 @@ class ReplayBuffer(UserList[dict]):
     ) -> Iterator[dict]:
         return self._batched_iter(self.data, batch_size, shuffle, infinite)
 
-    def resize(self, size: int):
+    def resize(self, size: int) -> None:
         """Optional method for the buffer to resize itself."""
 
-    async def prepare_for_sampling(self):
+    async def prepare_for_sampling(self) -> None:
         """Optional method for the buffer to prepare itself before sampling."""
 
     @staticmethod
@@ -194,7 +194,8 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
 
 class ReplayBufferType(StrEnum):
-    ADD_ONLY = auto()
+    # Maps to different buffer classes
+    APPEND_ONLY = auto()
     CIRCULAR = auto()
     RANDOMIZED = auto()
     PRIORITIZED = auto()
@@ -211,7 +212,7 @@ class ReplayBufferConfig(BaseModel):
 
     def make_buffer(self, **kwargs) -> ReplayBuffer:
         # kwargs are only for prioritized case
-        if self.buf_type == ReplayBufferType.ADD_ONLY:
+        if self.buf_type == ReplayBufferType.APPEND_ONLY:
             return ReplayBuffer()
         if self.buf_type == ReplayBufferType.CIRCULAR:
             return CircularReplayBuffer()
