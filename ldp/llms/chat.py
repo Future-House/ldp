@@ -66,6 +66,13 @@ class LLMResult(BaseModel):
         """Get the supported OpenAI parameters for the model."""
         return litellm.get_supported_openai_params(self.model)
 
+    def extract_single_message_content(self) -> tuple[Message, str]:
+        if not self.messages or len(self.messages) != 1 or not self.messages[0].content:
+            raise ValueError(
+                f"Expected a single message with content in the response {self}."
+            )
+        return self.messages[0], self.messages[0].content
+
 
 def sum_logprobs(choice: litellm.utils.Choices) -> float | None:
     """Calculate the sum of the log probabilities of an LLM completion (a Choices object).
