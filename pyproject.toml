@@ -4,7 +4,7 @@ requires = ["setuptools>=64", "setuptools_scm>=8"]
 
 [dependency-groups]
 codeflash = [
-    "codeflash>=0.7",  # Pin to keep recent
+    "codeflash>=0.8",  # Pin for --verify-setup checking formatter-cmds
     "ldp[dev]",
 ]
 dev = ["ldp[dev]"]
@@ -97,7 +97,7 @@ preview = true
 [tool.codeflash]
 disable-imports-sorting = true
 disable-telemetry = true
-formatter-cmds = ["ruff check --exit-zero --fix $file", "ruff format $file"]
+formatter-cmds = ["uv tool run ruff check --exit-zero --fix $file", "uv tool run ruff format $file"]
 module-root = "ldp"
 test-framework = "pytest"
 tests-root = "tests"
