@@ -355,7 +355,7 @@ class TestMemoryOpt:
                             content=LessonEntry.make_prompt(query_airesponse_dreturns)
                         )
                     ],
-                    tool_choice="none",
+                    tool_choice=memory_distiller.NO_TOOL_CHOICE,
                     output_type=LessonEntry,
                 )
                 if (
