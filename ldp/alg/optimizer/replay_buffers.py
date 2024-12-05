@@ -192,6 +192,11 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
         return self._batched_iter(buffer, batch_size, shuffle, infinite)
 
+    def __len__(self):
+        # override __len__ to return the buffer size if it's set and would result
+        # in downsampling when calling batched_iter
+        return min(len(self.data), self.buf_size or len(self.data))
+
 
 class ReplayBufferType(StrEnum):
     # Maps to different buffer classes
