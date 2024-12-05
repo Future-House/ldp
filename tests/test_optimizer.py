@@ -1,4 +1,5 @@
-from collections.abc import Iterable, Sequence
+import itertools
+from collections.abc import Iterable
 from typing import cast
 from uuid import UUID
 
@@ -39,7 +40,6 @@ from ldp.graph.gradient_estimators import (
 )
 from ldp.graph.ops import GradInType
 from ldp.llms import LLMModel, append_to_sys
-from tests import CILLMModelNames
 from tests.conftest import VCR_DEFAULT_MATCH_ON
 
 
@@ -170,7 +170,8 @@ async def test_ape_optimizer() -> None:
 class NumberGuesserModule:
     """Made up module used to enable simple training scripts."""
 
-    def __init__(self):
+    def __init__(self, matches: int = MemoryOp.DEFAULT_NUM_MATCHES):
+        self.matches = matches
         self.mem_op = MemoryOp()
         self.package_msg_op = FxnOp(self._package)
         self.llm_call_op = LLMCallOp()
@@ -186,11 +187,16 @@ class NumberGuesserModule:
                     " only contains the guessed number."
                 )
             ),
-            Message(content=f"Previous memories:\n{itemized_mems}\n-----\n\n{query}"),
+            Message(
+                content=(
+                    f"Previous memories:\n{itemized_mems}\n-----\n\nInput word:"
+                    f" {query!r}"
+                )
+            ),
         ]
 
     async def __call__(self, query: str) -> tuple[OpResult[str], list[Message]]:
-        mems = await self.mem_op(query)
+        mems = await self.mem_op(query, matches=self.matches)
         msgs = await self.package_msg_op(mems, query)
         c = await self.llm_call_op(
             config={
@@ -203,10 +209,13 @@ class NumberGuesserModule:
         return await self.strip_op(c), msgs.value
 
 
+CORRECT_REWARD = 1.0
+
+
 async def nondifferentiable_reward_model(target: str, result: OpResult[str]) -> float:
     se = (await SquaredErrorLoss()(target, result)).value
     if se == 0:
-        return 1.0  # Positive reward if it got it right
+        return CORRECT_REWARD  # Positive reward if it got it right
     return -se  # Squared error is positive, so convert to negative
 
 
@@ -295,13 +304,13 @@ class TestMemoryOpt:
 
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
-    async def test_lessons_memory_optimizer(self) -> None:
+    async def test_lessons_memory_optimizer(self) -> None:  # noqa: C901
         """
         Test we can use LLM completions to generate lessons instead of memories.
 
         This test is loosely based on Reflexion (https://arxiv.org/abs/2303.11366).
         """
-        memory_distiller = LLMModel(config={"model": CILLMModelNames.OPENAI.value})
+        memory_distiller = LLMModel(config={"model": "gpt-4o-2024-11-20"})
 
         class LessonEntry(BaseModel):
             """Entry for a lesson created from some example data."""
@@ -309,30 +318,32 @@ class TestMemoryOpt:
             query: str = Field(
                 description=(
                     "Plain text string for retrieving this lesson from a database of"
-                    " lessons."
+                    " lessons. Please fill this field with specific inputs and outputs,"
+                    " so we can fetch relevant lessons in the future."
                 )
             )
-            lesson: str = Field(description="Lesson generated from past attempts.")
-
-            @staticmethod
-            def make_prompt(examples: Sequence[tuple]) -> str:
-                """Create an LLM prompt to generate a lesson from examples."""
-                itemized_examples = "\n-".join(str(x) for x in examples)
-                return (
-                    "We are trying to guess a number based on the input word. We just"
-                    f" tried {len(examples)} times, and collected rewards where a"
-                    " higher reward is better. Here are the results in three-tuples of"
-                    f" input, output, reward:\n- {itemized_examples}\n\nPlease create"
-                    " a lesson based on this data referencing the relative success or"
-                    " failure associated with the reward, use concise wording and"
-                    " don't repeat yourself."
+            lesson: str = Field(
+                description=(
+                    "Lesson generated from past attempts. Please fill this field with"
+                    " specific inputs and outputs, as well as speculate on possible"
+                    " ways to attain desirable results."
                 )
+            )
 
             @classmethod
-            def to_memory(cls, lesson_json: str, run_id: UUID | None = None) -> Memory:
-                lesson = cls.model_validate_json(lesson_json)
+            def to_memory(
+                cls,
+                lesson_json: str,
+                run_id: UUID | None = None,
+                value: float | str = "",
+            ) -> Memory:
+                lesson: LessonEntry = cls.model_validate_json(lesson_json)
                 return Memory(
-                    query=lesson.query, output=lesson.lesson, value="", run_id=run_id
+                    query=lesson.query,
+                    output=lesson.lesson,
+                    value=value,
+                    run_id=run_id,
+                    template="{output}\n\nReturn: {value}",
                 )
 
             @classmethod
@@ -344,78 +355,170 @@ class TestMemoryOpt:
                 example_buffer: Iterable[tuple[CallID, CallID, float, JsonValue]],
             ) -> list[Memory]:
                 example_buffer = list(example_buffer)
-                if not example_buffer:
-                    raise RuntimeError("Expected non-empty example buffer.")
                 query_airesponse_dreturns: list[tuple[str, str, float]] = [
                     (
                         memory_op.ctx.get(mem_call_id, "query"),
                         output_op.ctx.get(output_call_id, "output").value.content,
                         d_return,
                     )
-                    for mem_call_id, output_call_id, d_return, metadata in example_buffer
+                    for mem_call_id, output_call_id, d_return, _ in example_buffer
+                ]
+                itemized_examples = "\n-".join(
+                    str(x) for x in query_airesponse_dreturns
+                )
+                message_history = [
+                    Message(
+                        content=(
+                            "We are trying to guess a number based on the input word."
+                            f" We just tried {len(query_airesponse_dreturns)} times,"
+                            " and collected rewards where a higher reward is better."
+                            " Here are the results in three-tuples of input, output,"
+                            f" reward:\n- {itemized_examples}\n\nPlease create a lesson"
+                            " based on this data referencing the relative success or"
+                            " failure associated with the reward, use concise wording"
+                            " and don't repeat yourself."
+                        )
+                    )
                 ]
                 response = await memory_distiller.call(
-                    messages=[
-                        Message(
-                            content=LessonEntry.make_prompt(query_airesponse_dreturns)
-                        )
-                    ],
-                    tool_choice=memory_distiller.NO_TOOL_CHOICE,
-                    output_type=LessonEntry,
+                    messages=message_history,
+                    tool_choice=memory_distiller.UNSPECIFIED_TOOL_CHOICE,
+                    output_type=LessonEntry.model_json_schema(),
                 )
-                if (
-                    not response.messages
-                    or len(response.messages) != 1
-                    or not response.messages[0].content
-                ):
-                    raise ValueError(
-                        "Expected a single message in the response containing a"
-                        f" serialized {cls.__name__}."
+                lesson_message, lesson_json = response.extract_single_message_content()
+                memory = cls.to_memory(
+                    lesson_json=lesson_json,
+                    run_id=example_buffer[0][0].run_id,
+                    value=sum(x[2] for x in query_airesponse_dreturns),
+                )
+                prefix = "Given that lesson"
+                if memory_op.memory_model.memories:
+                    # Lead the prompt with the best memories, but don't sort the
+                    # memories because the LLM may interpret ordering as a progression
+                    # of heuristics to align with
+                    best_memories: list[Memory] = []
+                    for m in memory_op.memory_model.memories.values():
+                        if isinstance(m.value, float):
+                            if len(best_memories) < 8:
+                                best_memories.append(m)
+                                continue
+                            argmin_memory = min(
+                                range(len(best_memories)),
+                                key=lambda x: best_memories[x].value,
+                            )
+                            if best_memories[argmin_memory].value < m.value:  # type: ignore[operator]
+                                best_memories[argmin_memory] = m
+                    div = "\n\n---\n\n"
+                    prefix += (
+                        ", for reference here are some past lessons with proposed"
+                        " heuristics, separated by dashed"
+                        f" lines:{div}{div.join(str(m) for m in best_memories)}{div}Now"
                     )
-                return [
-                    cls.to_memory(
-                        response.messages[0].content, run_id=example_buffer[0][0].run_id
-                    )
-                ]
+                message_history.extend([
+                    lesson_message,
+                    Message(
+                        content=(
+                            f"{prefix}, let's consider proposing a new heuristic to"
+                            " predict the output based on the input. If the results"
+                            f" had rewards equal to {CORRECT_REWARD}, propose the same"
+                            " heuristic as it was correct. Otherwise, the heuristic"
+                            " should be a complete and precise algorithm or"
+                            " performance metric, not a vague statement. Do no restate"
+                            " or reference any lesson in the heuristic. If the past"
+                            " rewards were quite negative, please come up with a"
+                            " completely different heuristic. Higher rewards are"
+                            " better, so consider comparing lessons and heuristics"
+                            " based on reward. Do not begin with phrases like"
+                            " 'Heuristic: ', 'Proposed heuristic: ', or 'New"
+                            " heuristic: '.\n\nGood examples are 'Sum the ordinal"
+                            " value of each character in the word.' or 'Count the"
+                            " number of unique letters in the word'.\n\nBad examples"
+                            " are 'Heuristic: Potentially favoring previously"
+                            " established successful pairings.' or 'Select outputs"
+                            " closer to 12.'."
+                        )
+                    ),
+                ])
+                response = await memory_distiller.call(
+                    messages=message_history,
+                    tool_choice=memory_distiller.UNSPECIFIED_TOOL_CHOICE,
+                )
+                memory.output = (
+                    f"Lesson: {memory.output}\n\nProposed heuristic:"
+                    f" {response.extract_single_message_content()[1]}"
+                )
+                return [memory]
 
         assert isinstance(LessonEntry.memory_factory, MemoryFactory)
 
-        model = NumberGuesserModule()
+        model = NumberGuesserModule(matches=6)
         opt = MemoryOpt(
             memory_op=model.mem_op,
             output_op=model.llm_call_op,
             memory_factory=LessonEntry.memory_factory,
         )
 
-        x = ["Hello", "Day", "Bar"]
-        y = [str(len(xi)) for xi in x]
-        trajectory = Trajectory()
-        for xi, yi in zip(x, y, strict=True):
-            async with compute_graph():
-                yh, _ = await model(xi)
-                # MemoryOp works with rewards, not gradients. So instead of backpropagating
-                # through the loss, for training we compute a non-differentiable reward.
-                reward = await nondifferentiable_reward_model(yi, yh)
-            yh.compute_grads()
+        async def train(x: Iterable[str], y: Iterable[str]) -> None:
+            trajectory = Trajectory()
+            for xi, yi in zip(x, y, strict=True):
+                async with compute_graph():
+                    yh, _ = await model(xi)
+                    # MemoryOp works with rewards, not gradients. So instead of backpropagating
+                    # through the loss, for training we compute a non-differentiable reward.
+                    reward = await nondifferentiable_reward_model(yi, yh)
+                yh.compute_grads()
 
-            # MemoryOpt is only going to look at action and reward,
-            # so set placeholders for the other values
-            trajectory.steps.append(
-                Transition(
-                    timestep=0,
-                    agent_state=None,
-                    next_agent_state=None,
-                    observation=Transition.NO_OBSERVATION,
-                    next_observation=Transition.NO_OBSERVATION,
-                    action=yh,
-                    reward=reward,
-                    done=False,
+                # MemoryOpt is only going to look at action and reward,
+                # so set placeholders for the other values
+                trajectory.steps.append(
+                    Transition(
+                        timestep=0,
+                        agent_state=None,
+                        next_agent_state=None,
+                        observation=Transition.NO_OBSERVATION,
+                        next_observation=Transition.NO_OBSERVATION,
+                        action=yh,
+                        reward=reward,
+                        done=False,
+                    )
                 )
-            )
 
-        opt.aggregate([trajectory])
-        await opt.update()
+            opt.aggregate([trajectory])
+            await opt.update()
 
+        @eval_mode()
+        async def evaluate(x: Iterable[str], y: Iterable[str]) -> bool:
+            se_losses = []
+            for xi, yi in zip(x, y, strict=True):
+                async with compute_graph():
+                    yh, _ = await model(xi)
+                    se_losses.append((await SquaredErrorLoss()(yi, yh)).value)
+            return all(se_loss == 0 for se_loss in se_losses)
+
+        all_x: list[Iterable[str]] = [
+            ["Bird", "Bat"],
+            ["Hello", "World"],
+            ["Head", "Shoulders", "Knees", "Toes"],
+            ["Spam", "Ham", "Eggs"],
+            ["Cat", "Dog", "Fish"],
+            ["Mango", "Banana", "Apples"],
+            ["Turnips", "Lettuce"],
+            ["Eyes", "Ears", "Mouth", "Nose"],
+            ["Coffee", "Tea", "Crumpets"],
+            ["Perception", "Is", "Reality"],
+            ["Life", "And", "Death"],
+            ["Car", "Boat", "Plane"],
+        ]
+        all_y = [[str(len(xi)) for xi in x] for x in all_x]
+        success = False
+        for (train_x, train_y), (eval_x, eval_y) in itertools.pairwise(
+            zip(all_x, all_y, strict=True)
+        ):
+            await train(train_x, train_y)
+            if await evaluate(eval_x, eval_y):
+                success = True
+
+        assert success, "Failed to complete optimization."
         assert not opt.example_buffer, (
             "MemoryOpt buffer should be empty after applying update"
         )
