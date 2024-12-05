@@ -2,7 +2,7 @@ import pytest
 from pytest_subtests import SubTests
 
 from ldp.graph import Memory
-from ldp.graph.memory import UIndexMemoryModel
+from ldp.graph.memory import UIndexMemoryModel, ValueMemoryModel
 from ldp.llms import EmbeddingModel
 
 
@@ -42,3 +42,9 @@ class TestUIndexMemoryModel:
         result = await memory_model.get_memory("sample query", matches=1)
         assert len(result) == 1
         assert result[0] == sample_memory
+
+
+class TestValueMemoryModel:
+    def test_initialization_serialization(self) -> None:
+        model = ValueMemoryModel()
+        model.model_dump()  # Check we can serialize

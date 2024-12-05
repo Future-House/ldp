@@ -24,6 +24,7 @@ from ldp.graph import (
     FxnOp,
     LLMCallOp,
     Memory,
+    MemoryModel,
     MemoryOp,
     Op,
     OpCtx,
@@ -38,6 +39,7 @@ from ldp.graph.gradient_estimators import (
 from ldp.graph.gradient_estimators import (
     straight_through_estimator as ste,
 )
+from ldp.graph.memory import ValueMemoryModel
 from ldp.graph.ops import GradInType
 from ldp.llms import LLMModel, append_to_sys
 from tests.conftest import VCR_DEFAULT_MATCH_ON
@@ -170,9 +172,13 @@ async def test_ape_optimizer() -> None:
 class NumberGuesserModule:
     """Made up module used to enable simple training scripts."""
 
-    def __init__(self, matches: int = MemoryOp.DEFAULT_NUM_MATCHES):
+    def __init__(
+        self,
+        memory_model: MemoryModel | None = None,
+        matches: int = MemoryModel.DEFAULT_MATCHES,
+    ):
         self.matches = matches
-        self.mem_op = MemoryOp()
+        self.mem_op = MemoryOp(memory_model)
         self.package_msg_op = FxnOp(self._package)
         self.llm_call_op = LLMCallOp()
         self.strip_op = FxnOp(lambda x: x.content)
@@ -304,7 +310,7 @@ class TestMemoryOpt:
 
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
-    async def test_lessons_memory_optimizer(self) -> None:  # noqa: C901
+    async def test_lessons_memory_optimizer(self) -> None:
         """
         Test we can use LLM completions to generate lessons instead of memories.
 
@@ -396,18 +402,9 @@ class TestMemoryOpt:
                     # Lead the prompt with the best memories, but don't sort the
                     # memories because the LLM may interpret ordering as a progression
                     # of heuristics to align with
-                    best_memories: list[Memory] = []
-                    for m in memory_op.memory_model.memories.values():
-                        if isinstance(m.value, float):
-                            if len(best_memories) < 8:
-                                best_memories.append(m)
-                                continue
-                            argmin_memory = min(
-                                range(len(best_memories)),
-                                key=lambda x: best_memories[x].value,
-                            )
-                            if best_memories[argmin_memory].value < m.value:  # type: ignore[operator]
-                                best_memories[argmin_memory] = m
+                    best_memories = await cast(
+                        ValueMemoryModel, memory_op.memory_model
+                    ).get_memory(query="", matches=8)
                     div = "\n\n---\n\n"
                     prefix += (
                         ", for reference here are some past lessons with proposed"
@@ -451,7 +448,9 @@ class TestMemoryOpt:
 
         assert isinstance(LessonEntry.memory_factory, MemoryFactory)
 
-        model = NumberGuesserModule(matches=6)
+        model = NumberGuesserModule(
+            memory_model=ValueMemoryModel(epsilon=0.2), matches=10
+        )
         opt = MemoryOpt(
             memory_op=model.mem_op,
             output_op=model.llm_call_op,

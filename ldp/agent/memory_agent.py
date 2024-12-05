@@ -70,7 +70,7 @@ class MemoryAgent(SimpleAgent):
         ),
     )
     num_memories: int = Field(
-        default=MemoryModel.DEFAULT_MEMORY_MATCHES,
+        default=MemoryModel.DEFAULT_MATCHES,
         description="Number of memories to retrieve from MemoryOp",
     )
     # Freeze to ensure the only mutation happens in either the agent state (which is
