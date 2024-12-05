@@ -368,7 +368,7 @@ class MemoryOp(Op[list[Memory]]):
         self,
         query: str,
         input: str | None = None,  # noqa: A002
-        matches: int = 3,
+        matches: int = MemoryModel.DEFAULT_MEMORY_MATCHES,
     ) -> list[Memory]:
         """Retrieve relevant memories based on a query."""
         if get_training_mode():
