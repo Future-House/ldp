@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 import tree
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
+from llmclient import MultipleCompletionLLMModel as LLMModel
 
 from ldp.graph import (
     CallID,
@@ -28,7 +29,7 @@ from ldp.graph import (
 )
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
 from ldp.graph.ops import GradInType, ResultOrValue, TOutput
-from ldp.llms import LLMModel, append_to_sys
+from ldp.llms.prompts import append_to_sys
 
 
 class StatefulFxnOp(FxnOp[TOutput]):
@@ -151,9 +152,7 @@ class TestLLMCallOp:
 
         # LLMCallOp track cost using run context
         result = llm_op.ctx.get(op_result.call_id, "result")
-        prompt_cost, completion_cost = result.prompt_and_completion_costs
-        assert prompt_cost > 0
-        assert completion_cost > 0
+        assert result.cost > 0
 
         # Environment tracks its internal costs
         assert env.total_cost > 0

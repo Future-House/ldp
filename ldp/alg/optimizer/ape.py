@@ -7,6 +7,8 @@ from enum import StrEnum, auto
 from typing import Any, Self, cast
 
 from aviary.core import Message
+from llmclient import LLMResult
+from llmclient import MultipleCompletionLLMModel as LLMModel
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -21,7 +23,6 @@ from ldp.agent import ReActAgent
 from ldp.alg.optimizer.opt import Optimizer
 from ldp.data_structures import Trajectory
 from ldp.graph import LLMCallOp, OpResult, PromptOp
-from ldp.llms import LLMModel, LLMResult
 
 logger = logging.getLogger(__name__)
 
@@ -285,7 +286,7 @@ class APEOpt(BaseModel, Optimizer):
                 )
             ),
         ]
-        result = await self.llm.call(messages, output_type=OutputPrompt)
+        result = await self.llm.call_single(messages, output_type=OutputPrompt)
         message_content = cast(str, cast(list[Message], result.messages)[-1].content)
         try:
             return OutputPrompt.model_validate_json(message_content).prompt

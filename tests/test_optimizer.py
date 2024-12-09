@@ -7,6 +7,7 @@ import pytest
 import tenacity
 import tree
 from aviary.core import Message
+from llmclient import MultipleCompletionLLMModel as LLMModel
 from pydantic import BaseModel, Field, JsonValue
 
 from ldp.agent import Agent, MemoryAgent, ReActAgent
@@ -38,7 +39,7 @@ from ldp.graph.gradient_estimators import (
     straight_through_estimator as ste,
 )
 from ldp.graph.ops import GradInType
-from ldp.llms import LLMModel, append_to_sys
+from ldp.llms.prompts import append_to_sys
 from tests import CILLMModelNames
 from tests.conftest import VCR_DEFAULT_MATCH_ON
 
@@ -349,7 +350,7 @@ class TestMemoryOpt:
                     )
                     for mem_call_id, output_call_id, d_return, metadata in example_buffer
                 ]
-                response = await memory_distiller.call(
+                response = await memory_distiller.call_single(
                     messages=[
                         Message(
                             content=LessonEntry.make_prompt(query_airesponse_dreturns)

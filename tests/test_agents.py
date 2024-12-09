@@ -11,6 +11,7 @@ import pytest
 from aviary.core import DummyEnv, Message, Tool, ToolCall, ToolRequestMessage
 from aviary.message import EnvStateMessage
 from httpx import ASGITransport, AsyncClient
+from llmclient import MultipleCompletionLLMModel as LLMModel
 from pydantic import BaseModel, Field
 
 from ldp.agent import (
@@ -34,7 +35,6 @@ from ldp.graph.modules import (
     ReActModuleSinglePrompt,
     ToolDescriptionMethods,
 )
-from ldp.llms import LLMModel
 
 from . import CILLMModelNames
 from .conftest import IN_GITHUB_ACTIONS, VCR_DEFAULT_MATCH_ON

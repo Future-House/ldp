@@ -7,7 +7,7 @@ from aviary.message import EnvStateMessage
 from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.graph import ConfigOp, LLMCallOp, OpResult, compute_graph
-from ldp.llms import prepend_sys
+from ldp.llms.prompts import prepend_sys
 
 from . import DEFAULT_LLM_COMPLETION_TIMEOUT, DefaultLLMModelNames
 from .agent import Agent

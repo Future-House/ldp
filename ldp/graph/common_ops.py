@@ -13,16 +13,15 @@ from typing import Generic, TypeVar, cast, overload
 import numpy as np
 import tree
 from aviary.core import Message, Tool, ToolRequestMessage, is_coroutine_callable
-from pydantic import BaseModel
-
-from ldp.llms import (
+from llmclient import (
     EmbeddingModel,
     HybridEmbeddingModel,
-    LiteEmbeddingModel,
-    LLMModel,
+    LiteLLMEmbeddingModel,
     LLMResult,
     SparseEmbeddingModel,
 )
+from llmclient import MultipleCompletionLLMModel as LLMModel
+from pydantic import BaseModel
 
 from .gradient_estimators import assign_constant_grads
 from .memory import Memory, MemoryModel, UIndexMemoryModel
@@ -254,7 +253,9 @@ class LLMCallOp(Op[Message]):
             # if no tools are provided, tool_choice must be 'none'
             tool_choice = "none"
 
-        result = await model.call(messages=msgs, tools=tools, tool_choice=tool_choice)
+        result = await model.call_single(
+            messages=msgs, tools=tools, tool_choice=tool_choice
+        )
         if result.messages is None:
             raise ValueError("No messages returned")
 
@@ -306,7 +307,7 @@ class LLMCallOp(Op[Message]):
         # are consistent - not sure we'd be sampling from the same distribution as N independent samples.
         # TODO: think about whether sampling params besides temperature need to be accounted for, like top_p
         results = await asyncio.gather(*[
-            model.call(temperature=1, **model_kwargs)
+            model.call_single(temperature=1, **model_kwargs)
             for _ in range(self.num_samples_partition_estimate)
         ])
         temp_factor = 1.0 / temperature - 1.0
@@ -406,18 +407,18 @@ class EmbeddingOp(Op):
         emb_models: list[EmbeddingModel] = []
         if dense_embedding_dim > 0:
             emb_models.append(
-                LiteEmbeddingModel(
+                LiteLLMEmbeddingModel(
                     name=dense_embedding,
-                    dimensions=dense_embedding_dim,
+                    ndim=dense_embedding_dim,
                     embed_kwargs=embedding_model_kwargs,
                 )
             )
         if sparse_embedding_dim > 0:
-            emb_models.append(SparseEmbeddingModel(dimensions=sparse_embedding_dim))
+            emb_models.append(SparseEmbeddingModel(ndim=sparse_embedding_dim))
         self.embedding = HybridEmbeddingModel(models=emb_models)
 
     async def forward(self, string_input: str) -> np.ndarray:
-        return await self.embedding.embed_text(string_input)
+        return np.array(await self.embedding.embed_document(string_input))
 
     @classmethod
     def backward(
