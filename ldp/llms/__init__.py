@@ -18,6 +18,7 @@ from llmclient.exceptions import (
 from .prompts import (
     append_to_messages,
     append_to_sys,
+    indent_xml,
     prepend_sys,
     prepend_sys_and_append_sys,
 )
@@ -33,6 +34,7 @@ __all__ = [
     "SparseEmbeddingModel",
     "append_to_messages",
     "append_to_sys",
+    "indent_xml",
     "prepend_sys",
     "prepend_sys_and_append_sys",
     "sum_logprobs",
