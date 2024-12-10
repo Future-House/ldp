@@ -19,6 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python",
 ]
 dependencies = [
@@ -26,7 +27,6 @@ dependencies = [
     "dm-tree",
     "fhaviary>=0.8.2",  # For core namespace
     "httpx",
-    "litellm>=1.52.15",  # For litellm.ssl_verify
     "networkx[default]~=3.4",  # Pin for pydot fix
     "numpy>=1.20",  # For numpy.typing
     "pydantic~=2.0",
@@ -35,6 +35,8 @@ dependencies = [
     "tqdm",
     "typing-extensions; python_version <= '3.11'",  # for typing.override
     "usearch>=2.13",  # For py.typed
+    'litellm; python_version < "3.13"',
+    'litellm>=1.49.1; python_version >= "3.13"',  # For removal of imghdr
 ]
 description = "Agent framework for constructing language model agents and training on constructive tasks."
 dynamic = ["version"]
