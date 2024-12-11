@@ -30,7 +30,9 @@ async def _run_eval_loop(
     shuffle: bool = False,
     num_rollouts_per_env: int = 1,
 ) -> None:
-    await asyncio.gather(*[callback.before_eval_loop() for callback in callbacks])
+    await asyncio.gather(*[
+        callback.before_eval_loop(dataset) for callback in callbacks
+    ])
 
     if num_iterations is None:
         try:
