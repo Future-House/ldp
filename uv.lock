@@ -5,10 +5,14 @@ resolution-markers = [
     "python_full_version < '3.12' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
     "python_full_version < '3.12' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
     "python_full_version < '3.12' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
-    "python_full_version >= '3.12' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
-    "python_full_version >= '3.12' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
-    "python_full_version >= '3.12' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
-    "python_full_version >= '3.12' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
 ]
 
 [[package]]
@@ -682,7 +686,7 @@ wheels = [
 
 [[package]]
 name = "fh-llm-client"
-version = "0.0.5"
+version = "0.0.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "coredis" },
@@ -693,9 +697,9 @@ dependencies = [
     { name = "tiktoken" },
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/96/6c/885d6260ecae58411773a044f4be8bb508d4c85c5bdfb8aa56953b558bb0/fh_llm_client-0.0.5.tar.gz", hash = "sha256:fb1da0e9935274e6e8e44ae47c5e1cab158b7547ec3851098329d2165260e9e0", size = 195525 }
+sdist = { url = "https://files.pythonhosted.org/packages/e8/ba/0395955b6dc64bdfe5724f0b5d8a8e8c916454d1fa0000c0686cd8432d4a/fh_llm_client-0.0.6.tar.gz", hash = "sha256:71ffa711f1bfe2c16b422ee4762a668e443c8351c485924ceb6745db4359dab0", size = 195993 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/a7/765602003e547d099babb8e18feb6fa268c91944b05f5391ce6e7daf73d8/fh_llm_client-0.0.5-py3-none-any.whl", hash = "sha256:17c4381b64c781271afb9355596932875bc95e8bb854a35e22d578d22b30a3a3", size = 31387 },
+    { url = "https://files.pythonhosted.org/packages/30/de/ee766cd71dec5a12cbb0c7bc8d8a90764bde730376ddee466902f239e756/fh_llm_client-0.0.6-py3-none-any.whl", hash = "sha256:7c20364b465db784c0320132c216cadd933fb56972c7bdff3996bd4a14769926", size = 31801 },
 ]
 
 [[package]]
@@ -1178,7 +1182,7 @@ wheels = [
 
 [[package]]
 name = "ldp"
-version = "0.14.4.dev23+g52da347.d20241210"
+version = "0.14.4.dev26+gc677c6b.d20241211"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -1186,7 +1190,6 @@ dependencies = [
     { name = "fh-llm-client" },
     { name = "fhaviary" },
     { name = "httpx" },
-    { name = "litellm" },
     { name = "networkx", extra = ["default"] },
     { name = "numpy" },
     { name = "pydantic" },
@@ -1320,7 +1323,6 @@ requires-dist = [
     { name = "httpx" },
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "ldp", extras = ["monitor", "nn", "rich", "server", "typing", "visualization"], marker = "extra == 'dev'" },
-    { name = "litellm", specifier = ">=1.52.15" },
     { name = "litellm", marker = "extra == 'dev'", specifier = ">=1.52.15" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
     { name = "networkx", extras = ["default"], specifier = "~=3.4" },
@@ -3220,7 +3222,7 @@ name = "triton"
 version = "3.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "filelock" },
+    { name = "filelock", marker = "python_full_version < '3.13'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/86/17/d9a5cf4fcf46291856d1e90762e36cbabd2a56c7265da0d1d9508c8e3943/triton-3.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f34f6e7885d1bf0eaaf7ba875a5f0ce6f3c13ba98f9503651c1e6dc6757ed5c", size = 209506424 },
