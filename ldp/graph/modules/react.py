@@ -16,7 +16,7 @@ from aviary.core import (
 from aviary.message import EMPTY_CONTENT_BASE_MSG
 
 from ldp.graph import FxnOp, LLMCallOp, OpResult, PromptOp, compute_graph
-from ldp.llms.prompts import prepend_sys
+from ldp.llms import prepend_sys
 
 from .llm_call import ParsedLLMCallModule
 
