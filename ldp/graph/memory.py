@@ -7,6 +7,7 @@ from uuid import UUID
 
 import numpy as np
 import numpy.typing as npt
+from llmclient import EmbeddingModel
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -17,8 +18,6 @@ from pydantic import (
     model_validator,
 )
 from usearch.index import Index
-
-from ldp.llms import EmbeddingModel
 
 if TYPE_CHECKING:
     from .common_ops import MemoryOp
@@ -128,7 +127,7 @@ class MemoryModel(BaseModel, ABC, Generic[TIndex]):
 
     async def add_memory(self, memory: Memory) -> None:
         key = await self._add_to_index(
-            embedding=await self.embedding_model.embed_text(memory.query)
+            embedding=np.array(await self.embedding_model.embed_document(memory.query))
         )
         self.memories[key] = memory
 
@@ -138,7 +137,8 @@ class MemoryModel(BaseModel, ABC, Generic[TIndex]):
         self, query: str, matches: int = DEFAULT_MEMORY_MATCHES
     ) -> list[Memory]:
         return await self._search_index(
-            embedding=await self.embedding_model.embed_text(query), matches=matches
+            embedding=np.array(await self.embedding_model.embed_document(query)),
+            matches=matches,
         )
 
     def __len__(self) -> int:
@@ -148,7 +148,7 @@ class MemoryModel(BaseModel, ABC, Generic[TIndex]):
     async def safe_access_index(self) -> AsyncIterator[TIndex]:
         """Get the internal Index under the protection of an internal Lock."""
         # pylint bug, SEE: https://github.com/pylint-dev/pylint/issues/9813
-        async with self._index_lock:  # pylint: disable=not-async-context-manager
+        async with self._index_lock:
             yield self._index
 
     @abstractmethod
@@ -167,9 +167,9 @@ class UIndexMemoryModel(MemoryModel[Index]):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if not self.embedding_model.dimensions:
+        if not self.embedding_model.ndim:
             raise TypeError("Specify dimensions to the embedding model.")
-        self._index = Index(ndim=self.embedding_model.dimensions)
+        self._index = Index(ndim=self.embedding_model.ndim)
 
     async def _add_to_index(self, embedding: np.ndarray) -> int:
         async with self.safe_access_index() as index:

@@ -1,21 +1,24 @@
-from .chat import (
-    JSONSchemaValidationError,
-    LLMModel,
+from llmclient import (
     LLMResult,
-    MultipleCompletionLLMModel,
     sum_logprobs,
     validate_json_completion,
 )
-from .embeddings import (
+from llmclient import MultipleCompletionLLMModel as LLMModel
+from llmclient.embeddings import (
     EmbeddingModel,
     EmbeddingModes,
     HybridEmbeddingModel,
-    LiteEmbeddingModel,
+    LiteLLMEmbeddingModel,
     SparseEmbeddingModel,
 )
+from llmclient.exceptions import (
+    JSONSchemaValidationError,
+)
+
 from .prompts import (
     append_to_messages,
     append_to_sys,
+    indent_xml,
     prepend_sys,
     prepend_sys_and_append_sys,
 )
@@ -27,11 +30,11 @@ __all__ = [
     "JSONSchemaValidationError",
     "LLMModel",
     "LLMResult",
-    "LiteEmbeddingModel",
-    "MultipleCompletionLLMModel",
+    "LiteLLMEmbeddingModel",
     "SparseEmbeddingModel",
     "append_to_messages",
     "append_to_sys",
+    "indent_xml",
     "prepend_sys",
     "prepend_sys_and_append_sys",
     "sum_logprobs",

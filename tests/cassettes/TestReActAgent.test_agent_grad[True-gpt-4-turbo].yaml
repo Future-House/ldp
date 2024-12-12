@@ -1,7 +1,7 @@
 interactions:
   - request:
       body:
-        '{"messages": [{"role": "system", "content": "Answer the following questions
+        '{"messages":[{"role":"system","content":"Answer the following questions
         as best you can. You have access to the following tools:\n\nNAME: print_story\n\nSYNOPSIS:\n    print_story(string
         story)\n\nDESCRIPTION:\n    Print a story.\n\nPARAMETERS:\n    story (string):
         Story to print.\n\nNAME: cast_float\n\nSYNOPSIS:\n    cast_float(string x)\n\nDESCRIPTION:\n    Cast
@@ -14,9 +14,8 @@ interactions:
         tuple\nObservation: the result of the action\n... (this Thought/Action/Action
         Input/Observation can repeat N times)\n\nExample:\n\nThought: I need to use
         the get_weather tool\nAction: get_weather\nAction Input: \"New York\", 7\nObservation:
-        The 7 day forecast for New York is [...]"}, {"role": "user", "content": "Write
-        a 5 word story via print_story"}], "model": "gpt-4-turbo", "stop": ["Observation:"],
-        "temperature": 0.1}'
+        The 7 day forecast for New York is [...]"},{"role":"user","content":"Write a
+        5 word story via print_story"}],"model":"gpt-4-turbo","n":1,"stop":["Observation:"],"temperature":0.1}'
       headers:
         accept:
           - application/json
@@ -25,13 +24,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1289"
+          - "1281"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.54.3
+          - AsyncOpenAI/Python 1.56.2
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -41,7 +40,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.54.3
+          - 1.56.2
         x-stainless-raw-response:
           - "true"
         x-stainless-retry-count:
@@ -55,20 +54,20 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA4xSy27bMBC8+ysWPLWAZci26oduORVpD0WanloXAk2uJCYUlyBXbYwg/15QfshB
-          U6CXBbizM5jZ5fMEQBgtShCqlaw6b7Obr/fq0B70g84Ls97cfdp+ueu7etl9//j4WUwTg/YPqPjM
-          minqvEU25I6wCigZk+p8vZzP881iVQxARxptojWesyLjPuwpW+SLIsuLLN+e2C0ZhVGU8GMCAPA8
-          1OTTaXwSJeTTc6fDGGWDorwMAYhANnWEjNFElo7FdAQVOUY3WP/WUt+0XMItOEQNTHA0DhJiS4Eh
-          MoUDKHJJyLgGqAZ8kortAWrzC+E3BR1nO3ejUvgSfDCOq4F2bsKt8z2X8G4n7o1Fx+BM0/IUYq81
-          OtiH9ASb6mwn3u/ctd2AdR9lWpnrrT31Xy75LTU+0D6e8Eu/Ns7EtgooI7mUNTJ5MaAvE4Cfw577
-          V6sTPlDnuWJ6RJcEF6v1UU+M5x3R5eIEMrG0V6ztdvqGXqWRpbHx6lJCSdWiHqnjWWWvDV0Bk6vU
-          f7t5S/uY3Ljmf+RHQCn0jLryAbVRrxOPYwHT7//X2GXLg2ERD5Gxq2rjGgzD/0j3qH2lP+hNsdps
-          VygmL5M/AAAA//8DAB72J5aJAwAA
+          H4sIAAAAAAAAAwAAAP//jFJda9tAEHzXr1juqQXLKLbrxHoLLaWGkkCbPNVFnO9W0tXS7XG3SmKC
+          /3s5+UM2bSAv97CzM8zM3msCIIwWOQhVS1ata9Jbnf1Ap+/n4fOXr8u7u+enh8ern2GD9033TYwi
+          g9Z/UPGRNVbUugbZkN3DyqNkjKpX19PpzafFzXzeAy1pbCKtcpzOUu78mtJJNpml2SzNFgd2TUZh
+          EDn8SgAAXvs3+rQaX0QO2eg4aTEEWaHIT0sAwlMTJ0KGYAJLy2I0gIoso+2tP9TUVTXnsASLqIEJ
+          9sZBQqjJMwQmvwVFNgoZWwGVgC9ScbOF0jwhPJPXYbyytyqGz8F5Y7noacchLK3rOIcPK/GdAsMG
+          twFK6qyGzmr0EKiU45X4uLLnPj2WXZCxK9s1zWG+OwVvqHKe1uGAn+alsSbUhUcZyMaQgcmJHt0l
+          AL/7gruLzoTz1DoumDZoo+Bkfr3XE8NdB3R6aF8wsWzOWIsj60Kv0MjSNOHsREJJVaMeqMM9ZacN
+          nQHJWep/3fxPe5/c2Oo98gOgFDpGXTiP2qjLxMOax/jt31o7tdwbFmEbGNuiNLZC33+MeI/SFVk5
+          zya4Xmspkl3yFwAA//8DACRd5fOCAwAA
       headers:
         CF-Cache-Status:
           - DYNAMIC
         CF-RAY:
-          - 8df950f96ed8faae-SJC
+          - 8effbac5be2496e1-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -76,14 +75,14 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Fri, 08 Nov 2024 23:24:25 GMT
+          - Tue, 10 Dec 2024 19:44:28 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=c7R6O3UrELUEXjWCIWuHSeoyVC1vPQtK74gF209bv.I-1731108265-1.0.1.1-qxdVapBa_Vl._sXTClR4FY281YRtDM4513iEjeHJQj0zbbbpo3LwsmZ12jByo0rkXaGs4naidbkg3JyMO6Uz0w;
-            path=/; expires=Fri, 08-Nov-24 23:54:25 GMT; domain=.api.openai.com; HttpOnly;
+          - __cf_bm=w4eA4W7pA8IYO1k8Lkje9HzTMqj9Y5npKaWaeWkwIFM-1733859868-1.0.1.1-oYA98x3oha4XXhNiHiGW7FWjNP9SjrC5O3AejXBmNlzFjvWoOEQsZY0fxQO_Ug.GqL9nnHTdlD74c7WY_AC9Eg;
+            path=/; expires=Tue, 10-Dec-24 20:14:28 GMT; domain=.api.openai.com; HttpOnly;
             Secure; SameSite=None
-          - _cfuvid=dNbf6A6B09bSG6qPpcCLepBZLGf76gH8k8N9P034eD0-1731108265380-0.0.1.1-604800000;
+          - _cfuvid=XW2FDZWQR_WIY.n9cSueh3jWdAwWZ17PpS5rlwQFrEc-1733859868656-0.0.1.1-604800000;
             path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
@@ -96,25 +95,25 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "1367"
+          - "2032"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
         x-ratelimit-limit-requests:
-          - "3000"
+          - "10000"
         x-ratelimit-limit-tokens:
-          - "250000"
+          - "2000000"
         x-ratelimit-remaining-requests:
-          - "2999"
+          - "9999"
         x-ratelimit-remaining-tokens:
-          - "249709"
+          - "1999710"
         x-ratelimit-reset-requests:
-          - 20ms
+          - 6ms
         x-ratelimit-reset-tokens:
-          - 69ms
+          - 8ms
         x-request-id:
-          - req_e76a93ae982fe7053672aa6cc9582e62
+          - req_f1e1966b85d8c1b6d48c54a361a48331
       status:
         code: 200
         message: OK

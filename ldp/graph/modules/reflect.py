@@ -5,8 +5,7 @@ from pydantic import BaseModel, Field
 
 from ldp.graph import ConfigOp, FxnOp, LLMCallOp, PromptOp, compute_graph
 from ldp.graph.ops import ResultOrValue
-from ldp.llms import append_to_sys
-from ldp.llms.prompts import indent_xml
+from ldp.llms import append_to_sys, indent_xml
 
 
 class ReflectModuleConfig(BaseModel):

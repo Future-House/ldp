@@ -24,9 +24,9 @@ classifiers = [
 dependencies = [
     "aiofiles",
     "dm-tree",
+    "fh-llm-client",
     "fhaviary>=0.8.2",  # For core namespace
     "httpx",
-    "litellm>=1.52.15",  # For litellm.ssl_verify
     "networkx[default]~=3.4",  # Pin for pydot fix
     "numpy>=1.20",  # For numpy.typing
     "pydantic~=2.0",
@@ -48,7 +48,7 @@ dev = [
     "fhaviary[xml]",
     "ipython>=8",  # Pin to keep recent
     "ldp[monitor,nn,rich,server,typing,visualization]",
-    "litellm!=1.49.4,!=1.49.5,!=1.49.6",  # For https://github.com/BerriAI/litellm/issues/6216
+    "litellm>=1.52.15",
     "mypy>=1.8",  # Pin for mutable-override
     "pre-commit>=3.4",  # Pin to keep recent
     "pydantic~=2.9",  # Pydantic 2.9 changed JSON schema exports 'allOf', so ensure tests match

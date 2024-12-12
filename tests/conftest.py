@@ -6,8 +6,7 @@ import numpy as np
 import pytest
 import torch
 from aviary.core import DummyEnv
-
-from ldp.utils import configure_log_levels
+from llmclient import configure_llm_logs
 
 from . import CASSETTES_DIR
 
@@ -21,7 +20,7 @@ def fixture_dummy_env() -> DummyEnv:
 
 @pytest.fixture(scope="session", autouse=True)
 def _fixture_set_up_environment() -> None:
-    configure_log_levels()
+    configure_llm_logs()
 
 
 def set_seed(seed: int | None) -> None:

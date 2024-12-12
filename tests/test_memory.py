@@ -1,9 +1,9 @@
 import pytest
+from llmclient import EmbeddingModel
 from pytest_subtests import SubTests
 
 from ldp.graph import Memory
 from ldp.graph.memory import UIndexMemoryModel
-from ldp.llms import EmbeddingModel
 
 
 @pytest.fixture(name="sample_memory")
