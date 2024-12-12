@@ -5,10 +5,14 @@ resolution-markers = [
     "python_full_version < '3.12' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
     "python_full_version < '3.12' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
     "python_full_version < '3.12' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
-    "python_full_version >= '3.12' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
-    "python_full_version >= '3.12' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
-    "python_full_version >= '3.12' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
-    "python_full_version >= '3.12' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
 ]
 
 [[package]]
@@ -1112,7 +1116,7 @@ wheels = [
 
 [[package]]
 name = "ldp"
-version = "0.14.6.dev9+g261607d"
+version = "0.14.4.dev20+g2e9ef4c.d20241210"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -1184,10 +1188,62 @@ visualization = [
 [package.dev-dependencies]
 codeflash = [
     { name = "codeflash" },
-    { name = "ldp", extra = ["dev"] },
+    { name = "fastapi" },
+    { name = "fhaviary", extra = ["xml"] },
+    { name = "ipython" },
+    { name = "litellm" },
+    { name = "mypy" },
+    { name = "pre-commit" },
+    { name = "pydantic" },
+    { name = "pydot" },
+    { name = "pylint" },
+    { name = "pylint-pydantic" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "pytest-rerunfailures" },
+    { name = "pytest-subtests" },
+    { name = "pytest-sugar" },
+    { name = "pytest-timer", extra = ["colorama"] },
+    { name = "pytest-xdist" },
+    { name = "refurb" },
+    { name = "rich" },
+    { name = "torch" },
+    { name = "tqdm" },
+    { name = "types-aiofiles" },
+    { name = "types-tqdm" },
+    { name = "vcrpy" },
+    { name = "wandb" },
 ]
 dev = [
-    { name = "ldp", extra = ["dev"] },
+    { name = "fastapi" },
+    { name = "fhaviary", extra = ["xml"] },
+    { name = "ipython" },
+    { name = "litellm" },
+    { name = "mypy" },
+    { name = "pre-commit" },
+    { name = "pydantic" },
+    { name = "pydot" },
+    { name = "pylint" },
+    { name = "pylint-pydantic" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-mock" },
+    { name = "pytest-recording" },
+    { name = "pytest-rerunfailures" },
+    { name = "pytest-subtests" },
+    { name = "pytest-sugar" },
+    { name = "pytest-timer", extra = ["colorama"] },
+    { name = "pytest-xdist" },
+    { name = "refurb" },
+    { name = "rich" },
+    { name = "torch" },
+    { name = "tqdm" },
+    { name = "types-aiofiles" },
+    { name = "types-tqdm" },
+    { name = "vcrpy" },
+    { name = "wandb" },
 ]
 
 [package.metadata]
@@ -1200,7 +1256,8 @@ requires-dist = [
     { name = "httpx" },
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "ldp", extras = ["monitor", "nn", "rich", "server", "typing", "visualization"], marker = "extra == 'dev'" },
-    { name = "litellm", specifier = ">=1.52.15" },
+    { name = "litellm", marker = "python_full_version < '3.13'" },
+    { name = "litellm", marker = "python_full_version >= '3.13'", specifier = ">=1.49.1" },
     { name = "litellm", marker = "extra == 'dev'", specifier = "!=1.49.4,!=1.49.5,!=1.49.6" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
     { name = "networkx", extras = ["default"], specifier = "~=3.4" },
@@ -3058,7 +3115,7 @@ name = "triton"
 version = "3.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "filelock" },
+    { name = "filelock", marker = "python_full_version < '3.13'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/86/17/d9a5cf4fcf46291856d1e90762e36cbabd2a56c7265da0d1d9508c8e3943/triton-3.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f34f6e7885d1bf0eaaf7ba875a5f0ce6f3c13ba98f9503651c1e6dc6757ed5c", size = 209506424 },
