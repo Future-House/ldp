@@ -538,6 +538,7 @@ class LiteLLMModel(LLMModel):
             stream=True,
             stream_options={"include_usage": True},
         )
+        chunk = None  # initializes chunk
         async for chunk in completion:
             yield Chunk(text=chunk.choices[0].text, prompt_tokens=0, completion_tokens=0)
         if hasattr(chunk, "usage") and hasattr(chunk.usage, "prompt_tokens"):
@@ -564,6 +565,7 @@ class LiteLLMModel(LLMModel):
             stream=True,
             stream_options={"include_usage": True},
         )
+        chunk = None  # initializes chunk
         async for chunk in completion:
             yield Chunk(
                 text=chunk.choices[0].delta.content,

@@ -110,7 +110,7 @@ ACCEPTABLE_RATE_LIMIT_ERROR: float = 0.10  # 10% error margin for token estimate
 
 
 async def time_n_llm_methods(
-    llm: LiteLLMModel, method: str, n: int, use_gather: bool = False, *args, **kwargs
+    llm: LiteLLMModel, method: str, n: int, *args, use_gather: bool = False, **kwargs
 ) -> float:
     """Give the token per second rate of a method call."""
     start_time = time.time()

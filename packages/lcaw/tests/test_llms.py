@@ -18,7 +18,8 @@ from lcaw.llms import (
     validate_json_completion,
 )
 from lcaw.types import LLMResult
-from tests.conftest import VCR_DEFAULT_MATCH_ON
+
+from .conftest import VCR_DEFAULT_MATCH_ON # pylint: disable=import-error
 
 
 class TestLiteLLMModel:
