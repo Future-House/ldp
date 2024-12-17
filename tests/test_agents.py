@@ -500,7 +500,39 @@ class TestReActAgent:
     @pytest.mark.parametrize(
         ("description_method", "expected"),
         [
-            (ToolDescriptionMethods.STR, NotImplementedError),
+            (
+                ToolDescriptionMethods.STR,
+                (
+                    "Answer the following questions as best you can. You have access to"
+                    " the following tools:\n\nNAME: many_edge_cases\n\nSYNOPSIS:\n   "
+                    " many_edge_cases(integer x, null y, integer | null union, unknown"
+                    " pydantic_model, object basic_dict, object complex_dict, unknown"
+                    " enum, string defaulted_str, number"
+                    " defaulted_float)\n\nDESCRIPTION:\n    Check using docstrings as"
+                    " partial f-string templates like so:"
+                    " {summary_format}.\n\nPARAMETERS:\n    x (integer): Yes, I end"
+                    " with a colon :\n    y (null): I am null. And despite that there"
+                    " is a multiline argument description.\n    union (integer | null):"
+                    " I am a union and the current year is {current_year}.\n   "
+                    " pydantic_model (unknown): I am a Pydantic model.\n    basic_dict"
+                    " (object): I am a dictionary with primitive values.\n   "
+                    " complex_dict (object): I am a dictionary with complex values.\n  "
+                    "  enum (unknown): I am an enum.\n    defaulted_str (string): I"
+                    " have a string default value.\n    defaulted_float (number): I"
+                    " have a float default value.\n\nNAME: intuitive_arg\n\nSYNOPSIS:\n"
+                    "    intuitive_arg(string x)\n\nDESCRIPTION:\n    Cast the input"
+                    " argument x to a float.\n\nPARAMETERS:\n    x (string): No"
+                    " description provided.\n\nUse the following format:\n\nThought:"
+                    " you should always think about what to do\nAction: the action to"
+                    " take, should be one of [many_edge_cases, intuitive_arg]\nAction"
+                    " Input: comma separated list of inputs to action as python"
+                    " tuple\nObservation: the result of the action\n... (this"
+                    " Thought/Action/Action Input/Observation can repeat N"
+                    " times)\n\nExample:\n\nThought: I need to use the get_weather"
+                    ' tool\nAction: get_weather\nAction Input: "New York",'
+                    " 7\nObservation: The 7 day forecast for New York is [...]"
+                ),
+            ),
             (
                 ToolDescriptionMethods.JSON,
                 (
