@@ -143,6 +143,7 @@ class TrajectoryFileCallback(Callback):
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         self.out_files: dict[str, Path] = {}
+        self.env_files: dict[str, Path] = {}
         self.trajs: dict[str, Trajectory] = defaultdict(Trajectory)
 
     def _make_filename(self, traj_id: str, env: Environment) -> str:
@@ -161,6 +162,7 @@ class TrajectoryFileCallback(Callback):
             self.out_files[traj_id] = self.output_dir / self._make_filename(
                 traj_id, env
             )
+            self.env_files[traj_id] = self.output_dir / f"{traj_id}_env.json"
 
     async def after_transition(
         self, traj_id: str, agent: Agent, env: Environment, transition: Transition
@@ -170,11 +172,9 @@ class TrajectoryFileCallback(Callback):
         traj.steps.append(transition)
         # TODO: make this async?
         traj.to_jsonl(self.out_files[traj_id])
-
-    def cleanup(self) -> None:
-        for out_file in self.out_files.values():
-            if out_file.exists():
-                out_file.unlink()
+        if transition.done:
+            with Path(self.env_files[traj_id]).open() as f:
+                f.write(env.export_frame().model_dump_json(exclude={"state"}, indent=2))
 
 
 class RolloutDebugDumpCallback(Callback):
