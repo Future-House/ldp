@@ -224,7 +224,7 @@ async def test_rate_limit_on_sequential_completion_litellm_methods(
         llm,
         llm_method_kwargs["method"],
         3,
-        use_gather=False,
+        use_gather=False,  # noqa: FURB120
         **llm_method_kwargs["kwargs"],
     )
     if "rate_limit" in llm.config:

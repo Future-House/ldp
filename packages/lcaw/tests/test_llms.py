@@ -19,7 +19,7 @@ from lcaw.llms import (
 )
 from lcaw.types import LLMResult
 
-from .conftest import VCR_DEFAULT_MATCH_ON # pylint: disable=import-error
+from .conftest import VCR_DEFAULT_MATCH_ON  # pylint: disable=import-error
 
 
 class TestLiteLLMModel:
