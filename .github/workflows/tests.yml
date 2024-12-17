@@ -39,10 +39,12 @@ jobs:
       - run: uv sync --python-preference=only-managed
       - name: Run refurb
         run: | # Go with this until https://github.com/astral-sh/uv/issues/6459
-          uv run refurb src/ldp tests
-          cd packages/lcaw
-          uv run refurb src/lcaw tests
-          cd ../..
+          cd src
+          uv run refurb ldp
+          cd ../packages/lcaw/src
+          uv run refurb lcaw
+          cd ../../..
+          uv run refurb tests packages/lcaw/tests
       - run: uv run pylint src packages
       - if: matrix.python-version == '3.11' # Only need to run this on one version
         uses: suzuki-shunsuke/github-action-renovate-config-validator@v1.1.1
