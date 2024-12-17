@@ -81,17 +81,13 @@ def sum_logprobs(choice: litellm.utils.Choices) -> float | None:
         return None
     if isinstance(logprob_obj, dict):
         if logprob_obj.get("content"):
-            return sum(
-                logprob_info["logprob"] for logprob_info in logprob_obj["content"]
-            )
+            return sum(logprob_info["logprob"] for logprob_info in logprob_obj["content"])
     elif choice.logprobs.content:
         return sum(logprob_info.logprob for logprob_info in choice.logprobs.content)
     return None
 
 
-def validate_json_completion(
-    completion: litellm.ModelResponse, output_type: type[BaseModel] | JSONSchema
-) -> None:
+def validate_json_completion(completion: litellm.ModelResponse, output_type: type[BaseModel] | JSONSchema) -> None:
     """Validate a completion against a JSON schema.
 
     Args:
@@ -105,9 +101,7 @@ def validate_json_completion(
             # make sure it is a JSON completion, even if None
             # We do want to modify the underlying message
             # so that users of it can just parse it as expected
-            choice.message.content = (
-                choice.message.content.split("```json")[-1].split("```")[0] or ""
-            )
+            choice.message.content = choice.message.content.split("```json")[-1].split("```")[0] or ""
             if isinstance(output_type, Mapping):  # JSON schema
                 litellm.litellm_core_utils.json_validation_rule.validate_schema(
                     schema=dict(output_type), response=choice.message.content
@@ -115,9 +109,7 @@ def validate_json_completion(
             else:
                 output_type.model_validate_json(choice.message.content)
     except ValidationError as err:
-        raise JSONSchemaValidationError(
-            "The completion does not match the specified schema."
-        ) from err
+        raise JSONSchemaValidationError("The completion does not match the specified schema.") from err
 
 
 def prepare_args(func: Callable, chunk: str, name: str | None) -> tuple[tuple, dict]:
@@ -146,9 +138,7 @@ class LLMModel(ABC, BaseModel):
 
     llm_type: str | None = None
     name: str
-    llm_result_callback: (
-        Callable[[LLMResult], None] | Callable[[LLMResult], Awaitable[None]] | None
-    ) = Field(
+    llm_result_callback: Callable[[LLMResult], None] | Callable[[LLMResult], Awaitable[None]] | None = Field(
         default=None,
         description=(
             "An async callback that will be executed on each"
@@ -258,10 +248,7 @@ class LLMModel(ABC, BaseModel):
             ]
             return await self._run_chat(messages, callbacks, name, system_prompt)
         if self.llm_type == "completion":
-
-            return await self._run_completion(
-                prompt, data, callbacks, name, system_prompt
-            )
+            return await self._run_completion(prompt, data, callbacks, name, system_prompt)
         raise ValueError(f"Unknown llm_type {self.llm_type!r}.")
 
     async def _run_chat(
@@ -287,11 +274,7 @@ class LLMModel(ABC, BaseModel):
             name=name,
             prompt=messages,
             prompt_count=(
-                sum(
-                    self.count_tokens(m.content)
-                    for m in messages
-                    if m.content is not None
-                )
+                sum(self.count_tokens(m.content) for m in messages if m.content is not None)
                 + sum(self.count_tokens(m.role) for m in messages)
             ),
         )
@@ -308,13 +291,9 @@ class LLMModel(ABC, BaseModel):
             async for chunk in completion:
                 if chunk.text:
                     if result.seconds_to_first_token == 0:
-                        result.seconds_to_first_token = (
-                            asyncio.get_running_loop().time() - start_clock
-                        )
+                        result.seconds_to_first_token = asyncio.get_running_loop().time() - start_clock
                     text_result.append(chunk.text)
-                    await do_callbacks(
-                        async_callbacks, sync_callbacks, chunk.text, name
-                    )
+                    await do_callbacks(async_callbacks, sync_callbacks, chunk.text, name)
             output = "".join(text_result)
         usage = chunk.prompt_tokens, chunk.completion_tokens
         if sum(usage) > 0:
@@ -350,9 +329,7 @@ class LLMModel(ABC, BaseModel):
         Returns:
             Result of the completion.
         """
-        formatted_prompt: str = (
-            system_prompt + "\n\n" + prompt if system_prompt else prompt
-        ).format(**data)
+        formatted_prompt: str = (system_prompt + "\n\n" + prompt if system_prompt else prompt).format(**data)
         result = LLMResult(
             model=self.name,
             name=name,
@@ -373,13 +350,9 @@ class LLMModel(ABC, BaseModel):
             async for chunk in completion:
                 if chunk.text:
                     if result.seconds_to_first_token == 0:
-                        result.seconds_to_first_token = (
-                            asyncio.get_running_loop().time() - start_clock
-                        )
+                        result.seconds_to_first_token = asyncio.get_running_loop().time() - start_clock
                     text_result.append(chunk.text)
-                    await do_callbacks(
-                        async_callbacks, sync_callbacks, chunk.text, name
-                    )
+                    await do_callbacks(async_callbacks, sync_callbacks, chunk.text, name)
             output = "".join(text_result)
         usage = chunk.prompt_tokens, chunk.completion_tokens
         if sum(usage) > 0:
@@ -411,19 +384,13 @@ def rate_limited(
     async def wrapper(
         self: LLMModelOrChild, *args: Any, **kwargs: Any
     ) -> Chunk | AsyncIterator[Chunk] | AsyncIterator[LLMModelOrChild]:
-
         if not hasattr(self, "check_rate_limit"):
-            raise NotImplementedError(
-                f"Model {self.name} must have a `check_rate_limit` method."
-            )
+            raise NotImplementedError(f"Model {self.name} must have a `check_rate_limit` method.")
 
         # Estimate token count based on input
         if func.__name__ in {"acomplete", "acomplete_iter"}:
             prompt = args[0] if args else kwargs.get("prompt", "")
-            token_count = (
-                len(prompt) / CHARACTERS_PER_TOKEN_ASSUMPTION
-                + EXTRA_TOKENS_FROM_USER_ROLE
-            )
+            token_count = len(prompt) / CHARACTERS_PER_TOKEN_ASSUMPTION + EXTRA_TOKENS_FROM_USER_ROLE
         elif func.__name__ in {"achat", "achat_iter"}:
             messages = args[0] if args else kwargs.get("messages", [])
             token_count = len(str(messages)) / CHARACTERS_PER_TOKEN_ASSUMPTION
@@ -440,9 +407,7 @@ def rate_limited(
                 async for item in func(self, *args, **kwargs):
                     token_count = 0
                     if isinstance(item, Chunk):
-                        token_count = int(
-                            len(item.text or "") / CHARACTERS_PER_TOKEN_ASSUMPTION
-                        )
+                        token_count = int(len(item.text or "") / CHARACTERS_PER_TOKEN_ASSUMPTION)
                     await self.check_rate_limit(token_count)
                     yield item
 
@@ -504,24 +469,16 @@ class LiteLLMModel(LLMModel):
                     {
                         "model_name": data["name"],
                         "litellm_params": {"model": data["name"]}
-                        | (
-                            {}
-                            if "gemini" not in data["name"]
-                            else {"safety_settings": DEFAULT_VERTEX_SAFETY_SETTINGS}
-                        ),
+                        | ({} if "gemini" not in data["name"] else {"safety_settings": DEFAULT_VERTEX_SAFETY_SETTINGS}),
                     }
                 ],
             } | data["config"]
 
         if "router_kwargs" not in data["config"]:
             data["config"]["router_kwargs"] = {}
-        data["config"]["router_kwargs"] = (
-            get_litellm_retrying_config() | data["config"]["router_kwargs"]
-        )
+        data["config"]["router_kwargs"] = get_litellm_retrying_config() | data["config"]["router_kwargs"]
         if not data["config"].get("pass_through_router"):
-            data["config"]["router_kwargs"] = {"retry_after": 5} | data["config"][
-                "router_kwargs"
-            ]
+            data["config"]["router_kwargs"] = {"retry_after": 5} | data["config"]["router_kwargs"]
 
         # we only support one "model name" for now, here we validate
         model_list = data["config"]["model_list"]
@@ -550,9 +507,7 @@ class LiteLLMModel(LLMModel):
             if self.config.get("pass_through_router"):
                 self._router = PassThroughRouter(**router_kwargs)
             else:
-                self._router = litellm.Router(
-                    model_list=self.config["model_list"], **router_kwargs
-                )
+                self._router = litellm.Router(model_list=self.config["model_list"], **router_kwargs)
         return self._router
 
     async def check_rate_limit(self, token_count: float, **kwargs) -> None:
@@ -584,13 +539,9 @@ class LiteLLMModel(LLMModel):
             stream_options={"include_usage": True},
         )
         async for chunk in completion:
-            yield Chunk(
-                text=chunk.choices[0].text, prompt_tokens=0, completion_tokens=0
-            )
+            yield Chunk(text=chunk.choices[0].text, prompt_tokens=0, completion_tokens=0)
         if hasattr(chunk, "usage") and hasattr(chunk.usage, "prompt_tokens"):
-            yield Chunk(
-                text=chunk.choices[0].text, prompt_tokens=0, completion_tokens=0
-            )
+            yield Chunk(text=chunk.choices[0].text, prompt_tokens=0, completion_tokens=0)
 
     @rate_limited
     async def achat(self, messages: list[Message]) -> Chunk:  # type: ignore[override]
@@ -598,8 +549,8 @@ class LiteLLMModel(LLMModel):
         response = await self.router.acompletion(self.name, prompts)
         return Chunk(
             text=cast(litellm.Choices, response.choices[0]).message.content,
-            prompt_tokens=response.usage.prompt_tokens,  # type: ignore[attr-defined]
-            completion_tokens=response.usage.completion_tokens,  # type: ignore[attr-defined]
+            prompt_tokens=response.usage.prompt_tokens,
+            completion_tokens=response.usage.completion_tokens,
         )
 
     @rate_limited
@@ -627,23 +578,16 @@ class LiteLLMModel(LLMModel):
             )
 
     def infer_llm_type(self) -> str:
-        if all(
-            "text-completion" in m.get("litellm_params", {}).get("model", "")
-            for m in self.config["model_list"]
-        ):
+        if all("text-completion" in m.get("litellm_params", {}).get("model", "") for m in self.config["model_list"]):
             return "completion"
         return "chat"
 
     def count_tokens(self, text: str) -> int:
         return litellm.token_counter(model=self.name, text=text)
 
-    async def select_tool(
-        self, *selection_args, **selection_kwargs
-    ) -> ToolRequestMessage:
+    async def select_tool(self, *selection_args, **selection_kwargs) -> ToolRequestMessage:
         """Shim to aviary.core.ToolSelector that supports tool schemae."""
-        tool_selector = ToolSelector(
-            model_name=self.name, acompletion=self.router.acompletion
-        )
+        tool_selector = ToolSelector(model_name=self.name, acompletion=self.router.acompletion)
         return await tool_selector(*selection_args, **selection_kwargs)
 
 
@@ -674,10 +618,9 @@ class MultipleCompletionLLMModel(BaseModel):
 
     @model_validator(mode="after")
     def set_model_name(self) -> Self:
-        if (
-            self.config.get("model") in {"gpt-3.5-turbo", None}
-            and self.name != "unknown"
-        ) or (self.name != "unknown" and "model" not in self.config):
+        if (self.config.get("model") in {"gpt-3.5-turbo", None} and self.name != "unknown") or (
+            self.name != "unknown" and "model" not in self.config
+        ):
             self.config["model"] = self.name
         elif "model" in self.config and self.name == "unknown":
             self.name = self.config["model"]
@@ -685,9 +628,7 @@ class MultipleCompletionLLMModel(BaseModel):
         # because that could be true if the model is fine-tuned
         return self
 
-    async def achat(
-        self, messages: Iterable[Message], **kwargs
-    ) -> litellm.ModelResponse:
+    async def achat(self, messages: Iterable[Message], **kwargs) -> litellm.ModelResponse:
         return await litellm.acompletion(
             messages=[m.model_dump(by_alias=True) for m in messages],
             **(self.config | kwargs),
@@ -752,9 +693,7 @@ class MultipleCompletionLLMModel(BaseModel):
         # > but got an empty array instead.
         # So, circumvent this behavior if tools in (None, [])
         if tools:
-            chat_kwargs["tools"] = ToolsAdapter.dump_python(
-                tools, exclude_none=True, by_alias=True
-            )
+            chat_kwargs["tools"] = ToolsAdapter.dump_python(tools, exclude_none=True, by_alias=True)
             if tool_choice is not None:
                 chat_kwargs["tool_choice"] = (
                     {
@@ -830,9 +769,7 @@ class MultipleCompletionLLMModel(BaseModel):
                     or (getattr(choice.message, "tool_calls", None) is not None)
                 ):
                     serialized_choice_message = choice.message.model_dump()
-                    serialized_choice_message["tool_calls"] = (
-                        serialized_choice_message.get("tool_calls") or []
-                    )
+                    serialized_choice_message["tool_calls"] = serialized_choice_message.get("tool_calls") or []
                     output_messages: list[Message | ToolRequestMessage] = [
                         ToolRequestMessage(**serialized_choice_message)
                     ]
@@ -856,9 +793,7 @@ class MultipleCompletionLLMModel(BaseModel):
             if tools:
                 raise NotImplementedError("Using tools with callbacks is not supported")
             if n > 1:
-                raise NotImplementedError(
-                    "Multiple completions with callbacks is not supported"
-                )
+                raise NotImplementedError("Multiple completions with callbacks is not supported")
             result = LLMResult(model=self.name, config=chat_kwargs, prompt=prompt)
 
             sync_callbacks = [f for f in callbacks if not is_coroutine_callable(f)]
@@ -873,9 +808,7 @@ class MultipleCompletionLLMModel(BaseModel):
                 if delta.content:
                     s = delta.content
                     if result.seconds_to_first_token == 0:
-                        result.seconds_to_first_token = (
-                            asyncio.get_running_loop().time() - start_clock
-                        )
+                        result.seconds_to_first_token = asyncio.get_running_loop().time() - start_clock
                     text_result.append(s)
                     [await f(s) for f in async_callbacks]
                     [f(s) for f in sync_callbacks]
@@ -929,8 +862,4 @@ class MultipleCompletionLLMModel(BaseModel):
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
         **chat_kwargs,
     ) -> LLMResult:
-        return (
-            await self.call(
-                messages, callbacks, output_type, tools, tool_choice, n=1, **chat_kwargs
-            )
-        )[0]
+        return (await self.call(messages, callbacks, output_type, tools, tool_choice, n=1, **chat_kwargs))[0]

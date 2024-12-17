@@ -81,9 +81,7 @@ class GlobalRateLimiter:
 
     def __init__(
         self,
-        rate_config: (
-            None | dict[tuple[str, str | MatchAllInputs], RateLimitItem]
-        ) = None,
+        rate_config: (None | dict[tuple[str, str | MatchAllInputs], RateLimitItem]) = None,
         use_in_memory: bool = False,
     ):
         self.rate_config = RATE_CONFIG if rate_config is None else rate_config
@@ -182,9 +180,7 @@ class GlobalRateLimiter:
         if namespace.startswith("get"):
             machine_id = namespace.split("|")[-1]
             if machine_id != "get":
-                namespace_w_stub_machine_id = namespace.replace(
-                    machine_id, MATCH_MACHINE_ID, 1
-                )
+                namespace_w_stub_machine_id = namespace.replace(machine_id, MATCH_MACHINE_ID, 1)
                 # try stripping the machine id for the namespace for shared limits
                 # i.e. matching to one rate limit across ALL machines
                 # these limits are in RATE_CONFIG WITHOUT a MATCH_MACHINE_ID placeholder
@@ -217,9 +213,7 @@ class GlobalRateLimiter:
             )
         return FALLBACK_RATE_LIMIT, namespace
 
-    def parse_key(
-        self, key: str
-    ) -> tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]:
+    def parse_key(self, key: str) -> tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]:
         """Parse the rate limit item from a redis/in-memory key.
 
         Args:
@@ -228,9 +222,7 @@ class GlobalRateLimiter:
 
         """
         namespace, primary_key = key.split("/")[1:3]
-        rate_limit, new_namespace = self.parse_rate_limits_and_namespace(
-            namespace, primary_key
-        )
+        rate_limit, new_namespace = self.parse_rate_limits_and_namespace(namespace, primary_key)
         return (
             rate_limit,
             (new_namespace, primary_key),
@@ -243,12 +235,10 @@ class GlobalRateLimiter:
         host, port = os.environ.get("REDIS_URL", ":").split(":", maxsplit=2)
 
         if not (host and port):
-            raise ValueError(f'Invalid REDIS_URL: {os.environ.get("REDIS_URL")}.')
+            raise ValueError(f"Invalid REDIS_URL: {os.environ.get('REDIS_URL')}.")
 
         if not isinstance(self.storage, RedisStorage):
-            raise NotImplementedError(
-                "get_rate_limit_keys only works with RedisStorage."
-            )
+            raise NotImplementedError("get_rate_limit_keys only works with RedisStorage.")
 
         client = Redis(host=host, port=int(port))
 
@@ -272,9 +262,7 @@ class GlobalRateLimiter:
     ) -> list[tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]]:
         """Returns a list of current RateLimitItems with tuples of namespace and primary key."""
         if not isinstance(self.storage, MemoryStorage):
-            raise NotImplementedError(
-                "get_in_memory_limit_keys only works with MemoryStorage."
-            )
+            raise NotImplementedError("get_in_memory_limit_keys only works with MemoryStorage.")
         return [self.parse_key(key) for key in self.storage.events]
 
     async def get_limit_keys(
@@ -285,7 +273,6 @@ class GlobalRateLimiter:
         return self.get_in_memory_limit_keys()
 
     async def rate_limit_status(self):
-
         limit_status = {}
 
         for rate_limit, (namespace, primary_key) in await self.get_limit_keys():
@@ -339,13 +326,9 @@ class GlobalRateLimiter:
             TimeoutError: if the acquire_timeout is exceeded.
             ValueError: if the weight exceeds the rate limit and raise_impossible_limits is True.
         """
-        namespace, primary_key = await self.parse_namespace_and_primary_key(
-            namespace_and_key, machine_id=machine_id
-        )
+        namespace, primary_key = await self.parse_namespace_and_primary_key(namespace_and_key, machine_id=machine_id)
 
-        _rate_limit, new_namespace = self.parse_rate_limits_and_namespace(
-            namespace, primary_key
-        )
+        _rate_limit, new_namespace = self.parse_rate_limits_and_namespace(namespace, primary_key)
 
         if isinstance(rate_limit, str):
             rate_limit = limit_parse(rate_limit)
@@ -353,10 +336,7 @@ class GlobalRateLimiter:
         rate_limit = rate_limit or _rate_limit
 
         if rate_limit.amount < weight and raise_impossible_limits:
-            raise ValueError(
-                f"Weight ({weight}) > RateLimit ({rate_limit}), cannot satisfy rate"
-                " limit."
-            )
+            raise ValueError(f"Weight ({weight}) > RateLimit ({rate_limit}), cannot satisfy rate limit.")
         while True:
             elapsed = 0.0
             while (
@@ -373,9 +353,7 @@ class GlobalRateLimiter:
                 await asyncio.sleep(self.WAIT_INCREMENT)
                 elapsed += self.WAIT_INCREMENT
             if elapsed >= acquire_timeout:
-                raise TimeoutError(
-                    f"Timeout ({elapsed} secs): rate limit for key: {namespace_and_key}"
-                )
+                raise TimeoutError(f"Timeout ({elapsed} secs): rate limit for key: {namespace_and_key}")
 
             # If the rate limit hit is False, then we're violating the limit, so we
             # need to wait again. This can happen in race conditions.

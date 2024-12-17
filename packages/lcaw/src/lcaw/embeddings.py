@@ -26,10 +26,7 @@ class EmbeddingModel(ABC, BaseModel):
     ndim: int | None = None
     config: dict[str, Any] = Field(
         default_factory=dict,
-        description=(
-            "Optional `rate_limit` key, value must be a RateLimitItem or RateLimitItem"
-            " string for parsing"
-        ),
+        description=("Optional `rate_limit` key, value must be a RateLimitItem or RateLimitItem string for parsing"),
     )
 
     def set_mode(self, mode: EmbeddingModes) -> None:
@@ -46,9 +43,7 @@ class EmbeddingModel(ABC, BaseModel):
     def from_name(embedding: str, **kwargs) -> "EmbeddingModel":
         if embedding.startswith("hybrid"):
             dense_model = LiteLLMEmbeddingModel(name="-".join(embedding.split("-")[1:]))
-            return HybridEmbeddingModel(
-                name=embedding, models=[dense_model, SparseEmbeddingModel(**kwargs)]
-            )
+            return HybridEmbeddingModel(name=embedding, models=[dense_model, SparseEmbeddingModel(**kwargs)])
         if embedding == "sparse":
             return SparseEmbeddingModel(**kwargs)
         return LiteLLMEmbeddingModel(name=embedding, **kwargs)
@@ -131,19 +126,13 @@ class LiteLLMEmbeddingModel(EmbeddingModel):
 
         return texts
 
-    async def embed_documents(
-        self, texts: list[str], batch_size: int = 16
-    ) -> list[list[float]]:
+    async def embed_documents(self, texts: list[str], batch_size: int = 16) -> list[list[float]]:
         texts = self._truncate_if_large(texts)
         N = len(texts)
         embeddings = []
         for i in range(0, N, batch_size):
-
             await self.check_rate_limit(
-                sum(
-                    len(t) / CHARACTERS_PER_TOKEN_ASSUMPTION
-                    for t in texts[i : i + batch_size]
-                )
+                sum(len(t) / CHARACTERS_PER_TOKEN_ASSUMPTION for t in texts[i : i + batch_size])
             )
 
             response = await litellm.aembedding(
@@ -164,9 +153,7 @@ class SparseEmbeddingModel(EmbeddingModel):
 
     name: str = "sparse"
     ndim: int = 256
-    enc: tiktoken.Encoding = Field(
-        default_factory=lambda: tiktoken.get_encoding("cl100k_base")
-    )
+    enc: tiktoken.Encoding = Field(default_factory=lambda: tiktoken.get_encoding("cl100k_base"))
 
     async def embed_documents(self, texts: list[str]) -> list[list[float]]:
         enc_batch = self.enc.encode_ordinary_batch(texts)
@@ -193,14 +180,9 @@ class HybridEmbeddingModel(EmbeddingModel):
         return data
 
     async def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        all_embeds = await asyncio.gather(
-            *[m.embed_documents(texts) for m in self.models]
-        )
+        all_embeds = await asyncio.gather(*[m.embed_documents(texts) for m in self.models])
 
-        return [
-            list(chain.from_iterable(embed_group))
-            for embed_group in zip(*all_embeds, strict=True)
-        ]
+        return [list(chain.from_iterable(embed_group)) for embed_group in zip(*all_embeds, strict=True)]
 
     def set_mode(self, mode: EmbeddingModes) -> None:
         # Set mode for all component models
@@ -221,10 +203,7 @@ class SentenceTransformerEmbeddingModel(EmbeddingModel):
             import numpy as np  # noqa: F401
             from sentence_transformers import SentenceTransformer
         except ImportError as exc:
-            raise ImportError(
-                "Please install lcaw[local] to use"
-                " SentenceTransformerEmbeddingModel."
-            ) from exc
+            raise ImportError("Please install lcaw[local] to use SentenceTransformerEmbeddingModel.") from exc
 
         self._model = SentenceTransformer(self.name)
 
@@ -289,9 +268,7 @@ def embedding_model_factory(embedding: str, **kwargs) -> EmbeddingModel:
         dense_name = embedding[len("hybrid-") :]
 
         if not dense_name:
-            raise ValueError(
-                "Hybrid embedding must contain at least one component embedding."
-            )
+            raise ValueError("Hybrid embedding must contain at least one component embedding.")
 
         # Recursively create each component embedding model
         dense_model = embedding_model_factory(dense_name, **kwargs)
@@ -303,9 +280,7 @@ def embedding_model_factory(embedding: str, **kwargs) -> EmbeddingModel:
         # Extract the SentenceTransformer model name after "st-"
         model_name = embedding[len("st-") :].strip()
         if not model_name:
-            raise ValueError(
-                "SentenceTransformer model name must be specified after 'st-'."
-            )
+            raise ValueError("SentenceTransformer model name must be specified after 'st-'.")
 
         return SentenceTransformerEmbeddingModel(
             name=model_name,

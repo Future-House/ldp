@@ -22,7 +22,6 @@ from tests.conftest import VCR_DEFAULT_MATCH_ON
 
 
 class TestLiteLLMModel:
-
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.parametrize(
         "config",
@@ -224,7 +223,7 @@ class TestLiteLLMModel:
             side_effect=litellm.Router.atext_completion,
             autospec=True,
         ) as mock_atext_completion:
-            chunk = await llm.acomplete("Please tell me a story")  # type: ignore[call-arg]
+            chunk = await llm.acomplete("Please tell me a story")
         if bypassed_router:
             mock_atext_completion.assert_not_awaited()
         else:
@@ -254,7 +253,7 @@ class TestLiteLLMModel:
         with pickle_path.open("wb") as f:
             pickle.dump(llm, f)
         with pickle_path.open("rb") as f:
-            rehydrated_llm = pickle.load(f)
+            rehydrated_llm = pickle.load(f)  # noqa: S301
         assert llm.name == rehydrated_llm.name
         assert llm.config == rehydrated_llm.config
         assert llm.router.deployment_names == rehydrated_llm.router.deployment_names
@@ -418,12 +417,12 @@ class TestMultipleCompletionLLMModel:
         )
         assert len(results) == self.NUM_COMPLETIONS
         for result in results:
-            assert (
-                result.messages is not None
-            ), "Expected messages in result, but got None"
-            assert (
-                result.messages[-1].content is not None
-            ), "Expected content in message, but got None"
+            assert result.messages is not None, (
+                "Expected messages in result, but got None"
+            )
+            assert result.messages[-1].content is not None, (
+                "Expected content in message, but got None"
+            )
             assert "red" in result.messages[-1].content.lower()
 
     @pytest.mark.parametrize(

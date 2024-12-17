@@ -74,9 +74,7 @@ class LLMResult(BaseModel):
         description="Optional prompt or list of serialized prompts.",
     )
     text: str = ""
-    messages: list[Message] | None = Field(
-        default=None, description="Messages received from the LLM."
-    )
+    messages: list[Message] | None = Field(default=None, description="Messages received from the LLM.")
     prompt_count: int = 0
     completion_count: int = 0
     model: str
@@ -84,12 +82,8 @@ class LLMResult(BaseModel):
     seconds_to_first_token: float = Field(
         default=0.0, description="Delta time (sec) to first response token's arrival."
     )
-    seconds_to_last_token: float = Field(
-        default=0.0, description="Delta time (sec) to last response token's arrival."
-    )
-    logprob: float | None = Field(
-        default=None, description="Sum of logprobs in the completion."
-    )
+    seconds_to_last_token: float = Field(default=0.0, description="Delta time (sec) to last response token's arrival.")
+    logprob: float | None = Field(default=None, description="Sum of logprobs in the completion.")
 
     def __str__(self) -> str:
         return self.text

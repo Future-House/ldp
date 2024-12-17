@@ -47,6 +47,7 @@ repos:
       - id: codespell
         additional_dependencies: [".[toml]"]
         exclude_types: [jupyter]
+        exclude: "packages/lcaw/tests/cassettes/.*"
   - repo: https://github.com/pappasam/toml-sort
     rev: v0.24.2
     hooks:
@@ -69,14 +70,22 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies:
+          - aiohttp
+          - coredis
           - fastapi>=0.109 # Match pyproject.toml
           - fhaviary>=0.8.2 # Match pyproject.toml
           - httpx
           - numpy>=1.20 # Match pyproject.toml
-          - pydantic~=2.0 # Match pyproject.toml
+          - pydantic~=2.0,>=2.10.1,<2.10.2 # Match pyproject.toml
+          - pydantic-settings
           - tenacity
+          - limits
+          - numpy
           - torch
           - types-aiofiles
           - types-tqdm
           - usearch>=2.13 # Match pyproject.toml
           - wandb
+          - tiktoken>=0.4.0 # Match pyproject.toml
+          - types-setuptools
+          - sentence-transformers

@@ -37,8 +37,13 @@ jobs:
           enable-cache: true
       - run: uv python pin ${{ matrix.python-version }}
       - run: uv sync --python-preference=only-managed
-      - run: uv run refurb ldp tests
-      - run: uv run pylint ldp tests
+      - name: Run refurb
+        run: | # Go with this until https://github.com/astral-sh/uv/issues/6459
+          uv run refurb src/ldp tests
+          cd packages/lcaw
+          uv run refurb src/lcaw tests
+          cd ../..
+      - run: uv run pylint src packages
       - if: matrix.python-version == '3.11' # Only need to run this on one version
         uses: suzuki-shunsuke/github-action-renovate-config-validator@v1.1.1
   test-ldp:
@@ -61,7 +66,8 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync
-      - run: uv run pytest -n 16 --dist=loadfile packages/lcaw/tests
+      - run: |
+          uv run pytest -n 16 --dist=loadfile packages/lcaw/tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

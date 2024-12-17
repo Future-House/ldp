@@ -45,7 +45,7 @@ async def test_call_ids() -> None:
         await asyncio.sleep(x)
         return int(x > 0)
 
-    op = StatefulFxnOp[int](fxn)
+    op = StatefulFxnOp[int](fxn)  # type: ignore[misc]
     # In this test, we want to make sure that op calls can't interfere with each
     # each other's compute graphs. So we launch two tasks, where the second
     # one should finish before the first, allowing for the possibility of a
@@ -99,7 +99,7 @@ T = TypeVar("T")
 @pytest.mark.asyncio
 async def test_opresult_typing(op_return: tuple[T, type[T]], training: bool) -> None:
     op_return_value, op_return_type = op_return
-    op = FxnOp[op_return_type](lambda: op_return_value)  # type: ignore[valid-type]
+    op = FxnOp[op_return_type](lambda: op_return_value)
 
     set_training_mode(training)
     async with compute_graph():
@@ -230,7 +230,7 @@ async def test_llm_call_graph() -> None:
         c = await config_op()
         result = await (llm_op := LLMCallOp())(c, package_msg)
     assert result.value is not None
-    assert len(result.value.content) > 10  # type: ignore[arg-type]
+    assert len(result.value.content) > 10
 
     output_grad = -2.0  # some grad accrued from result
     result.compute_grads([output_grad])

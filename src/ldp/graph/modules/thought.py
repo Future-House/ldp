@@ -39,4 +39,4 @@ class ThoughtModule:
             initial_sys_content=await self.first_sys_prompt_op(**first_prompt_kwargs),
             final_sys_content=await self.second_sys_prompt_op(**second_prompt_kwargs),
         )
-        return (await self.llm_call(packaged_msgs))[0]  # type: ignore[arg-type]
+        return (await self.llm_call(packaged_msgs))[0]

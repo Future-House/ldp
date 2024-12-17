@@ -300,7 +300,7 @@ class ReActModuleSinglePrompt:
             messages, sys_content=await self._create_system_prompt(tools)
         )
         final_result, react_message = await self.tool_select_module(
-            packaged_msgs,  # type: ignore[arg-type]
+            packaged_msgs,
             tools=tools,
         )
         return final_result, [react_message]

@@ -119,19 +119,17 @@ async def time_n_llm_methods(
     if not use_gather:
         for _ in range(n):
             if "iter" in method:
-                outputs.extend(
-                    [
-                        output
-                        async for output in await getattr(llm, method)(*args, **kwargs)
-                    ]
-                )
+                outputs.extend([
+                    output
+                    async for output in await getattr(llm, method)(*args, **kwargs)
+                ])
             else:
                 outputs.append(await getattr(llm, method)(*args, **kwargs))
 
     else:
-        outputs = await asyncio.gather(
-            *[getattr(llm, method)(*args, **kwargs) for _ in range(n)]
-        )
+        outputs = await asyncio.gather(*[
+            getattr(llm, method)(*args, **kwargs) for _ in range(n)
+        ])
 
     character_count = 0
     token_count = 0
@@ -156,7 +154,6 @@ async def time_n_llm_methods(
 async def test_rate_limit_on_run_prompt(
     llm_config_w_rate_limits: dict[str, Any],
 ) -> None:
-
     llm = LiteLLMModel(**llm_config_w_rate_limits)
 
     outputs = []
@@ -221,7 +218,6 @@ async def test_rate_limit_on_sequential_completion_litellm_methods(
     llm_config_w_rate_limits: dict[str, Any],
     llm_method_kwargs: dict[str, Any],
 ) -> None:
-
     llm = LiteLLMModel(**llm_config_w_rate_limits)
 
     estimated_tokens_per_second = await time_n_llm_methods(
@@ -251,7 +247,6 @@ async def test_rate_limit_on_parallel_completion_litellm_methods(
     llm_config_w_rate_limits: dict[str, Any],
     llm_method_kwargs: dict[str, Any],
 ) -> None:
-
     llm = LiteLLMModel(**llm_config_w_rate_limits)
 
     if "iter" not in llm_method_kwargs["method"]:
@@ -281,7 +276,6 @@ async def test_rate_limit_on_parallel_completion_litellm_methods(
 async def test_embedding_rate_limits(
     embedding_config_w_rate_limits: dict[str, Any],
 ) -> None:
-
     embedding_model = LiteLLMEmbeddingModel(**embedding_config_w_rate_limits)
     texts_to_embed = ["the duck says"] * 10
     start = time.time()

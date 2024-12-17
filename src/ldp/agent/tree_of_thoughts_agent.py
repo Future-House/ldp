@@ -73,7 +73,7 @@ class TreeofThoughtsAgent(BaseModel, Agent[SimpleAgentState]):
         )
 
     @compute_graph()
-    async def get_asv(  # type: ignore[override]
+    async def get_asv(
         self,
         agent_state: SimpleAgentState,
         obs: list[Message],

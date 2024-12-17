@@ -171,7 +171,7 @@ class BeamSearchRollout:
 
                         new_beam = Beam(
                             traj=Trajectory(
-                                traj_id=beam.traj.traj_id + f":{i_sample}",  # type: ignore[operator]
+                                traj_id=beam.traj.traj_id + f":{i_sample}",
                                 steps=[*beam.traj.steps, step],
                             ),
                             env=new_env,
