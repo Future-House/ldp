@@ -108,7 +108,7 @@ class Callback:
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
         """Invoked by OnlineTrainer after each training step."""
 
-    async def before_eval_loop(self, dataset: TaskDataset) -> None:
+    async def before_eval_loop(self) -> None:
         """Invoked by Evaluator and OnlineTrainer before the evaluation loop."""
 
     async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
