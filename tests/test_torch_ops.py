@@ -198,9 +198,9 @@ async def test_torch_op_composition() -> None:
 
     assert not torch_grad_args
     # d(result)/dx = y = 2.0
-    assert torch.allclose(torch_grad_kwargs["x"], torch.tensor([-2.0, -2.0, -2.0]))  # type: ignore[arg-type]
+    assert torch.allclose(torch_grad_kwargs["x"], torch.tensor([-2.0, -2.0, -2.0]))
     # d(result)/dy = sum(x) = 6.0
-    assert torch.allclose(torch_grad_kwargs["y"], torch.tensor(-6.0))  # type: ignore[arg-type]
+    assert torch.allclose(torch_grad_kwargs["y"], torch.tensor(-6.0))
 
 
 @pytest.mark.asyncio
@@ -216,9 +216,7 @@ async def test_torch_concurrency():
         for _ in range(10):
             no_grad = random.choice([True, False])
             await asyncio.sleep(0)
-            await async_protect_torch_call(check_no_grad, no_grad=no_grad)(  # type: ignore[arg-type]
-                not no_grad
-            )
+            await async_protect_torch_call(check_no_grad, no_grad=no_grad)(not no_grad)
             assert torch.is_grad_enabled()  # Make sure grad state is reset properly
 
             # The below is an example of doing unsafe concurrent operations in torch.
@@ -242,7 +240,7 @@ async def test_torch_autocast():
         assert result.dtype == torch.bfloat16
 
     await async_protect_torch_call(
-        call_model,  # type: ignore[arg-type]
+        call_model,
         autocast_dtype=torch.bfloat16,
         autocast_device_type=torch.device("cpu").type,
     )()

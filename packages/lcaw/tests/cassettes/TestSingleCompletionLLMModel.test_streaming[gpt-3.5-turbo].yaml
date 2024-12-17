@@ -1,0 +1,114 @@
+interactions:
+  - request:
+      body:
+        '{"messages": [{"role": "system", "content": "Respond with single words."},
+        {"role": "user", "content": "Hello, how are you?"}], "model": "gpt-4o-mini",
+        "stream": true, "stream_options": {"include_usage": true}, "temperature": 0.1}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "230"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.46.1
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 1.46.1
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.7
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string:
+          'data: {"id":"chatcmpl-Aaqi0SQDNtoh5vfY35La4cZImQtNX","object":"chat.completion.chunk","created":1733345784,"model":"gpt-4o-mini-2024-07-18","system_fingerprint":"fp_0705bf87c0","choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}],"usage":null}
+
+
+          data: {"id":"chatcmpl-Aaqi0SQDNtoh5vfY35La4cZImQtNX","object":"chat.completion.chunk","created":1733345784,"model":"gpt-4o-mini-2024-07-18","system_fingerprint":"fp_0705bf87c0","choices":[{"index":0,"delta":{"content":"Good"},"logprobs":null,"finish_reason":null}],"usage":null}
+
+
+          data: {"id":"chatcmpl-Aaqi0SQDNtoh5vfY35La4cZImQtNX","object":"chat.completion.chunk","created":1733345784,"model":"gpt-4o-mini-2024-07-18","system_fingerprint":"fp_0705bf87c0","choices":[{"index":0,"delta":{"content":"!"},"logprobs":null,"finish_reason":null}],"usage":null}
+
+
+          data: {"id":"chatcmpl-Aaqi0SQDNtoh5vfY35La4cZImQtNX","object":"chat.completion.chunk","created":1733345784,"model":"gpt-4o-mini-2024-07-18","system_fingerprint":"fp_0705bf87c0","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"usage":null}
+
+
+          data: {"id":"chatcmpl-Aaqi0SQDNtoh5vfY35La4cZImQtNX","object":"chat.completion.chunk","created":1733345784,"model":"gpt-4o-mini-2024-07-18","system_fingerprint":"fp_0705bf87c0","choices":[],"usage":{"prompt_tokens":22,"completion_tokens":2,"total_tokens":24,"prompt_tokens_details":{"cached_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}}}
+
+
+          data: [DONE]
+
+
+          '
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 8eceb3f24f98fa1e-SJC
+        Connection:
+          - keep-alive
+        Content-Type:
+          - text/event-stream; charset=utf-8
+        Date:
+          - Wed, 04 Dec 2024 20:56:24 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=vkcOVid1Pvu8FQ0DT9W2sdWZquwPkhwHtWovMAxtLvY-1733345784-1.0.1.1-KmDma8bdDiwBG.g.yr8P7HQzdbbskePbPM8voE_GKB6byybDgSmwN0h1FUlWS8aC84OMJJYUmxN2pcfQlIZNig;
+            path=/; expires=Wed, 04-Dec-24 21:26:24 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=KyxE8E6JKAWbHuwVBJeQNGyosi45ZHcGIfS6nZpWOxM-1733345784940-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        access-control-expose-headers:
+          - X-Request-ID
+        alt-svc:
+          - h3=":443"; ma=86400
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "145"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-ratelimit-limit-requests:
+          - "30000"
+        x-ratelimit-limit-tokens:
+          - "150000000"
+        x-ratelimit-remaining-requests:
+          - "29999"
+        x-ratelimit-remaining-tokens:
+          - "149999970"
+        x-ratelimit-reset-requests:
+          - 2ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_ebd6b10426c09e537141ea77f2c538ad
+      status:
+        code: 200
+        message: OK
+version: 1

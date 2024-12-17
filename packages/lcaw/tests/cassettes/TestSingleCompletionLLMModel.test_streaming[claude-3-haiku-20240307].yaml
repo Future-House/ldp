@@ -1,0 +1,172 @@
+interactions:
+  - request:
+      body:
+        '{"messages": [{"role": "system", "content": "Respond with single words."},
+        {"role": "user", "content": "Hello, how are you?"}], "model": "gpt-4o-mini",
+        "stream": true, "stream_options": {"include_usage": true}, "temperature": 0.1}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "230"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.46.1
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 1.46.1
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.7
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string:
+          'data: {"id":"chatcmpl-Aaqi1YS72LUHy7if8JZJ1oSdXyxEM","object":"chat.completion.chunk","created":1733345785,"model":"gpt-4o-mini-2024-07-18","system_fingerprint":"fp_0705bf87c0","choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}],"usage":null}
+
+
+          data: {"id":"chatcmpl-Aaqi1YS72LUHy7if8JZJ1oSdXyxEM","object":"chat.completion.chunk","created":1733345785,"model":"gpt-4o-mini-2024-07-18","system_fingerprint":"fp_0705bf87c0","choices":[{"index":0,"delta":{"content":"Good"},"logprobs":null,"finish_reason":null}],"usage":null}
+
+
+          data: {"id":"chatcmpl-Aaqi1YS72LUHy7if8JZJ1oSdXyxEM","object":"chat.completion.chunk","created":1733345785,"model":"gpt-4o-mini-2024-07-18","system_fingerprint":"fp_0705bf87c0","choices":[{"index":0,"delta":{"content":"!"},"logprobs":null,"finish_reason":null}],"usage":null}
+
+
+          data: {"id":"chatcmpl-Aaqi1YS72LUHy7if8JZJ1oSdXyxEM","object":"chat.completion.chunk","created":1733345785,"model":"gpt-4o-mini-2024-07-18","system_fingerprint":"fp_0705bf87c0","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"usage":null}
+
+
+          data: {"id":"chatcmpl-Aaqi1YS72LUHy7if8JZJ1oSdXyxEM","object":"chat.completion.chunk","created":1733345785,"model":"gpt-4o-mini-2024-07-18","system_fingerprint":"fp_0705bf87c0","choices":[],"usage":{"prompt_tokens":22,"completion_tokens":2,"total_tokens":24,"prompt_tokens_details":{"cached_tokens":0,"audio_tokens":0},"completion_tokens_details":{"reasoning_tokens":0,"audio_tokens":0,"accepted_prediction_tokens":0,"rejected_prediction_tokens":0}}}
+
+
+          data: [DONE]
+
+
+          '
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 8eceb3f32dd796e4-SJC
+        Connection:
+          - keep-alive
+        Content-Type:
+          - text/event-stream; charset=utf-8
+        Date:
+          - Wed, 04 Dec 2024 20:56:25 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=QTqOq9znrFBY1TK2JWQzyu_pijH4BpOvSJfvDnj6OuA-1733345785-1.0.1.1-yFow2p_qgD1o.4o2MStMvtPqjCbQ4BtUwGw8u_aTCuW2bRbpFWRAavGS9xk43Qec9tILBDSnoHWFrOqTwvwgVw;
+            path=/; expires=Wed, 04-Dec-24 21:26:25 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=M68T0_crXnUTrCcFUhjjSmQqVtOK3.zgDlZoigC2BpE-1733345785431-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        access-control-expose-headers:
+          - X-Request-ID
+        alt-svc:
+          - h3=":443"; ma=86400
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "494"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-ratelimit-limit-requests:
+          - "30000"
+        x-ratelimit-limit-tokens:
+          - "150000000"
+        x-ratelimit-remaining-requests:
+          - "29998"
+        x-ratelimit-remaining-tokens:
+          - "149999970"
+        x-ratelimit-reset-requests:
+          - 2ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_419dc78b23b78a6746577f666aa8f00f
+      status:
+        code: 200
+        message: OK
+  - request:
+      body: null
+      headers:
+        Accept:
+          - "*/*"
+        Accept-Encoding:
+          - identity
+        Connection:
+          - keep-alive
+        X-Amzn-Trace-Id:
+          - 509b417f-98ec-4ad2-9e1c-6697926256a8
+        user-agent:
+          - unknown/None; hf_hub/0.26.2; python/3.12.7; torch/2.5.1
+      method: HEAD
+      uri: https://huggingface.co/claude-3-haiku-20240307/resolve/main/tokenizer.json
+    response:
+      body:
+        string: ""
+      headers:
+        Access-Control-Allow-Origin:
+          - https://huggingface.co
+        Access-Control-Expose-Headers:
+          - X-Repo-Commit,X-Request-Id,X-Error-Code,X-Error-Message,X-Total-Count,ETag,Link,Accept-Ranges,Content-Range
+        Connection:
+          - keep-alive
+        Content-Length:
+          - "29"
+        Content-Type:
+          - text/plain; charset=utf-8
+        Date:
+          - Wed, 04 Dec 2024 20:56:25 GMT
+        ETag:
+          - W/"1d-DMkJvg8tpLoaQbsiq9Mz7l2CJyI"
+        Referrer-Policy:
+          - strict-origin-when-cross-origin
+        Vary:
+          - Origin
+        Via:
+          - 1.1 e4c0014a384c62a3cb7a89a15c1fb004.cloudfront.net (CloudFront)
+        WWW-Authenticate:
+          - Bearer realm="Authentication required", charset="UTF-8"
+        X-Amz-Cf-Id:
+          - WDfpyQGFzhlWgkIuy8_2ct9g0LzGP098HVEQcaHew79JVNHMcdJWRw==
+        X-Amz-Cf-Pop:
+          - SFO5-P3
+        X-Cache:
+          - Error from cloudfront
+        X-Error-Message:
+          - Invalid username or password.
+        X-Powered-By:
+          - huggingface-moon
+        X-Request-Id:
+          - Root=1-6750c1f9-5426b9352bd327ac4ed6c38a;509b417f-98ec-4ad2-9e1c-6697926256a8
+        cross-origin-opener-policy:
+          - same-origin
+      status:
+        code: 401
+        message: Unauthorized
+version: 1

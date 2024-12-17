@@ -150,7 +150,7 @@ class TestParallelism:
         #    ToolResponseMessage as Anthropic and OpenAI expect
         await agent.get_asv(
             agent_state,
-            ToolResponseMessage.from_request(request_msg, contents=["null"]),  # type: ignore[arg-type]
+            ToolResponseMessage.from_request(request_msg, contents=["null"]),
         )
 
         # 4. Now that we have confirmed that, let's make sure exec_tool_calls

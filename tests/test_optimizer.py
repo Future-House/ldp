@@ -7,7 +7,7 @@ import pytest
 import tenacity
 import tree
 from aviary.core import Message
-from llmclient import MultipleCompletionLLMModel as LLMModel
+from lcaw import MultipleCompletionLLMModel as LLMModel
 from pydantic import BaseModel, Field, JsonValue
 
 from ldp.agent import Agent, MemoryAgent, ReActAgent
