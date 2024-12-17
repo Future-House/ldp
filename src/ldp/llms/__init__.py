@@ -1,17 +1,17 @@
-from llmclient import (
+from lcaw import (
     LLMResult,
     sum_logprobs,
     validate_json_completion,
 )
-from llmclient import MultipleCompletionLLMModel as LLMModel
-from llmclient.embeddings import (
+from lcaw import MultipleCompletionLLMModel as LLMModel
+from lcaw.embeddings import (
     EmbeddingModel,
     EmbeddingModes,
     HybridEmbeddingModel,
     LiteLLMEmbeddingModel,
     SparseEmbeddingModel,
 )
-from llmclient.exceptions import (
+from lcaw.exceptions import (
     JSONSchemaValidationError,
 )
 

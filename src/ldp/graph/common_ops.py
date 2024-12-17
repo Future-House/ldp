@@ -13,14 +13,14 @@ from typing import Generic, TypeVar, cast, overload
 import numpy as np
 import tree
 from aviary.core import Message, Tool, ToolRequestMessage, is_coroutine_callable
-from llmclient import (
+from lcaw import (
     EmbeddingModel,
     HybridEmbeddingModel,
     LiteLLMEmbeddingModel,
     LLMResult,
     SparseEmbeddingModel,
 )
-from llmclient import MultipleCompletionLLMModel as LLMModel
+from lcaw import MultipleCompletionLLMModel as LLMModel
 from pydantic import BaseModel
 
 from .gradient_estimators import assign_constant_grads

@@ -4,10 +4,10 @@ requires = ["setuptools>=64", "setuptools_scm>=8"]
 
 [dependency-groups]
 codeflash = [
-    "codeflash>=0.8",  # Pin for --verify-setup checking formatter-cmds
-    "ldp[dev]",
+    "codeflash>=0.7",  # Pin to keep recent
+    "lcaw[dev]",
 ]
-dev = ["ldp[dev]", "lcaw[dev]"]
+dev = ["lcaw[dev]"]
 
 [project]
 authors = [
@@ -19,41 +19,34 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python",
 ]
 dependencies = [
-    "aiofiles",
-    "dm-tree",
-    "lcaw",
+    "coredis",
     "fhaviary>=0.8.2",  # For core namespace
-    "httpx",
-    "networkx[default]~=3.4",  # Pin for pydot fix
-    "numpy>=1.20",  # For numpy.typing
-    "pydantic~=2.0",
-    "tenacity",
-    "tiktoken",
-    "tqdm",
+    "limits",
+    "pydantic~=2.0,>=2.10.1,<2.10.2",
+    "tiktoken>=0.4.0",
     "typing-extensions; python_version <= '3.11'",  # for typing.override
-    "usearch>=2.13",  # For py.typed
+    'litellm; python_version < "3.13"',  # NOTE: paper-qa==5.3 doesn't support 3.13 yet
+    'litellm>=1.49.1; python_version >= "3.13"',  # For removal of imghdr
 ]
-description = "Agent framework for constructing language model agents and training on constructive tasks."
+description = "A client to provide LLM responses for FutureHouse applications."
 dynamic = ["version"]
 license = {file = "LICENSE"}
-name = "ldp"
+name = "lcaw"
 readme = "README.md"
 requires-python = ">=3.11"
 
 [project.optional-dependencies]
 dev = [
+    "lcaw[local]",
     "fhaviary[xml]",
     "ipython>=8",  # Pin to keep recent
-    "ldp[monitor,nn,rich,server,typing,visualization]",
-    "litellm>=1.52.15",
     "mypy>=1.8",  # Pin for mutable-override
     "pre-commit>=3.4",  # Pin to keep recent
-    "pydantic~=2.9",  # Pydantic 2.9 changed JSON schema exports 'allOf', so ensure tests match
     "pylint-pydantic",
-    "pylint>=3.2",  # Pin to keep recent
     "pytest-asyncio",
     "pytest-mock",
     "pytest-recording",
@@ -63,28 +56,12 @@ dev = [
     "pytest-timer[colorama]",
     "pytest-xdist",
     "pytest>=8",  # Pin to keep recent
+    "python-dotenv",
     "refurb>=2",  # Pin to keep recent
-    "vcrpy>=6",  # Pin for https://github.com/kevin1024/vcrpy/issues/884
 ]
-monitor = [
-    "wandb",
-]
-nn = [
-    "torch>=2.2",
-]
-rich = [
-    "rich",
-    "tqdm>=4.56",  # When tqdm.rich was created
-]
-server = [
-    "fastapi>=0.109",  # For Python 3.12 support
-]
-typing = [
-    "types-aiofiles",
-    "types-tqdm",
-]
-visualization = [
-    "pydot>=3.0.1",  # Matching networkx[extra]==3.4 version, SEE: https://github.com/networkx/networkx/blob/networkx-3.4/pyproject.toml#L92C6-L92C18
+local = [
+    "numpy",
+    "sentence-transformers",
 ]
 
 [project.urls]
@@ -97,8 +74,8 @@ preview = true
 [tool.codeflash]
 disable-imports-sorting = true
 disable-telemetry = true
-formatter-cmds = ["uv tool run ruff check --exit-zero --fix $file", "uv tool run ruff format $file"]
-module-root = "ldp"
+formatter-cmds = ["ruff check --exit-zero --fix $file", "ruff format $file"]
+module-root = "lcaw"
 test-framework = "pytest"
 tests-root = "tests"
 
@@ -169,8 +146,6 @@ warn_unused_ignores = true
 ignore_missing_imports = true
 # Per-module configuration options
 module = [
-    "networkx",  # SEE: https://github.com/networkx/networkx/issues/3988
-    "pydot",
     "tree",  # SEE: https://github.com/google-deepmind/tree/issues/84
 ]
 
@@ -231,6 +206,7 @@ disable = [
     "too-many-positional-arguments",  # Don't care to enforce this
     "too-many-return-statements",  # Rely on ruff PLR0911 for this
     "too-many-statements",  # Rely on ruff PLR0915 for this
+    "undefined-loop-variable",  # Don't care to enforce this
     "ungrouped-imports",  # Rely on ruff I001 for this
     "unidiomatic-typecheck",  # Rely on ruff E721 for this
     "unreachable",  # Rely on mypy unreachable for this
@@ -257,11 +233,6 @@ score = false
 min-similarity-lines = 12
 
 [tool.pytest.ini_options]
-# Add the specified OPTS to the set of command line arguments as if they had been
-# specified by the user.
-addopts = "--doctest-modules"
-# Set to avoid https://github.com/BerriAI/litellm/issues/5854
-asyncio_default_fixture_loop_scope = "session"
 # Sets a list of filters and actions that should be taken for matched warnings.
 # By default all warnings emitted during the test session will be displayed in
 # a summary at the end of the test session.
@@ -270,12 +241,13 @@ filterwarnings = [
     "ignore:The `dict` method is deprecated; use `model_dump` instead",  # SEE: https://github.com/BerriAI/litellm/issues/5987
     "ignore:Use 'content=<...>' to upload raw bytes/text content:DeprecationWarning",  # SEE: https://github.com/BerriAI/litellm/issues/5986
     'ignore:open_text is deprecated. Use files\(\) instead:DeprecationWarning',  # SEE: https://github.com/BerriAI/litellm/issues/5647
+    'ignore:pkg_resources is deprecated as an API.:DeprecationWarning:pybtex',  # SEE: https://bitbucket.org/pybtex-devs/pybtex/issues/169/replace-pkg_resources-with
 ]
 # List of directories that should be searched for tests when no specific directories,
 # files or test ids are given in the command line when executing pytest from the rootdir
 # directory. File system paths may use shell-style wildcards, including the recursive **
 # pattern.
-testpaths = ["src", "tests", "packages"]
+testpaths = ["tests"]
 
 [tool.refurb]
 enable_all = true
@@ -293,11 +265,7 @@ ignore = [
 
 [tool.ruff]
 # Line length to use when enforcing long-lines violations (like `E501`).
-line-length = 88
-# The minimum Python version to target, e.g., when considering automatic code
-# upgrades, like rewriting type annotations. Ruff will not propose changes
-# using features that are not available in the given version.
-target-version = "py311"
+line-length = 120
 # Enable application of unsafe fixes.
 unsafe-fixes = true
 
@@ -310,61 +278,12 @@ preview = true
 [tool.ruff.lint]
 explicit-preview-rules = true
 extend-select = [
-    "A006",
-    "ASYNC116",
-    "B901",
-    "B909",
     "C420",
     "DOC202",
     "DOC403",
-    "DTZ901",
-    "E111",
-    "E112",
-    "E113",
-    "E114",
-    "E115",
-    "E116",
-    "E117",
-    "E201",
-    "E202",
-    "E203",
-    "E204",
-    "E211",
-    "E221",
-    "E222",
-    "E223",
-    "E224",
-    "E225",
-    "E226",
-    "E227",
-    "E228",
-    "E231",
-    "E241",
-    "E242",
-    "E251",
-    "E252",
-    "E261",
-    "E262",
-    "E265",
-    "E266",
-    "E271",
-    "E272",
-    "E273",
-    "E274",
-    "E275",
-    "E301",
-    "E302",
-    "E303",
-    "E304",
-    "E305",
-    "E306",
-    "E502",
-    "FURB101",
-    "FURB103",
     "FURB110",
     "FURB113",
     "FURB116",
-    "FURB118",
     "FURB131",
     "FURB132",
     "FURB140",
@@ -380,32 +299,10 @@ extend-select = [
     "FURB171",
     "FURB180",
     "FURB188",
-    "FURB189",
     "FURB192",
-    "LOG015",
-    "PLC1901",
-    "PLC2801",
-    "PLE0304",
-    "PLE1141",
-    "PLE4703",
     "PLR6201",
     "PLW0108",
-    "PYI059",
-    "RUF027",
-    "RUF028",
-    "RUF031",
-    "RUF032",
-    "RUF033",
-    "RUF034",
-    "RUF035",
-    "RUF036",
-    "RUF038",
-    "RUF039",
-    "RUF048",
-    "SIM905",
-    "UP042",
-    "UP044",
-    "W391",
+    "RUF022",
 ]
 external = [
     "FURB",  # refurb
@@ -450,10 +347,9 @@ ignore = [
     "PLC0415",  # Don't care to prevent imports outside of top-level
     "PLR0912",  # Allow us to have lots of branches
     "PLR0913",
-    "PLR6104",  # Moving to __iadd__ risks ldp graph manipulation
+    "PLR6104",  # Moving to __iadd__ risks llm-client graph manipulation
     "PLW2901",  # Allow modifying loop variables
     "PTH",  # Overly pedantic
-    "RUF027",  # Prompt templates may not be f-strings
     "S101",  # Don't care to prevent asserts
     "S105",  # Duplicates Yelp/detect-secrets in pre-commit
     "S311",  # Ok to use python random
@@ -485,6 +381,7 @@ mypy-init-return = true
     "F841",  # Tests can have unused locals
     "N802",  # Tests function names can match class names
     "PLR2004",  # Tests can have magic values
+    "S301",  # can test pickle
 ]
 "docs/**.ipynb" = [
     "PLE1142",  # allow async
@@ -505,10 +402,12 @@ max-line-length = 120
 convention = "google"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+exclude = ["tests"]
+include = ["lcaw"]
+where = ["."]
 
 [tool.setuptools_scm]
-version_file = "src/ldp/version.py"
+version_file = "lcaw/version.py"
 
 [tool.tomlsort]
 all = true
@@ -516,10 +415,3 @@ in_place = true
 spaces_before_inline_comment = 2  # Match Python PEP 8
 spaces_indent_inline_array = 4  # Match Python PEP 8
 trailing_comma_inline_array = true
-
-[tool.uv.sources]
-lcaw = {workspace = true}
-ldp = {workspace = true}
-
-[tool.uv.workspace]
-members = ["packages/*"]

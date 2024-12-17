@@ -41,7 +41,7 @@ jobs:
       - run: uv run pylint ldp tests
       - if: matrix.python-version == '3.11' # Only need to run this on one version
         uses: suzuki-shunsuke/github-action-renovate-config-validator@v1.1.1
-  test:
+  test-ldp:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +49,19 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync
-      - run: uv run pytest -n 16 --dist=loadfile # auto only launches 8 workers in CI, despite runners have 16 cores
+      - run: uv run pytest -n 16 --dist=loadfile tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  test-lcaw:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - run: uv sync
+      - run: uv run pytest -n 16 --dist=loadfile packages/lcaw/tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

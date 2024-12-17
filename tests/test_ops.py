@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import tree
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
-from llmclient import MultipleCompletionLLMModel as LLMModel
+from lcaw import MultipleCompletionLLMModel as LLMModel
 
 from ldp.graph import (
     CallID,

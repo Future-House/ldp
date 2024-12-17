@@ -1,5 +1,5 @@
 import pytest
-from llmclient import EmbeddingModel
+from lcaw import EmbeddingModel
 from pytest_subtests import SubTests
 
 from ldp.graph import Memory

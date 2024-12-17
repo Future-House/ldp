@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import torch
 from aviary.core import DummyEnv
-from llmclient import configure_llm_logs
+from lcaw import configure_llm_logs
 
 from . import CASSETTES_DIR
 
