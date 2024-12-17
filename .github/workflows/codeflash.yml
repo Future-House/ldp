@@ -42,7 +42,7 @@ jobs:
         run: uv sync --group=codeflash
       - if: steps.bot_check.outputs.skip_remaining_steps == 'no'
         name: Run CodeFlash on ldp
-        run: uv run codeflash --module-root=src/ldp -tests-root=tests
+        run: uv run codeflash --module-root=src/ldp --tests-root=tests
       - if: steps.bot_check.outputs.skip_remaining_steps == 'no'
         name: Run CodeFlash on lcaw
-        run: uv run codeflash --module-root=packages/lcaw/src/lcaw -tests-root=packages/lcaw/tests
+        run: uv run codeflash --module-root=packages/lcaw/src/lcaw --tests-root=packages/lcaw/tests
