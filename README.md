@@ -30,9 +30,7 @@ An agent uses tools in response to observations, which are just natural language
 
 ```py
 agent_state = await agent.init_state(tools=tools)
-new_action, new_agent_state, value = await agent.get_asv(
-    agent_state, obs
-)
+new_action, new_agent_state, value = await agent.get_asv(agent_state, obs)
 ```
 
 `get_asv(agent_state, obs)` chooses an action (`a`) conditioned on the observation messages,
@@ -44,7 +42,7 @@ You can make the state `None` if you aren't using it. It could contain things li
 The `obs` are not the complete list of all prior observations, but rather the return of `env.step`.
 Usually the state should keep track of these.
 
-Value is the agent's state-action value estimate (typically called `Q`); it can default to 0.
+Value is the agent's state-action value estimate; it can default to 0.
 This is used for training with reinforcement learning.
 
 ## Computing Actions
@@ -54,36 +52,36 @@ You can just emit actions directly if you want:
 ```py
 from aviary.core import ToolCall
 
+
 def get_asv(self, agent_state, obs):
     action = ToolCall.from_name("calculator_tool", x="3 * 2")
-    placeholder_value = 0
-    return action, agent_state, placeholder_value
+    return action, agent_state, 0
 ```
 
-but likely you want to do something more sophisticated. Here's how our `SimpleAgent` - which just relies on a single LLM - works (typing omitted):
+but likely you want to do something more sophisticated. Here's how our `SimpleAgent` - which just relies on a single LLM call - works (typing omitted):
 
 ```py
 from ldp.graph import compute_graph
+
 
 class AgentState:
     def __init__(messages, tools):
         self.messages = messages
         self.tools = tools
 
+
 class SimpleAgent(Agent):
 
     async def init_state(self, tools):
-        return AgentState([],tools)
-
+        return AgentState([], tools)
 
     @compute_graph()
     async def get_asv(self, agent_state, obs):
         action = await self.llm_call_op(
-            msgs=agent_state.messages + obs,
-            tools=agent_state.tools)
+            msgs=agent_state.messages + obs, tools=agent_state.tools
+        )
         new_state = AgentState(
-            messages=agent_state.messages + obs + [action],
-            tools=agent_state.tools
+            messages=agent_state.messages + obs + [action], tools=agent_state.tools
         )
         return action, new_state, 0.0
 ```
@@ -94,9 +92,55 @@ Notice how it's pretty simple. We have to do some bookkeeping - namely appending
 
 We do have a compute graph - which helps if you want to differentiate with respect to parameters inside your agent (including possibly the LLM). If your compute graph looks like the above example - where all you do is call an LLM directly, then don't worry about this.
 
-If you want to do more complex agents and train them, then read on.
+If you want to do more complex agents and train them, then read on. Let's start with an example compute graph
 
-TODO
+```py
+from ldp.graph import FxnOp, LLMCallOp, PromptOp, compute_graph
+
+op_a = FxnOp(lambda x: 2 * x)
+
+async with compute_graph():
+    result = op_a(3)
+```
+
+This creates a compute graph and executes it. The compute graph is silly - just doubles the input. The compute graph executions and gradients are saved in a context for later use, like training updates. For example:
+
+```py
+print(op_result.compute_grads())
+```
+
+Now, inside the `SimpleAgent` example above, you can see some of the compute graph. Let's see a more complex example for an agent that has a memory it can draw upon.
+
+```py
+@compute_graph()
+async def get_asv(self, agent_state, obs):
+    # Update state with new observations
+    next_state = agent_state.get_next_state(obs)
+
+    # Retrieve relevant memories
+    query = await self._query_factory_op(next_state.messages)
+    memories = await self._memory_op(query, matches=self.num_memories)
+
+    # Format memories and package messages
+    formatted_memories = await self._format_memory_op(self.memory_prompt, memories)
+    memory_prompt = await self._prompt_op(memories=formatted_memories)
+    packaged_messages = await self._package_op(
+        next_state.messages, memory_prompt=memory_prompt, use_memories=bool(memories)
+    )
+
+    # Make LLM call and update state
+    config = await self._config_op()
+    result = await self._llm_call_op(
+        config, msgs=packaged_messages, tools=next_state.tools
+    )
+    next_state.messages.extend([result])
+
+    return result, next_state, 0.0
+```
+
+You can see in this example that we use differentiable ops to ensure there is a connection in the compute graph from the LLM result (action) back to things like the memory retrieval and the query used to retrieve the memory.
+
+Why use a compute graph? Aside from a gradient, using the compute graph enables the tracking of all inputs/outputs to the ops and serialization/deserialization of the compute graph so that you can easily save/load them. The tracking of input/outputs also makes it easier to do things like fine-tuning or reinforcement learning on the underlying LLMs.
 
 ## Generic Support
 
