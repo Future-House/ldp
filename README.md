@@ -100,7 +100,7 @@ from ldp.graph import FxnOp, LLMCallOp, PromptOp, compute_graph
 op_a = FxnOp(lambda x: 2 * x)
 
 async with compute_graph():
-    result = op_a(3)
+    op_result = op_a(3)
 ```
 
 This creates a compute graph and executes it. The compute graph is silly - just doubles the input. The compute graph executions and gradients are saved in a context for later use, like training updates. For example:
