@@ -41,7 +41,7 @@ The first argument, `agent_state`, is a state specific for the agent.
 The state is outside of the agent so agents are functional, enabling batching across environments.
 You can make the state `None` if you aren't using it. It could contain things like memory, as a list of previous observations and actions.
 
-The `obs` are not the complete list of observations, but rather the last list from `env.step`.
+The `obs` are not the complete list of all prior observations, but rather the return of `env.step`.
 Usually the state should keep track of these.
 
 Value can be `0`. It is the agent's estimate of the future rewards given its state and observations.
