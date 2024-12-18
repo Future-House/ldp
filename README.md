@@ -78,7 +78,6 @@ class SimpleAgent(Agent):
 
     @compute_graph()
     async def get_asv(self, agent_state, obs):
-
         action = await self.llm_call_op(
             msgs=agent_state.messages + obs,
             tools=agent_state.tools)
