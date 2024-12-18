@@ -35,7 +35,7 @@ new_action, new_agent_state, value = await agent.get_asv(
 )
 ```
 
-`get_asv(agent_state, obs)` chooses an action (`a`) from the observation messages,
+`get_asv(agent_state, obs)` chooses an action (`a`) conditioned on the observation messages,
 and returns the next agent state (`s`) and a value estimate (`v`).
 The first argument, `agent_state`, is a state specific for the agent.
 We make the state extrinsic so that agents are functional (enabling concurrency across environments).
