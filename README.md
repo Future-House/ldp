@@ -56,7 +56,8 @@ from aviary.core import ToolCall
 
 def get_asv(self, agent_state, obs):
     action = ToolCall.from_name("calculator_tool", x="3 * 2")
-    return action, agent_state, 0
+    placeholder_value = 0
+    return action, agent_state, placeholder_value
 ```
 
 but likely you want to do something more sophisticated. Here's how our `SimpleAgent` - which just relies on a single LLM - works (typing omitted):
