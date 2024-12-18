@@ -193,9 +193,9 @@ class APEOpt(BaseModel, Optimizer):
                 if result is None or not result.messages or not result.prompt:
                     continue
                 # (x: first prompt's user message's content, y: AI response's content)
-                # m is a Message with a result of the LLM. Which completes only strings.
-                # and we checked the result exists above.
                 x = next(
+                    # m is a Message with a result of the LLM. Which completes only strings.
+                    # and we checked the result exists above.
                     cast(str, m.content)
                     for m in result.prompt
                     if (isinstance(m, Message) and m.role == "user")
