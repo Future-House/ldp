@@ -1,6 +1,6 @@
 # ldp
 
-An agent framework for constructing language model agents and training on constructive tasks.
+An framework for constructing language model agents and training on constructive tasks.
 
 This repo models agent-environment interactions using a
 [Partially Observable Markov Decision Process][pomdp] (POMDP).
