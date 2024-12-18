@@ -1,6 +1,6 @@
 # ldp
 
-Agent framework for constructing language model agents and training on constructive tasks.
+An agent framework for constructing language model agents and training on constructive tasks.
 
 This repo models agent-environment interactions using a
 [Partially Observable Markov Decision Process][pomdp] (POMDP).
@@ -22,9 +22,11 @@ make sure you also install the `graphviz` library into your OS via:
 - Linux: `apt install graphviz`
 - macOS: `brew install graphviz`
 
-## Agent/Policy
+## Agent
 
-An agent should have two functions:
+An agent is something that interacts with an environment (defined in our other package [Aviary](https://github.com/Future-House/aviary/)).
+
+An agent uses tools in response to observations, which are just natural language observations. An agent has two functions:
 
 ```py
 agent_state = await agent.init_state(tools=tools)
@@ -33,22 +35,70 @@ new_action, new_agent_state, value = await agent.get_asv(
 )
 ```
 
-An agent should have a function `get_asv(agent_state, obs)`
-that chooses an action (`a`) from the observation messages,
+`get_asv(agent_state, obs)` chooses an action (`a`) from the observation messages,
 and returns the next agent state (`s`) and a value estimate (`v`).
-The first argument, `agent_state`, is a state specific for the agent
-that can be used for training from episodes.
-You can make it `None` if you aren't using it.
-It could contain things like agent memory.
+The first argument, `agent_state`, is a state specific for the agent.
+We make the state extrinsic so that agents are functional (enabling concurrency across environments).
+You can make the state `None` if you aren't using it. It could contain things like memory, as a list of previous observations and actions.
 
 The `obs` are not the complete list of observations, but rather the last list from `env.step`.
-The agent should keep track of observations via its state if it would like to keep them.
+Usually the state should keep track of these.
 
-The value can be `0`,
-it is the agent's estimate of the future rewards given its state and observations.
-This is used for training.
+Value can be `0`. It is the agent's estimate of the future rewards given its state and observations.
+This is used for training with reinforcement learning.
 
-### Generic Support
+## Computing Actions
+
+You can just emit actions directly if you want:
+
+```py
+from aviary.core import ToolCall
+
+def get_asv(self, agent_state, obs):
+    action = ToolCall.from_name("calculator_tool", x="3 * 2")
+    return action, agent_state, 0
+```
+
+but likely you want to do something more sophisticated. Here's how our `SimpleAgent` - which just relies on a single LLM - works (typing omitted):
+
+```py
+from ldp.graph import compute_graph
+
+class AgentState:
+    def __init__(messages, tools):
+        self.messages = messages
+        self.tools = tools
+
+class SimpleAgent(Agent):
+
+    async def init_state(self, tools):
+        return AgentState([],tools)
+
+
+    @compute_graph()
+    async def get_asv(self, agent_state, obs):
+
+        action = await self.llm_call_op(
+            msgs=agent_state.messages + obs,
+            tools=agent_state.tools)
+        new_state = AgentState(
+            messages=agent_state.messages + obs + [action],
+            tools=agent_state.tools
+        )
+        return action, new_state, 0.0
+```
+
+Notice how it's pretty simple. We have to do some bookkeeping - namely appending messages as they come and passing tools. There is no magic here.
+
+### Compute Graph
+
+We do have a compute graph - which helps if you want to differentiate with respect to parameters inside your agent (including possibly the LLM). If your compute graph looks like the above example - where all you do is call an LLM directly, then don't worry about this.
+
+If you want to do more complex agents and train them, then read on.
+
+TODO
+
+## Generic Support
 
 The `Agent` (as well as classes in `agent.ops`)
 are [generics](https://en.wikipedia.org/wiki/Generic_programming),
@@ -96,3 +146,7 @@ while not done:
     action, agent_state, _ = await agent.get_asv(agent_state, obs)
     obs, reward, done, truncated = await env.step(action.value)
 ```
+
+## Tutorial
+
+See a tutorial of building and [running an agent for GSM8K](docs/agent_tutorial.ipynb)
