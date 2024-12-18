@@ -173,7 +173,7 @@ class TrajectoryFileCallback(Callback):
         # TODO: make this async?
         traj.to_jsonl(self.out_files[traj_id])
         if transition.done:
-            with Path(self.env_files[traj_id]).open() as f:
+            with Path(self.env_files[traj_id]).open("w") as f:
                 f.write(env.export_frame().model_dump_json(exclude={"state"}, indent=2))
 
 
