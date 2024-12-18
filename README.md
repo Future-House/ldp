@@ -24,7 +24,7 @@ make sure you also install the `graphviz` library into your OS via:
 
 ## Agent
 
-An agent is something that interacts with an environment (defined in our other package [Aviary](https://github.com/Future-House/aviary/)).
+An agent is something that interacts with an environment (defined in our other GitHub repo [Future-House/aviary](https://github.com/Future-House/aviary)).
 
 An agent uses tools in response to observations, which are just natural language observations. An agent has two functions:
 
