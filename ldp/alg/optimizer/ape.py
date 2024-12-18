@@ -194,7 +194,9 @@ class APEOpt(BaseModel, Optimizer):
                     continue
                 # (x: first prompt's user message's content, y: AI response's content)
                 x = next(
-                    cast(str, m.content) for m in result.prompt if m.role == "user"
+                    cast(str, m.content)
+                    for m in result.prompt
+                    if (isinstance(m, Message) and m.role == "user")
                 )
                 y = cast(str, result.messages[0].content)
 
