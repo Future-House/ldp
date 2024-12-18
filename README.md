@@ -44,7 +44,7 @@ You can make the state `None` if you aren't using it. It could contain things li
 The `obs` are not the complete list of all prior observations, but rather the return of `env.step`.
 Usually the state should keep track of these.
 
-Value can be `0`. It is the agent's estimate of the future rewards given its state and observations.
+Value is the agent's state-action value estimate (typically called `Q`); it can default to 0.
 This is used for training with reinforcement learning.
 
 ## Computing Actions
