@@ -1,4 +1,4 @@
-from .algorithms import to_network
+from .algorithms import evaluate_consensus, to_network
 from .beam_search import Beam, BeamSearchRollout
 from .callbacks import (
     Callback,
@@ -45,5 +45,6 @@ __all__ = [
     "TrajectoryMetricsCallback",
     "TreeSearchRollout",
     "WandBLoggingCallback",
+    "evaluate_consensus",
     "to_network",
 ]
