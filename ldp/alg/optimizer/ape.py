@@ -196,7 +196,7 @@ class APEOpt(BaseModel, Optimizer):
                 # m is a Message with a result of the LLM. Which completes only strings.
                 # and we checked the result exists above.
                 x = next(
-                    cast(str, m.content) 
+                    cast(str, m.content)
                     for m in result.prompt
                     if (isinstance(m, Message) and m.role == "user")
                 )
