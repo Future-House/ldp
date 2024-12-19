@@ -144,12 +144,11 @@ class Evaluator:
             "shuffle": self.config.shuffle,
             "num_rollouts_per_env": self.config.num_rollouts_per_env,
         }
-        eval_kwargs |= kwargs
         await _run_eval_loop(
             dataset=self.dataset,
             rollout_manager=self.rollout_manager,
             callbacks=self.callbacks,
-            **eval_kwargs,
+            **(eval_kwargs | kwargs),
         )
 
 
