@@ -84,7 +84,12 @@ class EvaluatorConfig(BaseModel):
             "If 0, will not run the eval loop. "
         ),
     )
-    num_rollouts_per_env: int = 1
+    num_rollouts_per_env: int = Field(
+        default=1,
+        description=(
+            "Number of rollouts to execute for each environment in the dataset."
+        ),
+    )
     max_rollout_steps: int | None = None
     catch_agent_failures: bool = True
     catch_env_failures: bool = True
@@ -155,12 +160,6 @@ class OnlineTrainerConfig(EvaluatorConfig):
         description=(
             "Number of iterations (at one batch per iteration) to process during"
             " training, and setting to 0 skips training."
-        ),
-    )
-    num_rollouts_per_env: int = Field(
-        default=1,
-        description=(
-            "Number of rollouts to execute for each environment per training iteration."
         ),
     )
     update_every: int = Field(
