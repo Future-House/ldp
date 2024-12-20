@@ -73,10 +73,7 @@ class SimpleAgentState(BaseModel):
 
 
 class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
-    """Simple agent that can pick and invoke tools with a language model.
-
-    It does not have a system prompt because it's meant to be lightweight.
-    """
+    """Simple agent that can pick and invoke tools with a language model."""
 
     # Freeze to ensure the only mutation happens in either the agent state (which is
     # passed around) or in the internal Ops
