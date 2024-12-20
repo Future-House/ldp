@@ -20,6 +20,7 @@ from .simple_agent import SimpleAgent, SimpleAgentState
 from .tree_of_thoughts_agent import TreeofThoughtsAgent
 
 __all__ = [
+    "DEFAULT_LLM_COMPLETION_TIMEOUT",
     "Agent",
     "AgentConfig",
     "DefaultLLMModelNames",
