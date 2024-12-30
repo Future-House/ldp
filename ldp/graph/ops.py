@@ -61,6 +61,7 @@ class OpResult(Generic[TOutput]):
             "op_name": self.op_name,
             "op_class_name": self.op_class_name,
             "value": value_dump,
+            "logprob": self.logprob,
         }
 
     @classmethod

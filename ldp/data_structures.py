@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from collections.abc import Callable, Hashable, Iterable
+from contextlib import suppress
 from typing import Any, ClassVar, Self, cast
 from uuid import UUID
 
@@ -121,7 +122,12 @@ class Trajectory(BaseModel):
             reader = iter(f)
             traj = cls(traj_id=json.loads(next(reader)))
             for json_line in reader:
-                traj.steps.append(Transition(**json.loads(json_line)))
+                data = json.loads(json_line)
+                # logprob may have been serialized, but cannot be passed to
+                # OpResult, so remove it here.
+                with suppress(KeyError):
+                    data["action"].pop("logprob")
+                traj.steps.append(Transition(**data))
         return traj
 
     def compute_discounted_returns(self, discount: float = 1.0) -> list[float]:
