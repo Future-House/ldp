@@ -33,10 +33,29 @@ class HTTPAgentClient(Agent[TSerializableAgentState]):
         self._request_headers = request_headers
         self._request_timeout = request_timeout
 
+    async def get_as(
+        self, agent_state: TSerializableAgentState, obs: list[Message]
+    ) -> tuple[OpResult[ToolRequestMessage], TSerializableAgentState]:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{self._request_url}/get_as",
+                json={
+                    "agent_state": agent_state.model_dump(),
+                    "obs": [m.model_dump() for m in obs],
+                    "training": get_training_mode(),
+                },
+                headers=self._request_headers,
+                timeout=self._request_timeout,
+            )
+            response.raise_for_status()
+            response_data = response.json()
+            return (
+                OpResult.from_dict(ToolRequestMessage, response_data[0]),
+                self._agent_state_type(**response_data[1]),
+            )
+
     async def get_asv(
-        self,
-        agent_state: TSerializableAgentState,
-        obs: list[Message],
+        self, agent_state: TSerializableAgentState, obs: list[Message]
     ) -> tuple[OpResult[ToolRequestMessage], TSerializableAgentState, float]:
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -124,6 +143,18 @@ def make_simple_agent_server(
     ) -> dict[str, str]:
         """Get agent metadata, useful for debugging."""
         return {"agent_type": type(agent).__name__}
+
+    @asgi_app.post("/get_as")
+    async def get_as(
+        agent_state: SimpleAgentState,
+        obs: Messages,
+        _: Annotated[HTTPAuthorizationCredentials, Depends(validate_token)],
+        training: Annotated[bool, Body()] = True,
+    ) -> tuple[dict, SimpleAgentState]:
+        if training:
+            raise NotImplementedError("Training is not yet supported.")
+        action, agent_state = await agent.get_as(agent_state, obs)
+        return action.to_dict(), agent_state
 
     @asgi_app.post("/get_asv")
     async def get_asv(

@@ -165,9 +165,9 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         retry_error_callback=after_retry_failure_log,
     )
     @compute_graph()
-    async def get_asv(
+    async def get_as(
         self, agent_state: SimpleAgentState, obs: list[Message]
-    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState]:
         obs = obs.copy()  # Keep original obs, as we edit the content below
         if self.single_prompt:
             for i, m in enumerate(obs):
@@ -184,4 +184,4 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
             messages=next_state.messages, tools=next_state.tools
         )
         next_state.messages = [*next_state.messages, *new_messages]
-        return action_selection_result, next_state, 0.0
+        return action_selection_result, next_state

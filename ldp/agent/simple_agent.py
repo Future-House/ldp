@@ -115,9 +115,9 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
         )
 
     @compute_graph()
-    async def get_asv(
+    async def get_as(
         self, agent_state: SimpleAgentState, obs: list[Message]
-    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState]:
         next_state = agent_state.get_next_state(obs)
 
         messages = (
@@ -132,4 +132,4 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
             ),
         )
         next_state.messages = [*next_state.messages, result.value]
-        return result, next_state, 0.0
+        return result, next_state

@@ -27,7 +27,7 @@ async def test_rollout_and_discounting(dummy_env: DummyEnv) -> None:
             agent_state = await agent.init_state(tools=tools)
 
         observations.append((obs, agent_state))
-        action, agent_state, _ = await agent.get_asv(agent_state, obs)
+        action, agent_state = await agent.get_as(agent_state, obs)
         obs, reward, done, _ = await dummy_env.step(action.value)
         actions.append(action)
         rewards.append(reward)

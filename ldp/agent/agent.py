@@ -44,12 +44,36 @@ class Agent(ABC, Generic[TAgentState]):
         # Register the Agent subclass.
         _AGENT_REGISTRY[cls.__name__] = cls
 
-    @abstractmethod
+    async def get_as(
+        self, agent_state: TAgentState, obs: list[Message]
+    ) -> tuple[OpResult[ToolRequestMessage], TAgentState]:
+        """
+        Get new action and state given state and observation messages.
+
+        NOTE: the method's name has action listed before state to help you realize it's
+        a new state.
+
+        Args:
+            agent_state: Optional current agent state, pass None if irrelevant.
+                This can be something like agent memory.
+            obs: Most recent list of observation messages from the environment's steps.
+                If more observations than the most recent list are necessary, track them
+                in the agent state.
+
+        Returns:
+            Two-tuple of new action and new agent state. The agent_state is returned as
+                a copy so that you can safely mutate it without affecting the original.
+        """
+        raise NotImplementedError(f"{self.__class__.__name__} is not yet implemented.")
+
     async def get_asv(
         self, agent_state: TAgentState, obs: list[Message]
     ) -> tuple[OpResult[ToolRequestMessage], TAgentState, float]:
         """
         Get new action, state, and value given state and observation messages.
+
+        The default implementation uses a placeholder value of 0.0, but if your agent
+        has a value estimation capability, this method should be overridden.
 
         NOTE: the method's name has action listed before state to help you realize it's
         a new state.
@@ -70,6 +94,8 @@ class Agent(ABC, Generic[TAgentState]):
                 return 0. The value could also come from a Q-value evaluated at the
                 action chosen by the agent.
         """
+        action, next_state = await self.get_as(agent_state, obs)
+        return action, next_state, 0.0
 
     @abstractmethod
     async def init_state(self, tools: list[Tool]) -> TAgentState:

@@ -31,6 +31,8 @@ An agent uses tools in response to observations, which are just natural language
 ```py
 agent_state = await agent.init_state(tools=tools)
 new_action, new_agent_state, value = await agent.get_asv(agent_state, obs)
+# or if you don't need value
+new_action, new_agent_state = await agent.get_as(agent_state, obs)
 ```
 
 `get_asv(agent_state, obs)` chooses an action (`a`) conditioned on the observation messages,
@@ -44,6 +46,7 @@ Usually the state should keep track of these.
 
 Value is the agent's state-action value estimate; it can default to 0.
 This is used for training with reinforcement learning.
+If you don't intend to use value, just use the method `get_as` as it omits value.
 
 ## Computing Actions
 
@@ -53,19 +56,20 @@ You can just emit actions directly if you want:
 from aviary.core import ToolCall
 
 
-def get_asv(self, agent_state, obs):
+def get_as(self, agent_state, obs):
     action = ToolCall.from_name("calculator_tool", x="3 * 2")
-    return action, agent_state, 0
+    return action, agent_state
 ```
 
 but likely you want to do something more sophisticated. Here's how our `SimpleAgent` - which just relies on a single LLM call - works (typing omitted):
 
-```py
+```python
+from ldp.agent import Agent
 from ldp.graph import compute_graph
 
 
 class AgentState:
-    def __init__(messages, tools):
+    def __init__(self, messages, tools):
         self.messages = messages
         self.tools = tools
 
@@ -76,14 +80,14 @@ class SimpleAgent(Agent):
         return AgentState([], tools)
 
     @compute_graph()
-    async def get_asv(self, agent_state, obs):
+    async def get_as(self, agent_state, obs):
         action = await self.llm_call_op(
             msgs=agent_state.messages + obs, tools=agent_state.tools
         )
         new_state = AgentState(
             messages=agent_state.messages + obs + [action], tools=agent_state.tools
         )
-        return action, new_state, 0.0
+        return action, new_state
 ```
 
 Notice how it's pretty simple. We have to do some bookkeeping - namely appending messages as they come and passing tools. There is no magic here.
@@ -113,7 +117,7 @@ Now, inside the `SimpleAgent` example above, you can see some of the compute gra
 
 ```py
 @compute_graph()
-async def get_asv(self, agent_state, obs):
+async def get_as(self, agent_state, obs):
     # Update state with new observations
     next_state = agent_state.get_next_state(obs)
 
@@ -135,7 +139,7 @@ async def get_asv(self, agent_state, obs):
     )
     next_state.messages.extend([result])
 
-    return result, next_state, 0.0
+    return result, next_state
 ```
 
 You can see in this example that we use differentiable ops to ensure there is a connection in the compute graph from the LLM result (action) back to things like the memory retrieval and the query used to retrieve the memory.
@@ -187,7 +191,7 @@ agent_state = await agent.init_state(tools=tools)
 
 done = False
 while not done:
-    action, agent_state, _ = await agent.get_asv(agent_state, obs)
+    action, agent_state = await agent.get_as(agent_state, obs)
     obs, reward, done, truncated = await env.step(action.value)
 ```
 

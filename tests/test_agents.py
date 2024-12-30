@@ -98,13 +98,13 @@ class TestAgentState:
         agent_state = agent_state_0 = await agent.init_state(tools=tools)
         agent_state_0_json = agent_state_0.model_dump_json()
         for _ in range(3):  # Give a few steps to finish, the assertion needs >0 steps
-            action, agent_state, _ = await agent.get_asv(agent_state, obs)
+            action, agent_state = await agent.get_as(agent_state, obs)
             obs, reward, done, truncated = await dummy_env.step(action.value)
             if done:
                 break
 
         assert agent_state_0_json == agent_state_0.model_dump_json(), (
-            "Agent state should not be mutated between calls to get_asv"
+            "Agent state should not be mutated between calls to get_as"
         )
 
     def test_serialization_deserializaton(self) -> None:
@@ -127,14 +127,14 @@ class TestSimpleAgent:
 
         agent = SimpleAgent(llm_model={"model": model_name, "temperature": 0.1})
         agent_state = await agent.init_state(tools=tools)
-        action, agent_state, _ = await agent.get_asv(agent_state, obs)
+        action, agent_state = await agent.get_as(agent_state, obs)
         obs, reward, done, truncated = await dummy_env.step(action.value)
         assert reward > 0, (
             "Reward should be positive, indicating agent called print_story tool"
         )
         assert done
 
-        # Check serialization after get_asv runs to ensure private
+        # Check serialization after get_as runs to ensure private
         # Ops aren't included
         assert agent.model_dump() == {
             "hide_old_env_states": False,
@@ -162,7 +162,7 @@ class TestSimpleAgent:
 
         agent = SimpleAgent(llm_model={"model": model_name, "temperature": 0.1})
         agent_state = await agent.init_state(tools=tools)
-        action, agent_state, _ = await agent.get_asv(agent_state, obs)
+        action, agent_state = await agent.get_as(agent_state, obs)
         assert action.call_id is not None
         obs, reward, done, _ = await dummy_env.step(action.value)
         assert reward > 0, (
@@ -210,10 +210,10 @@ class TestSimpleAgent:
         agent = SimpleAgent(hide_old_env_states=True)
         agent_state_0 = await agent.init_state(tools=[])
 
-        _, agent_state_1, _ = await agent.get_asv(
+        _, agent_state_1 = await agent.get_as(
             agent_state_0, [EnvStateMessage(content="")]
         )
-        _, agent_state_2, _ = await agent.get_asv(
+        _, agent_state_2 = await agent.get_as(
             agent_state_1, [EnvStateMessage(content="")]
         )
 
@@ -259,7 +259,7 @@ class TestMemoryAgent:
             )
         )
 
-        new_action, agent_state, _ = await agent.get_asv(agent_state, obs)
+        new_action, agent_state = await agent.get_as(agent_state, obs)
         assert "Once there was" in str(new_action)
         obs, reward, done, truncated = await dummy_env.step(new_action.value)
         assert reward > 0, (
@@ -284,7 +284,7 @@ class TestMemoryAgent:
 
         agent = MemoryAgent()
         agent_state = await agent.init_state(tools=tools)
-        action, agent_state, _ = await agent.get_asv(agent_state, obs)
+        action, agent_state = await agent.get_as(agent_state, obs)
         assert action.call_id is not None
         obs, reward, done, truncated = await dummy_env.step(action.value)
         assert reward > 0, (
@@ -342,7 +342,7 @@ class TestReActAgent:
             single_prompt=single_prompt,
         )
         agent_state = await agent.init_state(tools=tools)
-        action, agent_state, _ = await agent.get_asv(agent_state, obs)
+        action, agent_state = await agent.get_as(agent_state, obs)
         obs, reward, done, truncated = await dummy_env.step(action.value)
         assert reward > 0, (
             "Reward should be positive, indicating agent called print_story tool"
@@ -386,7 +386,7 @@ class TestReActAgent:
         )
         agent_state = await agent.init_state(tools=tools)
         for i in range(4):  # noqa: B007
-            action, agent_state, _ = await agent.get_asv(agent_state, obs)
+            action, agent_state = await agent.get_as(agent_state, obs)
             for m in agent_state.messages:
                 if not isinstance(m, ToolRequestMessage):
                     assert m.content
@@ -439,7 +439,7 @@ class TestReActAgent:
             single_prompt=single_prompt,
         )
         agent_state = await agent.init_state(tools=tools)
-        action, agent_state, _ = await agent.get_asv(agent_state, obs)
+        action, agent_state = await agent.get_as(agent_state, obs)
         assert action.call_id is not None
         obs, reward, done, truncated = await dummy_env.step(action.value)
         assert reward > 0, (
@@ -742,7 +742,7 @@ async def test_interactive(dummy_env: DummyEnv, mocker):
         "builtins.input", side_effect=["print_story", "A cat wore a hat."]
     )
 
-    action, agent_state, _ = await agent.get_asv(agent_state, obs)
+    action, agent_state = await agent.get_as(agent_state, obs)
     next_obs, _, done, _ = await dummy_env.step(action.value)
 
     assert mock_input.call_count >= 2

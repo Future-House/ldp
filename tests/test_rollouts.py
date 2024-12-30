@@ -187,12 +187,12 @@ class CountingAgent(Agent[CountingAgentState]):
         return CountingAgentState()
 
     @compute_graph()
-    async def get_asv(
+    async def get_as(
         self, agent_state: CountingAgentState, obs: list[Message]
-    ) -> tuple[OpResult[ToolRequestMessage], CountingAgentState, float]:
+    ) -> tuple[OpResult[ToolRequestMessage], CountingAgentState]:
         new_state = CountingAgentState(count=float(cast(str, obs[0].content)) + 1)
         action = await self.op()
-        return action, new_state, 0.0
+        return action, new_state
 
 
 class CountingEnv(Environment[float]):

@@ -45,9 +45,9 @@ class InteractiveAgent(Agent[SimpleAgentState]):
         return SimpleAgentState(tools=tools)
 
     @compute_graph()
-    async def get_asv(  # noqa: C901
+    async def get_as(  # noqa: C901
         self, agent_state: SimpleAgentState, obs: list[Message]
-    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState]:
         print()  # add a newline to flush any progress bars, etc
         print("OBSERVATIONS:\n" + ("-" * 80))
         for msg in obs:
@@ -80,7 +80,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
             while True:
                 value = input(prompt)
                 if value == CLEAR:
-                    return await self.get_asv(agent_state, obs)  # just start over
+                    return await self.get_as(agent_state, obs)  # just start over
                 if value == EXIT:
                     raise RuntimeError("User requested to kill the agent.")
 
@@ -108,7 +108,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
 
         next_agent_state.messages = [*next_agent_state.messages, action.value]
 
-        return action, next_agent_state, 0.0
+        return action, next_agent_state
 
     @staticmethod
     def _get_param_string(pname: str, pprops: dict[str, Any]) -> str:

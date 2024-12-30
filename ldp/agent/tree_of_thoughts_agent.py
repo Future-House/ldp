@@ -73,14 +73,14 @@ class TreeofThoughtsAgent(BaseModel, Agent[SimpleAgentState]):
         )
 
     @compute_graph()
-    async def get_asv(  # type: ignore[override]
+    async def get_as(  # type: ignore[override]
         self,
         agent_state: SimpleAgentState,
         obs: list[Message],
         eval_function: Callable[[str, list[str]], float],
         n_steps: int = 0,
         n_select_samples: int = 0,
-    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState]:
         """Generate and evaluate possible steps in the problem-solving process.
 
         Args:
@@ -149,4 +149,4 @@ class TreeofThoughtsAgent(BaseModel, Agent[SimpleAgentState]):
                 op_class_name=type(self).__name__,
                 value=result,
             )
-        return op_result, new_state, 0.0
+        return op_result, new_state
