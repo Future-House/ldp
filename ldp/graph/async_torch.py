@@ -115,8 +115,8 @@ class AsyncBufferedWorker(ABC):
             # Sleep, to let another coroutine take over if it needs to
             await asyncio.sleep(0.0)
 
-    async def _maybe_process_batch(self):
-        """If the buffer is >= batch size or we have been waiting long enough, process the old batch.
+    async def _maybe_process_batch(self) -> None:
+        """If the buffer is >= batch size or we have been waiting long enough, process the oldest batch.
 
         If neither condition is met, do nothing.
         """
@@ -134,7 +134,7 @@ class AsyncBufferedWorker(ABC):
             batch = self._work_buffer[: self.batch_size]
             self._work_buffer = self._work_buffer[self.batch_size :]
 
-            # Construct the batch tensors
+            # Construct the batch inputs
             sample_kwargs = [x[2] for x in batch]
             batch_kwargs = self.collate_fn(sample_kwargs)
 
@@ -144,7 +144,7 @@ class AsyncBufferedWorker(ABC):
             self._result_buffer.update(zip(request_ids, results, strict=True))
 
     @abstractmethod
-    async def _batched_call(self, batch_kwargs: dict[str, Any]):
+    async def _batched_call(self, batch_kwargs: dict[str, Any]) -> Any:
         """Logic to call the worker on a batch of inputs."""
 
 
