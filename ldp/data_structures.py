@@ -123,7 +123,7 @@ class Trajectory(BaseModel):
             traj = cls(traj_id=json.loads(next(reader)))
             for json_line in reader:
                 data = json.loads(json_line)
-                # logprob may have been serialized, but cnanot be passed to
+                # logprob may have been serialized, but cannot be passed to
                 # OpResult, so remove it here.
                 with suppress(KeyError):
                     data["action"].pop("logprob")
