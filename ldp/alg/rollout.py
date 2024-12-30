@@ -10,6 +10,7 @@ from aviary.core import Environment, Message
 
 from ldp.agent import Agent
 from ldp.data_structures import Trajectory, Transition
+from ldp.utils import format_error_details
 
 from .callbacks import Callback
 
@@ -42,19 +43,7 @@ def reraise_exc_as(reraise: type[CaughtError], enabled: bool) -> Iterator[None]:
         yield
     except Exception as e:
         if enabled:
-            # Add more detailed error information
-            error_details = f"{e!s}"
-            if hasattr(e, "response"):  # For HTTP errors
-                error_details += f"\nStatus code: {e.response.status_code}"
-                try:
-                    response_data = e.response.json()
-                    if "detail" in response_data:
-                        error_details += "\nServer Traceback:\n"
-                        for line in response_data["detail"].split("\n"):
-                            error_details += f"    {line}\n"
-                except Exception:
-                    error_details += f"\nResponse body: {e.response.text}"
-
+            error_details = format_error_details(e)
             logger.exception(f"Caught {reraise.exc_type} exception:\n{error_details}")
             raise reraise(e) from None
         raise
