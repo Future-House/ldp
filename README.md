@@ -53,32 +53,38 @@ You can just emit actions directly if you want:
 from aviary.core import ToolCall
 
 
-def get_asv(self, agent_state, obs):
+def get_asv(agent_state, obs):
     action = ToolCall.from_name("calculator_tool", x="3 * 2")
     return action, agent_state, 0
 ```
 
-but likely you want to do something more sophisticated. Here's how our `SimpleAgent` - which just relies on a single LLM call - works (typing omitted):
+but likely you want to do something more sophisticated.
+Here's how our `SimpleAgent` - which just relies on a single LLM call - works (typing omitted):
 
 ```py
-from ldp.graph import compute_graph
+from ldp.agent import Agent
+from ldp.graph import LLMCallOp
 
 
 class AgentState:
-    def __init__(messages, tools):
+    def __init__(self, messages, tools):
         self.messages = messages
         self.tools = tools
 
 
 class SimpleAgent(Agent):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.llm_call_op = LLMCallOp()
 
     async def init_state(self, tools):
         return AgentState([], tools)
 
-    @compute_graph()
     async def get_asv(self, agent_state, obs):
         action = await self.llm_call_op(
-            msgs=agent_state.messages + obs, tools=agent_state.tools
+            config={"model": "gpt-4o", "temperature": 0.1},
+            msgs=agent_state.messages + obs,
+            tools=agent_state.tools,
         )
         new_state = AgentState(
             messages=agent_state.messages + obs + [action], tools=agent_state.tools
