@@ -151,13 +151,8 @@ class TrajectoryFileCallback(Callback):
         """Create the filename for the output file."""
         return f"{traj_id}.jsonl"
 
-    async def before_transition(
-        self,
-        traj_id: str,
-        agent: Agent,
-        env: Environment,
-        agent_state: Any,
-        obs: list[Message],
+    async def after_transition(
+        self, traj_id: str, agent: Agent, env: Environment, transition: Transition
     ) -> None:
         if traj_id not in self.out_files:
             self.out_files[traj_id] = self.output_dir / self._make_filename(
@@ -165,10 +160,6 @@ class TrajectoryFileCallback(Callback):
             )
             self.env_files[traj_id] = self.output_dir / f"{traj_id}_env.json"
 
-    async def after_transition(
-        self, traj_id: str, agent: Agent, env: Environment, transition: Transition
-    ) -> None:
-        assert traj_id in self.out_files
         traj = self.trajs[traj_id]
         traj.steps.append(transition)
         # TODO: make this async?
