@@ -2,6 +2,8 @@ import logging
 import logging.config
 from typing import Any
 
+logger = logging.getLogger(__name__)
+
 
 def configure_stdout_logs(
     name: str = "root",
@@ -80,3 +82,31 @@ def discounted_returns(
         returns.append(r)
     returns.reverse()
     return returns
+
+
+def format_error_details(error: Exception) -> str:
+    """Format detailed error information from an exception.
+
+    Specially handles HTTP errors that have response attributes with status codes
+    and JSON details, but works with any exception type.
+
+    Args:
+        error: The exception to format
+
+    Returns:
+        A formatted error string with available details
+    """
+    error_details = f"{error!s}"
+
+    if hasattr(error, "response"):
+        error_details += f"\nStatus code: {error.response.status_code}"
+        try:
+            response_data = error.response.json()
+            if "detail" in response_data:
+                error_details += "\nServer Traceback:\n"
+                for line in response_data["detail"].split("\n"):
+                    error_details += f"    {line}\n"
+        except Exception:
+            error_details += f"\nResponse body: {error.response.text}"
+
+    return error_details
