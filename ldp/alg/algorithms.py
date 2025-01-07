@@ -196,10 +196,10 @@ async def evaluate_consensus(
 def compute_pass_at_k(n: int, c: int, k: int) -> float:
     """Compute an unbiased estimation for 'pass @ k'.
 
-    Source: https://doi.org/10.48550/arXiv.2107.03374
+    Source: https://doi.org/10.48550/arXiv.2107.03374's figure 3.
 
-    If there's multiple tasks, an aggregation used in https://doi.org/10.48550/arXiv.2407.21787
-    is averaging pass @ k across the tasks.
+    If there's multiple tasks, an aggregation used is averaging pass @ k across tasks,
+    per https://doi.org/10.48550/arXiv.2407.21787's equation 1.
 
     Args:
         n: Total number of samples.
