@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable, Hashable, Iterable, Sequence
 from typing import Any, Literal, TypeVar, cast
 
 import networkx as nx
+import numpy as np
 from aviary.core import Message, Tool, ToolRequestMessage, is_coroutine_callable, join
 
 from ldp.graph import OpResult
@@ -190,3 +191,25 @@ async def evaluate_consensus(
             ideal_count += consensus == ideal_answer_fn(group[0])
 
     return grouped_consensus, ideal_count / len(groups) if groups else 0.0
+
+
+def compute_pass_at_k(n: int, c: int, k: int) -> float:
+    """Compute an unbiased estimation for 'pass @ k'.
+
+    Source: https://doi.org/10.48550/arXiv.2107.03374
+
+    If there's multiple tasks, an aggregation used in https://doi.org/10.48550/arXiv.2407.21787
+    is averaging pass @ k across the tasks.
+
+    Args:
+        n: Total number of samples.
+        c: Number of correct (pass a verifier) samples.
+        k: k term (number of attempts) used in pass @ k.
+
+    Returns:
+        Unbiased estimation for pass @ k, the probability of getting at least one
+            successful outcome in k attempts.
+    """
+    if n - c < k:
+        return 1.0
+    return 1.0 - np.prod(1.0 - k / np.arange(n - c + 1, n + 1))

@@ -5,7 +5,7 @@ from aviary.core import DummyEnv
 from aviary.utils import MultipleChoiceQuestion
 
 from ldp.agent import SimpleAgent
-from ldp.alg import evaluate_consensus
+from ldp.alg import compute_pass_at_k, evaluate_consensus
 from ldp.utils import discounted_returns
 
 
@@ -107,3 +107,20 @@ async def test_evaluate_consensus() -> None:
         num_samples=5,
         seed=42,
     ) == (expected_consensus, 2 / 3)
+
+
+@pytest.mark.parametrize(
+    ("n", "c", "k", "expected"),
+    [
+        pytest.param(10, 10, 3, 1.0, id="all-correct-k>1"),
+        pytest.param(10, 10, 1, 1.0, id="all-correct-k=1"),
+        pytest.param(10, 0, 3, 0.0, id="all-incorrect-k>1"),
+        pytest.param(10, 0, 1, 0.0, id="all-incorrect-k=1"),
+        pytest.param(3, 1, 3, 1.0, id="n-c<k"),
+        (10, 5, 3, 1 - 1 / 12),
+        (2, 1, 1, 1 / 2),  # Match https://ai.stackexchange.com/a/40396
+        # SEE: https://github.com/parker-research/pass-at-k/blob/037c5d477486f9e95e1c21fc349576447cd6ce8b/tests/test_pass_at_k.py
+    ],
+)
+def test_compute_pass_at_k(n: int, c: int, k: int, expected: float) -> None:
+    assert compute_pass_at_k(n, c, k) == pytest.approx(expected)
