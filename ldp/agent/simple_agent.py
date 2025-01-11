@@ -20,6 +20,8 @@ class HiddenEnvStateMessage(EnvStateMessage):
 class SimpleAgentState(BaseModel):
     """Simple bucket for an Agent to access tools and store messages."""
 
+    model_config = ConfigDict(extra="forbid")
+
     tools: list[Tool] = Field(default_factory=list)
     messages: list[ToolRequestMessage | ToolResponseMessage | Message] = Field(
         default_factory=list
@@ -77,7 +79,7 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
 
     # Freeze to ensure the only mutation happens in either the agent state (which is
     # passed around) or in the internal Ops
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     llm_model: dict[str, Any] = Field(
         default={
