@@ -8,7 +8,6 @@ from .callbacks import (
     MeanMetricsCallback,
     RolloutDebugDumpCallback,
     StoreTrajectoriesCallback,
-    TrajectoryFileCallback,
     TrajectoryMetricsCallback,
     WandBLoggingCallback,
 )
@@ -41,7 +40,6 @@ __all__ = [
     "RolloutManager",
     "StoreTrajectoriesCallback",
     "TEnvCloneFn",
-    "TrajectoryFileCallback",
     "TrajectoryMetricsCallback",
     "TreeSearchRollout",
     "WandBLoggingCallback",

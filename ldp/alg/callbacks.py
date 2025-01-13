@@ -3,8 +3,7 @@ import logging
 import os
 import time
 from collections import defaultdict
-from collections.abc import Collection, Iterable, Sequence
-from contextlib import suppress
+from collections.abc import Callable, Collection, Iterable, Sequence
 from pathlib import Path
 from typing import Any, cast
 
@@ -123,53 +122,65 @@ class Callback:
 
 
 class StoreTrajectoriesCallback(Callback):
-    """Simple callback that stores train/eval trajectories in an in-memory list."""
-
-    def __init__(self):
-        self.train_trajectories = []
-        self.eval_trajectories = []
-
-    async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
-        self.train_trajectories.extend(trajectories)
-
-    async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
-        self.eval_trajectories.extend(trajectories)
-
-
-class TrajectoryFileCallback(Callback):
     """Callback that writes trajectories to a file."""
 
-    def __init__(self, output_dir: os.PathLike | str):
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+    @staticmethod
+    def default_serialize_env(env: Environment, transition: Transition) -> str | None:
+        """Export a JSON-serialized Frame if the transition is done."""
+        if not transition.done:
+            return None
+        try:
+            frame = env.export_frame()
+        except NotImplementedError:
+            return None  # Allow for envs that didn't implement export_frame()
+        return frame.model_dump_json(exclude={"state"}, indent=2)
 
-        self.out_files: dict[str, Path] = {}
+    def __init__(
+        self,
+        output_dir: str | os.PathLike | None = None,
+        serialize_env: Callable[
+            [Environment, Transition], str | None
+        ] = default_serialize_env,
+    ):
+        if output_dir is not None:
+            self.output_dir: Path | None = Path(output_dir)
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            self.output_dir = None
+
+        self.traj_files: dict[str, Path] = {}
         self.env_files: dict[str, Path] = {}
-        self.trajs: dict[str, Trajectory] = defaultdict(Trajectory)
+        self.traj_id_to_traj: dict[str, Trajectory] = defaultdict(Trajectory)
+        self.train_traj_ids: list[str | None] = []
+        self.eval_traj_ids: list[str | None] = []
+        self.serialize_env = serialize_env
 
-    def _make_filename(self, traj_id: str, env: Environment) -> str:
+    def _make_traj_filename(self, traj_id: str, env: Environment) -> str:
         """Create the filename for the output file."""
         return f"{traj_id}.jsonl"
 
     async def after_transition(
         self, traj_id: str, agent: Agent, env: Environment, transition: Transition
     ) -> None:
-        if traj_id not in self.out_files:
-            self.out_files[traj_id] = self.output_dir / self._make_filename(
+        if self.output_dir is not None and traj_id not in self.traj_files:
+            self.traj_files[traj_id] = self.output_dir / self._make_traj_filename(
                 traj_id, env
             )
             self.env_files[traj_id] = self.output_dir / f"{traj_id}_env.json"
 
-        traj = self.trajs[traj_id]
+        traj = self.traj_id_to_traj[traj_id]  # Get or create trajectory
         traj.steps.append(transition)
-        await traj.to_jsonl(self.out_files[traj_id])
-        if transition.done:
-            with (
-                # Do not fail if the environment didn't implement export_frame().
-                suppress(NotImplementedError),
-                Path(self.env_files[traj_id]).open("w") as f,
-            ):
-                f.write(env.export_frame().model_dump_json(exclude={"state"}, indent=2))
+        if self.output_dir is not None:
+            await traj.to_jsonl(self.traj_files[traj_id])
+            with self.env_files[traj_id].open("w") as f:
+                if to_dump := self.serialize_env(env, transition):
+                    f.write(to_dump)
+
+    async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
+        self.train_traj_ids.extend([t.traj_id for t in trajectories])
+
+    async def after_eval_step(self, trajectories: Sequence[Trajectory]) -> None:
+        self.eval_traj_ids.extend([t.traj_id for t in trajectories])
 
 
 class RolloutDebugDumpCallback(Callback):

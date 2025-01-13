@@ -149,7 +149,7 @@ async def test_offline_trainer(clear_ctx_at_each_iter: bool) -> None:
         callbacks=[traj_callback],
     )
     await evaluator.run()
-    assert len(traj_callback.eval_trajectories) == 1
+    assert len(traj_callback.eval_traj_ids) == 1
 
     count_callback = DummyCallback()
     metrics_callback = MeanMetricsCallback(train_dataset=dataset)
@@ -160,7 +160,11 @@ async def test_offline_trainer(clear_ctx_at_each_iter: bool) -> None:
         ),
         agent=agent,
         optimizer=opt,
-        train_trajectories=traj_callback.eval_trajectories,
+        train_trajectories=[
+            traj_callback.traj_id_to_traj[t_id]
+            for t_id in traj_callback.eval_traj_ids
+            if t_id
+        ],
         callbacks=[count_callback, metrics_callback],
     )
     await trainer.train()
