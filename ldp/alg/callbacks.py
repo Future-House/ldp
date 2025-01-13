@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -171,10 +172,16 @@ class StoreTrajectoriesCallback(Callback):
         traj = self.traj_id_to_traj[traj_id]  # Get or create trajectory
         traj.steps.append(transition)
         if self.output_dir is not None:
-            await traj.to_jsonl(self.traj_files[traj_id])
-            async with aiofiles.open(self.env_files[traj_id], "w") as f:
-                if to_dump := self.serialize_env(env, transition):
-                    await f.write(to_dump)
+
+            async def possibly_dump_env() -> None:
+                async with aiofiles.open(self.env_files[traj_id], "w") as f:
+                    env_or_none = self.serialize_env(env, transition)
+                    if env_or_none is not None:
+                        await f.write(env_or_none)
+
+            await asyncio.gather(
+                possibly_dump_env(), traj.to_jsonl(self.traj_files[traj_id])
+            )
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
         self.train_traj_ids.extend([t.traj_id for t in trajectories])
