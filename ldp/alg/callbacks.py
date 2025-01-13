@@ -162,8 +162,7 @@ class TrajectoryFileCallback(Callback):
 
         traj = self.trajs[traj_id]
         traj.steps.append(transition)
-        # TODO: make this async?
-        traj.to_jsonl(self.out_files[traj_id])
+        await traj.to_jsonl(self.out_files[traj_id])
         if transition.done:
             with (
                 # Do not fail if the environment didn't implement export_frame().
