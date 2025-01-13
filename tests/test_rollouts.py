@@ -75,7 +75,7 @@ async def test_rollout(training: bool) -> None:
     # Let's check we can serialize and deserialize the trajectories
     for traj in trajs:
         with tempfile.NamedTemporaryFile(suffix=".jsonl") as f:
-            traj.to_jsonl(filename=f.name)
+            await traj.to_jsonl(filename=f.name)
             rehydrated_traj = Trajectory.from_jsonl(f.name)
             assert traj.traj_id == rehydrated_traj.traj_id
 
