@@ -172,9 +172,9 @@ class StoreTrajectoriesCallback(Callback):
         traj.steps.append(transition)
         if self.output_dir is not None:
             await traj.to_jsonl(self.traj_files[traj_id])
-            with self.env_files[traj_id].open("w") as f:
+            async with aiofiles.open(self.env_files[traj_id], "w") as f:
                 if to_dump := self.serialize_env(env, transition):
-                    f.write(to_dump)
+                    await f.write(to_dump)
 
     async def after_train_step(self, trajectories: Sequence[Trajectory]) -> None:
         self.train_traj_ids.extend([t.traj_id for t in trajectories])
