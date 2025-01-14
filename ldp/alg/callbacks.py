@@ -134,7 +134,7 @@ class StoreTrajectoriesCallback(Callback):
             frame = env.export_frame()
         except NotImplementedError:
             return None  # Allow for envs that didn't implement export_frame()
-        return frame.model_dump_json(exclude={"state"}, indent=2)
+        return frame.model_dump_json(indent=2)
 
     def __init__(
         self,
