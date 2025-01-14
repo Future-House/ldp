@@ -82,7 +82,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
 
     llm_model: dict[str, Any] = Field(
         default={
-            "model": CommonLLMNames.OPENAI_BASELINE.value,
+            "model": CommonLLMNames.GPT_4O.value,
             "temperature": 0.1,
             "logprobs": True,
             "top_logprobs": 1,
