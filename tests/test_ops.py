@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 import tree
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
+from llmclient import CommonLLMNames
 from llmclient import MultipleCompletionLLMModel as LLMModel
 
 from ldp.graph import (
@@ -173,8 +174,7 @@ class TestLLMCallOp:
     @pytest.mark.asyncio
     @pytest.mark.parametrize("temperature", [0.0, 0.5, 1.0])
     async def test_compute_logprob(self, temperature) -> None:
-        model_name = "gpt-4o-mini"
-        config = {"model": model_name, "temperature": temperature}
+        config = {"model": CommonLLMNames.OPENAI_TEST.value, "temperature": temperature}
         llm_op = LLMCallOp()
         output = await llm_op(config, msgs=[Message(content="Hello")])
         logp = llm_op.ctx.get(output.call_id, "logprob")

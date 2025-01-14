@@ -8,6 +8,7 @@ from aviary.core import (
     ToolRequestMessage,
     ToolResponseMessage,
 )
+from llmclient import CommonLLMNames
 from pydantic import BaseModel, ConfigDict, Field
 from tenacity import (
     Future,
@@ -29,7 +30,7 @@ from ldp.graph.modules.react import (
     ToolDescriptionMethods,
 )
 
-from . import DEFAULT_LLM_COMPLETION_TIMEOUT, DefaultLLMModelNames
+from . import DEFAULT_LLM_COMPLETION_TIMEOUT
 from .agent import Agent
 from .simple_agent import SimpleAgentState
 
@@ -81,7 +82,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
 
     llm_model: dict[str, Any] = Field(
         default={
-            "model": DefaultLLMModelNames.OPENAI.value,
+            "model": CommonLLMNames.OPENAI_BASELINE.value,
             "temperature": 0.1,
             "logprobs": True,
             "top_logprobs": 1,

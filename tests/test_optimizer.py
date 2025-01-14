@@ -7,6 +7,7 @@ import pytest
 import tenacity
 import tree
 from aviary.core import Message
+from llmclient import CommonLLMNames
 from llmclient import MultipleCompletionLLMModel as LLMModel
 from pydantic import BaseModel, Field, JsonValue
 
@@ -40,7 +41,6 @@ from ldp.graph.gradient_estimators import (
 )
 from ldp.graph.ops import GradInType
 from ldp.llms.prompts import append_to_sys
-from tests import CILLMModelNames
 from tests.conftest import VCR_DEFAULT_MATCH_ON
 
 
@@ -297,7 +297,7 @@ class TestMemoryOpt:
 
         This test is loosely based on Reflexion (https://arxiv.org/abs/2303.11366).
         """
-        memory_distiller = LLMModel(config={"model": CILLMModelNames.OPENAI.value})
+        memory_distiller = LLMModel(config={"model": CommonLLMNames.OPENAI_TEST.value})
 
         class LessonEntry(BaseModel):
             """Entry for a lesson created from some example data."""
