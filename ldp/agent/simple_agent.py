@@ -79,7 +79,7 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
 
     # Freeze to ensure the only mutation happens in either the agent state (which is
     # passed around) or in the internal Ops
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True)
 
     llm_model: dict[str, Any] = Field(
         default={
