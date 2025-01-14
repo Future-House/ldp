@@ -8,6 +8,7 @@ from contextlib import suppress
 from typing import Any, ClassVar, Self, cast
 from uuid import UUID
 
+import aiofiles
 import networkx as nx
 from aviary.core import Message, ToolRequestMessage, ToolResponseMessage, join
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
@@ -112,10 +113,11 @@ class Trajectory(BaseModel):
             return False
         return self.steps[-1].done
 
-    def to_jsonl(self, filename: str | os.PathLike) -> None:
-        with open(filename, "w") as f:
-            f.write(json.dumps(self.traj_id) + "\n")
-            f.writelines(s.model_dump_json() + "\n" for s in self.steps)
+    async def to_jsonl(self, filename: str | os.PathLike) -> None:
+        async with aiofiles.open(filename, "w") as f:
+            await f.write(json.dumps(self.traj_id) + "\n")
+            for s in self.steps:
+                await f.write(s.model_dump_json() + "\n")
 
     @classmethod
     def from_jsonl(cls, filename: str | os.PathLike) -> Self:

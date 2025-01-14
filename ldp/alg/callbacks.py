@@ -1,10 +1,10 @@
+import asyncio
 import json
 import logging
 import os
 import time
 from collections import defaultdict
-from collections.abc import Collection, Iterable, Sequence
-from contextlib import suppress
+from collections.abc import Callable, Collection, Iterable, Sequence
 from pathlib import Path
 from typing import Any, cast
 
@@ -139,38 +139,58 @@ class StoreTrajectoriesCallback(Callback):
 class TrajectoryFileCallback(Callback):
     """Callback that writes trajectories to a file."""
 
-    def __init__(self, output_dir: os.PathLike | str):
+    @staticmethod
+    def default_serialize_env(env: Environment, transition: Transition) -> str | None:
+        """Export a JSON-serialized Frame if the transition is done."""
+        if not transition.done:
+            return None
+        try:
+            frame = env.export_frame()
+        except NotImplementedError:
+            return None  # Allow for envs that didn't implement export_frame()
+        return frame.model_dump_json(exclude={"state"}, indent=2)
+
+    def __init__(
+        self,
+        output_dir: str | os.PathLike,
+        serialize_env: Callable[
+            [Environment, Transition], str | None
+        ] = default_serialize_env,
+    ):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        self.out_files: dict[str, Path] = {}
+        self.traj_files: dict[str, Path] = {}
         self.env_files: dict[str, Path] = {}
         self.trajs: dict[str, Trajectory] = defaultdict(Trajectory)
 
-    def _make_filename(self, traj_id: str, env: Environment) -> str:
+        self.serialize_env = serialize_env
+
+    def _make_traj_filename(self, traj_id: str, env: Environment) -> str:
         """Create the filename for the output file."""
         return f"{traj_id}.jsonl"
 
     async def after_transition(
         self, traj_id: str, agent: Agent, env: Environment, transition: Transition
     ) -> None:
-        if traj_id not in self.out_files:
-            self.out_files[traj_id] = self.output_dir / self._make_filename(
+        if traj_id not in self.traj_files:
+            self.traj_files[traj_id] = self.output_dir / self._make_traj_filename(
                 traj_id, env
             )
             self.env_files[traj_id] = self.output_dir / f"{traj_id}_env.json"
 
         traj = self.trajs[traj_id]
         traj.steps.append(transition)
-        # TODO: make this async?
-        traj.to_jsonl(self.out_files[traj_id])
-        if transition.done:
-            with (
-                # Do not fail if the environment didn't implement export_frame().
-                suppress(NotImplementedError),
-                Path(self.env_files[traj_id]).open("w") as f,
-            ):
-                f.write(env.export_frame().model_dump_json(exclude={"state"}, indent=2))
+
+        async def possibly_dump_env() -> None:
+            async with aiofiles.open(self.env_files[traj_id], "w") as f:
+                env_or_none = self.serialize_env(env, transition)
+                if env_or_none is not None:
+                    await f.write(env_or_none)
+
+        await asyncio.gather(
+            possibly_dump_env(), traj.to_jsonl(self.traj_files[traj_id])
+        )
 
 
 class RolloutDebugDumpCallback(Callback):
