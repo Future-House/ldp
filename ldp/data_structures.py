@@ -88,6 +88,7 @@ class Transition(BaseModel):
         return bool(self.metadata.get("exception"))
 
     def model_dump_json(self, *, indent: int | None = None, **kwargs) -> str:
+        # TODO: decide if we should override Transition.model_dump() instead.
         # The kwargs for model_dump are the same as super().model_dump_json,
         # with the exception of indent.
         dump = self.model_dump(**kwargs)

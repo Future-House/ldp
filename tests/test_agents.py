@@ -11,13 +11,13 @@ import pytest
 from aviary.core import DummyEnv, Message, Tool, ToolCall, ToolRequestMessage
 from aviary.message import EnvStateMessage
 from httpx import ASGITransport, AsyncClient
+from llmclient import CommonLLMNames
 from llmclient import MultipleCompletionLLMModel as LLMModel
 from pydantic import BaseModel, Field
 
 from ldp.agent import (
     Agent,
     AgentConfig,
-    DefaultLLMModelNames,
     HTTPAgentClient,
     MemoryAgent,
     ReActAgent,
@@ -36,7 +36,6 @@ from ldp.graph.modules import (
     ToolDescriptionMethods,
 )
 
-from . import CILLMModelNames
 from .conftest import IN_GITHUB_ACTIONS, VCR_DEFAULT_MATCH_ON
 
 HERE = Path(__file__).parent
@@ -118,7 +117,8 @@ class TestAgentState:
 
 class TestSimpleAgent:
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, CILLMModelNames.OPENAI.value]
+        "model_name",
+        [CommonLLMNames.ANTHROPIC_TEST.value, CommonLLMNames.OPENAI_TEST.value],
     )
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -153,7 +153,8 @@ class TestSimpleAgent:
             raise RuntimeError("Could not find LLMCallOp in compute graph")
 
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, CILLMModelNames.OPENAI.value]
+        "model_name",
+        [CommonLLMNames.ANTHROPIC_TEST.value, CommonLLMNames.OPENAI_TEST.value],
     )
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -232,7 +233,7 @@ class TestSimpleAgent:
 
 class TestMemoryAgent:
     # # On 5/14/2024, claude 3 opus would not follow its past memories
-    @pytest.mark.parametrize("model_name", [CILLMModelNames.OPENAI.value])
+    @pytest.mark.parametrize("model_name", [CommonLLMNames.OPENAI_TEST.value])
     @pytest.mark.asyncio
     @pytest.mark.vcr
     async def test_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
@@ -325,8 +326,8 @@ class TestReActAgent:
     @pytest.mark.parametrize(
         ("single_prompt", "model_name"),
         [
-            (True, CILLMModelNames.ANTHROPIC.value),
-            (False, CILLMModelNames.ANTHROPIC.value),
+            (True, CommonLLMNames.ANTHROPIC_TEST.value),
+            (False, CommonLLMNames.ANTHROPIC_TEST.value),
             (True, "gpt-4-turbo"),
             (False, "gpt-4o"),
         ],
@@ -376,7 +377,7 @@ class TestReActAgent:
         agent = ReActAgent(
             single_prompt=single_prompt,
             llm_model={
-                "model": DefaultLLMModelNames.OPENAI.value,
+                "model": CommonLLMNames.OPENAI_TEST.value,
                 # If tools are provided, don't allow it to make parallel tool calls, since
                 # we want to force longer trajectories. In single_prompt mode, parallel tool
                 # calling is not possible, and OpenAI requires parallel_tool_calls=None
@@ -421,8 +422,8 @@ class TestReActAgent:
     @pytest.mark.parametrize(
         ("single_prompt", "model_name"),
         [
-            (True, CILLMModelNames.ANTHROPIC.value),
-            (False, CILLMModelNames.ANTHROPIC.value),
+            (True, CommonLLMNames.ANTHROPIC_TEST.value),
+            (False, CommonLLMNames.ANTHROPIC_TEST.value),
             (True, "gpt-4-turbo"),
             (False, "gpt-4o"),
         ],

@@ -4,12 +4,13 @@ from typing import Any, Self, cast
 
 from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
 from aviary.message import EnvStateMessage
+from llmclient import CommonLLMNames
 from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.graph import ConfigOp, LLMCallOp, OpResult, compute_graph
 from ldp.llms import prepend_sys
 
-from . import DEFAULT_LLM_COMPLETION_TIMEOUT, DefaultLLMModelNames
+from . import DEFAULT_LLM_COMPLETION_TIMEOUT
 from .agent import Agent
 
 
@@ -19,6 +20,8 @@ class HiddenEnvStateMessage(EnvStateMessage):
 
 class SimpleAgentState(BaseModel):
     """Simple bucket for an Agent to access tools and store messages."""
+
+    model_config = ConfigDict(extra="forbid")
 
     tools: list[Tool] = Field(default_factory=list)
     messages: list[ToolRequestMessage | ToolResponseMessage | Message] = Field(
@@ -81,7 +84,7 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
 
     llm_model: dict[str, Any] = Field(
         default={
-            "model": DefaultLLMModelNames.OPENAI.value,
+            "model": CommonLLMNames.GPT_4O.value,
             "temperature": 0.1,
             "timeout": DEFAULT_LLM_COMPLETION_TIMEOUT,
         },
