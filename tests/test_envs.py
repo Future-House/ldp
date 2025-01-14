@@ -12,10 +12,9 @@ from aviary.core import (
     ToolRequestMessage,
     ToolResponseMessage,
 )
+from llmclient import CommonLLMNames
 
 from ldp.agent import SimpleAgent
-
-from . import CILLMModelNames
 
 
 class ParallelizedDummyEnv(DummyEnv):
@@ -105,7 +104,7 @@ class TestParallelism:
         )
 
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-4-turbo"]
+        "model_name", [CommonLLMNames.ANTHROPIC_TEST.value, "gpt-4-turbo"]
     )
     @pytest.mark.asyncio
     async def test_exec_tool_calls_handling(self, model_name: str) -> None:

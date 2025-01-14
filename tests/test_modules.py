@@ -2,6 +2,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
+from llmclient import CommonLLMNames
 from pytest_subtests import SubTests
 
 from ldp.agent import ReActAgent
@@ -14,15 +15,16 @@ from ldp.graph.modules import (
     parse_message,
 )
 
-from . import CILLMModelNames
-
 
 @pytest.mark.asyncio
 @pytest.mark.vcr
 async def test_reflect_module() -> None:
     config = ReflectModuleConfig(
-        llm_model={"model": CILLMModelNames.ANTHROPIC.value, "temperature": 0}
-    )  # Lower temperature for more deterministic responses
+        llm_model={
+            "model": CommonLLMNames.ANTHROPIC_TEST.value,
+            "temperature": 0,  # Lower temperature for more deterministic responses
+        }
+    )
     reflect_module = ReflectModule(config)
     context = "I am happy. How do I feel?"
     response = "You are sad."
