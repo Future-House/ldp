@@ -291,14 +291,14 @@ class OnlineTrainer:
 class OfflineTrainerConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    batch_size: int
+    batch_size: int = Field(ge=1)
     update_every: int = Field(
         default=1,
         description="Number of training iterations to run before updating the model.",
-        ge=1,
+        ge=0,
     )
     clear_ctx_at_each_iter: bool = False
-    num_epochs: int = 1
+    num_epochs: int = Field(default=1, ge=0)
 
 
 class OfflineTrainer:
