@@ -14,7 +14,7 @@ from ldp.agent import Agent
 from ldp.alg.optimizer import Optimizer
 from ldp.data_structures import Trajectory
 from ldp.graph import OpResult, eval_mode, train_mode
-from ldp.shims import tqdm, trange
+from ldp.shims import tqdm
 
 from .callbacks import Callback, ClearContextCallback
 from .rollout import EnvError, RolloutManager, reraise_exc_as
@@ -298,7 +298,7 @@ class OfflineTrainerConfig(BaseModel):
         ge=1,
     )
     clear_ctx_at_each_iter: bool = False
-    # TODO: add some concept of eval loops
+    num_epochs: int = 1
 
 
 class OfflineTrainer:
@@ -324,49 +324,53 @@ class OfflineTrainer:
         random.shuffle(self.train_trajectories)
 
         full_batch = len(self.train_trajectories) <= self.config.batch_size
+        num_total_steps = self.config.num_epochs * (
+            1
+            if full_batch
+            else (len(self.train_trajectories) // self.config.batch_size)
+        )
 
-        if full_batch:
-            # Separating out the full batch case lets the user run a single update()
-            # step even if train_trajectories is empty. This can be useful if the
-            # optimizer is pre-populated with offline training data, for example.
-            batch = self.train_trajectories
+        with tqdm(total=num_total_steps, desc="Training Iterations", ncols=0) as pbar:
+            for _ in range(self.config.num_epochs):
+                if full_batch:
+                    # Separating out the full batch case lets the user run a single update()
+                    # step even if train_trajectories is empty. This can be useful if the
+                    # optimizer is pre-populated with offline training data, for example.
+                    batch = self.train_trajectories
 
-            self.optimizer.aggregate(batch, show_pbar=True)
-            await self.optimizer.update()
-
-            await asyncio.gather(*[
-                callback.after_update() for callback in self.callbacks
-            ])
-
-            await asyncio.gather(*[
-                callback.after_train_step(batch) for callback in self.callbacks
-            ])
-
-        else:
-            for training_step, i_batch_start in enumerate(
-                trange(
-                    0,
-                    len(self.train_trajectories),
-                    self.config.batch_size,
-                    desc="Training Iterations",
-                    ncols=0,
-                )
-            ):
-                batch = self.train_trajectories[
-                    i_batch_start : i_batch_start + self.config.batch_size
-                ]
-
-                self.optimizer.aggregate(batch)
-
-                if (training_step + 1) % self.config.update_every == 0:
+                    self.optimizer.aggregate(batch, show_pbar=True)
                     await self.optimizer.update()
+
                     await asyncio.gather(*[
                         callback.after_update() for callback in self.callbacks
                     ])
 
-                await asyncio.gather(*[
-                    callback.after_train_step(batch) for callback in self.callbacks
-                ])
+                    await asyncio.gather(*[
+                        callback.after_train_step(batch) for callback in self.callbacks
+                    ])
+                    pbar.update()
+
+                else:
+                    for training_step, i_batch_start in enumerate(
+                        range(0, len(self.train_trajectories), self.config.batch_size)
+                    ):
+                        batch = self.train_trajectories[
+                            i_batch_start : i_batch_start + self.config.batch_size
+                        ]
+
+                        self.optimizer.aggregate(batch)
+
+                        if (training_step + 1) % self.config.update_every == 0:
+                            await self.optimizer.update()
+                            await asyncio.gather(*[
+                                callback.after_update() for callback in self.callbacks
+                            ])
+
+                        await asyncio.gather(*[
+                            callback.after_train_step(batch)
+                            for callback in self.callbacks
+                        ])
+                        pbar.update()
 
 
 async def _close_envs(envs: Sequence[Environment], catch_env_failures: bool):
