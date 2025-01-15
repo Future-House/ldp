@@ -337,7 +337,11 @@ class TransitionTree:
             # step.metadata["advantage"] = step.value - state_values[parent_id]
 
     def remove_nonterminal_branches(self) -> TransitionTree:
-        """Creates a new tree with only branches that end in terminal states (done=True)."""
+        """Creates a new tree with only branches that end in terminal states (done=True).
+
+        TODO: refactor this to not use trajectories. See the note in merge_identical_nodes
+        for reasoning.
+        """
         new_tree = TransitionTree(self.root_id)
         for trajectory in self.get_trajectories():
             if not trajectory.done:
@@ -347,11 +351,15 @@ class TransitionTree:
 
             for step in trajectory.steps:
                 step_id = ":".join(traj_id_parts[: step.timestep + 2])
-                new_tree.add_transition(
-                    step_id=step_id,
-                    step=step,
-                    weight=self.get_weight(step_id),
-                )
+                if step_id not in new_tree.tree:
+                    # Traversing the tree by traversing trajectories means we may
+                    # visit early nodes multiple times. Only add if we haven't visited
+                    # already.
+                    new_tree.add_transition(
+                        step_id=step_id,
+                        step=step,
+                        weight=self.get_weight(step_id),
+                    )
 
         return new_tree
 
@@ -366,6 +374,10 @@ class TransitionTree:
         ] = join,
     ) -> TransitionTree:
         """Merge nodes with identical (state, observation, action)s. Returns a new tree.
+
+        NOTE: the step IDs of nodes will lose their lineage after merging nodes. For example,
+        the parent of ROOT:0:0 may not be ROOT:0 if ROOT:0 got merged with ROOT:1. Algorithms
+        that rely on step IDs (like remove_nonterminal_branches) will not work as expected.
 
         Args:
             agent_state_hash_fn: A function that returns a hashable representation
