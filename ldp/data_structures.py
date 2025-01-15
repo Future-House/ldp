@@ -337,7 +337,7 @@ class TransitionTree:
             # step.metadata["advantage"] = step.value - state_values[parent_id]
 
     def remove_nonterminal_branches(self) -> TransitionTree:
-        """Creates a new tree with only branches that end in terminal states."""
+        """Creates a new tree with only branches that end in terminal states (done=True)."""
         new_tree = TransitionTree(self.root_id)
         for trajectory in self.get_trajectories():
             if not trajectory.done:
