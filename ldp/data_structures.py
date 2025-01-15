@@ -192,7 +192,7 @@ class TransitionTree:
         """Add a transition to the tree.
 
         Args:
-            step_id: A unique identifier for the root node of the tree.
+            step_id: A unique identifier for this node in the tree.
                 The expected form of the step ID is "{parent step ID}:{step index}".
             step: The transition to add.
             weight: Weight of the transition. Defaults to 1.0.
@@ -335,6 +335,25 @@ class TransitionTree:
             # TODO: switch to the following, instead of overwriting step.value.
             # See docstring for explanation.
             # step.metadata["advantage"] = step.value - state_values[parent_id]
+
+    def remove_nonterminal_branches(self) -> TransitionTree:
+        """Creates a new tree with only branches that end in terminal states."""
+        new_tree = TransitionTree(self.root_id)
+        for trajectory in self.get_trajectories():
+            if not trajectory.done:
+                continue
+
+            traj_id_parts = cast(str, trajectory.traj_id).split(":")
+
+            for step in trajectory.steps:
+                step_id = ":".join(traj_id_parts[: step.timestep + 2])
+                new_tree.add_transition(
+                    step_id=step_id,
+                    step=step,
+                    weight=self.get_weight(step_id),
+                )
+
+        return new_tree
 
     def merge_identical_nodes(
         self,
