@@ -192,7 +192,7 @@ class TransitionTree:
         """Add a transition to the tree.
 
         Args:
-            step_id: A unique identifier for the root node of the tree.
+            step_id: A unique identifier for this node in the tree.
                 The expected form of the step ID is "{parent step ID}:{step index}".
             step: The transition to add.
             weight: Weight of the transition. Defaults to 1.0.
@@ -336,6 +336,33 @@ class TransitionTree:
             # See docstring for explanation.
             # step.metadata["advantage"] = step.value - state_values[parent_id]
 
+    def remove_nonterminal_branches(self) -> TransitionTree:
+        """Creates a new tree with only branches that end in terminal states (done=True).
+
+        TODO: refactor this to not use trajectories. See the note in merge_identical_nodes
+        for reasoning.
+        """
+        new_tree = TransitionTree(self.root_id)
+        for trajectory in self.get_trajectories():
+            if not trajectory.done:
+                continue
+
+            traj_id_parts = cast(str, trajectory.traj_id).split(":")
+
+            for step in trajectory.steps:
+                step_id = ":".join(traj_id_parts[: step.timestep + 2])
+                if step_id not in new_tree.tree:
+                    # Traversing the tree by traversing trajectories means we may
+                    # visit early nodes multiple times. Only add if we haven't visited
+                    # already.
+                    new_tree.add_transition(
+                        step_id=step_id,
+                        step=step,
+                        weight=self.get_weight(step_id),
+                    )
+
+        return new_tree
+
     def merge_identical_nodes(
         self,
         agent_state_hash_fn: Callable[[Any], Hashable],
@@ -347,6 +374,10 @@ class TransitionTree:
         ] = join,
     ) -> TransitionTree:
         """Merge nodes with identical (state, observation, action)s. Returns a new tree.
+
+        NOTE: the step IDs of nodes will lose their lineage after merging nodes. For example,
+        the parent of ROOT:0:0 may not be ROOT:0 if ROOT:0 got merged with ROOT:1. Algorithms
+        that rely on step IDs (like remove_nonterminal_branches) will not work as expected.
 
         Args:
             agent_state_hash_fn: A function that returns a hashable representation

@@ -157,6 +157,7 @@ async def test_offline_trainer(clear_ctx_at_each_iter: bool) -> None:
         config=OfflineTrainerConfig(
             batch_size=1,
             clear_ctx_at_each_iter=clear_ctx_at_each_iter,
+            num_epochs=2,
         ),
         agent=agent,
         optimizer=opt,
@@ -166,11 +167,11 @@ async def test_offline_trainer(clear_ctx_at_each_iter: bool) -> None:
     await trainer.train()
 
     assert count_callback.counters == {
-        "after_train_step": 1,
+        "after_train_step": 2,
         "after_eval_step": 0,
         "after_eval_loop": 0,
-        "after_update": 1,
-        "num_train_trajectories": 1,
+        "after_update": 2,
+        "num_train_trajectories": 2,
     }
     assert metrics_callback.train_means["failures"] < 1, "Training should work"
 
