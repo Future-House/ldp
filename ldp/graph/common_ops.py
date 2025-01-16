@@ -11,6 +11,7 @@ from functools import lru_cache
 from typing import Generic, TypeVar, cast, overload
 
 import numpy as np
+import tenacity
 import tree
 from aviary.core import Message, Tool, ToolRequestMessage, is_coroutine_callable
 from llmclient import (
@@ -201,12 +202,21 @@ class PromptOp(FxnOp[str]):
         return super(FxnOp, self).__repr__()
 
 
+class ResponseValidationError(Exception):
+    """Raised when a response from the LLM does not pass user-specified validator."""
+
+
 class LLMCallOp(Op[Message]):
     """An operation for LLM calls interaction."""
 
-    def __init__(self, num_samples_logprob_estimate: int = 0) -> None:
+    def __init__(
+        self,
+        num_samples_logprob_estimate: int = 0,
+        response_validator: Callable[[LLMResult], bool | Awaitable[bool]] | None = None,
+    ) -> None:
         super().__init__()
         self.num_samples_partition_estimate = num_samples_logprob_estimate
+        self.response_validator = response_validator
 
     @overload
     async def forward(
@@ -253,8 +263,12 @@ class LLMCallOp(Op[Message]):
             # if no tools are provided, tool_choice must be 'none'
             tool_choice = "none"
 
-        result = await model.call_single(
-            messages=msgs, tools=tools, tool_choice=tool_choice
+        result = await self._call_single_and_maybe_validate(
+            model=model,
+            num_retries=config.get("num_retries", 0),
+            messages=msgs,
+            tools=tools,
+            tool_choice=tool_choice,
         )
         if result.messages is None:
             raise ValueError("No messages returned")
@@ -282,6 +296,34 @@ class LLMCallOp(Op[Message]):
         self.ctx.update(call_id, "logprob", logprob)
 
         return result.messages[0]
+
+    async def _call_single_and_maybe_validate(
+        self, model: LLMModel, num_retries: int, **kwargs
+    ) -> LLMResult:
+        if not self.response_validator:
+            # If a response validator is not supplied, then we should not do any retries here - leave
+            # that for LiteLLM to handle.
+            return await model.call_single(**kwargs)
+
+        @tenacity.retry(
+            retry=tenacity.retry_if_exception_type(ResponseValidationError),
+            stop=tenacity.stop_after_attempt(num_retries),
+            wait=tenacity.wait_fixed(1),
+        )
+        async def call_and_validate() -> LLMResult:
+            result = await model.call_single(**kwargs)
+
+            validated = cast(Callable, self.response_validator)(result)
+            if is_coroutine_callable(self.response_validator):
+                validated = await validated
+            if not validated:
+                # Don't provide more info here - user can control error logging
+                # in the validator if desired.
+                raise ResponseValidationError
+
+            return result
+
+        return await call_and_validate()
 
     async def compute_logprob(
         self,
@@ -354,6 +396,28 @@ class LLMCallOp(Op[Message]):
         ]
         # filter out the None values
         return [(e, w) for e, w in examples if e is not None]
+
+    @staticmethod
+    def anthropic_response_validator(response: LLMResult) -> bool:
+        """Sometimes Anthropic models respond with garbled tool calls.
+
+        Specifically, parameters get injected into the tool name. This obviously
+        breaks the tool call, but also messes up the subsequent tool response message.
+        So instead, check here and force a retry if configured.
+        """
+        if response.messages is None:
+            return True
+
+        for msg in response.messages:
+            if not isinstance(msg, ToolRequestMessage):
+                continue
+
+            for tc in msg.tool_calls:
+                if any(x in tc.function.name for x in "{}<>"):
+                    logger.error(f"Found bad tool call: {tc}")
+                    return False
+
+        return True
 
 
 class MemoryOp(Op[list[Memory]]):
