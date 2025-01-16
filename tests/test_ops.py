@@ -164,7 +164,7 @@ class TestLLMCallOp:
     async def test_empty_tools(self) -> None:
         llm_call_op = LLMCallOp()
         message_result = await llm_call_op(
-            LLMModel.model_fields["config"].default,
+            LLMModel.model_fields["config"].default_factory(),  # type: ignore[call-arg, misc]
             msgs=[Message(content="Hello")],
             tools=[],
         )
