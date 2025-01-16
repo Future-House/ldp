@@ -94,18 +94,18 @@ async def test_consensus_evaluation() -> None:
     assert await bulk_evaluate_consensus(
         data_with_several_groups,
         grouping_fn=lambda x: x[0].question,
-        extract_answer_fn=operator.itemgetter(1),
         num_samples=5,
         seed=42,
+        extract_answer_fn=operator.itemgetter(1),
     ) == (expected_consensus, 0.0)
     # Check accuracy is present when we can get an ideal answer
     assert await bulk_evaluate_consensus(
         data_with_several_groups,
         grouping_fn=lambda x: x[0].question,
-        extract_answer_fn=operator.itemgetter(1),
         ideal_answer_fn=lambda x: x[0].ideal_answer,
         num_samples=5,
         seed=42,
+        extract_answer_fn=operator.itemgetter(1),
     ) == (expected_consensus, 2 / 3)
 
 
