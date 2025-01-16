@@ -85,28 +85,37 @@ async def test_consensus_evaluation() -> None:
     ]
     # NOTE: this consensus is sensitive to seed
     expected_consensus = {
-        question_1.question: [("42", 3), ("11", 1), ("-84", 1)],
-        question_2.question: [("apple", 4), ("brownie", 1)],
-        question_3.question: [("1", 3), ("2", 2)],
+        question_1.question: ([("42", 3), ("11", 1), ("-84", 1)], 3 / 5, 0.2190890),
+        question_2.question: ([("apple", 4), ("brownie", 1)], 4 / 5, 0.1788854),
+        question_3.question: ([("1", 3), ("2", 2)], 3 / 5, 0.2190890),
     }
 
     # Check accuracy is 0% without an ideal answer
-    assert await bulk_evaluate_consensus(
+    groups, accuracy = await bulk_evaluate_consensus(
         data_with_several_groups,
         grouping_fn=lambda x: x[0].question,
         num_samples=5,
         seed=42,
         extract_answer_fn=operator.itemgetter(1),
-    ) == (expected_consensus, 0.0)
+    )
+    assert len(groups) == len(expected_consensus)
+    for q, (consensus, acc_mean, acc_ste) in expected_consensus.items():
+        assert groups[q] == (consensus, pytest.approx(acc_mean), pytest.approx(acc_ste))
+    assert accuracy == 0.0, "Can't compute accuracy without an ideal answer"
+
     # Check accuracy is present when we can get an ideal answer
-    assert await bulk_evaluate_consensus(
+    groups, accuracy = await bulk_evaluate_consensus(
         data_with_several_groups,
         grouping_fn=lambda x: x[0].question,
         ideal_answer_fn=lambda x: x[0].ideal_answer,
         num_samples=5,
         seed=42,
         extract_answer_fn=operator.itemgetter(1),
-    ) == (expected_consensus, 2 / 3)
+    )
+    assert len(groups) == len(expected_consensus)
+    for q, (consensus, acc_mean, acc_ste) in expected_consensus.items():
+        assert groups[q] == (consensus, pytest.approx(acc_mean), pytest.approx(acc_ste))
+    assert accuracy == 2 / 3
 
 
 @pytest.mark.parametrize(
