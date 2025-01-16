@@ -5,7 +5,7 @@ from aviary.core import DummyEnv
 from aviary.utils import MultipleChoiceQuestion
 
 from ldp.agent import SimpleAgent
-from ldp.alg import compute_pass_at_k, evaluate_consensus
+from ldp.alg import bulk_evaluate_consensus, compute_pass_at_k
 from ldp.utils import discounted_returns
 
 
@@ -39,7 +39,7 @@ async def test_rollout_and_discounting(dummy_env: DummyEnv) -> None:
 
 
 @pytest.mark.asyncio
-async def test_evaluate_consensus() -> None:
+async def test_consensus_evaluation() -> None:
     # We have two questions, so let's group based on question
     question_1 = MultipleChoiceQuestion(
         question="What is the meaning of life?",
@@ -57,7 +57,7 @@ async def test_evaluate_consensus() -> None:
         ideal_answer="8",
     )
     data_with_several_groups: list[tuple[MultipleChoiceQuestion, str]] = [
-        # Correct consensus
+        # Has consensus and it was correct
         (question_1, "-84"),
         (question_1, "11"),
         (question_1, "11"),
@@ -68,7 +68,7 @@ async def test_evaluate_consensus() -> None:
         (question_1, "42"),
         (question_1, "42"),
         (question_1, "42"),
-        # Correct consensus
+        # Has consensus and it was correct
         (question_2, "brownie"),
         (question_2, "brownie"),
         (question_2, "apple"),
@@ -77,7 +77,7 @@ async def test_evaluate_consensus() -> None:
         (question_2, "apple"),
         (question_2, "apple"),
         (question_2, "apple"),
-        # Incorrect consensus
+        # Has no consensus and regardless it's incorrect
         (question_3, "1"),
         (question_3, "2"),
         (question_3, "1"),
@@ -91,7 +91,7 @@ async def test_evaluate_consensus() -> None:
     }
 
     # Check accuracy is 0% without an ideal answer
-    assert await evaluate_consensus(
+    assert await bulk_evaluate_consensus(
         data_with_several_groups,
         grouping_fn=lambda x: x[0].question,
         extract_answer_fn=operator.itemgetter(1),
@@ -99,7 +99,7 @@ async def test_evaluate_consensus() -> None:
         seed=42,
     ) == (expected_consensus, 0.0)
     # Check accuracy is present when we can get an ideal answer
-    assert await evaluate_consensus(
+    assert await bulk_evaluate_consensus(
         data_with_several_groups,
         grouping_fn=lambda x: x[0].question,
         extract_answer_fn=operator.itemgetter(1),
