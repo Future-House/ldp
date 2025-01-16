@@ -7,9 +7,10 @@ from uuid import UUID
 import litellm
 import numpy as np
 import pytest
+import tenacity
 import tree
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
-from llmclient import CommonLLMNames
+from llmclient import CommonLLMNames, LLMResult
 from llmclient import MultipleCompletionLLMModel as LLMModel
 
 from ldp.graph import (
@@ -185,6 +186,29 @@ class TestLLMCallOp:
             assert logp == raw_logp
         else:
             assert logp is None
+
+    @pytest.mark.vcr
+    @pytest.mark.asyncio
+    async def test_validation(self) -> None:
+        config = {"model": CommonLLMNames.OPENAI_TEST.value, "num_retries": 1}
+        validator = StatefulValidator()
+        llm_op = LLMCallOp(response_validator=validator)
+        await llm_op(config, msgs=[Message(content="Hello")])
+        assert validator.counter == 2  # first attempt should have failed
+
+        config = {"model": CommonLLMNames.OPENAI_TEST.value, "num_retries": 0}
+        llm_op = LLMCallOp(response_validator=StatefulValidator())
+        with pytest.raises(tenacity.RetryError, match="ResponseValidationError"):
+            await llm_op(config, msgs=[Message(content="Hello")])
+
+
+class StatefulValidator:
+    def __init__(self):
+        self.counter = 0
+
+    def __call__(self, response: LLMResult) -> bool:
+        self.counter += 1
+        return self.counter > 1
 
 
 @pytest.mark.asyncio

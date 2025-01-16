@@ -307,7 +307,8 @@ class LLMCallOp(Op[Message]):
 
         @tenacity.retry(
             retry=tenacity.retry_if_exception_type(ResponseValidationError),
-            stop=tenacity.stop_after_attempt(num_retries),
+            # num_retries+1 because the first call is not a retry
+            stop=tenacity.stop_after_attempt(num_retries + 1),
             wait=tenacity.wait_fixed(1),
         )
         async def call_and_validate() -> LLMResult:
