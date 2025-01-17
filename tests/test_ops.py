@@ -206,9 +206,10 @@ class StatefulValidator:
     def __init__(self):
         self.counter = 0
 
-    def __call__(self, response: LLMResult) -> bool:
+    def __call__(self, response: LLMResult) -> None:
         self.counter += 1
-        return self.counter > 1
+        if self.counter == 1:
+            raise ValueError("Invalid response")
 
 
 @pytest.mark.asyncio

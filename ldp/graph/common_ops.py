@@ -212,7 +212,7 @@ class LLMCallOp(Op[Message]):
     def __init__(
         self,
         num_samples_logprob_estimate: int = 0,
-        response_validator: Callable[[LLMResult], bool | Awaitable[bool]] | None = None,
+        response_validator: Callable[[LLMResult], Awaitable[None] | None] | None = None,
     ) -> None:
         super().__init__()
         self.num_samples_partition_estimate = num_samples_logprob_estimate
@@ -305,6 +305,9 @@ class LLMCallOp(Op[Message]):
             # that for LiteLLM to handle.
             return await model.call_single(**kwargs)
 
+        # NOTE: `num_retries` also gets passed to LiteLLM, so there could a maximum of
+        # `num_retries**2` retries. TODO: consider if we should have separate parameters
+        # for LiteLLM and validation retries.
         @tenacity.retry(
             retry=tenacity.retry_if_exception_type(ResponseValidationError),
             # num_retries+1 because the first call is not a retry
@@ -314,13 +317,14 @@ class LLMCallOp(Op[Message]):
         async def call_and_validate() -> LLMResult:
             result = await model.call_single(**kwargs)
 
-            validated = cast(Callable, self.response_validator)(result)
-            if is_coroutine_callable(self.response_validator):
-                validated = await validated
-            if not validated:
-                # Don't provide more info here - user can control error logging
-                # in the validator if desired.
-                raise ResponseValidationError
+            try:
+                validated = cast(Callable, self.response_validator)(result)
+                if is_coroutine_callable(self.response_validator):
+                    validated = await validated
+            except Exception as e:
+                raise ResponseValidationError(
+                    f"Response validator failed: {self.response_validator!r}"
+                ) from e
 
             return result
 
@@ -399,7 +403,7 @@ class LLMCallOp(Op[Message]):
         return [(e, w) for e, w in examples if e is not None]
 
     @staticmethod
-    def anthropic_response_validator(response: LLMResult) -> bool:
+    def anthropic_response_validator(response: LLMResult) -> None:
         """Sometimes Anthropic models respond with garbled tool calls.
 
         Specifically, parameters get injected into the tool name. This obviously
@@ -407,7 +411,7 @@ class LLMCallOp(Op[Message]):
         So instead, check here and force a retry if configured.
         """
         if response.messages is None:
-            return True
+            return
 
         for msg in response.messages:
             if not isinstance(msg, ToolRequestMessage):
@@ -415,10 +419,9 @@ class LLMCallOp(Op[Message]):
 
             for tc in msg.tool_calls:
                 if any(x in tc.function.name for x in "{}<>"):
-                    logger.error(f"Found bad tool call: {tc}")
-                    return False
-
-        return True
+                    err_msg = f"Found bad tool call: {tc}"
+                    logger.error(err_msg)
+                    raise ValueError(err_msg)
 
 
 class MemoryOp(Op[list[Memory]]):
