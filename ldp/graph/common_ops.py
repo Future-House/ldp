@@ -214,6 +214,15 @@ class LLMCallOp(Op[Message]):
         num_samples_logprob_estimate: int = 0,
         response_validator: Callable[[LLMResult], Awaitable[None] | None] | None = None,
     ) -> None:
+        """Initializes the LLMCallOp.
+
+        Args:
+            num_samples_logprob_estimate: The number of samples used to estimate the partition
+                function at T!=1. Defaults to 0 (calculation is skipped).
+            response_validator: An optional callable (can be async) that validates the response.
+                It should raise an exception if the response is invalid. The Op will retry up
+                to `config.get('num_retries', 0)` times if validation fails.
+        """
         super().__init__()
         self.num_samples_partition_estimate = num_samples_logprob_estimate
         self.response_validator = response_validator
