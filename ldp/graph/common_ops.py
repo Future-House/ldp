@@ -328,7 +328,7 @@ class LLMCallOp(Op[Message]):
 
             try:
                 validated = cast(Callable, self.response_validator)(result)
-                if is_coroutine_callable(self.response_validator):
+                if inspect.isawaitable(validated):
                     validated = await validated
             except Exception as e:
                 raise ResponseValidationError(
