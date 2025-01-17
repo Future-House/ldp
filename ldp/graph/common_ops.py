@@ -418,7 +418,7 @@ class LLMCallOp(Op[Message]):
                 continue
 
             for tc in msg.tool_calls:
-                if any(x in tc.function.name for x in "{}<>"):
+                if any(x in tc.function.name for x in "{}<>()"):
                     err_msg = f"Found bad tool call: {tc}"
                     logger.error(err_msg)
                     raise ValueError(err_msg)
