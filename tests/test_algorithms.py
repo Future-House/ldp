@@ -6,6 +6,7 @@ from aviary.utils import MultipleChoiceQuestion
 
 from ldp.agent import SimpleAgent
 from ldp.alg import bulk_evaluate_consensus, compute_pass_at_k
+from ldp.alg.algorithms import measure_consensus_proportion
 from ldp.utils import discounted_returns
 
 
@@ -93,6 +94,16 @@ async def test_consensus_evaluation() -> None:
         question_2.question: ([("apple", 4), ("brownie", 1)], 4 / 5, 0.1788854),
         question_3.question: ([("2", 3), ("1", 2)], 3 / 5, 0.2190890),
     }
+    stored_accuracy_mean_ste: list[tuple[float, float]] = []
+
+    def append_accuracy_metrics(
+        consensus_answer: str,  # noqa: ARG001
+        consensus_size: int,
+        sample_size: int,
+    ) -> None:
+        stored_accuracy_mean_ste.append(
+            measure_consensus_proportion(consensus_size, sample_size)
+        )
 
     # Check accuracy is 0% without an ideal answer
     groups, accuracy = await bulk_evaluate_consensus(
@@ -101,11 +112,16 @@ async def test_consensus_evaluation() -> None:
         num_samples=5,
         seed=42,
         extract_answer_fn=operator.itemgetter(1),
+        consensus_callback=append_accuracy_metrics,
     )
     assert len(groups) == len(expected_consensus)
-    for q, (consensus, acc_mean, acc_ste) in expected_consensus.items():
-        assert groups[q] == (consensus, pytest.approx(acc_mean), pytest.approx(acc_ste))
+    for (q, (consensus, acc_mean, acc_ste)), actual_acc_ste in zip(
+        expected_consensus.items(), stored_accuracy_mean_ste, strict=True
+    ):
+        assert groups[q] == consensus
+        assert actual_acc_ste == (pytest.approx(acc_mean), pytest.approx(acc_ste))
     assert accuracy == 0.0, "Can't compute accuracy without an ideal answer"
+    stored_accuracy_mean_ste.clear()  # Prepare for next batch of assertions
 
     # Check accuracy is present when we can get an ideal answer
     groups, accuracy = await bulk_evaluate_consensus(
@@ -115,10 +131,14 @@ async def test_consensus_evaluation() -> None:
         num_samples=5,
         seed=42,
         extract_answer_fn=operator.itemgetter(1),
+        consensus_callback=append_accuracy_metrics,
     )
     assert len(groups) == len(expected_consensus)
-    for q, (consensus, acc_mean, acc_ste) in expected_consensus.items():
-        assert groups[q] == (consensus, pytest.approx(acc_mean), pytest.approx(acc_ste))
+    for (q, (consensus, acc_mean, acc_ste)), actual_acc_ste in zip(
+        expected_consensus.items(), stored_accuracy_mean_ste, strict=True
+    ):
+        assert groups[q] == consensus
+        assert actual_acc_ste == (pytest.approx(acc_mean), pytest.approx(acc_ste))
     assert accuracy == 2 / 3
 
 
