@@ -1,13 +1,14 @@
 import asyncio
 import collections
+import inspect
 import itertools
 import random
 from collections.abc import Awaitable, Callable, Hashable, Iterable, Sequence
-from typing import Any, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar
 
 import networkx as nx
 import numpy as np
-from aviary.core import Message, Tool, ToolRequestMessage, is_coroutine_callable, join
+from aviary.core import Message, Tool, ToolRequestMessage, join
 
 from ldp.graph import OpResult
 from ldp.graph.ops import GradOutType
@@ -172,15 +173,12 @@ async def evaluate_consensus(
         else:  # Sample without replacement
             sampled = rand.sample(group, num_samples)
 
+        async def extract_answer(datum: TData) -> TAnswer:
+            answer = extract_answer_fn(datum)
+            return await answer if inspect.isawaitable(answer) else answer
+
         # Get answers for the sampled data
-        if is_coroutine_callable(extract_answer_fn):
-            extract_answer_fn = cast(
-                Callable[[TData], Awaitable[TAnswer]], extract_answer_fn
-            )
-            answers = await asyncio.gather(*(extract_answer_fn(x) for x in sampled))
-        else:
-            extract_answer_fn = cast(Callable[[TData], TAnswer], extract_answer_fn)
-            answers = [extract_answer_fn(x) for x in sampled]
+        answers = await asyncio.gather(*(extract_answer(x) for x in sampled))
 
         # Compute consensus: mode of the sampled answers
         grouped_consensus[group_key] = collections.Counter(answers).most_common()
