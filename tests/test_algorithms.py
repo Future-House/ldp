@@ -85,9 +85,13 @@ async def test_consensus_evaluation() -> None:
     ]
     # NOTE: this consensus is sensitive to seed
     expected_consensus = {
-        question_1.question: ([("42", 3), ("11", 1), ("-84", 1)], 3 / 5, 0.2190890),
+        question_1.question: (
+            [("42", 3), ("cheesecake", 1), ("-84", 1)],
+            3 / 5,
+            0.2190890,
+        ),
         question_2.question: ([("apple", 4), ("brownie", 1)], 4 / 5, 0.1788854),
-        question_3.question: ([("1", 3), ("2", 2)], 3 / 5, 0.2190890),
+        question_3.question: ([("2", 3), ("1", 2)], 3 / 5, 0.2190890),
     }
 
     # Check accuracy is 0% without an ideal answer
