@@ -180,7 +180,9 @@ async def bulk_evaluate_consensus(
     rand = np.random.default_rng(seed) if seed is not None else seed
     grouped_consensus: dict[TGroupKey, list[tuple[TAnswer, int]]] = {}
 
-    async def index(group_key: TGroupKey, group: list[TData]) -> int:
+    async def add_consensus_check_ideal(
+        group_key: TGroupKey, group: list[TData]
+    ) -> int:
         grouped_consensus[group_key], consensus = await evaluate_consensus(
             group, extract_answer_fn, num_samples, rand, consensus_callback
         )
@@ -189,7 +191,11 @@ async def bulk_evaluate_consensus(
             return consensus == ideal_answer_fn(group[0])
         return 0
 
-    ideal_count = sum(await asyncio.gather(*itertools.starmap(index, groups.items())))
+    ideal_count = sum(
+        await asyncio.gather(
+            *itertools.starmap(add_consensus_check_ideal, groups.items())
+        )
+    )
     return grouped_consensus, ideal_count / len(groups) if groups else 0.0
 
 
