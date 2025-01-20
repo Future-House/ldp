@@ -84,6 +84,7 @@ async def test_consensus_evaluation() -> None:
         (question_3, "2"),
         (question_3, "1"),
         (question_3, "2"),
+        (question_3, "4"),
     ]
     # NOTE: this consensus is sensitive to seed
     expected_consensus = {
@@ -93,7 +94,7 @@ async def test_consensus_evaluation() -> None:
             0.2190890,
         ),
         question_2.question: ([("apple", 4), ("brownie", 1)], 4 / 5, 0.1788854),
-        question_3.question: ([("2", 3), ("1", 2)], 3 / 5, 0.2190890),
+        question_3.question: ([("2", 2), ("1", 2), ("4", 1)], 2 / 5, 0.2190890),
     }
     stored_accuracy_mean_ste: list[tuple[float, float]] = []
 
@@ -141,6 +142,14 @@ async def test_consensus_evaluation() -> None:
         assert groups[q] == consensus
         assert actual_acc_ste == (pytest.approx(acc_mean), pytest.approx(acc_ste))
     assert accuracy == 2 / 3
+
+    with pytest.raises(ValueError, match="sampling with replacement"):
+        await bulk_evaluate_consensus(
+            data_with_several_groups,
+            grouping_fn=lambda x: x[0].question,
+            num_samples=10,  # Sampling with replacement is disallowed
+            extract_answer_fn=operator.itemgetter(1),
+        )
 
 
 @pytest.mark.parametrize(

@@ -147,7 +147,7 @@ async def bulk_evaluate_consensus(
     data: Iterable[TData],
     grouping_fn: Callable[[TData], TGroupKey],
     extract_answer_fn: Callable[[TData], TAnswer | Awaitable[TAnswer]],
-    num_samples: int,
+    num_samples: int | None = None,
     seed: np.random.Generator | random.Random | int | None = None,
     ideal_answer_fn: (
         Callable[[TData], TAnswer] | Literal["NO_IDEAL_ANSWER_FN"]
@@ -202,7 +202,7 @@ async def bulk_evaluate_consensus(
 async def evaluate_consensus(
     data: Sequence[TData],
     extract_answer_fn: Callable[[TData], TAnswer | Awaitable[TAnswer]],
-    num_samples: int,
+    num_samples: int | None = None,
     seed: np.random.Generator | random.Random | int | None = None,
     consensus_callback: Callable[[TAnswer, int, int], Any] | None = None,
 ) -> tuple[list[tuple[TAnswer, int]], TAnswer]:
@@ -213,7 +213,8 @@ async def evaluate_consensus(
         data: Data to evaluate consensus upon, length is called N.
         extract_answer_fn: Function to extract the actual answer from a datum. It can
             be async so this can be done using a LLM call.
-        num_samples: Number of samples to choose from the N total.
+        num_samples: Number of samples to choose from the N total, or None (default) to
+            infer this value to match N.
         seed: Optional seed for sampling.
         consensus_callback: Optional callback function called just after computing
             consensus, it's passed the consensus answer, consensus size, and
@@ -229,11 +230,18 @@ async def evaluate_consensus(
         if isinstance(seed, np.random.Generator | random.Random)
         else np.random.default_rng(seed)
     )
-
+    if num_samples is None:
+        num_samples = len(data)
     if len(data) < num_samples:  # Too few items, sample with replacement
-        sampled: Iterable[TData] = [rand.choice(data) for _ in range(num_samples)]  # type: ignore[arg-type]
-    elif isinstance(rand, random.Random):  # Built-in random sample without replacement
-        sampled = rand.sample(data, num_samples)
+        raise ValueError(
+            f"A number of samples {num_samples} exceeding the {len(data)} data points"
+            " present is disallowed since sampling with replacement can produce"
+            " misleading consensus. Imagine if there was 1 data point, but 100 samples,"
+            " this would report perfect consensus with low standard error (but it would"
+            " be statistically artificial)."
+        )
+    if isinstance(rand, random.Random):  # Built-in random sample without replacement
+        sampled: Iterable[TData] = rand.sample(data, num_samples)
     else:  # NumPy random sample without replacement
         sampled = rand.choice(data, num_samples, replace=False)  # type: ignore[arg-type]
 
