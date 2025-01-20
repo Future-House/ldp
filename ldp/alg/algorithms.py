@@ -148,7 +148,7 @@ async def bulk_evaluate_consensus(
     grouping_fn: Callable[[TData], TGroupKey],
     extract_answer_fn: Callable[[TData], TAnswer | Awaitable[TAnswer]],
     num_samples: int,
-    seed: int | None = None,
+    seed: np.random.Generator | random.Random | int | None = None,
     ideal_answer_fn: (
         Callable[[TData], TAnswer] | Literal["NO_IDEAL_ANSWER_FN"]
     ) = NO_IDEAL_ANSWER_FN,
@@ -164,7 +164,7 @@ async def bulk_evaluate_consensus(
             the group key could be the question or question ID.
         extract_answer_fn: Passed through to evaluate_consensus.
         num_samples: Passed through to evaluate_consensus.
-        seed: Optional seed for sampling.
+        seed: Passed through to evaluate_consensus.
         ideal_answer_fn: Optional function to extract the ideal answer from a datum to
             compute accuracy with, or pass NO_IDEAL_ANSWER to skip this calculation.
         consensus_callback: Passed through to evaluate_consensus.
@@ -178,14 +178,13 @@ async def bulk_evaluate_consensus(
     for x in data:
         groups[grouping_fn(x)].append(x)
 
-    rand = np.random.default_rng(seed) if seed is not None else seed
     grouped_consensus: dict[TGroupKey, list[tuple[TAnswer, int]]] = {}
 
     async def add_consensus_check_ideal(
         group_key: TGroupKey, group: list[TData]
     ) -> int:
         grouped_consensus[group_key], consensus = await evaluate_consensus(
-            group, extract_answer_fn, num_samples, rand, consensus_callback
+            group, extract_answer_fn, num_samples, seed, consensus_callback
         )
         if ideal_answer_fn != NO_IDEAL_ANSWER_FN:  # If we have an ideal
             # Assume all items in the group have the same ideal answer

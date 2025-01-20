@@ -1,5 +1,6 @@
 import operator
 
+import numpy as np
 import pytest
 from aviary.core import DummyEnv
 from aviary.utils import MultipleChoiceQuestion
@@ -110,7 +111,7 @@ async def test_consensus_evaluation() -> None:
         data_with_several_groups,
         grouping_fn=lambda x: x[0].question,
         num_samples=5,
-        seed=42,
+        seed=np.random.default_rng(42),
         extract_answer_fn=operator.itemgetter(1),
         consensus_callback=append_accuracy_metrics,
     )
@@ -129,7 +130,7 @@ async def test_consensus_evaluation() -> None:
         grouping_fn=lambda x: x[0].question,
         ideal_answer_fn=lambda x: x[0].ideal_answer,
         num_samples=5,
-        seed=42,
+        seed=np.random.default_rng(42),
         extract_answer_fn=operator.itemgetter(1),
         consensus_callback=append_accuracy_metrics,
     )
