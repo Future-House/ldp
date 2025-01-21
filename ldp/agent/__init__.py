@@ -7,7 +7,7 @@ from .agent import Agent, AgentConfig
 from .agent_client import HTTPAgentClient, make_simple_agent_server
 from .memory_agent import MemoryAgent
 from .react_agent import ReActAgent
-from .simple_agent import SimpleAgent, SimpleAgentState
+from .simple_agent import NoToolsSimpleAgent, SimpleAgent, SimpleAgentState
 from .tree_of_thoughts_agent import TreeofThoughtsAgent
 
 __all__ = [
@@ -16,6 +16,7 @@ __all__ = [
     "AgentConfig",
     "HTTPAgentClient",
     "MemoryAgent",
+    "NoToolsSimpleAgent",
     "ReActAgent",
     "SimpleAgent",
     "SimpleAgentState",

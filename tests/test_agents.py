@@ -26,7 +26,7 @@ from ldp.agent import (
     make_simple_agent_server,
 )
 from ldp.agent.interactive_agent import InteractiveAgent
-from ldp.agent.simple_agent import HiddenEnvStateMessage
+from ldp.agent.simple_agent import HiddenEnvStateMessage, NoToolsSimpleAgent
 from ldp.alg import to_network
 from ldp.graph import LLMCallOp, Memory, OpResult, eval_mode
 from ldp.graph.gradient_estimators import llm_straight_through_estimator as llm_ste
@@ -229,6 +229,39 @@ class TestSimpleAgent:
         # Check that the second EnvStateMessage didn't get hidden
         assert isinstance(agent_state_2.messages[2], EnvStateMessage)
         assert not isinstance(agent_state_2.messages[2], HiddenEnvStateMessage)
+
+
+class TestNoToolsSimpleAgent:
+    @pytest.mark.parametrize(
+        "model_name",
+        [CommonLLMNames.ANTHROPIC_TEST.value, CommonLLMNames.OPENAI_TEST.value],
+    )
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
+        obs, tools = await dummy_env.reset()
+        print_story_tool = next(iter(t for t in tools if t.info.name == "print_story"))
+
+        def print_story_factory(message: Message) -> ToolRequestMessage:
+            return ToolRequestMessage(
+                content=message.content,
+                tool_calls=[ToolCall.from_tool(print_story_tool, story="stub")],
+            )
+
+        agent = NoToolsSimpleAgent(
+            print_story_factory, llm_model={"model": model_name, "temperature": 0.1}
+        )
+        agent_state = await agent.init_state(tools=tools)
+        action, agent_state, _ = await agent.get_asv(agent_state, obs)
+        tool_req_msg = action.value
+        assert isinstance(tool_req_msg, ToolRequestMessage)
+        assert len(tool_req_msg.tool_calls) == 1
+        assert tool_req_msg.tool_calls[0].function.name == print_story_tool.info.name
+        obs, reward, done, truncated = await dummy_env.step(action.value)
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
+        assert done
 
 
 class TestMemoryAgent:
