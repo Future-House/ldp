@@ -3,6 +3,7 @@ from typing import cast
 import torch
 import torch.distributed as dist
 from aviary.core import Message, Tool, ToolRequestMessage
+from pydantic import Field, field_validator
 
 from ldp.agent import Agent, SimpleAgentState
 from ldp.graph import OpResult
@@ -32,6 +33,21 @@ class AgentLMConfig(_LMConfig):
     temperature: float = 1.0
     max_new_tokens: int = 50
     parallel_tool_calls: bool = False
+
+    llm_call_kwargs: dict = Field(
+        default_factory=dict,
+        description="Additional kwargs to pass to LocalLLMCallOp.forward. "
+        "Note that the validator defaults top_k=None and top_p=1.0, which "
+        "are better defaults than HF's.",
+        validate_default=True,
+    )
+
+    @field_validator("llm_call_kwargs")
+    @classmethod
+    def validate_llm_call_kwargs(cls, v: dict) -> dict:
+        v.setdefault("top_k", None)
+        v.setdefault("top_p", 1.0)
+        return v
 
 
 # TODO: consider merging with SimpleAgent
@@ -84,6 +100,7 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
                 temperature=self.llm_model.temperature,
                 max_new_tokens=self.llm_model.max_new_tokens,
                 tools=next_state.tools,
+                **self.llm_model.llm_call_kwargs,
             ),
         )
 

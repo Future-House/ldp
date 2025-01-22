@@ -127,8 +127,8 @@ class ParallelModeConfig(FSDPConfig):
     )
     execution_mode: ExecutionMode = Field(
         description=(
-            "Execution mode of the current setup, defines how to allocate resources"
-            " (cpus/gpus) for the model to run on."
+            "Execution mode of the current setup, defines how to allocate resources "
+            "(cpus/gpus) for the model to run on."
         ),
         default=ExecutionMode.LOCAL_MACHINE,
     )
@@ -169,8 +169,8 @@ class TransformerHandlerConfig(BaseModel):
     parallel_mode_config: ParallelModeConfig | None = Field(
         default=None,
         description=(
-            "Opt-in config for parallel execution, default of None leads to a"
-            " transformer without parallelism"
+            "Optional configuration for distributing the transformer across "
+            "multiple devices/nodes. If not provided, will default to single-device."
         ),
     )
 
