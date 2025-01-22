@@ -125,10 +125,7 @@ class LMConfig(BaseModel):
         return tokenizer, model
 
     def get_tokenizer(self) -> PreTrainedTokenizer:
-        assert self._loaded_model_name is not None, (
-            "Call resolve_model_location() before get_*() methods."
-        )
-        return self._load_tokenizer(self._loaded_model_name)
+        return self._load_tokenizer(self._loaded_model_name or self.model)
 
     @no_type_check
     def _load_tokenizer(self, model_name: str) -> PreTrainedTokenizer:
