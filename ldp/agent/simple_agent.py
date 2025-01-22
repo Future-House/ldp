@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from typing import Any, Self, cast
 
 from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
@@ -7,7 +8,7 @@ from aviary.message import EnvStateMessage
 from llmclient import CommonLLMNames
 from pydantic import BaseModel, ConfigDict, Field
 
-from ldp.graph import ConfigOp, LLMCallOp, OpResult, compute_graph
+from ldp.graph import ConfigOp, FxnOp, LLMCallOp, OpResult, compute_graph
 from ldp.llms import prepend_sys
 
 from . import DEFAULT_LLM_COMPLETION_TIMEOUT
@@ -130,6 +131,46 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
             await self._llm_call_op(
                 await self._config_op(), msgs=messages, tools=next_state.tools
             ),
+        )
+        next_state.messages = [*next_state.messages, result.value]
+        return result, next_state, 0.0
+
+
+class NoToolsSimpleAgent(SimpleAgent):
+    """Agent whose action is parsed out of a LLM prompt without tool schemae."""
+
+    def __init__(
+        self,
+        cast_tool_request: (
+            Callable[[Message], ToolRequestMessage]
+            | Callable[[Message], Awaitable[ToolRequestMessage]]
+        ),
+        **kwargs,
+    ):
+        """Initialize.
+
+        Args:
+            cast_tool_request: Function that is given a plain text message and produces
+                a tool request message.
+            **kwargs: Keyword arguments to pass to SimpleAgent's constructor.
+        """
+        super().__init__(**kwargs)
+        self._cast_tool_request_op = FxnOp[ToolRequestMessage](cast_tool_request)
+
+    @compute_graph()
+    async def get_asv(
+        self, agent_state: SimpleAgentState, obs: list[Message]
+    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+        next_state = agent_state.get_next_state(obs)
+
+        messages = (
+            prepend_sys(next_state.messages, sys_content=self.sys_prompt)
+            if self.sys_prompt is not None
+            else next_state.messages
+        )
+        result = await self._cast_tool_request_op(
+            # NOTE: this call has no tools specified to the LLM
+            await self._llm_call_op(await self._config_op(), msgs=messages)
         )
         next_state.messages = [*next_state.messages, result.value]
         return result, next_state, 0.0
