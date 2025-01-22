@@ -177,8 +177,11 @@ warn_unused_ignores = true
 ignore_missing_imports = true
 # Per-module configuration options
 module = [
+    "accelerate.*",  # SEE: https://github.com/huggingface/accelerate/issues/2396
+    "dask_cuda",
     "networkx",  # SEE: https://github.com/networkx/networkx/issues/3988
     "pydot",
+    "transformers.*",  # SEE: https://github.com/huggingface/transformers/pull/18485
     "tree",  # SEE: https://github.com/google-deepmind/tree/issues/84
 ]
 

@@ -56,8 +56,8 @@ class TensorChunker:
         split_kwargs_list: list[dict] = [{} for _ in range(self.num_chunks)]
         dummy_chunk_flags: list[bool] = []
 
-        # Helper function to process both args and kwargs
         def process_items(items, is_kwargs=False):
+            """Helper function to process both args and kwargs."""
             nonlocal dummy_chunk_flags
             for item in items:
                 key, value = item if is_kwargs else (None, item)

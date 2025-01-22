@@ -9,7 +9,7 @@ from collections.abc import Awaitable, Callable
 from enum import StrEnum, auto
 from functools import cache, partial, wraps
 from pathlib import Path
-from typing import Any, Concatenate, ParamSpec, Self, TypeVar, cast
+from typing import Any, Concatenate, ParamSpec, Self, TypeVar, assert_never, cast
 
 import accelerate
 import torch
@@ -227,7 +227,7 @@ class TransformerHandler(ModuleHandler):
             case LMType.REGRESSION:
                 tokenizer, model = config.lm_config.get_regression_lm()
             case _:
-                raise NotImplementedError(f"Unsupported LM type: {config.lm_type}")
+                assert_never(config.lm_type)
         tokenizer.pad_token = tokenizer.eos_token
         super().__init__(model)
         self.tokenizer = tokenizer
@@ -261,7 +261,7 @@ class TransformerHandler(ModuleHandler):
         # We do not want to save random states - they would be loaded by load_state
         # automatically. Clean up after all processes have saved.
         if int(os.getenv("RANK", "0")) == 0:
-            random_states = Path(ckpt).rglob("random_state*pkl")
+            random_states = Path(ckpt).rglob("random_state*.pkl")
             for random_state in random_states:
                 random_state.unlink()
 
@@ -438,14 +438,14 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
         match parallel_mode_config.execution_mode:
+            # TODO: see if we can just access `parallel_mode_config` as a
+            # `config` attribute instead of passing both.
             case ExecutionMode.LOCAL_MACHINE:
                 self._init_local_cluster(config, parallel_mode_config)
             case ExecutionMode.SLURM_CLUSTER:
                 self._init_slurm_cluster(config, parallel_mode_config)
             case _:
-                raise NotImplementedError(
-                    f"Unsupported execution mode: {parallel_mode_config.execution_mode}"
-                )
+                assert_never(parallel_mode_config.execution_mode)
 
         self._initialized = True
 
@@ -463,7 +463,9 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
         self.handler_call_fn = handler_call_fn
 
-    def _init_local_cluster(self, config, parallel_mode_config):
+    def _init_local_cluster(
+        self, config: TransformerHandlerConfig, parallel_mode_config: ParallelModeConfig
+    ):
         """Initialize a Dask cluster on local machine."""
         self.cluster = LocalCUDACluster(
             n_workers=parallel_mode_config.num_workers,
@@ -474,7 +476,9 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         )
         self._initialize_workers(config, parallel_mode_config)
 
-    def _init_slurm_cluster(self, config, parallel_mode_config):
+    def _init_slurm_cluster(
+        self, config: TransformerHandlerConfig, parallel_mode_config: ParallelModeConfig
+    ):
         """Initialize a SLURM-based Dask cluster with GPU allocation."""
         self.cluster = SLURMCluster(
             cores=parallel_mode_config.num_cpus_per_worker,
@@ -488,7 +492,9 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         )
         self._initialize_workers(config, parallel_mode_config)
 
-    def _initialize_workers(self, config, parallel_mode_config):
+    def _initialize_workers(
+        self, config: TransformerHandlerConfig, parallel_mode_config: ParallelModeConfig
+    ):
         self.cluster.scale(parallel_mode_config.num_workers)
         self.client = Client(self.cluster)
         self.client.wait_for_workers(parallel_mode_config.num_workers)
@@ -980,8 +986,7 @@ def maybe_set_tokenizer_chat_template(tokenizer: PreTrainedTokenizer) -> None:
                     f"{REPO_ROOT}/ldp/nn/chat_templates/llama3_chat_template.jinja"
                 )
                 logger.info("Using llama3 chat template for gpt2 model in tests.")
-                with open(template_path) as file:  # noqa: FURB101
-                    loaded_chat_template = file.read()
+                loaded_chat_template = Path(template_path).read_text()
                 tokenizer.chat_template = loaded_chat_template
 
                 loaded_chat_template = loaded_chat_template.replace(

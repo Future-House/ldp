@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 
-def set_seed(seed: int | None):
+def set_seed(seed: int | None) -> None:
     if seed is None:
         return
 
