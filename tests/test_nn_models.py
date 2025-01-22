@@ -18,11 +18,7 @@ from .conftest import PARALLEL_MODE_CONFIGS, TEST_GPUS
 
 
 def test_model_load():
-    config = ldp.nn.LMConfig(
-        model="gpt2",
-        load_args={"attn_implementation": "eager"},
-        dtype=ldp.nn.TorchDType.fp32,
-    )
+    config = ldp.nn.LMConfig(model="gpt2")
     config.resolve_model_location()
     config.get_causal_lm()
 
