@@ -1,4 +1,4 @@
-from .agent.simple_local_agent import SimpleLocalLLMAgent
+from .agent.simple_local_agent import AgentLMConfig, SimpleLocalLLMAgent
 from .graph.llm_call_op import LocalLLMCallOp
 from .handlers.chunking import TensorChunker
 from .handlers.transformer_handler import (
@@ -19,6 +19,7 @@ from .lm_config import LMConfig, TorchDType
 from .utils import set_seed
 
 __all__ = [
+    "AgentLMConfig",
     "AsyncTransformer",
     "AsyncTransformerInterface",
     "ExecutionMode",

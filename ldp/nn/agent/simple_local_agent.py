@@ -18,7 +18,7 @@ from ..handlers.transformer_handler import (  # noqa: TID252
 from ..lm_config import LMConfig as _LMConfig  # noqa: TID252
 
 
-class LMConfig(_LMConfig):
+class AgentLMConfig(_LMConfig):
     """Adds some additional configuration options for running an LM in an Op."""
 
     # async batching parameters
@@ -40,7 +40,7 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
 
     def __init__(
         self,
-        llm_model: LMConfig,
+        llm_model: AgentLMConfig,
         sys_prompt: str | None = None,
         hide_old_env_states: bool = False,
     ):
