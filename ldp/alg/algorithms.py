@@ -260,7 +260,7 @@ async def evaluate_consensus(
     return most_common, consensus_answer
 
 
-def compute_pass_at_k(n: int, c: int, k: int) -> float:
+def compute_pass_at_k(n: int, c: int, k: int) -> float | np.floating:
     """Compute an unbiased estimation for 'pass @ k'.
 
     Source: https://doi.org/10.48550/arXiv.2107.03374's figure 3.
