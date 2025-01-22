@@ -22,7 +22,7 @@ from usearch.index import Index
 if TYPE_CHECKING:
     from .common_ops import MemoryOp
     from .op_utils import CallID
-    from .ops import Op, OpResult, TOutput
+    from .ops import Op, OpResult, TOutput_co
 
 
 class Memory(BaseModel):
@@ -82,7 +82,7 @@ class Memory(BaseModel):
         cls,
         mem_op: "MemoryOp",
         mem_call_id: "CallID",
-        output_op: "Op[TOutput]",
+        output_op: "Op[TOutput_co]",
         output_call_id: "CallID",
         value: float,
         **kwargs,
@@ -90,7 +90,9 @@ class Memory(BaseModel):
         """Create from a MemoryOp, output Op, and their call IDs."""
         query: str = mem_op.ctx.get(mem_call_id, "query")
         memory_input: str | None = mem_op.ctx.get(mem_call_id, "memory_input")
-        output_result: OpResult[TOutput] = output_op.ctx.get(output_call_id, "output")
+        output_result: OpResult[TOutput_co] = output_op.ctx.get(
+            output_call_id, "output"
+        )
         return cls(
             query=query,
             input=memory_input if memory_input is not None else query,

@@ -17,11 +17,6 @@ logger = getLogger(__name__)
 TModel = TypeVar("TModel", bound=PreTrainedModel)
 
 
-class ModelMode(StrEnum):
-    training = "training"
-    inference = "inference"
-
-
 class TorchDType(StrEnum):
     bf16 = "bfloat16"
     fp16 = "float16"
@@ -44,6 +39,11 @@ class LMConfig(BaseModel):
         default_factory=dict,
         description="Passed as AutoTokenizer.from_pretrained(self.model, **tokenizer_args)",
     )
+    chat_template: str | None = Field(
+        default=None,
+        description="Name of a jinja file defining a chat template. "
+        "Leave as None to not use a chat template.",
+    )
 
     device: str | int | None = None
     dtype: TorchDType = Field(
@@ -52,7 +52,6 @@ class LMConfig(BaseModel):
             "Will pass torch_dtype=getattr(torch, self.dtype) if dtype is not auto."
         ),
     )
-    mode: ModelMode | None = None
     eos_as_pad_fallback: bool = Field(
         default=True,
         description=(
@@ -125,10 +124,7 @@ class LMConfig(BaseModel):
         return tokenizer, model
 
     def get_tokenizer(self) -> PreTrainedTokenizer:
-        assert self._loaded_model_name is not None, (
-            "Call resolve_model_location() before get_*() methods."
-        )
-        return self._load_tokenizer(self._loaded_model_name)
+        return self._load_tokenizer(self._loaded_model_name or self.model)
 
     @no_type_check
     def _load_tokenizer(self, model_name: str) -> PreTrainedTokenizer:

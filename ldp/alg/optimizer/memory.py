@@ -10,7 +10,7 @@ from ldp.agent import MemoryAgent
 from ldp.alg.optimizer.opt import Optimizer
 from ldp.data_structures import Trajectory
 from ldp.graph import CallID, Memory, MemoryOp, Op, OpResult
-from ldp.graph.ops import TOutput
+from ldp.graph.ops import TOutput_co
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class MemoryFactory(Protocol):
     async def __call__(
         self,
         memory_op: MemoryOp,
-        output_op: Op[TOutput],
+        output_op: Op[TOutput_co],
         memory_template: str,
         example_buffer: Iterable[tuple[CallID, CallID, float, JsonValue]],
     ) -> list[Memory]:
@@ -43,7 +43,7 @@ class MemoryFactory(Protocol):
 
 async def _default_memory_factory(
     memory_op: MemoryOp,
-    output_op: Op[TOutput],
+    output_op: Op[TOutput_co],
     memory_template: str,
     example_buffer: Iterable[tuple[CallID, CallID, float, JsonValue]],
 ) -> list[Memory]:

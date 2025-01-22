@@ -27,7 +27,7 @@ from pydantic import BaseModel
 from .gradient_estimators import assign_constant_grads
 from .memory import Memory, MemoryModel, UIndexMemoryModel
 from .op_utils import CallID, get_call_id, get_training_mode
-from .ops import GradInType, Op, OpCtx, ResultOrValue, TOutput
+from .ops import GradInType, Op, OpCtx, ResultOrValue, TOutput_co
 
 logger = logging.getLogger(__name__)
 
@@ -37,13 +37,17 @@ def logsumexp(a: np.ndarray | list[float]) -> float:
     return a_max + np.log(np.sum(np.exp(a - a_max)))
 
 
-class IdentityOp(Op[TOutput]):
+TOutput = TypeVar("TOutput")
+
+
+class IdentityOp(Op[TOutput_co]):
     """
     An operation that simply returns the input value.
 
     NOTE: this op is equivalent to FxnOp(lambda x: x).
     """
 
+    # Can't have covariant TypeVar as a parameter type
     async def forward(self, value: TOutput) -> TOutput:
         # We assume value already has the correct run_id from its producer
         return value
@@ -60,7 +64,7 @@ class IdentityOp(Op[TOutput]):
         return [], {"value": grad_output}
 
 
-class StopGradOp(IdentityOp[TOutput]):
+class StopGradOp(IdentityOp[TOutput_co]):
     """Pass through Op that terminates gradients in the backward pass."""
 
     @classmethod
@@ -135,7 +139,7 @@ def async_cache(func):
     return wrapper
 
 
-class FxnOp(Op[TOutput]):
+class FxnOp(Op[TOutput_co]):
     """
     Wrap a function for a straight through gradient approximation for all args/kwargs.
 
@@ -145,7 +149,7 @@ class FxnOp(Op[TOutput]):
 
     def __init__(
         self,
-        fxn: Callable[..., TOutput] | Callable[..., Awaitable[TOutput]],
+        fxn: Callable[..., TOutput_co] | Callable[..., Awaitable[TOutput_co]],
         cache: bool = False,
         fxn_name: str | None = None,  # useful for lambdas
     ):
@@ -168,7 +172,7 @@ class FxnOp(Op[TOutput]):
     def __repr__(self) -> str:
         return f"{type(self).__name__} {self.fxn_name} ({id(self)})"
 
-    async def forward(self, *args, **kwargs) -> TOutput:
+    async def forward(self, *args, **kwargs) -> TOutput_co:
         if is_coroutine_callable(self.fxn):
             return await self.fxn(*args, **kwargs)
         return self.fxn(*args, **kwargs)

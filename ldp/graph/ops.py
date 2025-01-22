@@ -28,14 +28,14 @@ BackwardsType: TypeAlias = Callable[
     ["OpCtx", list, dict, tree.Structure, "CallID"],
     GradInType,
 ]
-TOutput = TypeVar("TOutput")
+TOutput_co = TypeVar("TOutput_co", covariant=True)
 
 
-class OpResult(Generic[TOutput]):
+class OpResult(Generic[TOutput_co]):
     """Result of a forward pass, used in the compute graph."""
 
     def __init__(
-        self, call_id: CallID | Any, op_name: str, op_class_name: str, value: TOutput
+        self, call_id: CallID | Any, op_name: str, op_class_name: str, value: TOutput_co
     ):
         """
         Initialize an OpResult instance.
@@ -66,8 +66,8 @@ class OpResult(Generic[TOutput]):
 
     @classmethod
     def from_dict(
-        cls, t_output: type[TOutput], dump: dict[str, Any]
-    ) -> OpResult[TOutput]:
+        cls, t_output: type[TOutput_co], dump: dict[str, Any]
+    ) -> OpResult[TOutput_co]:
         value = dump.pop("value")
         if issubclass(t_output, BaseModel):
             value = t_output.model_validate(value)
@@ -282,7 +282,7 @@ class OpResult(Generic[TOutput]):
         return self.call_id.run_id
 
     @staticmethod
-    def unwrap_value(result: ResultOrValue[TOutput]) -> TOutput:
+    def unwrap_value(result: ResultOrValue[TOutput_co]) -> TOutput_co:
         if isinstance(result, OpResult):
             return result.value
         return result
@@ -315,7 +315,7 @@ class OpResult(Generic[TOutput]):
         self.ctx.update(call_id=self.call_id, key=key, value=value)
 
 
-ResultOrValue: TypeAlias = OpResult[TOutput] | TOutput
+ResultOrValue: TypeAlias = OpResult[TOutput_co] | TOutput_co
 
 # Sentinel value for get() default
 NOT_FOUND = object()
@@ -401,7 +401,7 @@ _OP_CLASS_REGISTRY: dict[str, type[Op]] = {}
 _OP_REGISTRY: dict[str, Op] = {}
 
 
-class Op(ABC, Generic[TOutput]):
+class Op(ABC, Generic[TOutput_co]):
     """
     An operation that is 'differentiable' and can be used in an optimizer.
 
@@ -464,7 +464,7 @@ class Op(ABC, Generic[TOutput]):
         return f"{self.__class__.__name__} (name={self.name}, id={id(self)})"
 
     @abstractmethod
-    async def forward(self, *args, **kwargs) -> TOutput:
+    async def forward(self, *args, **kwargs) -> TOutput_co:
         """
         Forward pass of the Op. Must accept call_id as an argument.
 
@@ -516,7 +516,7 @@ class Op(ABC, Generic[TOutput]):
     # with a single node.
     @compute_graph()
     @op_call()
-    async def __call__(self, *args, **kwargs) -> OpResult[TOutput]:
+    async def __call__(self, *args, **kwargs) -> OpResult[TOutput_co]:
         call_id = get_call_id()
 
         if not all(
@@ -559,7 +559,7 @@ class Op(ABC, Generic[TOutput]):
 
         # actually call forward pass with unpacked args and kwargs
         result = await self.forward(*unpacked_args, **unpacked_kwargs)
-        t_output: type[TOutput] = type(result)
+        t_output: type[TOutput_co] = type(result)
 
         # Now package up my result so it can be consumed by other calls.
         # Explicitly specify t_output. OpResult[TOutput] returns a generic object

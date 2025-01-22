@@ -204,7 +204,7 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
                 *args,
                 **kwargs,
                 pad_token_id=model.config.pad_token_id,  # not always set properly by .generate()
-                # eos_token_id=model.config.eos_token_id,  TODO remove
+                eos_token_id=model.config.eos_token_id,
             )
 
 
@@ -228,10 +228,11 @@ class TransformerHandler(ModuleHandler):
                 tokenizer, model = config.lm_config.get_regression_lm()
             case _:
                 assert_never(config.lm_type)
-        tokenizer.pad_token = tokenizer.eos_token
         super().__init__(model)
         self.tokenizer = tokenizer
-        maybe_set_tokenizer_chat_template(self.tokenizer)
+        maybe_set_tokenizer_chat_template(
+            self.tokenizer, self.config.lm_config.chat_template
+        )
 
         self._setup_accelerator()
 
@@ -434,8 +435,9 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
             raise ValueError("Parallel mode config must be provided.")
         self.config = config
         self.tokenizer = config.lm_config.get_tokenizer()
-        maybe_set_tokenizer_chat_template(self.tokenizer)
-        self.tokenizer.pad_token = self.tokenizer.eos_token
+        maybe_set_tokenizer_chat_template(
+            self.tokenizer, self.config.lm_config.chat_template
+        )
 
         match parallel_mode_config.execution_mode:
             # TODO: see if we can just access `parallel_mode_config` as a
@@ -964,49 +966,42 @@ def _move_tensor(x, device: torch.device) -> torch.Tensor:
     return x.to(device) if isinstance(x, torch.Tensor) else x
 
 
-def maybe_set_tokenizer_chat_template(tokenizer: PreTrainedTokenizer) -> None:
+def maybe_set_tokenizer_chat_template(
+    tokenizer: PreTrainedTokenizer, chat_template: str | None
+) -> None:
     """Set the chat template for the tokenizer if needed."""
     # Check if the tokenizer's existing chat_template contains the '{% generation %}' tag
-    if tokenizer.chat_template and "{% generation %}" in tokenizer.chat_template:
-        # The tokenizer's chat_template already has the required tag
-        return
+
     model_name = tokenizer.name_or_path.lower()
-    match model_name:
-        case name if "meta-llama/llama-3" in name:
-            template_path = (
-                f"{REPO_ROOT}/ldp/nn/chat_templates/llama3_chat_template.jinja"
-            )
-        case name if "meta-llama/llama-2" in name:
-            template_path = (
-                f"{REPO_ROOT}/ldp/nn/chat_templates/llama2_chat_template.jinja"
-            )
-        case _:
-            if "PYTEST_CURRENT_TEST" in os.environ and "gpt2" in model_name:
-                template_path = (
-                    f"{REPO_ROOT}/ldp/nn/chat_templates/llama3_chat_template.jinja"
-                )
-                logger.info("Using llama3 chat template for gpt2 model in tests.")
-                loaded_chat_template = Path(template_path).read_text()
-                tokenizer.chat_template = loaded_chat_template
+    if in_test := ("PYTEST_CURRENT_TEST" in os.environ and "gpt2" in model_name):
+        # Override whatever was passed in for tests
+        logger.info("Using llama3 chat template for gpt2 model in tests.")
+        chat_template = "llama3_chat_template_ori.jinja"
 
-                loaded_chat_template = loaded_chat_template.replace(
-                    "<|eot_id|>", tokenizer.eos_token
-                )
-                tokenizer.chat_template = loaded_chat_template
-                return
+    if chat_template is not None:
+        # User should provided a chat template that includes the {% generation %} keyword needed
+        # for populating "assistant_masks" when tokenizing inputs for the purpose of training.
+        # We need to monitor the PR comments at https://github.com/huggingface/transformers/pull/30650
+        # for updates on the issue.
+        template_path = Path(chat_template)
+        if not template_path.exists():
+            # Check the aviary_internal library of templates
+            template_path = Path(f"{REPO_ROOT}/ldp/nn/chat_templates/{chat_template}")
+        loaded_chat_template = template_path.read_text()
 
-            # Warn the user about potential training issues
-            logger.warning(
-                "Tokenizer's chat_template does not contain '{% generation %}'. "
-                "Training will have issues as the tag does not exist, which means "
-                "HuggingFace's internal code for retrieving the assistant_mask for training will be invalid."
+        if in_test:
+            # Adapt the template for the actual tokenizer we are using
+            loaded_chat_template = loaded_chat_template.replace(
+                "<|eot_id|>", tokenizer.eos_token
             )
-            return
+        tokenizer.chat_template = loaded_chat_template
+        return
 
-    with open(template_path) as file:  # noqa: FURB101
-        loaded_chat_template = file.read()
-    # We load this chat template that includes the {% generation %} keyword needed
-    # for populating "assistant_masks" when tokenizing inputs for the purpose of training.
-    # We need to monitor the PR comments at https://github.com/huggingface/transformers/pull/30650
-    # for updates on the issue.
-    tokenizer.chat_template = loaded_chat_template
+    if not tokenizer.chat_template or "{% generation %}" in tokenizer.chat_template:
+        # Warn the user about potential training issues
+        logger.warning(
+            "Tokenizer does not have a chat template with '{% generation %}'. "
+            "Generative training will have issues as the tag does not exist, which means "
+            "HuggingFace's internal code for retrieving the assistant_mask for training will be invalid. "
+            "Fine-tuning for other purposes, like regression, will not be affected."
+        )
