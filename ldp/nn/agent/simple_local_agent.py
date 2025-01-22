@@ -3,7 +3,6 @@ from typing import cast
 import torch
 import torch.distributed as dist
 from aviary.core import Message, Tool, ToolRequestMessage
-from aviary_internal.nn.chunking import TensorChunker
 
 from ldp.agent import Agent, SimpleAgentState
 from ldp.graph import OpResult
@@ -11,6 +10,7 @@ from ldp.graph.op_utils import compute_graph
 from ldp.llms import prepend_sys
 
 from ..graph.llm_call_op import LocalLLMCallOp  # noqa: TID252
+from ..handlers.chunking import TensorChunker  # noqa: TID252
 from ..handlers.transformer_handler import (  # noqa: TID252
     ParallelModeConfig,
     logits_to_logprobs,
@@ -78,7 +78,7 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
 
         # Execute the LLM operation call
         result = cast(
-            OpResult,
+            OpResult[Message | ToolRequestMessage],
             await self._llm_call_op(
                 xi=messages,
                 temperature=self.llm_model.temperature,
@@ -95,7 +95,7 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
 
         # Update state messages with result and return the new state
         next_state.messages = [*next_state.messages, result.value]
-        return result, next_state, 0.0
+        return cast(OpResult[ToolRequestMessage], result), next_state, 0.0
 
     # TODO: maybe remove these recomputation methods. I added them to debug some things. But idk,
     # maybe they'll come in handy later.

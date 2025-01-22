@@ -40,7 +40,9 @@ class LMConfig(BaseModel):
         description="Passed as AutoTokenizer.from_pretrained(self.model, **tokenizer_args)",
     )
     chat_template: str | None = Field(
-        default=None, description="Name of a jinja file defining a chat template."
+        default=None,
+        description="Name of a jinja file defining a chat template. "
+        "Leave as None to not use a chat template.",
     )
 
     device: str | int | None = None
