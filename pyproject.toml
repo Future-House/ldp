@@ -71,7 +71,14 @@ monitor = [
     "wandb",
 ]
 nn = [
-    "torch>=2.2",
+    "accelerate",
+    "dask-cuda>=24.8.2",
+    "dask-jobqueue",
+    "dask[distributed]",
+    "tokenizers>0.20",
+    "torch>=2.5",
+    "transformers>=4.46",
+    "wandb",
 ]
 rich = [
     "rich",
@@ -170,8 +177,11 @@ warn_unused_ignores = true
 ignore_missing_imports = true
 # Per-module configuration options
 module = [
+    "accelerate.*",  # SEE: https://github.com/huggingface/accelerate/issues/2396
+    "dask_cuda",
     "networkx",  # SEE: https://github.com/networkx/networkx/issues/3988
     "pydot",
+    "transformers.*",  # SEE: https://github.com/huggingface/transformers/pull/18485
     "tree",  # SEE: https://github.com/google-deepmind/tree/issues/84
 ]
 
@@ -217,6 +227,7 @@ disable = [
     "missing-final-newline",  # Rely on ruff W292 for this
     "no-else-return",  # Rely on ruff RET506 for this
     "no-member",  # Buggy, SEE: https://github.com/pylint-dev/pylint/issues/8138
+    "no-value-for-parameter",  # Rely on mypy call-arg for this
     "not-callable",  # Don't care to enforce this
     "protected-access",  # Don't care to enforce this
     "raise-missing-from",  # Rely on ruff B904 for this
@@ -420,6 +431,7 @@ ignore = [
     "ARG003",  # Thrown all the time when we are subclassing
     "ASYNC109",  # Buggy, SEE: https://github.com/astral-sh/ruff/issues/12353
     "ASYNC2",  # It's ok to mix async and sync ops (like opening a file)
+    "B027",  # Very common to have an empty method in a base class
     "BLE001",  # Don't care to enforce blind exception catching
     "COM812",  # Trailing comma with black leads to wasting lines
     "D100",  # D100, D101, D102, D103, D104, D105, D106, D107: don't always need docstrings

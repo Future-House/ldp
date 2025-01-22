@@ -74,6 +74,7 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies:
+          - accelerate
           - fastapi>=0.109 # Match pyproject.toml
           - fh-llm-client>=0.0.9 # Match pyproject.toml
           - fhaviary[xml]>=0.14 # Match pyproject.toml
@@ -81,7 +82,9 @@ repos:
           - numpy>=1.20 # Match pyproject.toml
           - pydantic~=2.0 # Match pyproject.toml
           - tenacity
-          - torch
+          - torch>=2.5
+          - tokenizers>=0.20
+          - transformers>=4.46
           - types-aiofiles
           - types-tqdm
           - usearch>=2.13 # Match pyproject.toml
