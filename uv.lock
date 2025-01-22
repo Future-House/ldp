@@ -16,6 +16,24 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "accelerate"
+version = "1.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "numpy" },
+    { name = "packaging" },
+    { name = "psutil" },
+    { name = "pyyaml" },
+    { name = "safetensors" },
+    { name = "torch" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/85/15/0fab0260ab4069e5224e637d2e400538bb27b0dfc36f17daf68db9770d78/accelerate-1.3.0.tar.gz", hash = "sha256:518631c0adb80bd3d42fb29e7e2dc2256bcd7c786b0ba9119bbaa08611b36d9c", size = 342758 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/73/de/64508cb91af013aaba214752309c0967568a4219d50a4ea30e822af3c976/accelerate-1.3.0-py3-none-any.whl", hash = "sha256:5788d9e6a7a9f80fed665cf09681c4dddd9dc056bea656db4140ffc285ce423e", size = 336647 },
+]
+
+[[package]]
 name = "aiofiles"
 version = "24.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1272,7 +1290,7 @@ wheels = [
 
 [[package]]
 name = "ldp"
-version = "0.19.1.dev3+gac4d5bb.d20250122"
+version = "0.19.1.dev5+gcae91c1"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -1292,6 +1310,7 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
+    { name = "accelerate" },
     { name = "dask", extra = ["distributed"] },
     { name = "dask-cuda" },
     { name = "dask-jobqueue" },
@@ -1330,6 +1349,7 @@ monitor = [
     { name = "wandb" },
 ]
 nn = [
+    { name = "accelerate" },
     { name = "dask", extra = ["distributed"] },
     { name = "dask-cuda" },
     { name = "dask-jobqueue" },
@@ -1355,6 +1375,7 @@ visualization = [
 
 [package.dev-dependencies]
 codeflash = [
+    { name = "accelerate" },
     { name = "codeflash" },
     { name = "dask", extra = ["distributed"] },
     { name = "dask-cuda" },
@@ -1391,6 +1412,7 @@ codeflash = [
     { name = "wandb" },
 ]
 dev = [
+    { name = "accelerate" },
     { name = "dask", extra = ["distributed"] },
     { name = "dask-cuda" },
     { name = "dask-jobqueue" },
@@ -1428,6 +1450,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "accelerate", marker = "extra == 'nn'" },
     { name = "aiofiles" },
     { name = "dask", extras = ["distributed"], marker = "extra == 'nn'" },
     { name = "dask-cuda", marker = "extra == 'nn'", specifier = ">=24.8.2" },
