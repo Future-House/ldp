@@ -30,12 +30,12 @@ from ldp.graph import (
     set_training_mode,
 )
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
-from ldp.graph.ops import GradInType, ResultOrValue, TOutput
+from ldp.graph.ops import GradInType, ResultOrValue, TOutput_co
 from ldp.llms.prompts import append_to_sys
 
 
-class StatefulFxnOp(FxnOp[TOutput]):
-    async def forward(self, *args, **kwargs) -> TOutput:
+class StatefulFxnOp(FxnOp[TOutput_co]):
+    async def forward(self, *args, **kwargs) -> TOutput_co:
         result = await super().forward(*args, **kwargs)
         self.ctx.update(get_call_id(), "observed", value=True)
         return result
