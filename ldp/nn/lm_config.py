@@ -103,8 +103,13 @@ class LMConfig(BaseModel):
         _compile_enabled: bool = True,
         **kwargs,
     ) -> tuple[PreTrainedTokenizer, TModel]:
-        model = self._load_pretrained_model(self.model, model_cls, **kwargs)
-        tokenizer = self.get_tokenizer()
+        assert self._loaded_model_name is not None, (
+            "Call resolve_model_location() before get_*() methods."
+        )
+        model = self._load_pretrained_model(
+            self._loaded_model_name, model_cls, **kwargs
+        )
+        tokenizer = self._load_tokenizer(self._loaded_model_name)
 
         # Make consistent in case _load_tokenizer changed the pad token
         model.config.pad_token_id = tokenizer.pad_token_id
@@ -119,9 +124,14 @@ class LMConfig(BaseModel):
 
         return tokenizer, model
 
-    @no_type_check
     def get_tokenizer(self) -> PreTrainedTokenizer:
-        model_name = self.model
+        assert self._loaded_model_name is not None, (
+            "Call resolve_model_location() before get_*() methods."
+        )
+        return self._load_tokenizer(self._loaded_model_name)
+
+    @no_type_check
+    def _load_tokenizer(self, model_name: str) -> PreTrainedTokenizer:
         logger.info(f"Loading tokenizer from {model_name}")
         tokenizer = AutoTokenizer.from_pretrained(model_name, **self.tokenizer_args)
         tokenizer.padding_side = "right"
@@ -161,3 +171,11 @@ class LMConfig(BaseModel):
             model = model.to(kwargs["torch_dtype"])
 
         return model
+
+    def resolve_model_location(self, is_main_process: bool = True):
+        """This method can be overridden in subclasses to load models from custom storage.
+
+        This class automatically supports models in (a) Huggingface Hub or (b) the local
+        filesystem.
+        """
+        self._loaded_model_name = self.model
