@@ -1,3 +1,4 @@
+from .agent.simple_local_agent import SimpleLocalLLMAgent
 from .graph.llm_call_op import LocalLLMCallOp
 from .handlers.chunking import TensorChunker
 from .handlers.transformer_handler import (
@@ -27,6 +28,7 @@ __all__ = [
     "ParallelAsyncTransformer",
     "ParallelModeConfig",
     "ParallelTransformerHandler",
+    "SimpleLocalLLMAgent",
     "TensorChunker",
     "TorchDType",
     "TransformerHandler",
