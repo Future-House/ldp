@@ -58,8 +58,9 @@ def fixture_vcr_config() -> dict[str, Any]:
     }
 
 
-TEST_GPUS: bool = os.getenv("TEST_GPUS", "").lower() in {"true", "1"}
-TEST_SLURM: bool = os.getenv("TEST_SLURM", "").lower() in {"true", "1"}
+ENABLED = {"true", "1", "yes"}
+TEST_GPUS: bool = os.getenv("TEST_GPUS", "").lower() in ENABLED
+TEST_SLURM: bool = os.getenv("TEST_SLURM", "").lower() in ENABLED
 
 PARALLEL_MODE_CONFIGS = [
     pytest.param(None, id="cpu-only"),

@@ -17,6 +17,7 @@ import torch.distributed as dist
 import tree
 from dask import config
 from dask.distributed import Client
+from dask_cuda import LocalCUDACluster
 from dask_jobqueue import SLURMCluster
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from torch import nn
@@ -46,10 +47,6 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import overload  # noqa: UP035
 
-try:
-    from dask_cuda import LocalCUDACluster
-except ImportError:
-    LocalCUDACluster = None
 
 config.set({
     # We have no use for rebooting workers in aviary for now, and rebooting workers
@@ -468,20 +465,13 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
     def _init_local_cluster(self, config, parallel_mode_config):
         """Initialize a Dask cluster on local machine."""
-        try:
-            self.cluster = LocalCUDACluster(
-                n_workers=parallel_mode_config.num_workers,
-                threads_per_worker=parallel_mode_config.num_cpus_per_worker,
-                host=parallel_mode_config.scheduler_addr,
-                port=parallel_mode_config.scheduler_port,
-                memory_limit=None,  # do not let Dask manage memory - if we OOM, we OOM
-            )
-        except TypeError:
-            raise ImportError(
-                f"To run {type(self).__name__} with execution mode"
-                f" {parallel_mode_config.execution_mode}, please install the"
-                " 'dask-cuda' package by running `make nn` in the repo root."
-            ) from None
+        self.cluster = LocalCUDACluster(
+            n_workers=parallel_mode_config.num_workers,
+            threads_per_worker=parallel_mode_config.num_cpus_per_worker,
+            host=parallel_mode_config.scheduler_addr,
+            port=parallel_mode_config.scheduler_port,
+            memory_limit=None,  # do not let Dask manage memory - if we OOM, we OOM
+        )
         self._initialize_workers(config, parallel_mode_config)
 
     def _init_slurm_cluster(self, config, parallel_mode_config):
@@ -828,7 +818,7 @@ def prepare_model_for_fsdp_with_meta_device(model: nn.Module) -> nn.Module:
     More details here: https://github.com/pytorch/pytorch/issues/104187.
 
     Args:
-        model: model class to prepare for usage with FSDP and meta device.
+        model: model to prepare for usage with FSDP and meta device.
 
     Returns:
         Model with reset_parameters defined on every submodule.

@@ -21,7 +21,7 @@ class ModuleExecutionInterface(ABC):
 
     Subclasses should implement @wrap_func and @wrap_afunc such that calling code can do:
 
-    ```
+    ```python
     exec_interface = MyExecutionInterface(...)
 
 
