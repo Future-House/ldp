@@ -11,6 +11,7 @@ from llmclient import configure_llm_logs
 from . import CASSETTES_DIR
 
 IN_GITHUB_ACTIONS: bool = os.getenv("GITHUB_ACTIONS") == "true"
+TEST_GPUS: bool = os.getenv("TEST_GPUS", "").lower() in {"true", "1"}
 
 
 @pytest.fixture(name="dummy_env")
