@@ -482,7 +482,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         self, config: TransformerHandlerConfig, parallel_mode_config: ParallelModeConfig
     ):
         """Initialize a Dask cluster on local machine."""
-        # lazy import since LocalCUDACluster only works on Linux machines
+        # lazy import since dask-cuda only works on Linux machines
         from dask_cuda import LocalCUDACluster
 
         self.cluster = LocalCUDACluster(
