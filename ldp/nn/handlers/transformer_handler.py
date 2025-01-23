@@ -17,7 +17,6 @@ import torch.distributed as dist
 import tree
 from dask import config
 from dask.distributed import Client
-from dask_cuda import LocalCUDACluster
 from dask_jobqueue import SLURMCluster
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from torch import nn
@@ -483,6 +482,9 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         self, config: TransformerHandlerConfig, parallel_mode_config: ParallelModeConfig
     ):
         """Initialize a Dask cluster on local machine."""
+        # lazy import since dask-cuda only works on Linux machines
+        from dask_cuda import LocalCUDACluster
+
         self.cluster = LocalCUDACluster(
             n_workers=parallel_mode_config.num_workers,
             threads_per_worker=parallel_mode_config.num_cpus_per_worker,
