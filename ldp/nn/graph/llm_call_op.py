@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 from functools import partial
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import tree
 from aviary.core import MalformedMessageError, Message, Messages
 from aviary.tools import Tool, ToolCall, ToolRequestMessage
+from transformers import LogitsProcessorList
 
 from ldp.graph.gradient_estimators import assign_constant_grads
 from ldp.graph.op_utils import CallID, get_call_id, get_training_mode
@@ -59,6 +60,8 @@ class LocalLLMCallOp(Op[Message]):
         )
         self.model_handler = handler_config.make_async_module()
         self.model_name = model_config.model
+
+        self.llm_call_kwargs = {"logits_processor": LogitsProcessorList()}
 
     @staticmethod
     def prep_messages_for_tokenizer(xi: Messages) -> list[dict]:
@@ -139,6 +142,7 @@ class LocalLLMCallOp(Op[Message]):
         temperature: float = 1.0,
         max_new_tokens: int = 10,
         tools: list[Tool] | None = None,
+        **kwargs: dict[str, Any],
     ) -> Message:
         call_id = get_call_id()
         inputs = self.prep_messages_for_tokenizer(xi)
@@ -156,6 +160,8 @@ class LocalLLMCallOp(Op[Message]):
             return_legacy_cache=False,
             return_dict_in_generate=True,
             do_sample=temperature > 0,
+            **self.llm_call_kwargs,
+            **kwargs,
         )
 
         out_msg = Message(role="assistant", content=out_text)

@@ -32,11 +32,12 @@ from torch.distributed.fsdp import (
 )
 from torch.nn.functional import pad
 from transformers import PreTrainedModel, PreTrainedTokenizer
-from transformers.generation.utils import GenerateDecoderOnlyOutput
+from transformers.generation.utils import GenerateDecoderOnlyOutput, LogitsProcessorList
 from transformers.tokenization_utils_base import BatchEncoding
 
 from ldp.graph.async_torch import AsyncBufferedWorker, AsyncTorchModule
 
+from ..generation import LogitsProcessorWithFinalize  # noqa: TID252
 from ..lm_config import LMConfig, TorchDType  # noqa: TID252
 from ..utils import REPO_ROOT, set_seed  # noqa: TID252
 from .chunking import TensorChunker
@@ -126,8 +127,8 @@ class ParallelModeConfig(FSDPConfig):
     )
     execution_mode: ExecutionMode = Field(
         description=(
-            "Execution mode of the current setup, defines how to allocate resources"
-            " (cpus/gpus) for the model to run on."
+            "Execution mode of the current setup, defines how to allocate resources "
+            "(cpus/gpus) for the model to run on."
         ),
         default=ExecutionMode.LOCAL_MACHINE,
     )
@@ -168,8 +169,8 @@ class TransformerHandlerConfig(BaseModel):
     parallel_mode_config: ParallelModeConfig | None = Field(
         default=None,
         description=(
-            "Opt-in config for parallel execution, default of None leads to a"
-            " transformer without parallelism"
+            "Optional configuration for distributing the transformer across "
+            "multiple devices/nodes. If not provided, will default to single-device."
         ),
     )
 
@@ -308,7 +309,20 @@ class AsyncTransformer(TransformerHandler, AsyncTransformerInterface):
         inputs_len = inputs_tokenized["input_ids"].shape[1]
         self.module.eval()
         outputs = await AsyncTorchModule.__call__(self, **inputs_tokenized, **kwargs)
+        self._maybe_finalize_logits_processors(kwargs.get("logits_processor"), outputs)
+
         return _process_outputs(self.config, self.tokenizer, outputs, inputs_len)
+
+    @staticmethod
+    def _maybe_finalize_logits_processors(
+        logits_processors: LogitsProcessorList | None,
+        outputs: GenerateDecoderOnlyOutput,
+    ) -> None:
+        if not logits_processors:
+            return
+        for processor in logits_processors:
+            if isinstance(processor, LogitsProcessorWithFinalize):
+                processor.finalize(outputs.sequences)
 
 
 class ParallelWorkerConfig(FSDPConfig):
@@ -565,6 +579,10 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         inputs_tokenized = _get_tokenized_inputs(self.tokenizer, inputs, tools_json)
         inputs_len = inputs_tokenized["input_ids"].shape[1]
         outputs = await AsyncBufferedWorker.__call__(self, **inputs_tokenized, **kwargs)
+        AsyncTransformer._maybe_finalize_logits_processors(
+            kwargs.get("logits_processor"), outputs
+        )
+
         return _process_outputs(self.config, self.tokenizer, outputs, inputs_len)
 
     async def _batched_call(self, batch_kwargs: dict[str, Any]):
