@@ -45,9 +45,7 @@ class AgentLMConfig(_LMConfig):
     @field_validator("llm_call_kwargs")
     @classmethod
     def validate_llm_call_kwargs(cls, v: dict) -> dict:
-        v.setdefault("top_k", None)
-        v.setdefault("top_p", 1.0)
-        return v
+        return {"top_k": None, "top_p": 1.0} | v
 
 
 # TODO: consider merging with SimpleAgent
