@@ -27,8 +27,8 @@ async def test_circular_buffer() -> None:
     ):
         next(buf.batched_iter(batch_size=4))
 
-    await buf.reset()
-    assert not buf.data, "Reset didn't clear data"
+    buf.clear()
+    assert not buf, "Failed to clear data"
 
 
 async def _dummy_q_function(*args, **kwargs) -> float:  # noqa: ARG001

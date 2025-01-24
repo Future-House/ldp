@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
@@ -65,11 +64,12 @@ class ChainedOptimizer(Optimizer):
             await optimizer.update()
 
 
-class OptimizerResetBufferCallback(Callback):
-    """Invoke the reset method on buffer(s) after each optimizer update."""
+class OptimizerClearBufferCallback(Callback):
+    """Invoke the clear method on buffer(s) after each optimizer update."""
 
     def __init__(self, *buffers: ReplayBuffer):
         self._buffers = list(buffers)
 
     async def after_update(self) -> None:
-        await asyncio.gather(*(b.reset() for b in self._buffers))
+        for b in self._buffers:
+            b.clear()
