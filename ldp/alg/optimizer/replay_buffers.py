@@ -62,6 +62,14 @@ class ReplayBuffer(UserList[dict]):
     ) -> Iterator[dict]:
         return self._batched_iter(self.data, batch_size, shuffle, infinite)
 
+    async def reset(self) -> None:
+        """
+        Optional method for the buffer to reset itself, base class clears stored data.
+
+        Other behaviors could be moving internal pointers or LLM-backed data curation.
+        """
+        self.data.clear()
+
     def resize(self, size: int) -> None:
         """Optional method for the buffer to resize itself."""
 
