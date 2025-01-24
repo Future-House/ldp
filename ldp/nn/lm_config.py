@@ -135,11 +135,11 @@ class LMConfig(BaseModel):
         if self.pad_token is not None:
             if self.pad_token not in tokenizer.vocab:
                 raise ValueError(
-                    f"pad_token {self.pad_token} not in tokenizer vocabulary"
+                    f"pad_token {self.pad_token!r} not in tokenizer vocabulary"
                 )
             if tokenizer.pad_token is not None:
                 logger.warning(
-                    f"Overriding tokenizer pad token {tokenizer.pad_token} with {self.pad_token}"
+                    f"Overriding tokenizer pad token {tokenizer.pad_token!r} with {self.pad_token!r}"
                 )
             tokenizer.pad_token = self.pad_token
 
