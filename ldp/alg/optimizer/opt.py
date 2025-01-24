@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 
+from ldp.alg.callbacks import Callback
+from ldp.alg.optimizer.replay_buffers import ReplayBuffer
 from ldp.data_structures import Trajectory
 from ldp.shims import tqdm
 
@@ -60,3 +63,13 @@ class ChainedOptimizer(Optimizer):
     async def update(self) -> None:
         for optimizer in self.optimizers:
             await optimizer.update()
+
+
+class OptimizerResetBufferCallback(Callback):
+    """Invoke the reset method on buffer(s) after each optimizer update."""
+
+    def __init__(self, *buffers: ReplayBuffer):
+        self._buffers = list(buffers)
+
+    async def after_update(self) -> None:
+        await asyncio.gather(*(b.reset() for b in self._buffers))
