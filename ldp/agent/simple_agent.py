@@ -19,6 +19,10 @@ class HiddenEnvStateMessage(EnvStateMessage):
     content: str = "[Previous environment state - hidden]"
 
 
+def hide_action_content(msg: ToolRequestMessage) -> ToolRequestMessage:
+    return msg.model_copy(update={"content": None})
+
+
 class SimpleAgentState(BaseModel):
     """Simple bucket for an Agent to access tools and store messages."""
 
@@ -31,6 +35,10 @@ class SimpleAgentState(BaseModel):
     hide_old_env_states: bool = Field(
         default=False,
         description="Whether to hide old EnvStateMessages.",
+    )
+    hide_old_action_content: bool = Field(
+        default=False,
+        description="If True, will hide the content of old ToolRequestMessages.",
     )
 
     def get_next_state(
@@ -50,6 +58,7 @@ class SimpleAgentState(BaseModel):
             tools: Optional list of tools available to the agent. If unspecified, these
                 should be pulled from the prior_state.
             hide_old_env_states: Optional override of self.hide_old_env_states.
+                TODO: do we still need this override?
             kwargs: Additional keyword arguments to pass to this class's constructor.
 
         Returns:
@@ -67,11 +76,17 @@ class SimpleAgentState(BaseModel):
                 HiddenEnvStateMessage() if isinstance(m, EnvStateMessage) else m
                 for m in old_messages
             ]
+        if self.hide_old_action_content:
+            old_messages = [
+                hide_action_content(m) if isinstance(m, ToolRequestMessage) else m
+                for m in old_messages
+            ]
 
         return type(self)(
             tools=tools if tools is not None else self.tools,
             messages=old_messages + (obs or []),
             hide_old_env_states=hide_old_env_states,
+            hide_old_action_content=self.hide_old_action_content,
             **kwargs,
         )
 
@@ -105,6 +120,11 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
         description="See SimpleAgentState.hide_old_env_states.",
     )
 
+    hide_old_action_content: bool = Field(
+        default=False,
+        description="See SimpleAgentState.hide_old_action_content.",
+    )
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._config_op = ConfigOp[dict](config=self.llm_model)
@@ -112,7 +132,9 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:
         return SimpleAgentState(
-            tools=tools, hide_old_env_states=self.hide_old_env_states
+            tools=tools,
+            hide_old_env_states=self.hide_old_env_states,
+            hide_old_action_content=self.hide_old_action_content,
         )
 
     @compute_graph()
