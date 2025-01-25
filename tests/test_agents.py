@@ -4,6 +4,7 @@ import tempfile
 from enum import IntEnum, auto
 from functools import partial
 from pathlib import Path
+from typing import cast
 from unittest.mock import patch
 
 import networkx as nx
@@ -229,6 +230,27 @@ class TestSimpleAgent:
         # Check that the second EnvStateMessage didn't get hidden
         assert isinstance(agent_state_2.messages[2], EnvStateMessage)
         assert not isinstance(agent_state_2.messages[2], HiddenEnvStateMessage)
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_hide_old_action_content(self, dummy_env: DummyEnv) -> None:
+        obs, tools = await dummy_env.reset()
+
+        agent = SimpleAgent(hide_old_action_content=True)
+        agent_state_0 = await agent.init_state(tools=tools)
+
+        action, agent_state_1, _ = await agent.get_asv(agent_state_0, obs)
+        action.value.content = "Injecting some reasoning"
+        obs, *_ = await dummy_env.step(action.value)
+        _, agent_state_2, _ = await agent.get_asv(agent_state_1, obs)
+
+        orig_action = cast(ToolRequestMessage, agent_state_1.messages[1])
+        modified_action = cast(ToolRequestMessage, agent_state_2.messages[1])
+
+        # tool calls shouldn't have been modified
+        assert orig_action.tool_calls == modified_action.tool_calls
+        # But the content should have been
+        assert modified_action.content is None
 
 
 class TestNoToolsSimpleAgent:
