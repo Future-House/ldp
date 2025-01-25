@@ -4,7 +4,7 @@ import json
 import logging
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, ClassVar
+from typing import ClassVar
 
 import tree
 from aviary.core import (
@@ -202,7 +202,7 @@ class LocalLLMCallOp(Op[Message]):
         temperature: float = 1.0,
         max_new_tokens: int = 10,
         tools: Tools | None = None,
-        **kwargs: dict[str, Any],
+        **kwargs,
     ) -> Message:
         call_id = get_call_id()
         inputs = self.prep_messages_for_tokenizer(msgs)
