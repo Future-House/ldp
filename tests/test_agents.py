@@ -139,6 +139,7 @@ class TestSimpleAgent:
         # Ops aren't included
         assert agent.model_dump() == {
             "hide_old_env_states": False,
+            "hide_old_action_content": False,
             "llm_model": {"model": model_name, "temperature": 0.1},
             "sys_prompt": None,
         }
