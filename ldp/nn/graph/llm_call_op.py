@@ -39,18 +39,18 @@ class MessageAndToolParser(ABC):
 
     supported_templates: ClassVar[set[str]] = set()
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def get_message_content(cls, msg: Message) -> str | None:
         """Represents a message as a string."""
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def prep_tools_for_tokenizer(cls, tools: Tools | None) -> list[dict] | None:
         """Prepares tools for tokenization."""
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def parse_tool_request_message(
         cls, out_text: str, tools: Tools
     ) -> ToolRequestMessage:
