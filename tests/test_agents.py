@@ -12,7 +12,7 @@ from aviary.core import DummyEnv, Message, Tool, ToolCall, ToolRequestMessage
 from aviary.message import EnvStateMessage
 from httpx import ASGITransport, AsyncClient
 from llmclient import CommonLLMNames
-from llmclient import MultipleCompletionLLMModel as LLMModel
+from llmclient import LiteLLMModel as LLMModel
 from pydantic import BaseModel, Field
 
 from ldp.agent import (

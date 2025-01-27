@@ -7,8 +7,8 @@ from enum import StrEnum, auto
 from typing import Any, Self, cast
 
 from aviary.core import Message
+from llmclient import LiteLLMModel as LLMModel
 from llmclient import LLMResult
-from llmclient import MultipleCompletionLLMModel as LLMModel
 from pydantic import (
     BaseModel,
     ConfigDict,

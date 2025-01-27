@@ -21,7 +21,7 @@ from llmclient import (
     LLMResult,
     SparseEmbeddingModel,
 )
-from llmclient import MultipleCompletionLLMModel as LLMModel
+from llmclient import LiteLLMModel as LLMModel
 from pydantic import BaseModel
 
 from .gradient_estimators import assign_constant_grads
