@@ -8,6 +8,7 @@ from .beam_search import Beam, BeamSearchRollout
 from .callbacks import (
     Callback,
     ClearContextCallback,
+    ClearOptimizerBuffersCallback,
     ComputeTrajectoryMetricsMixin,
     LoggingCallback,
     MeanMetricsCallback,
@@ -33,6 +34,7 @@ __all__ = [
     "BeamSearchRollout",
     "Callback",
     "ClearContextCallback",
+    "ClearOptimizerBuffersCallback",
     "ComputeTrajectoryMetricsMixin",
     "Evaluator",
     "EvaluatorConfig",
