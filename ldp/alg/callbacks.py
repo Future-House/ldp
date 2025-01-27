@@ -6,7 +6,7 @@ import time
 from collections import defaultdict
 from collections.abc import Callable, Collection, Iterable, Sequence
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import aiofiles
 from aviary.core import (
@@ -26,6 +26,9 @@ try:
     import wandb
 except ImportError:
     wandb = None  # type: ignore[assignment]
+
+if TYPE_CHECKING:
+    from ldp.alg.optimizer.replay_buffers import ReplayBuffer
 
 logger = logging.getLogger(__name__)
 
@@ -567,3 +570,14 @@ class TerminalPrintingCallback(Callback):
         print("\nObservation:")
         pprint(obs, expand_all=True)
         print(f"Elapsed time: {elapsed_time:.2f} seconds")
+
+
+class ClearOptimizerBuffersCallback(Callback):
+    """Invoke the clear method on buffer(s) after each optimizer update."""
+
+    def __init__(self, *buffers: "ReplayBuffer"):
+        self._buffers = list(buffers)
+
+    async def after_update(self) -> None:
+        for b in self._buffers:
+            b.clear()
