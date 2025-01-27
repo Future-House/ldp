@@ -52,12 +52,12 @@ class LMConfig(BaseModel):
             "Will pass torch_dtype=getattr(torch, self.dtype) if dtype is not auto."
         ),
     )
-    eos_as_pad_fallback: bool = Field(
-        default=True,
-        description=(
-            "If the tokenizer is missing a pad token, "
-            "automatically set it to the EOS token. Defaults to True."
-        ),
+    pad_token: str | None = Field(
+        default=None,
+        description="If set, will override the pad token in the tokenizer. "
+        "Must be a valid token already in the vocabulary. Should be primarily "
+        "used for tokenizers that do not predefine a pad token; will throw a "
+        "warning otherwise.",
     )
     gradient_checkpointing: bool = False
     compile: bool = False
@@ -132,9 +132,16 @@ class LMConfig(BaseModel):
         tokenizer = AutoTokenizer.from_pretrained(model_name, **self.tokenizer_args)
         tokenizer.padding_side = "right"
 
-        if (not tokenizer.pad_token) and self.eos_as_pad_fallback:
-            logger.warning("Tokenizer does not have a pad token. Using EOS token.")
-            tokenizer.pad_token = tokenizer.eos_token
+        if self.pad_token is not None:
+            if self.pad_token not in tokenizer.vocab:
+                raise ValueError(
+                    f"pad_token {self.pad_token!r} not in tokenizer vocabulary"
+                )
+            if tokenizer.pad_token is not None:
+                logger.warning(
+                    f"Overriding tokenizer pad token {tokenizer.pad_token!r} with {self.pad_token!r}"
+                )
+            tokenizer.pad_token = self.pad_token
 
         return tokenizer
 
