@@ -2,16 +2,17 @@ interactions:
   - request:
       body:
         '{"messages": [{"role": "user", "content": "Write a 5 word story via print_story"}],
-        "model": "gpt-4o-2024-08-06", "temperature": 0.1, "tool_choice": "required",
-        "tools": [{"type": "function", "function": {"name": "print_story", "description":
-        "Print a story.", "parameters": {"type": "object", "properties": {"story": {"description":
-        "Story to print.", "title": "Story", "type": "string"}}, "required": ["story"]}}},
-        {"type": "function", "function": {"name": "cast_float", "description": "Cast
-        the input argument x to a float.", "parameters": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "string"}}, "required": ["x"]}}}, {"type": "function",
-        "function": {"name": "cast_int", "description": "Cast the input argument x to
-        an integer.", "parameters": {"type": "object", "properties": {"x": {"title":
-        "X", "type": "number"}}, "required": ["x"]}}}]}'
+        "model": "gpt-4o-2024-11-20", "max_tokens": 4096, "n": 1, "temperature": 0.1,
+        "tool_choice": "required", "tools": [{"type": "function", "function": {"name":
+        "print_story", "description": "Print a story.", "parameters": {"type": "object",
+        "properties": {"story": {"description": "Story to print.", "title": "Story",
+        "type": "string"}}, "required": ["story"]}}}, {"type": "function", "function":
+        {"name": "cast_float", "description": "Cast the input argument x to a float.",
+        "parameters": {"type": "object", "properties": {"x": {"title": "X", "type":
+        "string"}}, "required": ["x"]}}}, {"type": "function", "function": {"name":
+        "cast_int", "description": "Cast the input argument x to an integer.", "parameters":
+        {"type": "object", "properties": {"x": {"title": "X", "type": "number"}}, "required":
+        ["x"]}}}]}'
       headers:
         accept:
           - application/json
@@ -20,13 +21,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "862"
+          - "890"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.54.3
+          - AsyncOpenAI/Python 1.59.9
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -36,11 +37,11 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.54.3
+          - 1.59.9
         x-stainless-raw-response:
           - "true"
         x-stainless-retry-count:
-          - "1"
+          - "0"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
@@ -50,20 +51,19 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA4xTTYvbMBC9+1eIOSeLna/u+lbYXtLSQ0MKaVOMIo9ttbIkpDHdbMh/L1bij6Rb
-          qA9CzJv3ZuZpfIoYA5lDykBUnERt1fT9l414Fc3223P1eZt82O30utbJGp/WXz96mLQMc/iJgjrW
-          gzC1VUjS6AssHHLCVjV5N0+S+HG2WgagNjmqllZami7MdBbPFtP4cRqvrsTKSIEeUvY9YoyxUzjb
-          FnWOL5CyeNJFavSelwhpn8QYOKPaCHDvpSeuCSYDKIwm1G3XulFqBJAxKhNcqaHw5TuN7oNPXKlM
-          LF9IruYHpGpVPbvtSr9+etrMdqN6F+mjDQ0VjRa9PyO8j6d3xRgDzevAtU5qyjwZd7yjMwbclU2N
-          mtrW4bSHkLaHdA+bRnsk9ruS3qLzzKNwSJ6RYVqWFT3s4Qw3cuforfuPkVMOi8ZzdbXwGj/3b6JM
-          aZ05+DuLoZBa+ipzyH0Ydex41FULdaC5eVSwztSWMjK/ULeySXLdABh2bkBnHUiGuBqx5h1wo5fl
-          SFyGV+8XTXBRYT5Qh4XjTS7NCIhGs//dzVval/mlLv9HfgCEQEuYZ9ZhLsXtxEOaw/aX/Fda73Jo
-          GPzRE9ZZIXWJLuxXWFKbLZaiWC5y5AjROfoDAAD//wMAQRMCux4EAAA=
+          H4sIAAAAAAAAAwAAAP//jFPLbtswELzrK4g924H8qBPrVhdtD3HQFG2KoHUhMORKYkyRLB9NHMP/
+          Xoi2JdlNgeogEDuc2d3Z5TYhBASHjACrqGe1kcO3QX2cqE/h/UJ/d7OX2+eK3bPbxc2X6debbzBo
+          GPrhEZk/si6Yro1EL7Taw8wi9dioji4nV+l8nl7OI1BrjrKhlcYPp3o4TsfT4Wg0HKcHYqUFQwcZ
+          +ZEQQsg2/psSFcdnyEg6OEZqdI6WCFl7iRCwWjYRoM4J56nyMOhAppVH1VStgpQ9wGstc0al7BLv
+          v23v3PlEpcwXT1f3pREsLJcvH35V1+vPd++uH0PVy7eX3phYUBEUa/3p4W08O0tGCChaR66xQvnc
+          eW03Z3RCgNoy1Kh8UzpsVxCvrSBbwVI7T9a4caTQQXEiFHFKP12sYAcnKrvktfPPnkEWi+CoPDh3
+          iO/aUUhdGqsf3JmzUAglXJVbpC522Dc6OWaLeSCczBKM1bXxuddrVI3saHQYPHSr1qHjI+i1p7LH
+          mhyBE72co6ciDrvdL0ZZhbyjdntGAxe6ByS93v+u5jXtff9Clf8j3wGMofHIc2ORC3bacXfNYvMS
+          /3WtdTkWDA7tb8Ew9wJtMw+OBQ1y/0jAbZzHOi+EKtHGnYuLa/JZSifFmLPZG0h2yR8AAAD//wMA
+          DT+UojIEAAA=
       headers:
-        CF-Cache-Status:
-          - DYNAMIC
         CF-RAY:
-          - 8df95100997d96db-SJC
+          - 9094032a0ad3cf2e-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -71,9 +71,15 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Fri, 08 Nov 2024 23:24:25 GMT
+          - Tue, 28 Jan 2025 21:17:59 GMT
         Server:
           - cloudflare
+        Set-Cookie:
+          - __cf_bm=9OnzFljfWopC3VSO_KOGXCxcPmpn2biIK66lpD9Y1LQ-1738099079-1.0.1.1-3PGwl3Yt7PYN_2czeKz4d.Qj.2uQLLUgLXmQyYxtvguFU3b3Kq3f9jPMI.igf25I_jT.5MG3eJZUi7c2UfXpPg;
+            path=/; expires=Tue, 28-Jan-25 21:47:59 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=4K4fKadxZU9JIJiOu.h1JzccbY_iwwd2S6X5ptYEebk-1738099079567-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -82,10 +88,12 @@ interactions:
           - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "365"
+          - "713"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -97,13 +105,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "9999"
         x-ratelimit-remaining-tokens:
-          - "29999973"
+          - "29995894"
         x-ratelimit-reset-requests:
           - 6ms
         x-ratelimit-reset-tokens:
-          - 0s
+          - 8ms
         x-request-id:
-          - req_b6d390e3bfb090a3b3bbead59285db3a
+          - req_b8b915b18a6d0835fe18df56c77629f6
       status:
         code: 200
         message: OK
