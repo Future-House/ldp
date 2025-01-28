@@ -7,7 +7,7 @@ from ldp.alg.optimizer.replay_buffers import (
 
 
 @pytest.mark.asyncio
-async def test_circular_buffer():
+async def test_circular_buffer() -> None:
     buf = CircularReplayBuffer()
 
     samples = [{"state": 1, "action": 2, "reward": 3, "t": t} for t in range(5)]
@@ -26,6 +26,9 @@ async def test_circular_buffer():
         RuntimeError, match="Found buffer element with inconsistent keys"
     ):
         next(buf.batched_iter(batch_size=4))
+
+    buf.clear()
+    assert not buf, "Failed to clear data"
 
 
 async def _dummy_q_function(*args, **kwargs) -> float:  # noqa: ARG001
