@@ -24,7 +24,8 @@ classifiers = [
 dependencies = [
     "aiofiles",
     "dm-tree",
-    "fh-llm-client>=0.0.9",  # Pin for CommonLLMNames
+    "fh-llm-client @ git+https://github.com/Future-House/llm-client.git@main",
+    # "fh-llm-client>=0.0.11",
     "fhaviary>=0.8.2",  # For core namespace
     "httpx",
     "networkx[default]~=3.4",  # Pin for pydot fix
@@ -45,7 +46,6 @@ requires-python = ">=3.11"
 
 [project.optional-dependencies]
 dev = [
-    "fh-llm-client>=0.0.9",  # Pin for cost tracking
     "fhaviary[xml]>=0.14",  # Pin for MultipleChoiceQuestion
     "ipython>=8",  # Pin to keep recent
     "ldp[monitor,nn,rich,server,typing,visualization]",

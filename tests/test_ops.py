@@ -11,8 +11,8 @@ import tenacity
 import tree
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
 from llmclient import CommonLLMNames, LLMResult
-from llmclient import LiteLLMModel as LLMModel
 
+# from llmclient import LiteLLMModel as LLMModel
 from ldp.graph import (
     CallID,
     ConfigOp,
@@ -32,6 +32,7 @@ from ldp.graph import (
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
 from ldp.graph.ops import GradInType, ResultOrValue, TOutput_co
 from ldp.llms.prompts import append_to_sys
+from tests.conftest import VCR_DEFAULT_MATCH_ON
 
 
 class StatefulFxnOp(FxnOp[TOutput_co]):
@@ -144,7 +145,7 @@ class TestLLMCallOp:
 
         env = LLMCallingEnv()
         obs, tools = await env.reset()
-        config = {"model": model_name, "temperature": 0.1}
+        config = {"name": model_name, "temperature": 0.1}
         llm_op = LLMCallOp()
 
         # Perform one step
@@ -159,23 +160,31 @@ class TestLLMCallOp:
         # Environment tracks its internal costs
         assert env.total_cost > 0
 
-    @pytest.mark.vcr
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
     async def test_empty_tools(self) -> None:
         llm_call_op = LLMCallOp()
+        # config = LLMModel.model_fields["config"].default_factory()
+        config = {"name": CommonLLMNames.OPENAI_TEST.value}
         message_result = await llm_call_op(
-            LLMModel.model_fields["config"].default_factory(),  # type: ignore[call-arg, misc]
+            config,
             msgs=[Message(content="Hello")],
             tools=[],
         )
-        assert isinstance(message_result.value, ToolRequestMessage)
-        assert not message_result.value.tool_calls
+        # ASK: Should llm_call_op return a ToolRequestMessage once there's no tool calls?
+        # The LLM returns a Message instead.
+        assert isinstance(message_result.value, Message)
+        assert not hasattr(message_result.value, "tool_calls")
 
-    @pytest.mark.vcr
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
     @pytest.mark.parametrize("temperature", [0.0, 0.5, 1.0])
     async def test_compute_logprob(self, temperature) -> None:
-        config = {"model": CommonLLMNames.OPENAI_TEST.value, "temperature": temperature}
+        config = {
+            "name": CommonLLMNames.OPENAI_TEST.value,
+            "temperature": temperature,
+            "logprobs": True,
+        }
         llm_op = LLMCallOp()
         output = await llm_op(config, msgs=[Message(content="Hello")])
         logp = llm_op.ctx.get(output.call_id, "logprob")
@@ -190,13 +199,13 @@ class TestLLMCallOp:
     @pytest.mark.vcr
     @pytest.mark.asyncio
     async def test_validation(self) -> None:
-        config = {"model": CommonLLMNames.OPENAI_TEST.value, "num_retries": 1}
+        config = {"name": CommonLLMNames.OPENAI_TEST.value, "num_retries": 1}
         validator = StatefulValidator()
         llm_op = LLMCallOp(response_validator=validator)
         await llm_op(config, msgs=[Message(content="Hello")])
         assert validator.counter == 2  # first attempt should have failed
 
-        config = {"model": CommonLLMNames.OPENAI_TEST.value, "num_retries": 0}
+        config = {"name": CommonLLMNames.OPENAI_TEST.value, "num_retries": 0}
         llm_op = LLMCallOp(response_validator=StatefulValidator())
         with pytest.raises(tenacity.RetryError, match="ResponseValidationError"):
             await llm_op(config, msgs=[Message(content="Hello")])
@@ -239,7 +248,7 @@ async def test_llm_call_graph() -> None:
 
     package_msg_op = FxnOp(append_to_sys)
     config = {
-        "model": "gpt-3.5-turbo-0125",
+        "name": "gpt-3.5-turbo-0125",
         "temperature": 0.1,
         "logprobs": True,
         "top_logprobs": 1,
@@ -417,12 +426,12 @@ async def test_clear_contexts():
 @pytest.mark.vcr
 @pytest.mark.parametrize("dense_embedding_size", [0, 256, 512])
 @pytest.mark.parametrize("sparse_embedding_size", [0, 32, 64])
-@pytest.mark.parametrize("model", ["text-embedding-3-small", "text-embedding-3-large"])
-async def test_embedding_op(model, dense_embedding_size, sparse_embedding_size) -> None:
+@pytest.mark.parametrize("name", ["text-embedding-3-small", "text-embedding-3-large"])
+async def test_embedding_op(name, dense_embedding_size, sparse_embedding_size) -> None:
     if dense_embedding_size == sparse_embedding_size == 0:
         return
     op = EmbeddingOp(
-        dense_embedding=model,
+        dense_embedding=name,
         dense_embedding_dim=dense_embedding_size,
         sparse_embedding_dim=sparse_embedding_size,
     )

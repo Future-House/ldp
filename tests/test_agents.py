@@ -89,7 +89,7 @@ def many_edge_cases(
 
 
 class TestAgentState:
-    @pytest.mark.vcr
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.parametrize("agent", [SimpleAgent(), MemoryAgent(), ReActAgent()])
     @pytest.mark.asyncio
     async def test_no_state_mutation(self, dummy_env: DummyEnv, agent: Agent) -> None:
@@ -126,7 +126,7 @@ class TestSimpleAgent:
     async def test_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
 
-        agent = SimpleAgent(llm_model={"model": model_name, "temperature": 0.1})
+        agent = SimpleAgent(llm_model={"name": model_name, "temperature": 0.1})
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         obs, reward, done, truncated = await dummy_env.step(action.value)
@@ -140,7 +140,7 @@ class TestSimpleAgent:
         assert agent.model_dump() == {
             "hide_old_env_states": False,
             "hide_old_action_content": False,
-            "llm_model": {"model": model_name, "temperature": 0.1},
+            "llm_model": {"name": model_name, "temperature": 0.1},
             "sys_prompt": None,
         }
 
@@ -163,7 +163,7 @@ class TestSimpleAgent:
     async def test_agent_grad(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
 
-        agent = SimpleAgent(llm_model={"model": model_name, "temperature": 0.1})
+        agent = SimpleAgent(llm_model={"name": model_name, "temperature": 0.1})
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
@@ -272,7 +272,7 @@ class TestNoToolsSimpleAgent:
             )
 
         agent = NoToolsSimpleAgent(
-            print_story_factory, llm_model={"model": model_name, "temperature": 0.1}
+            print_story_factory, llm_model={"name": model_name, "temperature": 0.1}
         )
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
@@ -295,7 +295,7 @@ class TestMemoryAgent:
     async def test_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
 
-        agent = MemoryAgent(llm_model={"model": model_name, "temperature": 0.1})
+        agent = MemoryAgent(llm_model={"name": model_name, "temperature": 0.1})
         agent_state = await agent.init_state(tools=tools)
 
         # access memory and add one to it
@@ -395,7 +395,7 @@ class TestReActAgent:
     ) -> None:
         obs, tools = await dummy_env.reset()
         agent = ReActAgent(
-            llm_model={"model": model_name, "temperature": 0.1},
+            llm_model={"name": model_name, "temperature": 0.1},
             single_prompt=single_prompt,
         )
         agent_state = await agent.init_state(tools=tools)
@@ -418,8 +418,8 @@ class TestReActAgent:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("single_prompt", [True, False])
-    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
-    @pytest.mark.flaky(reruns=3)
+    # @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    # @pytest.mark.flaky(reruns=3)
     async def test_multi_step(self, dummy_env: DummyEnv, single_prompt: bool) -> None:
         obs, tools = await dummy_env.reset()
         obs = dummy_env.state.messages = [
@@ -433,7 +433,7 @@ class TestReActAgent:
         agent = ReActAgent(
             single_prompt=single_prompt,
             llm_model={
-                "model": CommonLLMNames.OPENAI_TEST.value,
+                "name": CommonLLMNames.OPENAI_TEST.value,
                 # If tools are provided, don't allow it to make parallel tool calls, since
                 # we want to force longer trajectories. In single_prompt mode, parallel tool
                 # calling is not possible, and OpenAI requires parallel_tool_calls=None
@@ -492,7 +492,7 @@ class TestReActAgent:
         obs, tools = await dummy_env.reset()
 
         agent = ReActAgent(
-            llm_model={"model": model_name, "temperature": 0.1},
+            llm_model={"name": model_name, "temperature": 0.1},
             single_prompt=single_prompt,
         )
         agent_state = await agent.init_state(tools=tools)
@@ -696,7 +696,7 @@ class TestReActAgent:
         ]
         user_msg = Message(content="Cast the string '5.6' to a float.")
         with (
-            patch.object(LLMModel, "achat") as mock_achat,
+            patch.object(LLMModel, "acompletion") as mock_acompletion,
             patch.object(ReActModuleSinglePrompt, "parse_message"),
         ):
             agent = ReActAgent(
@@ -708,9 +708,9 @@ class TestReActAgent:
                     await agent.get_asv(agent_state, obs=[user_msg])
                 return
             await agent.get_asv(agent_state, obs=[user_msg])
-        mock_achat.assert_awaited_once()
-        assert mock_achat.await_args
-        assert mock_achat.await_args[0][0] == [
+        mock_acompletion.assert_awaited_once()
+        assert mock_acompletion.await_args
+        assert mock_acompletion.await_args[0][0] == [
             Message(role="system", content=expected),
             user_msg,
         ]

@@ -270,7 +270,7 @@ class LLMCallOp(Op[Message]):
         Returns:
             Output message from the model.
         """
-        model = LLMModel(config=config)
+        model = LLMModel(name=config["name"], config=config)
 
         if not tools:
             # if no tools are provided, tool_choice must be 'none'
@@ -278,16 +278,19 @@ class LLMCallOp(Op[Message]):
 
         result = await self._call_single_and_maybe_validate(
             model=model,
-            num_retries=config.get("num_retries", 0),
+            # num_retries=config.get("num_retries", 0),
             messages=msgs,
             tools=tools,
             tool_choice=tool_choice,
+            **config,
         )
         if result.messages is None:
             raise ValueError("No messages returned")
 
         # if not set, assume temp = 1. TODO: when would it not be set?
-        temperature: float = (result.config or {}).get("temperature", 1.0)
+        # ASK: Should LLMResult carry config? Currently LiteLLMModel keeps it.
+        # temperature: float = (result.config or {}).get("temperature", 1.0)
+        temperature: float = config.get("temperature", 1.0)
 
         # Compute a Monte Carlo estimate of the logprob of this sequence at the given temperature.
         logprob = await self.compute_logprob(
@@ -311,7 +314,7 @@ class LLMCallOp(Op[Message]):
         return result.messages[0]
 
     async def _call_single_and_maybe_validate(
-        self, model: LLMModel, num_retries: int, **kwargs
+        self, model: LLMModel, num_retries: int = 0, **kwargs
     ) -> LLMResult:
         if not self.response_validator:
             # If a response validator is not supplied, then we should not do any retries here - leave
@@ -366,8 +369,9 @@ class LLMCallOp(Op[Message]):
         # TODO: possibly move to MultipleCompletionLLMModel here, though we need to check that the estimates
         # are consistent - not sure we'd be sampling from the same distribution as N independent samples.
         # TODO: think about whether sampling params besides temperature need to be accounted for, like top_p
+        # NOTE: messages is being passed as a model_kwargs. This is raising the [call-arg] error.
         results = await asyncio.gather(*[
-            model.call_single(temperature=1, **model_kwargs)
+            model.call_single(temperature=1, **model_kwargs)  # type: ignore[call-arg]
             for _ in range(self.num_samples_partition_estimate)
         ])
         temp_factor = 1.0 / temperature - 1.0

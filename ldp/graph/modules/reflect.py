@@ -12,7 +12,7 @@ class ReflectModuleConfig(BaseModel):
     """Configuration for the ReflectModuleConfig."""
 
     llm_model: dict[str, Any] = Field(
-        default={"model": "gpt-3.5-turbo"},
+        default={"name": "gpt-3.5-turbo"},
         description="Starting configuration for the LLM model.",
     )
 

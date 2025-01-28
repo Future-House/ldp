@@ -95,8 +95,15 @@ class SquaredErrorLoss(Op[int]):
 async def test_ape_optimizer() -> None:
     sys_prompt_op = PromptOp("Guess a number based on the input word.")
     package_msg_op = FxnOp(append_to_sys)
-    llm = LLMModel()
-    llm.config["max_retries"] = 3  # we seem to be hitting rate limits frequently
+    # NOTE: llm_call_op was receiving llm.config, which doesn't have the "name" field.
+    # This was breaking the forward pass when trying to instantiate a new LLMModel.
+    # llm = LLMModel(name="gpt-4o-mini")
+    # llm.config["max_retries"] = 3  # we seem to be hitting rate limits frequently
+    config = {
+        "name": "gpt-4o-mini",
+        "max_retries": 3,
+    }
+    llm = LLMModel(name=config["name"], config=config)
     llm_call_op = LLMCallOp()
     strip_op = FxnOp(lambda x: x.content)
     loss_op = SquaredErrorLoss()
@@ -106,7 +113,7 @@ async def test_ape_optimizer() -> None:
         """Perform a forward pass through the model to the resultant SE loss."""
         s = await sys_prompt_op()
         m = await package_msg_op(xi_, s)
-        c = await llm_call_op(llm.config, m)
+        c = await llm_call_op(config, m)
         yh = await strip_op(c)
         return await loss_op(yi_, yh)
 
@@ -190,7 +197,7 @@ class NumberGuesserModule:
         msgs = await self.package_msg_op(mems, query)
         c = await self.llm_call_op(
             config={
-                "model": "gpt-4-turbo",  # this is flaky, so use a smarter model
+                "name": "gpt-4-turbo",  # this is flaky, so use a smarter model
                 "temperature": 0,
                 "max_retries": 3,
             },
@@ -297,7 +304,8 @@ class TestMemoryOpt:
 
         This test is loosely based on Reflexion (https://arxiv.org/abs/2303.11366).
         """
-        memory_distiller = LLMModel(config={"model": CommonLLMNames.OPENAI_TEST.value})
+        config = {"name": CommonLLMNames.OPENAI_TEST.value}
+        memory_distiller = LLMModel(name=config["name"], config=config)
 
         class LessonEntry(BaseModel):
             """Entry for a lesson created from some example data."""
