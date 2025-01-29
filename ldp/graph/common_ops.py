@@ -278,6 +278,8 @@ class LLMCallOp(Op[Message]):
 
         result = await self._call_single_and_maybe_validate(
             model=model,
+            # ASK: Added this as a default of `_call_single_and_maybe_validate`
+            # to avoid conflicts when passing config as a kwarg.
             # num_retries=config.get("num_retries", 0),
             messages=msgs,
             tools=tools,
@@ -313,6 +315,7 @@ class LLMCallOp(Op[Message]):
 
         return result.messages[0]
 
+    # ASK: Added `num_retries` as a kwarg to avoid conflicts when passing config as a kwarg.
     async def _call_single_and_maybe_validate(
         self, model: LLMModel, num_retries: int = 0, **kwargs
     ) -> LLMResult:
@@ -371,7 +374,7 @@ class LLMCallOp(Op[Message]):
         # TODO: think about whether sampling params besides temperature need to be accounted for, like top_p
         # NOTE: messages is being passed as a model_kwargs. This is raising the [call-arg] error.
         results = await asyncio.gather(*[
-            model.call_single(temperature=1, **model_kwargs)  # type: ignore[call-arg]
+            model.call_single(temperature=1, **model_kwargs)
             for _ in range(self.num_samples_partition_estimate)
         ])
         temp_factor = 1.0 / temperature - 1.0
