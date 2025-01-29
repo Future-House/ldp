@@ -278,9 +278,6 @@ class LLMCallOp(Op[Message]):
 
         result = await self._call_single_and_maybe_validate(
             model=model,
-            # ASK: Added this as a default of `_call_single_and_maybe_validate`
-            # to avoid conflicts when passing config as a kwarg.
-            # num_retries=config.get("num_retries", 0),
             messages=msgs,
             tools=tools,
             tool_choice=tool_choice,
@@ -290,8 +287,6 @@ class LLMCallOp(Op[Message]):
             raise ValueError("No messages returned")
 
         # if not set, assume temp = 1. TODO: when would it not be set?
-        # ASK: Should LLMResult carry config? Currently LiteLLMModel keeps it.
-        # temperature: float = (result.config or {}).get("temperature", 1.0)
         temperature: float = config.get("temperature", 1.0)
 
         # Compute a Monte Carlo estimate of the logprob of this sequence at the given temperature.
@@ -315,7 +310,6 @@ class LLMCallOp(Op[Message]):
 
         return result.messages[0]
 
-    # ASK: Added `num_retries` as a kwarg to avoid conflicts when passing config as a kwarg.
     async def _call_single_and_maybe_validate(
         self, model: LLMModel, num_retries: int = 0, **kwargs
     ) -> LLMResult:
@@ -372,7 +366,6 @@ class LLMCallOp(Op[Message]):
         # TODO: possibly move to MultipleCompletionLLMModel here, though we need to check that the estimates
         # are consistent - not sure we'd be sampling from the same distribution as N independent samples.
         # TODO: think about whether sampling params besides temperature need to be accounted for, like top_p
-        # NOTE: messages is being passed as a model_kwargs. This is raising the [call-arg] error.
         results = await asyncio.gather(*[
             model.call_single(temperature=1, **model_kwargs)
             for _ in range(self.num_samples_partition_estimate)
