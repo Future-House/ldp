@@ -11,8 +11,8 @@ import tenacity
 import tree
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
 from llmclient import CommonLLMNames, LLMResult
+from llmclient import LiteLLMModel as LLMModel
 
-# from llmclient import LiteLLMModel as LLMModel
 from ldp.graph import (
     CallID,
     ConfigOp,
@@ -163,10 +163,8 @@ class TestLLMCallOp:
     @pytest.mark.asyncio
     async def test_empty_tools(self) -> None:
         llm_call_op = LLMCallOp()
-        # config = LLMModel.model_fields["config"].default_factory()
-        config = {"name": CommonLLMNames.OPENAI_TEST.value}
         message_result = await llm_call_op(
-            config,
+            config=LLMModel.model_fields["config"].default_factory(),  # type: ignore[call-arg, misc]
             msgs=[Message(content="Hello")],
             tools=[],
         )

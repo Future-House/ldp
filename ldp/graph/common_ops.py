@@ -270,7 +270,7 @@ class LLMCallOp(Op[Message]):
         Returns:
             Output message from the model.
         """
-        model = LLMModel(name=config["name"], config=config)
+        model = LLMModel(config=config)
 
         if not tools:
             # if no tools are provided, tool_choice must be 'none'
