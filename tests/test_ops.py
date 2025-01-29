@@ -32,7 +32,6 @@ from ldp.graph import (
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
 from ldp.graph.ops import GradInType, ResultOrValue, TOutput_co
 from ldp.llms.prompts import append_to_sys
-from tests.conftest import VCR_DEFAULT_MATCH_ON
 
 
 class StatefulFxnOp(FxnOp[TOutput_co]):
@@ -160,7 +159,7 @@ class TestLLMCallOp:
         # Environment tracks its internal costs
         assert env.total_cost > 0
 
-    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.vcr
     @pytest.mark.asyncio
     async def test_empty_tools(self) -> None:
         llm_call_op = LLMCallOp()
@@ -176,7 +175,7 @@ class TestLLMCallOp:
         assert isinstance(message_result.value, Message)
         assert not hasattr(message_result.value, "tool_calls")
 
-    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.vcr
     @pytest.mark.asyncio
     @pytest.mark.parametrize("temperature", [0.0, 0.5, 1.0])
     async def test_compute_logprob(self, temperature) -> None:
