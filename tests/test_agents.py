@@ -102,7 +102,7 @@ class TestAgentState:
             obs, reward, done, truncated = await dummy_env.step(action.value)
             if done:
                 break
-
+        assert done, "Environment should have finished"
         assert agent_state_0_json == agent_state_0.model_dump_json(), (
             "Agent state should not be mutated between calls to get_asv"
         )
