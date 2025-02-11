@@ -89,7 +89,7 @@ def many_edge_cases(
 
 
 class TestAgentState:
-    @pytest.mark.vcr
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.parametrize("agent", [SimpleAgent(), MemoryAgent(), ReActAgent()])
     @pytest.mark.asyncio
     async def test_no_state_mutation(self, dummy_env: DummyEnv, agent: Agent) -> None:
