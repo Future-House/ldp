@@ -1,10 +1,14 @@
 version = 1
 requires-python = ">=3.11"
 resolution-markers = [
-    "python_full_version >= '3.12' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
-    "python_full_version >= '3.12' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
-    "python_full_version >= '3.12' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
-    "python_full_version >= '3.12' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
     "python_full_version < '3.12' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
     "python_full_version < '3.12' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
     "python_full_version < '3.12' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
@@ -789,8 +793,8 @@ wheels = [
 
 [[package]]
 name = "fh-llm-client"
-version = "0.0.12.dev5+g96bbce5"
-source = { git = "https://github.com/Future-House/llm-client.git?rev=main#96bbce5b9f02fadff4411ca0b49aada2af2ee836" }
+version = "0.0.12.dev7+g3831881"
+source = { git = "https://github.com/Future-House/llm-client.git?rev=main#3831881f72bc3e726d9d856ea3fa764a015b2f58" }
 dependencies = [
     { name = "coredis" },
     { name = "fhaviary" },
@@ -1292,7 +1296,6 @@ wheels = [
 
 [[package]]
 name = "ldp"
-version = "0.22.1.dev6+gde97d6b.d20250211"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -1317,6 +1320,7 @@ dev = [
     { name = "dask-cuda" },
     { name = "dask-jobqueue" },
     { name = "fastapi" },
+    { name = "fh-llm-client" },
     { name = "fhaviary", extra = ["xml"] },
     { name = "ipython" },
     { name = "litellm" },
@@ -1393,6 +1397,7 @@ requires-dist = [
     { name = "dm-tree" },
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.109" },
     { name = "fh-llm-client", git = "https://github.com/Future-House/llm-client.git?rev=main" },
+    { name = "fh-llm-client", marker = "extra == 'dev'", specifier = ">=0.0.9" },
     { name = "fhaviary", specifier = ">=0.8.2" },
     { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'", specifier = ">=0.17" },
     { name = "httpx" },
@@ -3536,7 +3541,7 @@ name = "triton"
 version = "3.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "filelock", marker = "sys_platform == 'linux'" },
+    { name = "filelock", marker = "python_full_version < '3.13' and sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/86/17/d9a5cf4fcf46291856d1e90762e36cbabd2a56c7265da0d1d9508c8e3943/triton-3.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f34f6e7885d1bf0eaaf7ba875a5f0ce6f3c13ba98f9503651c1e6dc6757ed5c", size = 209506424 },
