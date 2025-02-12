@@ -159,12 +159,12 @@ class TestLLMCallOp:
         # Environment tracks its internal costs
         assert env.total_cost > 0
 
-    # @pytest.mark.vcr
+    @pytest.mark.vcr
     @pytest.mark.asyncio
     async def test_empty_tools(self) -> None:
         llm_call_op = LLMCallOp()
         message_result = await llm_call_op(
-            config=LLMModel.model_fields["config"].default_factory(),  # type: ignore[call-arg, misc]
+            LLMModel.model_fields["config"].default_factory(),  # type: ignore[call-arg, misc]
             msgs=[Message(content="Hello")],
             tools=[],
         )
