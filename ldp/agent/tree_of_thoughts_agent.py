@@ -44,7 +44,7 @@ class TreeofThoughtsAgent(BaseModel, Agent[SimpleAgentState]):
 
     llm_model: dict[str, Any] = Field(
         default={
-            "model": CommonLLMNames.GPT_4O.value,
+            "name": CommonLLMNames.GPT_4O.value,
             "temperature": 0.1,
             "timeout": DEFAULT_LLM_COMPLETION_TIMEOUT,
         },

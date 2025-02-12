@@ -1,11 +1,18 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
-        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
-        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
-        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}}]}'
+        '{"messages": [{"role": "user", "content": "Write a 5 word story via print_story"}],
+        "model": "gpt-4o-2024-11-20", "max_tokens": 4096, "n": 1, "temperature": 0.1,
+        "tool_choice": "required", "tools": [{"type": "function", "function": {"name":
+        "print_story", "description": "Print a story.", "parameters": {"type": "object",
+        "properties": {"story": {"description": "Story to print.", "title": "Story",
+        "type": "string"}}, "required": ["story"]}}}, {"type": "function", "function":
+        {"name": "cast_float", "description": "Cast the input argument x to a float.",
+        "parameters": {"type": "object", "properties": {"x": {"title": "X", "type":
+        "string"}}, "required": ["x"]}}}, {"type": "function", "function": {"name":
+        "cast_int", "description": "Cast the input argument x to an integer.", "parameters":
+        {"type": "object", "properties": {"x": {"title": "X", "type": "number"}}, "required":
+        ["x"]}}}]}'
       headers:
         accept:
           - application/json
@@ -14,13 +21,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "801"
+          - "890"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.61.1
+          - AsyncOpenAI/Python 1.59.9
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -30,11 +37,11 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.61.1
+          - 1.59.9
         x-stainless-raw-response:
           - "true"
         x-stainless-retry-count:
-          - "1"
+          - "0"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
@@ -44,19 +51,19 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFPBbtswDL37KwSekyJ26gzxbT3ssg7D0MPaLoOhSrSjRpY0iU7rBvn3
-          wU5iO1kH1AdD4NN7JB+pXcQYKAkZA7HmJCqnp5/fHuh5+3O2MBt/78SP9LV4049fNtWisd9h0jLs
-          0zMKOrGuhK2cRlLWHGDhkRO2qvGn+TKZp2m87IDKStQtrXQ0vbbTZJZcT+N4msyOxLVVAgNk7FfE
-          GGO77t+WaCS+QsZmk1OkwhB4iZD1lxgDb3UbAR6CCsQNwWQAhTWEpq3a1FqPALJW54JrPSQ+fLvR
-          efCJa52Hlz/fvqbryj7e1bfNzf3D5k7L0CxG+Q7SjesKKmojen9GeB/PLpIxBoZXHdd5ZSgPZH1z
-          QWcMuC/rCg21pcNuBd21FWQruLWB2AabMGGFrY1kBl8Yl1s0VHsMVyvYw5naPnrv/HtklMeiDlwf
-          HTzG9/1ItC2dt0/hwmEolFFhnXvkoet0bHh0ytblgfpspuC8rRzlZDdoWtk4Pi4ADCs3oEl8BMkS
-          1yPW/ASc6eUSiatu6P2eCS7WKAfqsG+8lsqOgGjU+7/VvKd96F+Z8iPyAyAEOkKZO49SifOOh2se
-          2xf5v2u9y13BENBvlcCcFPp2HhILXuvDY4HQBMIqL5Qp0Xe71y2wyzGdY5osF4sUon30FwAA//8D
-          ABGs7IY6BAAA
+          H4sIAAAAAAAAAwAAAP//jFPLbtswELzrK4g924H8qBPrVhdtD3HQFG2KoHUhMORKYkyRLB9NHMP/
+          Xoi2JdlNgeogEDuc2d3Z5TYhBASHjACrqGe1kcO3QX2cqE/h/UJ/d7OX2+eK3bPbxc2X6debbzBo
+          GPrhEZk/si6Yro1EL7Taw8wi9dioji4nV+l8nl7OI1BrjrKhlcYPp3o4TsfT4Wg0HKcHYqUFQwcZ
+          +ZEQQsg2/psSFcdnyEg6OEZqdI6WCFl7iRCwWjYRoM4J56nyMOhAppVH1VStgpQ9wGstc0al7BLv
+          v23v3PlEpcwXT1f3pREsLJcvH35V1+vPd++uH0PVy7eX3phYUBEUa/3p4W08O0tGCChaR66xQvnc
+          eW03Z3RCgNoy1Kh8UzpsVxCvrSBbwVI7T9a4caTQQXEiFHFKP12sYAcnKrvktfPPnkEWi+CoPDh3
+          iO/aUUhdGqsf3JmzUAglXJVbpC522Dc6OWaLeSCczBKM1bXxuddrVI3saHQYPHSr1qHjI+i1p7LH
+          mhyBE72co6ciDrvdL0ZZhbyjdntGAxe6ByS93v+u5jXtff9Clf8j3wGMofHIc2ORC3bacXfNYvMS
+          /3WtdTkWDA7tb8Ew9wJtMw+OBQ1y/0jAbZzHOi+EKtHGnYuLa/JZSifFmLPZG0h2yR8AAAD//wMA
+          DT+UojIEAAA=
       headers:
         CF-RAY:
-          - 91006449efa6ce68-SJC
+          - 9094032a0ad3cf2e-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -64,9 +71,15 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 11 Feb 2025 00:58:40 GMT
+          - Tue, 28 Jan 2025 21:17:59 GMT
         Server:
           - cloudflare
+        Set-Cookie:
+          - __cf_bm=9OnzFljfWopC3VSO_KOGXCxcPmpn2biIK66lpD9Y1LQ-1738099079-1.0.1.1-3PGwl3Yt7PYN_2czeKz4d.Qj.2uQLLUgLXmQyYxtvguFU3b3Kq3f9jPMI.igf25I_jT.5MG3eJZUi7c2UfXpPg;
+            path=/; expires=Tue, 28-Jan-25 21:47:59 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=4K4fKadxZU9JIJiOu.h1JzccbY_iwwd2S6X5ptYEebk-1738099079567-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -80,7 +93,7 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "1092"
+          - "713"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -92,13 +105,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "9999"
         x-ratelimit-remaining-tokens:
-          - "29999973"
+          - "29995894"
         x-ratelimit-reset-requests:
           - 6ms
         x-ratelimit-reset-tokens:
-          - 0s
+          - 8ms
         x-request-id:
-          - req_18ec13eb9228510f81e0fdb7b02f36f1
+          - req_b8b915b18a6d0835fe18df56c77629f6
       status:
         code: 200
         message: OK

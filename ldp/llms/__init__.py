@@ -1,9 +1,9 @@
+from llmclient import LiteLLMModel as LLMModel
 from llmclient import (
     LLMResult,
     sum_logprobs,
     validate_json_completion,
 )
-from llmclient import MultipleCompletionLLMModel as LLMModel
 from llmclient.embeddings import (
     EmbeddingModel,
     EmbeddingModes,

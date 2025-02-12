@@ -82,7 +82,7 @@ class SimpleAgent(Agent):
 
     async def get_asv(self, agent_state, obs):
         action = await self.llm_call_op(
-            config={"model": "gpt-4o", "temperature": 0.1},
+            config={"name": "gpt-4o", "temperature": 0.1},
             msgs=agent_state.messages + obs,
             tools=agent_state.tools,
         )
