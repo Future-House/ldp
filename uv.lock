@@ -1,18 +1,18 @@
 version = 1
 requires-python = ">=3.11"
 resolution-markers = [
-    "python_full_version >= '3.13' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
+    "python_full_version < '3.12' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
+    "python_full_version < '3.12' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
+    "python_full_version < '3.12' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
+    "python_full_version < '3.12' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
     "python_full_version == '3.12.*' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
-    "python_full_version >= '3.13' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
+    "python_full_version == '3.12.*' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
     "python_full_version == '3.12.*' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
-    "python_full_version == '3.12.*' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
     "python_full_version >= '3.13' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
-    "python_full_version == '3.12.*' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
-    "python_full_version < '3.12' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
-    "python_full_version < '3.12' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
-    "python_full_version < '3.12' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
-    "python_full_version < '3.12' and platform_python_implementation == 'PyPy' and sys_platform != 'linux'",
+    "python_full_version >= '3.13' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
 ]
 
 [[package]]
@@ -793,8 +793,8 @@ wheels = [
 
 [[package]]
 name = "fh-llm-client"
-version = "0.0.12.dev7+g3831881"
-source = { git = "https://github.com/Future-House/llm-client.git?rev=main#3831881f72bc3e726d9d856ea3fa764a015b2f58" }
+version = "0.0.12.dev9+gf312c5d"
+source = { git = "https://github.com/Future-House/llm-client.git?rev=main#f312c5d2084008ff165731b56cbd6809065511d4" }
 dependencies = [
     { name = "coredis" },
     { name = "fhaviary" },

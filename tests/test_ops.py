@@ -159,7 +159,7 @@ class TestLLMCallOp:
         # Environment tracks its internal costs
         assert env.total_cost > 0
 
-    @pytest.mark.vcr
+    # @pytest.mark.vcr
     @pytest.mark.asyncio
     async def test_empty_tools(self) -> None:
         llm_call_op = LLMCallOp()
@@ -168,10 +168,8 @@ class TestLLMCallOp:
             msgs=[Message(content="Hello")],
             tools=[],
         )
-        # ASK: Should llm_call_op return a ToolRequestMessage once there's no tool calls?
-        # The LLM returns a Message instead.
-        assert isinstance(message_result.value, Message)
-        assert not hasattr(message_result.value, "tool_calls")
+        assert isinstance(message_result.value, ToolRequestMessage)
+        assert not message_result.value.tool_calls
 
     @pytest.mark.vcr
     @pytest.mark.asyncio
