@@ -65,15 +65,15 @@ TReturn = TypeVar("TReturn")
 TParams = ParamSpec("TParams")
 
 
-def is_conversation(messages) -> bool:
-    """Check if messages is an instance of Conversation."""
-    return isinstance(messages, list) and all(
+def is_message_history(maybe_messages) -> bool:
+    """Check if input is a message history encoded as list of dict[str, str]."""
+    return isinstance(maybe_messages, list) and all(
         isinstance(msg, dict)
         and all(
             isinstance(key, str) and isinstance(value, str)
             for key, value in msg.items()
         )
-        for msg in messages
+        for msg in maybe_messages
     )
 
 
@@ -897,7 +897,7 @@ def _get_tokenized_inputs(
         return BatchEncoding(inputs)
     if isinstance(inputs, str):
         return tokenizer(inputs, return_tensors="pt")
-    if is_conversation(inputs):
+    if is_message_history(inputs):
         return tokenizer.apply_chat_template(
             inputs,
             tools=tools_json,
