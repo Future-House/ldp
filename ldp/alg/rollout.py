@@ -225,7 +225,7 @@ class RolloutManager:
                     last_step = trajectory.steps[-1]
                     if last_step.metadata.get("exception"):
                         # We'll keep it short but still have something to categorize
-                        exc_str: str = last_step.metadata["exception"][:500]
+                        exc_str: str = str(last_step.metadata["exception"])[:500]
                         exc_str = exc_str.replace('"', "'")
                         exception_counter[exc_str] += 1
                         num_exceptions = sum(exception_counter.values())
