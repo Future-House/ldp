@@ -120,14 +120,20 @@ class AsyncBufferedWorker(ABC):
 
         If neither condition is met, do nothing.
         """
+        # Technically should not happen, but if a coroutine crashes, it could release
+        # self._lock before placing results in _results_buffer and additional process
+        # coming inside will crash.
+        if not self._work_buffer:
+            return
+
         now = time.time()
 
         # sort by oldest requests first
         self._work_buffer.sort(key=operator.itemgetter(0))
 
-        if (
-            len(self._work_buffer) >= self.batch_size
-            or (now - self._work_buffer[0][0] > self.timeout) and len(self._work_buffer) > 0
+        if len(self._work_buffer) >= self.batch_size or (
+            (now - self._work_buffer[0][0] > self.timeout)
+            and len(self._work_buffer) > 0
         ):
             # if we're over batch size or have at least one input waiting for
             # more than timeout, pull out a batch to run

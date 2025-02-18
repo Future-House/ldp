@@ -8,10 +8,10 @@ from contextlib import contextmanager, nullcontext
 from typing import Any, TypeVar, overload
 
 from aviary.core import Environment, Message
+from tqdm import tqdm
 
 from ldp.agent import Agent
 from ldp.data_structures import Trajectory, Transition
-from ldp.utils import format_error_details
 
 from .callbacks import Callback
 
@@ -196,20 +196,16 @@ class RolloutManager:
         max_steps: int | None = None,
     ) -> list[Trajectory]:
         self.traj_buffer.clear()
-        exception_counter = Counter()
+        exception_counter: Counter = Counter()
 
         traj_ids = [uuid.uuid4().hex for _ in environments]
 
         # Create all tasks first
         tasks = [
-            asyncio.create_task(
-                self._rollout(traj_id, env, max_steps=max_steps)
-            )
+            asyncio.create_task(self._rollout(traj_id, env, max_steps=max_steps))
             for traj_id, env in zip(traj_ids, environments, strict=True)
         ]
 
-        # Use a single line bar_format to avoid multiline spam.
-        from tqdm import tqdm
         bar_format = (
             "{l_bar}{bar} {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]"
             " {postfix}"
@@ -229,7 +225,8 @@ class RolloutManager:
                     last_step = trajectory.steps[-1]
                     if last_step.metadata.get("exception"):
                         # We'll keep it short but still have something to categorize
-                        exc_str = last_step.metadata["exception"][:500].replace('"', "'")
+                        exc_str: str = last_step.metadata["exception"][:500]
+                        exc_str = exc_str.replace('"', "'")
                         exception_counter[exc_str] += 1
                         num_exceptions = sum(exception_counter.values())
                         pbar.set_postfix({"num_exceptions": num_exceptions})
@@ -237,9 +234,10 @@ class RolloutManager:
         # Final summary of exceptions (if any)
         if exception_counter:
             logger.info("Caught exceptions:")
-            logger.info("{:<6} {:<50}".format("Count", "Exception"))
+            logger.info("%-6s %-50s", "Count", "Exception")
             for exc, count in exception_counter.items():
-                logger.info("{:<6} {:<50}".format(count, exc))
+                logger.info("%-6d %-50s", count, exc)
+
         return [self.traj_buffer[traj_id] for traj_id in traj_ids]
 
     async def _rollout(
