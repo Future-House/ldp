@@ -1,6 +1,7 @@
 from .agent.simple_local_agent import AgentLMConfig, SimpleLocalLLMAgent
 from .graph.llm_call_op import LocalLLMCallOp
 from .handlers.chunking import TensorChunker
+from .handlers.module_handler import AsyncModuleHandler, ModuleExecutionInterface
 from .handlers.transformer_handler import (
     AsyncTransformer,
     AsyncTransformerInterface,
@@ -20,12 +21,14 @@ from .utils import set_seed
 
 __all__ = [
     "AgentLMConfig",
+    "AsyncModuleHandler",
     "AsyncTransformer",
     "AsyncTransformerInterface",
     "ExecutionMode",
     "LMConfig",
     "LMType",
     "LocalLLMCallOp",
+    "ModuleExecutionInterface",
     "ParallelAsyncTransformer",
     "ParallelModeConfig",
     "ParallelTransformerHandler",

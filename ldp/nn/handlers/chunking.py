@@ -159,8 +159,9 @@ class TensorChunker:
             for i in range(self.num_chunks):
                 if i >= len(chunks):
                     # Chunk 0 will always exist, and we need only a batch of one ([:1])
-                    # to activate the model
-                    chunks.append(torch.full_like(chunks[0][:1], self.dummy_value))
+                    # to activate the model. 
+                    # We use real data to avoid errors in the model expecting certain token structure.
+                    chunks.append(chunks[0][:1])
                     dummy_chunk_flags.append(True)
                 else:
                     dummy_chunk_flags.append(False)

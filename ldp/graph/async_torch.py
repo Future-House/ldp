@@ -127,7 +127,7 @@ class AsyncBufferedWorker(ABC):
 
         if (
             len(self._work_buffer) >= self.batch_size
-            or now - self._work_buffer[0][0] > self.timeout
+            or (now - self._work_buffer[0][0] > self.timeout) and len(self._work_buffer) > 0
         ):
             # if we're over batch size or have at least one input waiting for
             # more than timeout, pull out a batch to run
