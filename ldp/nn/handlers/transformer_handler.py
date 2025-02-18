@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import atexit
 import logging
 import os
 import socket
@@ -193,6 +194,14 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
     @staticmethod
     def model_generate(model: PreTrainedModel, *args, **kwargs):
         """A method that can be used as module_call_fn to sample from an LLM."""
+        if dist.get_world_size() > 1:
+            synced_gpus = kwargs.pop("synced_gpus", None)
+            if synced_gpus is None:
+                logger.debug("synced_gpus not defined, defaulting to True.")
+            elif not synced_gpus:
+                raise ValueError("synced_gpus must be True when using FSDP.")
+            kwargs["synced_gpus"] = True
+
         # Summoning params per https://github.com/pytorch/pytorch/issues/100069
         # If model is not FSDP, this context manager is a no-op.
         with FullyShardedDataParallel.summon_full_params(model, recurse=False):
@@ -463,6 +472,8 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
         self._initialized = True
 
+        atexit.register(self.teardown)
+
         # don't call AsyncTorchModule.__init__ because we don't need to set up module[_call_fn]
         AsyncBufferedWorker.__init__(
             self,
@@ -484,6 +495,10 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         # lazy import since dask-cuda only works on Linux machines
         from dask_cuda import LocalCUDACluster
 
+        # This uses NVIDIA's NVML layer instead of native CUDA, which is more robust in GPU detection
+        # post initialization. This prevents issues with forked processes wrongly detecting the
+        # default GPU as cuda:0
+        os.environ["PYTORCH_NVML_BASED_CUDA_CHECK"] = "1"
         self.cluster = LocalCUDACluster(
             n_workers=parallel_mode_config.num_workers,
             threads_per_worker=parallel_mode_config.num_cpus_per_worker,
