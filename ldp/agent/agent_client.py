@@ -51,11 +51,6 @@ class HTTPAgentClient(Agent[TSerializableAgentState]):
             )
             response.raise_for_status()
             response_data = response.json()
-            # TODO: the server is returning logprob inside the result of `SimpleAgent.get_asv`
-            # get_asv[0] is the return of calling LLMCallOp, which should be a Message (no logprobs)
-            # I couldn't find where this logprob is being injected. So I removed here until I
-            # find where it's coming from.
-            response_data[0].pop("logprob", None)
             return (
                 OpResult.from_dict(ToolRequestMessage, response_data[0]),
                 self._agent_state_type(**response_data[1]),

@@ -61,7 +61,9 @@ class OpResult(Generic[TOutput_co]):
             "op_name": self.op_name,
             "op_class_name": self.op_class_name,
             "value": value_dump,
-            "logprob": self.logprob,
+            # NOTE: logprob is not a OpResult attribute. So this breaks serialization
+            # 
+            # "logprob": self.logprob,
         }
 
     @classmethod
