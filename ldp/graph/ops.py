@@ -69,13 +69,13 @@ class OpResult(Generic[TOutput_co]):
         cls, t_output: type[TOutput_co], dump: dict[str, Any]
     ) -> OpResult[TOutput_co]:
         value = dump.pop("value")
+
         if issubclass(t_output, BaseModel):
             value = t_output.model_validate(value)
 
-        # logprob was added to serialization for convenience,
-        # but is not actually an OpResult argument, so we just discard it here
         dump.pop("logprob", None)
-        return cls[t_output](**dump, value=value)  # type: ignore[index]
+
+        return cls(**dump, value=value)
 
     def __hash__(self) -> int:
         return hash(self.call_id)
