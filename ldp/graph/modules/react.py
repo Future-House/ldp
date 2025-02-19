@@ -193,7 +193,8 @@ def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:  # noqa:
         tool = next(t for t in tools if t.info.name == tool_name)
     except StopIteration as exc:
         raise MalformedMessageError(f"Tool {tool_name} not found in tools.") from exc
-    if len(action_args) < len(tool.info.parameters.required):
+    required_parameters = tool.info.parameters.required if tool.info.parameters else []
+    if len(action_args) < len(required_parameters):
         raise MalformedMessageError(
             f"Action Input {action_args!r} shorter than {tool.info.name!r} tool's"
             " parameters."

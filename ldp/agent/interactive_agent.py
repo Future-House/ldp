@@ -29,7 +29,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
             info = tool.info
             docstring = f"{info.name}("
             arg_docs = []
-            for pname, pprops in info.parameters.properties.items():
+            for pname, pprops in info.get_properties().items():
                 docstring += self._get_param_string(pname, pprops) + ", "
                 arg_doc = "   " + pname
                 if "description" in pprops:
@@ -74,7 +74,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
                 )
 
         params: dict[str, Any] = {}
-        for pname, pprops in tool.info.parameters.properties.items():
+        for pname, pprops in tool.info.get_properties().items():
             pdefault = pprops.get("default", MISSING_DEFAULT)
             prompt = f">>> Enter parameter ({self._get_param_string(pname, pprops)}): "
             while True:
