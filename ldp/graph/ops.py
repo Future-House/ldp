@@ -74,6 +74,9 @@ class OpResult(Generic[TOutput_co]):
         if issubclass(t_output, BaseModel):
             value = t_output.model_validate(value)
 
+        # logprob was added to serialization for convenience,
+        # but is not actually an OpResult argument, so we just discard it here
+        dump.pop("logprob", None)
         return cls[t_output](**dump, value=value)  # type: ignore[index]
 
     def __hash__(self) -> int:
