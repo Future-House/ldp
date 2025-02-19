@@ -9,7 +9,7 @@ interactions:
         I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
         The 7 day forecast for New York is [...]"},{"role":"user","content":"Cast ''5.5''
         to a float, then to an integer, and finally use it to write a story of that
-        many words."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        many words."}],"model":"gpt-4o-mini-2024-07-18","n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -23,7 +23,7 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1636"
+          - "1600"
         content-type:
           - application/json
         host:
@@ -43,9 +43,9 @@ interactions:
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
-          - "60.0"
+          - "600.0"
         x-stainless-retry-count:
-          - "0"
+          - "1"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
@@ -55,19 +55,19 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFLLbtswELzrKxa85GIZlmLBtW5JCwPNLUXbQx8QGHIlsaG4BLkyWgT+
-          94KyYzloCuQiQDs7g5nhPmUAwmhRg1C9ZDV4m9+Wj1/vb8K+em9Wn7Td393vvtzcfdvt9vwBxSIx
-          6OEXKn5mLRUN3iIbckdYBZSMSbXYXG+326oo1xMwkEabaJ3nfE35YJzJy1W5zlebvHh3YvdkFEZR
-          w/cMAOBp+iafTuNvUcNq8TwZMEbZoajPSwAikE0TIWM0kaVjsZhBRY7RTdY/9zR2PdfwERyiBiZQ
-          MjJcVcvqKv1JaC1JhtaEyEuAH+5SKWA7RpnSuNHa0/xwtmap84Ee4gk/z1vjTOybgDKSSzYikxcT
-          esgAfk4VjC9SCR9o8NwwPaJLgmVVHfXE3PyMFpsTyMTSXrA25eIVvUYjS2PjRYlCSdWjnqlz43LU
-          hi6A7CL1v25e0z4mN657i/wMKIWeUTc+oDbqZeJ5LWA6zP+tnVueDIuIYW8UNmwwpJfQ2MrRHs9F
-          xD+RcWha4zoMPpjjzbS+Ka4R9bpVWIjskP0FAAD//wMA2fjqnkEDAAA=
+          H4sIAAAAAAAAAwAAAP//jFLBatwwFLz7Kx665LJebGc3Dj4mlG3JoYW0hdAGo0jPthpZEtJzkxL2
+          34vs3bVDU8jF4DdvhpnRe0kAmJKsAiY6TqJ3Or0qzPcvtzcfbu/u+s949fFpd73rH+WT2H17Ltkq
+          MuzDLxR0ZK2F7Z1GUtZMsPDICaNqXm6yLLu42G5HoLcSdaS1jtKNTXtlVFpkxSbNyjS/PLA7qwQG
+          VsGPBADgZfxGn0biM6sgWx0nPYbAW2TVaQmAeavjhPEQVCBuiK1mUFhDaEbrXzs7tB1V8AkMogSy
+          IHggONuut2fxj0OjLSdolA+0BvhplkoemyHwmMYMWh/m+5M1bVvn7UM44Kd5o4wKXe2RB2uijUDW
+          sRHdJwD3YwXDq1TMeds7qsk+oomCxVTnGOfY/Izm5QEkS1wvWGWxekOvlkhc6bAokQkuOpQzdW6c
+          D1LZBZAsUv/r5i3tKbky7XvkZ0AIdISydh6lEq8Tz2se42H+b+3U8miYBfS/lcCaFPr4EhIbPujp
+          XFj4Ewj7ulGmRe+8mm6mcXV+jig3jcCcJfvkLwAAAP//AwB4V4m+QQMAAA==
       headers:
         CF-Cache-Status:
           - DYNAMIC
         CF-RAY:
-          - 9148d55158c3ceb5-SJC
+          - 9149eeda3ec8ce34-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -75,15 +75,9 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Wed, 19 Feb 2025 19:58:44 GMT
+          - Wed, 19 Feb 2025 23:10:55 GMT
         Server:
           - cloudflare
-        Set-Cookie:
-          - __cf_bm=W6XNxwnFtCgDlYQejjv6LYcL_KysE8JsR._PhVDaPdM-1739995124-1.0.1.1-7el_mUS9SpAtpt5flsB9LbjUtWglwgde6_mvbloT88wPuDr.Flkd8vEkx4qPPYCgKz3FXLDdoG73VN1gUh81Kw;
-            path=/; expires=Wed, 19-Feb-25 20:28:44 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=.C1Olbwk3pHrn3DrWop7iC2yZ2KklVx1aDyDqKvq_hU-1739995124407-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -95,7 +89,7 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "725"
+          - "453"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -107,13 +101,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149995756"
+          - "149999837"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
-          - 1ms
+          - 0s
         x-request-id:
-          - req_2e3f29eef4294bb1c51772283af04617
+          - req_7e3b8ffaf93b8b9f44ae48b62534a9c3
       status:
         code: 200
         message: OK
@@ -129,7 +123,7 @@ interactions:
         to a float, then to an integer, and finally use it to write a story of that
         many words."},{"role":"assistant","content":"Thought: I need to cast ''5.5''
         to a float first.  \n. Based on this reasoning, let''s select the appropriate
-        tool!\nAction: "},{"role":"user","content":"Continue..."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        tool!\nAction: "},{"role":"user","content":"Continue..."}],"model":"gpt-4o-mini-2024-07-18","n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -143,7 +137,7 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1836"
+          - "1800"
         content-type:
           - application/json
         host:
@@ -163,7 +157,7 @@ interactions:
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
-          - "60.0"
+          - "600.0"
         x-stainless-retry-count:
           - "0"
         x-stainless-runtime:
@@ -175,18 +169,18 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFPBbtswDL37KwSe4yJ2knb2ce0hWHNosa4YsAyGItO2VlnSJHlpFuTf
-          B9mJ7WQZMB8MgY98j3yi9gEhwHNICbCKOlZrEX6M316fxc/7jbSr5erlVqx+Pybl9uH14XPSwMRX
-          qM0PZO5UdcNUrQU6rmQHM4PUoWeN7mZJkiyieN4CtcpR+LJSu3CuwppLHsbTeB5O78Low7G6Upyh
-          hZR8CwghZN/+fZ8yx3dIyXRyitRoLS0R0j6JEDBK+AhQa7l1VDqYDCBT0qH0rctGiBHglBIZo0IM
-          wt23H50Hs6gQGapPm939I9KX5+TJbrdf+NfNslo+jfQ66p1uGyoayXqTRngfTy/ECAFJa+wErcsK
-          oai7qCYEqCmbGqXzncN+De9rSNewuFms4QBnyYfg2vn7yAaDRWOpOPpzjB96w4UqtVEbe+EfFFxy
-          W2UGqW3nGNsZnNRaHWjObgy0UbV2mVNvKD1tnNx2rDBs1YBGJ9ApR8UQn0Xx5ApflqOjvL3SfosY
-          ZRXmQ+mwTbTJuRoBwWj2v7u5xt3Nz2X5P/QDwBhqh3mmDeacnU88pBn0j+5fab3LbcNg0fziDDPH
-          0fj7yLGgjeiWB+zOOqyzgssSjTa8fQ9Q6CyaIebzgmEEwSH4AwAA//8DAD+ZzrQdBAAA
+          H4sIAAAAAAAAAwAAAP//jFNNb9swDL37Vwg8x4WdJs7qYw8btnVYkQJdt2UwVIl2tOhrktylCPLf
+          B9uJ7WQZMB8MgY98j3yidhEhIDjkBNiaBqasjG+n+vGevxPLV52pz9mXp5u7l6/vf/+6yx6WtzBp
+          KszzT2ThWHXFjLISgzC6g5lDGrBhTRezJEmybD5vAWU4yqassiGemVgJLeJpMp3FySJO3xyq10Yw
+          9JCT7xEhhOzaf9On5riFnCSTY0Sh97RCyPskQsAZ2USAei98oDrAZACZ0QF107qupRwBwRhZMCrl
+          INx9u9F5MItKWSyr+w8ZS8Ti0WzfPmz8J6o2LPv2caTXUb/atqGy1qw3aYT38fxMjBDQVGEn6ENR
+          SkPDWTUhQF1VK9Sh6Rx2K9iuIF/B/Gq+gj2cJO+jS+cfIxsclrWn8uDPIb7vDZemss48+zP/oBRa
+          +HXhkPp2jrGd0VGt1YH65MbAOqNsKILZoG5opzdZxwrDVg1oegSDCVQO8et0OrnAV3AMVLRX2m8R
+          o2yNfCgdtonWXJgREI1m/7ubS9zd/EJX/0M/AIyhDcgL65ALdjrxkOaweXT/SutdbhsGj+5FMCyC
+          QNfcB8eS1rJbHvCvPqAqSqErdNaJ9j1AaYv0GpHPSoYpRPvoDwAAAP//AwBB/FAiHQQAAA==
       headers:
         CF-RAY:
-          - 9148d5585b62fab6-SJC
+          - 9149eeddda21ce34-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -194,15 +188,9 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Wed, 19 Feb 2025 19:58:45 GMT
+          - Wed, 19 Feb 2025 23:10:56 GMT
         Server:
           - cloudflare
-        Set-Cookie:
-          - __cf_bm=J9u_Jx3SdSUlnoAy.RqnnL4AcApA70DuoYJpl1J_B3g-1739995125-1.0.1.1-jskPTxhL8pO1WEpO30eCmEIk_uD4th81NpGohCWppR6y9Kz8Fy06_jl9FfG.RLrhURwMCrWh.pdT.W6EvZEWRw;
-            path=/; expires=Wed, 19-Feb-25 20:28:45 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=Eru0zQuf9md9gqTTeXO1Nfls7eEpyYbCaH7Wlw3zBZU-1739995125445-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -216,7 +204,7 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "759"
+          - "466"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -228,13 +216,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149995723"
+          - "149999802"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
-          - 1ms
+          - 0s
         x-request-id:
-          - req_97869658e471a24eebf65bfd874ac693
+          - req_579ac9b42669786ffa6dfbe9b33c5c84
       status:
         code: 200
         message: OK
@@ -250,8 +238,8 @@ interactions:
         to a float, then to an integer, and finally use it to write a story of that
         many words."},{"role":"assistant","content":"Thought: I need to cast ''5.5''
         to a float first.  \n. Based on this reasoning, let''s select the appropriate
-        tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_eoJbyCKeaTQ9PswwUiXbHhHP","type":"function","function":{"arguments":"{\"x\":
-        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"Observation: 5.5","name":"cast_float","tool_call_id":"call_eoJbyCKeaTQ9PswwUiXbHhHP"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_RgPJ6c0i7VoxFSksMamkc6ZK","type":"function","function":{"arguments":"{\"x\":
+        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"Observation: 5.5","name":"cast_float","tool_call_id":"call_RgPJ6c0i7VoxFSksMamkc6ZK"}],"model":"gpt-4o-mini-2024-07-18","n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -265,7 +253,7 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "2137"
+          - "2101"
         content-type:
           - application/json
         host:
@@ -285,7 +273,7 @@ interactions:
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
-          - "60.0"
+          - "600.0"
         x-stainless-retry-count:
           - "0"
         x-stainless-runtime:
@@ -297,17 +285,18 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA4xSQW7bMBC86xULni3Dki3Y1jFBCvTSBkXhS1sIDLmSaFMkQ67atIH/XlByLAVJ
-          gV54mNkZzCz3OQFgSrISmGg5ic7p9CY/Hb6sHm+P+iQ/HA93h/ud6W8en/7Iz+aeLaLCPhxR0Itq
-          KWznNJKyZqSFR04YXbPter/fF1leDERnJeooaxylG5t2yqg0X+WbdLVNs91F3VolMLASviUAAM/D
-          G3MaiU+shNXiBekwBN4gK69DAMxbHRHGQ1CBuCG2mEhhDaEZon9tbd+0VMIn+ws+gkGUQBYEDwTU
-          ItTacoJiWUSUG1CGsEG/BPhu5pYe6z7wWMv0Wl/w8zWjto3z9iFc+CteK6NCW3nkwZqYJ5B1bGDP
-          CcCPYRf9q3rMeds5qsie0ETDdb4d/dj0BROb7S4kWeJ6ptoUi3f8KonElQ6zbTLBRYtykk6r571U
-          dkYks9Zv07znPTZXpvkf+4kQAh2hrJxHqcTrxtOYx3ih/xq7bnkIzAL6n0pgRQp9/AmJNe/1eDcs
-          /A6EXVUr06B3Xo3HU7sqWyPKTS0wY8k5+QsAAP//AwAv9gcnSgMAAA==
+          H4sIAAAAAAAAAwAAAP//jFLRitswEHz3Vyx6joPtc5KeH0uhHIXCwVEobTE6aW2rJ2uFtE5Tjvx7
+          kZOLc/QKfTFmZ2c0s7vPGYAwWjQg1CBZjd7m7yv35b4m/ES6/zB9dPdPD1+728P+dlcdSrFKDHr8
+          iYpfWGtFo7fIhtwJVgElY1Itd3VRFNvtZjsDI2m0idZ7zmvKR+NMXhVVnRe7vHx3Zg9kFEbRwLcM
+          AOB5/iafTuNBNFCsXiojxih7FM2lCUAEsqkiZIwmsnQsVguoyDG62frDQFM/cAOf6RfwIBnuYJB7
+          BB4QOkuSYS/thLBZb1ZwBw5RAxMoGRkMp1/pwDjGHsMa4Lu7fihgN0WZwrrJ2nP9eHFuqfeBHuMZ
+          v9Q740wc2oAykksuI5MXM3rMAH7ME5pehRY+0Oi5ZXpClwRvqt1JTyyLWdCqPoNMLO0Va1Ou3tBr
+          NbI0Nl7NWCipBtQLdVmInLShKyC7Sv23m7e0T8mN6/9HfgGUQs+oWx9QG/U68dIWMN3tv9ouU54N
+          i4hhbxS2bDCkTWjs5GRP1yTi78g4tp1xPQYfzOmkOt+WN4i67hSWIjtmfwAAAP//AwAMuM4zYAMA
+          AA==
       headers:
         CF-RAY:
-          - 9148d55eec64fab6-SJC
+          - 9149eee2ae91ce34-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -315,15 +304,9 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Wed, 19 Feb 2025 19:58:46 GMT
+          - Wed, 19 Feb 2025 23:10:57 GMT
         Server:
           - cloudflare
-        Set-Cookie:
-          - __cf_bm=Sif3Qj.1KSF8tzxcgSdG_nzQQerBcBykbIDbfo8eqvg-1739995126-1.0.1.1-q8UDC560EY2W0wiAD2OpZeaUya1Ez4Mc16scZduviP9sGFBFvlJaEXUSrNa1PDLbLOFehNOXiTRE3em0CMrq3w;
-            path=/; expires=Wed, 19-Feb-25 20:28:46 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=spz6nB2LhCvKzKubetDbzp3jeJ0oN7Sd5NCWrEyWTJs-1739995126119-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -337,7 +320,7 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "394"
+          - "529"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -349,13 +332,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149995717"
+          - "149999796"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
-          - 1ms
+          - 0s
         x-request-id:
-          - req_5c230523bf1a9c9922760ffd5fd493e1
+          - req_c1f4b596ba404b38d5d30cc38d3aa499
       status:
         code: 200
         message: OK
@@ -371,10 +354,10 @@ interactions:
         to a float, then to an integer, and finally use it to write a story of that
         many words."},{"role":"assistant","content":"Thought: I need to cast ''5.5''
         to a float first.  \n. Based on this reasoning, let''s select the appropriate
-        tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_eoJbyCKeaTQ9PswwUiXbHhHP","type":"function","function":{"arguments":"{\"x\":
-        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"Observation: 5.5","name":"cast_float","tool_call_id":"call_eoJbyCKeaTQ9PswwUiXbHhHP"},{"role":"assistant","content":"Thought:
-        Now I need to cast the float 5.5 to an integer.  \n. Based on this reasoning,
-        let''s select the appropriate tool!\nAction: "},{"role":"user","content":"Continue..."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_RgPJ6c0i7VoxFSksMamkc6ZK","type":"function","function":{"arguments":"{\"x\":
+        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"Observation: 5.5","name":"cast_float","tool_call_id":"call_RgPJ6c0i7VoxFSksMamkc6ZK"},{"role":"assistant","content":"Thought:
+        Now that I have the float value 5.5, I need to cast it to an integer.  \n. Based
+        on this reasoning, let''s select the appropriate tool!\nAction: "},{"role":"user","content":"Continue..."}],"model":"gpt-4o-mini-2024-07-18","n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -388,7 +371,7 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "2346"
+          - "2332"
         content-type:
           - application/json
         host:
@@ -408,7 +391,7 @@ interactions:
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
-          - "60.0"
+          - "600.0"
         x-stainless-retry-count:
           - "0"
         x-stainless-runtime:
@@ -420,18 +403,18 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFNNj5swEL3zK6w5hxWQhCzcWrVbqYdtpahpV90KOWYgboxt2SZKFOW/
-          V3wEyDaVygFZ82bem3kenz1CgOeQEmA76lilhf8+2m/W9To4xh++r55OJQ1e1kF4PBy+lc8/YNZU
-          qO1vZO5a9cBUpQU6rmQHM4PUYcMaruZJkizDKG6BSuUomrJSO3+h/IpL7kdBtPCDlR8+9tU7xRla
-          SMlPjxBCzu2/6VPmeISUBLNrpEJraYmQDkmEgFGiiQC1lltHpYPZCDIlHcqmdVkLMQGcUiJjVIhR
-          uPvOk/NoFhUiW71Lnl6+FvGnz8+rePORRptwHwfbLxO9jvqk24aKWrLBpAk+xNM3YoSApBV2gtZl
-          /GaWPoOasq5QuqZvOL/C8RXS5cPyAjeJF+/e+dfEAINFbanonenjl8FqoUpt1Na+cQ4KLrndZQap
-          bSeYGuld1VodqG/uCrRRlXaZU3uUDe08TjpWGPdpRMO4B51yVEyqHpezO3xZjo7y9jKH/WGU7TAf
-          S8c9onXO1QTwJrP/3c097m5+Lsv/oR8BxlA7zDNtMOfsduIxzWDz3P6VNrjcNgwWzYEzzBxH09xH
-          jgWtRbc4YE/WYZUVXJZotOHtS4BCZ+EcMV8UDEPwLt4fAAAA//8DAP2SmQ4XBAAA
+          H4sIAAAAAAAAAwAAAP//jFNNb9swDL37Vwg8x4Udx8nmY4pdAmzF0mEYsg6GKtGOVlnSJHltFuS/
+          D/6I7XQZUB8MgY98j3yijgEhIDhkBNieelYZGa7n6us2KuNf80+79Jb/2Ww/3j/fP98dNtp9g1lT
+          oR9/IvPnqhumKyPRC606mFmkHhvWeLWIomi5TFctUGmOsikrjQ8XOqyEEuE8mi/CaBXG7/rqvRYM
+          HWTke0AIIcf23/SpOL5ARqLZOVKhc7REyIYkQsBq2USAOiecp8rDbASZVh5V07qqpZwAXmuZMyrl
+          KNx9x8l5NItKmbNNaXCXrJMP2y9rGqNeJrunu8/biV5HfTBtQ0Wt2GDSBB/i2SsxQkDRCjtB53Nx
+          MUufQW1ZV6h80zccH+DlAbL0Jj3BReIpuHb+MTHAYlE7Kntn+vhpsFrq0lj96F45B4VQwu1zi9S1
+          E0yNDM5qrQ7UF3cFxurK+NzrJ1QNbbJKO1YY92lE42UPeu2pnFS9j2dX+HKOnor2Mof9YZTtkY+l
+          4x7Rmgs9AYLJ7P92c427m1+o8i30I8AYGo88Nxa5YJcTj2kWm+f2v7TB5bZhcGh/C4a5F2ib++BY
+          0Fp2iwPu4DxWeSFUidZY0b4EKEweJ4h8UTCMITgFfwEAAP//AwBicGNNFwQAAA==
       headers:
         CF-RAY:
-          - 9148d5631d8367fe-SJC
+          - 9149eee72b42ce34-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -439,15 +422,9 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Wed, 19 Feb 2025 19:58:46 GMT
+          - Wed, 19 Feb 2025 23:10:57 GMT
         Server:
           - cloudflare
-        Set-Cookie:
-          - __cf_bm=UMOvx1mf7acV4dIthNBIXp9odgtHoXJKkXkSi0cpCRg-1739995126-1.0.1.1-13ehpYBRDJ57lzXqH88jTVrHZJ1OuOKnkiV2CAMVuzuzK2fx7ndKtT2pnGj41aFAK5ALK4wqtUPOENWnew7DPw;
-            path=/; expires=Wed, 19-Feb-25 20:28:46 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=0uzio.kt3M8s1ho95Te3CyJdYRhYWEr1i3K84HrST9g-1739995126794-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -461,7 +438,7 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "416"
+          - "545"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -473,13 +450,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149995679"
+          - "149999754"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
-          - 1ms
+          - 0s
         x-request-id:
-          - req_266ff33e197778bff54c9b980efbaac2
+          - req_211a176b9e142d3ca160e97336ce22f2
       status:
         code: 200
         message: OK
@@ -495,11 +472,11 @@ interactions:
         to a float, then to an integer, and finally use it to write a story of that
         many words."},{"role":"assistant","content":"Thought: I need to cast ''5.5''
         to a float first.  \n. Based on this reasoning, let''s select the appropriate
-        tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_eoJbyCKeaTQ9PswwUiXbHhHP","type":"function","function":{"arguments":"{\"x\":
-        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"Observation: 5.5","name":"cast_float","tool_call_id":"call_eoJbyCKeaTQ9PswwUiXbHhHP"},{"role":"assistant","content":"Thought:
-        Now I need to cast the float 5.5 to an integer.  \n. Based on this reasoning,
-        let''s select the appropriate tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_7A9FYPf6GJN76VEa2V1k60bO","type":"function","function":{"arguments":"{\"x\":
-        5.5}","name":"cast_int"}}]},{"role":"tool","content":"Observation: 5","name":"cast_int","tool_call_id":"call_7A9FYPf6GJN76VEa2V1k60bO"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_RgPJ6c0i7VoxFSksMamkc6ZK","type":"function","function":{"arguments":"{\"x\":
+        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"Observation: 5.5","name":"cast_float","tool_call_id":"call_RgPJ6c0i7VoxFSksMamkc6ZK"},{"role":"assistant","content":"Thought:
+        Now that I have the float value 5.5, I need to cast it to an integer.  \n. Based
+        on this reasoning, let''s select the appropriate tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_cJgpeZ3B3ERTBa1eo63ZkOQR","type":"function","function":{"arguments":"{\"x\":
+        5.5}","name":"cast_int"}}]},{"role":"tool","content":"Observation: 5","name":"cast_int","tool_call_id":"call_cJgpeZ3B3ERTBa1eo63ZkOQR"}],"model":"gpt-4o-mini-2024-07-18","n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -513,7 +490,7 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "2637"
+          - "2623"
         content-type:
           - application/json
         host:
@@ -533,7 +510,7 @@ interactions:
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
-          - "60.0"
+          - "600.0"
         x-stainless-retry-count:
           - "0"
         x-stainless-runtime:
@@ -545,18 +522,18 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFLLbtswELzrKxa89CIZfsKxj2kuQW9F0BZoCoEhVxJjiiS4Kz8Q5N8L
-          So7lICnQCw87O8PZ2X3JAITRYgtCNZJVG2xxO9/9eDjenZ6pJvqOv37SnWvD1+64U/hN5Inhn55R
-          8RtronwbLLLxboBVRMmYVGfrxWazWc3m6x5ovUabaHXgYumL1jhTzKfzZTFdF7ObM7vxRiGJLfzO
-          AABe+jf5dBqPYgvT/K3SIpGsUWwvTQAiepsqQhIZYulY5COovGN0vfWHxnd1w1u4h0buEbhBMI6x
-          xgh7aTsEX8Eqh0NjVAMtSkdwDw5RA3s4RMMIEoh9PPWdcPBR0wTg0U3gVhJq8A64MQQRJXlnXJ2D
-          Rf5CMCSU6CZFN6hMHt211YhVRzLF5Tprz/XXy+zW1yH6Jzrjl3plnKGmHL5McxL7IHr0NQP402fc
-          vYtNhOjbwCX7HbokuNjcDHpiXO0Vuj6D7Fnasb5crPJP9EqNLI2lqy0JJVWDeqSOK5WdNv4KyK6m
-          /ujmM+1L2P8jPwJKYWDUZYiojXo/8dgWMV3+v9ouKfeGBWHcG4UlG4xpExor2dnhHgWdiLEtK+Nq
-          jCGa4SirUM4WiHpZKZyJ7DX7CwAA//8DAEbCqt6iAwAA
+          H4sIAAAAAAAAAwAAAP//jFLLbtswELzrKxa85GIZsiPHqY8tUNiHAk1RtEAfEGhqJbKluCp3ZTcN
+          /O+BZMdy0BTohYeZncHMLh8SAOVKtQJlrBbTtD59PQ+fPjTruzdftut33XJj5+u3d/yK/3z+Vb1X
+          k15B2x9o5Ek1NdS0HsVRONImohbsXWfLPMuym5vFciAaKtH3srqVNKe0ccGl82yep9kynd2e1Jac
+          QVYr+JoAADwMb58zlPhbrSCbPCENMusa1eo8BKAi+R5Rmtmx6CBqMpKGgmAYon+01NVWVrABq3cI
+          gfZgNAtcLaaLKxACHcAFwRrjBPbWGQu12yFDgyAWYad9h7CYwgb2znvouMcdnwgh2EcnCBpYKN4D
+          VbCAPcWSpwDfwmWsiFXHul9N6Lw/4YdzT091G2nLJ/6MVy44tkVEzRT6TizUqoE9JADfh312z1ak
+          2khNK4XQTwy9YZ7lRz81nnFkr29PpJBof6HK55MX/IoSRTvPFxdRRhuL5Sgdz6e70tEFkVy0/jvN
+          S97H5i7U/2M/EsZgK1gWbcTSmeeNx7GI/S//19h5y0NgxRh3zmAhDmN/iRIr3fnj31N8z4JNUblQ
+          Y2yjO37Aqi1m14hlXhmcqeSQPAIAAP//AwCrhJxgjgMAAA==
       headers:
         CF-RAY:
-          - 9148d5674ac367fe-SJC
+          - 9149eeeb7f81ce34-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -564,15 +541,9 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Wed, 19 Feb 2025 19:58:47 GMT
+          - Wed, 19 Feb 2025 23:10:58 GMT
         Server:
           - cloudflare
-        Set-Cookie:
-          - __cf_bm=uRo.crtXvhikJ8h002EHXPqDM6lV2qteeqyLCt1ssqg-1739995127-1.0.1.1-ymo0F7OmYp79.MPo5aLDGhqMM6NKLCv4VzSlobnHWXHWv2XY9QQiaywZZBvt5guorjT7hhaQFzS7j7TJNNOGTA;
-            path=/; expires=Wed, 19-Feb-25 20:28:47 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=QcVBacP1oCN.kPWAcBsj63E89rEcsqqaktDQ8OFSBd8-1739995127931-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -586,7 +557,7 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "886"
+          - "912"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -598,13 +569,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149995673"
+          - "149999749"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
-          - 1ms
+          - 0s
         x-request-id:
-          - req_b40a5e4defbf00742e3746e04bc6134e
+          - req_d1b710d6bbd74f87014a38188f746fb7
       status:
         code: 200
         message: OK
@@ -620,14 +591,14 @@ interactions:
         to a float, then to an integer, and finally use it to write a story of that
         many words."},{"role":"assistant","content":"Thought: I need to cast ''5.5''
         to a float first.  \n. Based on this reasoning, let''s select the appropriate
-        tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_eoJbyCKeaTQ9PswwUiXbHhHP","type":"function","function":{"arguments":"{\"x\":
-        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"Observation: 5.5","name":"cast_float","tool_call_id":"call_eoJbyCKeaTQ9PswwUiXbHhHP"},{"role":"assistant","content":"Thought:
-        Now I need to cast the float 5.5 to an integer.  \n. Based on this reasoning,
-        let''s select the appropriate tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_7A9FYPf6GJN76VEa2V1k60bO","type":"function","function":{"arguments":"{\"x\":
-        5.5}","name":"cast_int"}}]},{"role":"tool","content":"Observation: 5","name":"cast_int","tool_call_id":"call_7A9FYPf6GJN76VEa2V1k60bO"},{"role":"assistant","content":"Thought:
-        I have the integer value of 5, which means I need to write a story of 5 words.  \n.
-        Based on this reasoning, let''s create a simple story.\n. Based on this reasoning,
-        let''s select the appropriate tool!\nAction: "},{"role":"user","content":"Continue..."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_RgPJ6c0i7VoxFSksMamkc6ZK","type":"function","function":{"arguments":"{\"x\":
+        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"Observation: 5.5","name":"cast_float","tool_call_id":"call_RgPJ6c0i7VoxFSksMamkc6ZK"},{"role":"assistant","content":"Thought:
+        Now that I have the float value 5.5, I need to cast it to an integer.  \n. Based
+        on this reasoning, let''s select the appropriate tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_cJgpeZ3B3ERTBa1eo63ZkOQR","type":"function","function":{"arguments":"{\"x\":
+        5.5}","name":"cast_int"}}]},{"role":"tool","content":"Observation: 5","name":"cast_int","tool_call_id":"call_cJgpeZ3B3ERTBa1eo63ZkOQR"},{"role":"assistant","content":"Thought:
+        I have now cast ''5.5'' to an integer, which gives me the value 5. I will use
+        this value to write a story of 5 words.  \n. Based on this reasoning, let''s
+        select the appropriate tool!\nAction: "},{"role":"user","content":"Continue..."}],"model":"gpt-4o-mini-2024-07-18","n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -641,7 +612,7 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "2934"
+          - "2900"
         content-type:
           - application/json
         host:
@@ -661,7 +632,7 @@ interactions:
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
-          - "60.0"
+          - "600.0"
         x-stainless-retry-count:
           - "0"
         x-stainless-runtime:
@@ -673,19 +644,21 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFNNj5swEL3zK6w5h1XIR5Nw66qq2kqrbqVNe2gq5JgBvDG2aw/tRlH+
-          ewUkQNKstByQNc/vzcyb8SFgDGQKMQNRcBKlVeH9ZPd9nT7s1uNvc/Eet9PPj49uje/K6OunLzCq
-          GWb7jILOrDthSquQpNEtLBxywlo1WkxXq9U8miwboDQpqpqWWwpnJiylluFkPJmF40UYLU/swkiB
-          HmL2M2CMsUPzr+vUKb5AzMajc6RE73mOEHeXGANnVB0B7r30xDXBqAeF0YS6Ll1XSg0AMkYlgivV
-          J26/w+Dcm8WVSu5//H16WP5205cPulT5M/84n0wzYwf5Wum9bQrKKi06kwZ4F4+vkjEGmpcN1zqp
-          KfFk3P6Kzhhwl1claqpLh8MGmmsbiDfwVCDzlWYeybMt8opkVim1Z2S0zAu628ARLuSOwa3zr4FT
-          DrPKc3Wy8BQ/djNRJrfObP2VxZBJLX2ROOS+aXXoeHDO1uSB6mKoYJ0pLSVkdqhr2dl81apCv3g9
-          Gp1BMsTVgLVYjm7oJSkSl83Uu0UTXBSY9tR+4XiVSjMAgkHv/1dzS7vtX+r8LfI9IARawjSxDlMp
-          Ljvurzms3+Vr1zqXm4LBo/sjBSYk0dXzSDHjlWpfC/i9JyyTTOocXbN8zQbbJJoiprNMYATBMfgH
-          AAD//wMAWZGz/UAEAAA=
+          H4sIAAAAAAAAAwAAAP//jFPLrpswEN3zFdaswxXk5smu2fQhpd2kV5WaK+SYAdwa27KHtmmUf6+A
+          BEiaSmWBrDk+Z2bOjE8BYyAzSBiIkpOorAo3U/2y+xC/y21dyu3y/fYLfn6ufLT+9Hb3ApOGYQ7f
+          UNCV9SRMZRWSNLqDhUNO2KjGy1kURYvFfN0ClclQNbTCUjgzYSW1DKfRdBZGyzBeXdilkQI9JOxr
+          wBhjp/bf1Kkz/AUJiybXSIXe8wIh6S8xBs6oJgLce+mJa4LJAAqjCXVTuq6VGgFkjEoFV2pI3H2n
+          0XkwiyuV7uT255vftFrMlf2404bkZmOm69UoXyd9tG1Bea1Fb9II7+PJXTLGQPOq5VonNaWejDve
+          0RkD7oq6Qk1N6XDaQ3ttD8kediUyX2vmS6nRs4OTRUmMTMaPT3s4w43SOXh0fh2Z5DCvPVcX9y7x
+          cz8OZQrrzMHfuQu51NKXqUPu2y7HZgfXbG0eqG/mCdaZylJK5jvqRna2WHSqMOzcgMbrC0iGuBqx
+          VvPJA700Q+KyHXi/Y4KLErOBOuwarzNpRkAw6v3vah5pd/1LXfyP/AAIgZYwS63DTIrbjodrDpsn
+          +a9rvcttweDR/ZACU5LomnlkmPNadQ8F/NETVmkudYGu3bt2eW0aPyNms1xgDME5+AMAAP//AwD/
+          SvYiOwQAAA==
       headers:
+        CF-Cache-Status:
+          - DYNAMIC
         CF-RAY:
-          - 9148d56e6c1467fe-SJC
+          - 9149eef20e2bce34-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -693,15 +666,9 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Wed, 19 Feb 2025 19:58:48 GMT
+          - Wed, 19 Feb 2025 23:10:59 GMT
         Server:
           - cloudflare
-        Set-Cookie:
-          - __cf_bm=yIZPhevBmIEFGHeghttSywxlh62qMG77VVHnauyFpKE-1739995128-1.0.1.1-ObkoUHj98PXEZ7AW9ZckKOa29uvu_7aGIt0vKryA3DPTlGuovdMQ56aIzHR5vUPQYHKY72X9SwMmIlvJ35_HLg;
-            path=/; expires=Wed, 19-Feb-25 20:28:48 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=ciBWSpJdxB3jRNNSY9EwS21aRrTUVtkUCwoda6o8yLg-1739995128682-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -710,12 +677,10 @@ interactions:
           - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "492"
+          - "449"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -727,13 +692,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149995615"
+          - "149999694"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
           - 1ms
         x-request-id:
-          - req_bb35705e68463f7c813a0e82643b767b
+          - req_4c498f6966bc1182c9483a9c10c91a5e
       status:
         code: 200
         message: OK

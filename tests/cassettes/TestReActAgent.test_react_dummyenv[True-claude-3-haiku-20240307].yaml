@@ -1,22 +1,23 @@
 interactions:
   - request:
       body:
-        '{"messages": [{"role": "user", "content": [{"type": "text", "text": "Write
-        a 5 word story via print_story"}]}], "temperature": 0.1, "stop_sequences": ["Observation:"],
-        "system": [{"type": "text", "text": "Answer the following questions as best
-        you can. You have access to the following tools:\n\nNAME: print_story\n\nSYNOPSIS:\n    print_story(string
-        story)\n\nDESCRIPTION:\n    Print a story.\n\nPARAMETERS:\n    story (string):
-        Story to print.\n\nNAME: cast_float\n\nSYNOPSIS:\n    cast_float(string x)\n\nDESCRIPTION:\n    Cast
-        the input argument x to a float.\n\nPARAMETERS:\n    x (string): No description
-        provided.\n\nNAME: cast_int\n\nSYNOPSIS:\n    cast_int(number x)\n\nDESCRIPTION:\n    Cast
-        the input argument x to an integer.\n\nPARAMETERS:\n    x (number): No description
-        provided.\n\nUse the following format:\n\nThought: you should always think about
-        what to do\nAction: the action to take, should be one of [print_story, cast_float,
-        cast_int]\nAction Input: comma separated list of inputs to action as python
-        tuple\nObservation: the result of the action\n... (this Thought/Action/Action
-        Input/Observation can repeat N times)\n\nExample:\n\nThought: I need to use
-        the get_weather tool\nAction: get_weather\nAction Input: \"New York\", 7\nObservation:
-        The 7 day forecast for New York is [...]"}], "max_tokens": 4096, "model": "claude-3-haiku-20240307"}'
+        '{"model":"claude-3-haiku-20240307","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"stop_sequences":["Observation:"],"system":[{"type":"text","text":"Answer
+        the following questions as best you can. You have access to the following tools:\n\nNAME:
+        print_story\n\nSYNOPSIS:\n    print_story(string story)\n\nDESCRIPTION:\n    Print
+        a story.\n\nPARAMETERS:\n    story (string): Story to print.\n\nNAME: cast_float\n\nSYNOPSIS:\n    cast_float(string
+        x)\n\nDESCRIPTION:\n    Cast the input argument x to a float.\n\nPARAMETERS:\n    x
+        (string): No description provided.\n\nNAME: cast_int\n\nSYNOPSIS:\n    cast_int(number
+        x)\n\nDESCRIPTION:\n    Cast the input argument x to an integer.\n\nPARAMETERS:\n    x
+        (number): No description provided.\n\nNAME: get_random_int\n\nSYNOPSIS:\n    get_random_int()\n\nDESCRIPTION:\n    Get
+        a random integer in 1 to 10.\n\nPARAMETERS:\n\nUse the following format:\n\nThought:
+        you should always think about what to do\nAction: the action to take, should
+        be one of [print_story, cast_float, cast_int, get_random_int]\nAction Input:
+        comma separated list of inputs to action as python tuple\nObservation: the result
+        of the action\n... (this Thought/Action/Action Input/Observation can repeat
+        N times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction:
+        get_weather\nAction Input: \"New York\", 7\nObservation: The 7 day forecast
+        for New York is [...]"}],"max_tokens":4096}'
       headers:
         accept:
           - application/json
@@ -27,28 +28,27 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1366"
+          - "1490"
         content-type:
           - application/json
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.52.3
+          - litellm/1.61.2
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA1SQMU/DQAyF/4rlCaQLCg3Q9raOXShDl4qg6Eis5NTWDnc+ShX1v6MEMWSy3if7
-          PT0P6Bu0eI5tlT+uNte0X7aFutVhs5ZD+0avC0KDeu1p3KIYXTuCIKcRuBh9VMeKBs/S0Akt1ieX
-          GsqKrHP+mLJFvnjKi3yJBmthJVa078O/o9LPeDsNi/tOUtuphS0wUQMqcAleCRw8w0VCA1ElXEve
-          1OqFLfTBs1YzCFvuk1q4K3HHNUHqhcGB+jMZ0I6AuHko8b5kvH0YjCp9FchFYbR/KtJXIq7HmnNt
-          cfcZKXy7KRwNpukbdkA/ZlYqR+KItsiXBiXpjL3cbr8AAAD//wMABuHT9mwBAAA=
+          H4sIAAAAAAAAA2RQTU/DMAz9K5ZPIGWobCuD3EBIaKddpnGgqAqJWaNtTkkcxlTtv6MW7VBxst6H
+          35PdoXeo8ZC2dXG7Ke19kvXny/PDfMNPr2m6COuMCuXUUu+ilMyWUGEM+54wKfkkhgUVHoKjPWq0
+          e5MdTWaTxvhdnkyL6byYFQtUaAMLsaB+6y6JQj/97jA0rpuQt41oWAITOZAAx+iFwEAJxxAdJAnx
+          VPGjFR9YQxs9Sz0iYcltFg1XFa7YEuQ2MBgQfyAF0hAQu5sKryvG87vCJKGtI5kUGPUfSvSViW1/
+          5hhrXH0kit9mKEeFefiG7tD3nbWEHXFCPStLhdbYhmobaXDXY0dx0SMZ918LWUZ5d+fzLwAAAP//
+          AwBp9ZijqAEAAA==
       headers:
-        CF-Cache-Status:
-          - DYNAMIC
         CF-RAY:
-          - 8df951012cb515aa-SJC
+          - 9149f36cdab3ce78-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -56,27 +56,43 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Fri, 08 Nov 2024 23:24:25 GMT
+          - Wed, 19 Feb 2025 23:14:03 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
           - chunked
         X-Robots-Tag:
           - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-02-19T23:14:02Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-02-19T23:14:03Z"
         anthropic-ratelimit-requests-limit:
           - "5000"
         anthropic-ratelimit-requests-remaining:
           - "4999"
         anthropic-ratelimit-requests-reset:
-          - "2024-11-08T23:25:12Z"
+          - "2025-02-19T23:14:02Z"
         anthropic-ratelimit-tokens-limit:
-          - "5000000"
+          - "6000000"
         anthropic-ratelimit-tokens-remaining:
-          - "5000000"
+          - "6000000"
         anthropic-ratelimit-tokens-reset:
-          - "2024-11-08T23:24:25Z"
+          - "2025-02-19T23:14:02Z"
+        cf-cache-status:
+          - DYNAMIC
         request-id:
-          - req_01Tr18AQEQbkKAyQomqAvuNF
+          - req_01DSJFudGsSTN1qKoZrtvYTb
         via:
           - 1.1 google
       status:

@@ -1,23 +1,19 @@
 interactions:
   - request:
       body:
-        '{"messages": [{"role": "user", "content": [{"type": "text", "text": "Write
-        a 5 word story via print_story"}]}], "temperature": 0.1, "stop_sequences": ["Observation:",
-        "Action:"], "tools": [{"name": "print_story", "input_schema": {"type": "object",
-        "properties": {"story": {"description": "Story to print.", "title": "Story",
-        "type": "string"}}, "required": ["story"]}, "description": "Print a story."},
-        {"name": "cast_float", "input_schema": {"type": "object", "properties": {"x":
-        {"title": "X", "type": "string"}}, "required": ["x"]}, "description": "Cast
-        the input argument x to a float."}, {"name": "cast_int", "input_schema": {"type":
-        "object", "properties": {"x": {"title": "X", "type": "number"}}, "required":
-        ["x"]}, "description": "Cast the input argument x to an integer."}], "system":
-        [{"type": "text", "text": "Answer the following questions as best you can, using
-        the provided tools.\n\nUse the following format:\n\nThought: you should always
-        think about what to do\nAction: the action to take, should be one of the provided
-        tools with necessary arguments\nObservation: the result of the action\n... (this
-        Thought/Action/Observation can repeat N times)\n\nExample:\n\nThought: I need
-        to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
-        The 7 day forecast for New York is [...]"}], "max_tokens": 4096, "model": "claude-3-haiku-20240307"}'
+        '{"model":"claude-3-haiku-20240307","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"stop_sequences":["Observation:","Action:"],"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"system":[{"type":"text","text":"Answer the
+        following questions as best you can, using the provided tools.\n\nUse the following
+        format:\n\nThought: you should always think about what to do\nAction: the action
+        to take, should be one of the provided tools with necessary arguments\nObservation:
+        the result of the action\n... (this Thought/Action/Observation can repeat N
+        times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction: get_weather(\"New
+        York\", 7)\nObservation: The 7 day forecast for New York is [...]"}],"max_tokens":4096}'
       headers:
         accept:
           - application/json
@@ -28,28 +24,26 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1376"
+          - "1445"
         content-type:
           - application/json
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.52.3
+          - litellm/1.61.2
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA1SPQUvDQBCF/8ryzhuJqSV2b/WkgmClJ0XCkgzJknQn7s7SlpD/LokIehq+994M
-          8ya4Bgan2Fb57dEdDq+le34r7y/7x5ewc/37A0NDriMtKYrRtgSNwMMi2BhdFOsFGiduaIBBPdjU
-          ULbJOuv6lBV5cZdv8hIaNXshLzAf0+9Focuyuw6DY8ep7cSoJ+WJGiWsUiQlHakxOC9VFA5XJczD
-          4p2DE1JWbdWZQ6NW8wbzp0YUHqtANrKH+aFIX4l8vTz/nw32tTj2BhpprWcmOD8mqYR78hFmuys0
-          OMlfrdjN8zcAAAD//wMAGIDnLT0BAAA=
+          H4sIAAAAAAAAA2SPQWvDMAyF/4rR2Rlpkm3Ut962sstghY0xgmeL2DS1Mlsm7UL++0hHYWUn8d73
+          JJ4m8BYUHFLXlqute37ajavXh83ncf097HB82+Y1SODTgEsKU9IdgoRI/WLolHxiHRgkHMhiDwpM
+          r7PFoi6c9vtcVGXVlHV5DxIMBcbAoN6ny0XG47J7HgpeHOXOsRKPIiBawSRyQsEOxRB94DYxxZNg
+          on5hY/SMQotbMVK04gxvYP6QkJiGNqJOFED9qoRfGYNZyl9rBRvDnoICCfn8nprAhyFzy7THkEDd
+          NbUEo43D1kTUS7q9TpQXHlHb/4wy/3WqZp5/AAAA//8DAJV/0QZ5AQAA
       headers:
-        CF-Cache-Status:
-          - DYNAMIC
         CF-RAY:
-          - 8df952263d71cfb4-SJC
+          - 9149f4fe3b37ebf3-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -57,27 +51,43 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Fri, 08 Nov 2024 23:25:13 GMT
+          - Wed, 19 Feb 2025 23:15:07 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
           - chunked
         X-Robots-Tag:
           - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-02-19T23:15:06Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-02-19T23:15:07Z"
         anthropic-ratelimit-requests-limit:
           - "5000"
         anthropic-ratelimit-requests-remaining:
           - "4999"
         anthropic-ratelimit-requests-reset:
-          - "2024-11-08T23:26:12Z"
+          - "2025-02-19T23:15:06Z"
         anthropic-ratelimit-tokens-limit:
-          - "5000000"
+          - "6000000"
         anthropic-ratelimit-tokens-remaining:
-          - "5000000"
+          - "6000000"
         anthropic-ratelimit-tokens-reset:
-          - "2024-11-08T23:25:13Z"
+          - "2025-02-19T23:15:06Z"
+        cf-cache-status:
+          - DYNAMIC
         request-id:
-          - req_016Q76N5oXBTHX5e99uFnN6H
+          - req_019mgPRLN6ubTtPRykXJbYPH
         via:
           - 1.1 google
       status:
@@ -85,27 +95,21 @@ interactions:
         message: OK
   - request:
       body:
-        '{"messages": [{"role": "user", "content": [{"type": "text", "text": "Write
-        a 5 word story via print_story"}]}, {"role": "assistant", "content": [{"type":
-        "text", "text": "Thought: I need to use the print_story tool to write a 5 word
-        story.. Based on this reasoning, let''s select the appropriate tool!\nAction:
-        "}]}, {"role": "user", "content": [{"type": "text", "text": "Continue..."}]}],
-        "temperature": 0.1, "stop_sequences": ["Observation:", "Action:"], "tools":
-        [{"name": "print_story", "input_schema": {"type": "object", "properties": {"story":
-        {"description": "Story to print.", "title": "Story", "type": "string"}}, "required":
-        ["story"]}, "description": "Print a story."}, {"name": "cast_float", "input_schema":
-        {"type": "object", "properties": {"x": {"title": "X", "type": "string"}}, "required":
-        ["x"]}, "description": "Cast the input argument x to a float."}, {"name": "cast_int",
-        "input_schema": {"type": "object", "properties": {"x": {"title": "X", "type":
-        "number"}}, "required": ["x"]}, "description": "Cast the input argument x to
-        an integer."}], "tool_choice": {"type": "any"}, "system": [{"type": "text",
-        "text": "Answer the following questions as best you can, using the provided
-        tools.\n\nUse the following format:\n\nThought: you should always think about
-        what to do\nAction: the action to take, should be one of the provided tools
-        with necessary arguments\nObservation: the result of the action\n... (this Thought/Action/Observation
-        can repeat N times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction:
-        get_weather(\"New York\", 7)\nObservation: The 7 day forecast for New York is
-        [...]"}], "max_tokens": 4096, "model": "claude-3-haiku-20240307"}'
+        '{"model":"claude-3-haiku-20240307","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]},{"role":"assistant","content":[{"type":"text","text":"Thought:
+        I need to use the print_story tool to write a 5 word story.. Based on this reasoning,
+        let''s select the appropriate tool!\nAction: "}]},{"role":"user","content":[{"type":"text","text":"Continue..."}]}],"temperature":0.1,"stop_sequences":["Observation:","Action:"],"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"},"system":[{"type":"text","text":"Answer
+        the following questions as best you can, using the provided tools.\n\nUse the
+        following format:\n\nThought: you should always think about what to do\nAction:
+        the action to take, should be one of the provided tools with necessary arguments\nObservation:
+        the result of the action\n... (this Thought/Action/Observation can repeat N
+        times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction: get_weather(\"New
+        York\", 7)\nObservation: The 7 day forecast for New York is [...]"}],"max_tokens":4096}'
       headers:
         accept:
           - application/json
@@ -116,29 +120,29 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1685"
+          - "1737"
         content-type:
           - application/json
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.52.3
+          - litellm/1.61.2
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA1SQ3U7DMAxGX6XydYa6FejI5ZBgGjDxI8YFQlVovC5b6pTEQZuqvjvKJiS49Gd/
-          R0fuwWiQ0IamysezzWyp71+unovr7au+i+V8QbcrEMCHDtMVhqAaBAHe2RSoEExgRQwCWqfRgoTa
-          qqhxVIw2yuziaJJPzvMiL0FA7YiRGOR7/0tk52wVQ0IePdIcq3xcrN7Kx33ZbcvFlBeX85v502z5
-          AAJItanXeUNcBXb+kKrURQbZwymQ8Eq477Bm1JnS30gcPYos0tr5BpnVp8WsxdZ5g0Fk1qzROmqy
-          tTdIOmxMdwbD8CESr6s8quDov+xxEfArItUIkqK1AuLxObI/+VTsdkgBZDmZCnCR/2YX42H4AQAA
-          //8DAJNjWdp7AQAA
+          H4sIAAAAAAAAA2SQTUvDQBCG/0qY81bSD4ndWw96sEUKWrCILGsySdZuZtPdWdsS8t8lLQWLx3m/
+          eJgOTAESmlCpdJw9Py7fPS3ennSznW3L70P2sJqDAD61OKQwBF0hCPDODoIOwQTWxCCgcQVakJBb
+          HQscTUe1Nrs4mqSTWTpNMxCQO2IkBvnRXRfZOatiGCbPHMMdVTpeb5aL4yuto1nU5UtZr1aH/aQC
+          AaSbodd6Q6wCO38aqtRGBtnBRZCwITy2mDMWiS5+kDh6FEmk0vkKmfWXxaTBxnmDQSTWlGgdVUnp
+          DVIRatPeQd9/imGvVR51cHQLezYC7iNSjiApWisgnp8juwuPYrdDCiCzbC4g13mNKveo2ThSt4n0
+          6nvUxX/PRf6r3Kd9/wsAAP//AwDKddehtwEAAA==
       headers:
         CF-Cache-Status:
           - DYNAMIC
         CF-RAY:
-          - 8df9522cab05cfb4-SJC
+          - 9149f5017c8debf3-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -146,27 +150,41 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Fri, 08 Nov 2024 23:25:13 GMT
+          - Wed, 19 Feb 2025 23:15:08 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
           - chunked
         X-Robots-Tag:
           - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-02-19T23:15:07Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-02-19T23:15:07Z"
         anthropic-ratelimit-requests-limit:
           - "5000"
         anthropic-ratelimit-requests-remaining:
           - "4999"
         anthropic-ratelimit-requests-reset:
-          - "2024-11-08T23:26:12Z"
+          - "2025-02-19T23:15:07Z"
         anthropic-ratelimit-tokens-limit:
-          - "5000000"
+          - "6000000"
         anthropic-ratelimit-tokens-remaining:
-          - "5000000"
+          - "6000000"
         anthropic-ratelimit-tokens-reset:
-          - "2024-11-08T23:25:13Z"
+          - "2025-02-19T23:15:07Z"
         request-id:
-          - req_01XQE7MHjWyv3id3ZAocVEiG
+          - req_01Q2E1WmsuBMYj6ePdc1vU1D
         via:
           - 1.1 google
       status:
