@@ -69,7 +69,6 @@ class OpResult(Generic[TOutput_co]):
         cls, t_output: type[TOutput_co], dump: dict[str, Any]
     ) -> OpResult[TOutput_co]:
         value = dump.pop("value")
-        logprob = dump.pop("logprob", None)
         if issubclass(t_output, BaseModel):
             value = t_output.model_validate(value)
 

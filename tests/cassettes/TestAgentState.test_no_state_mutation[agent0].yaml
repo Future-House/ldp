@@ -1,113 +1,114 @@
 interactions:
-- request:
-    body: '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
-      a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
-      to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
-      the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-      the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
-      a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
-    headers:
-      accept:
-      - application/json
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '986'
-      content-type:
-      - application/json
-      host:
-      - api.openai.com
-      user-agent:
-      - AsyncOpenAI/Python 1.63.0
-      x-stainless-arch:
-      - arm64
-      x-stainless-async:
-      - async:asyncio
-      x-stainless-lang:
-      - python
-      x-stainless-os:
-      - MacOS
-      x-stainless-package-version:
-      - 1.63.0
-      x-stainless-raw-response:
-      - 'true'
-      x-stainless-read-timeout:
-      - '120.0'
-      x-stainless-retry-count:
-      - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.12.9
-    method: POST
-    uri: https://api.openai.com/v1/chat/completions
-  response:
-    body:
-      string: !!binary |
-        H4sIAAAAAAAAAwAAAP//jFPBjtowEL3nK6w5wyqEhV1y2+2lqqpWbbda1FJFxp4EF8dj2U6BRfz7
-        KgGSQLdSc4iseX5vZt6M9xFjoCSkDMSKB1FaPXxM1vMqX37Tn58eHl6e379sPnyaL7/ndrJdSxjU
-        DFr+RhHOrBtBpdUYFJkjLBzygLXq6G48m80myd19A5QkUde0wobhLQ2TOLkdjkbDJD4RV6QEekjZ
-        z4gxxvbNvy7RSNxCyuLBOVKi97xASNtLjIEjXUeAe6984CbAoAMFmYCmrtpUWveAQKQzwbXuEh+/
-        fe/c+cS1zpAeNzv1zj8trZtP4y/yxzN9tZNtL99RemebgvLKiNafHt7G06tkjIHhZcO1TpmQ+UBu
-        d0VnDLgrqhJNqEuH/QKaawtIF/CRfGBr3HmWU2UkU4Z5Q5ubBRzgQuUQvXX+1TPIYV55rk/OneKH
-        dhSaCuto6a+chVwZ5VeZQ+6bDvtGR+dsTR6oLmYJ1lFpQxZojaaWHY1Pg4du1To0OYOBAtc91uQM
-        XOhlEgNXzbDb/RJcrFB21G7PeCUV9YCo1/vf1bylfexfmeJ/5DtACLQBZWYdSiUuO+6uOaxf4r+u
-        tS43BYNH90cJzIJCV89DYs4rfXwk4Hc+YJnlyhTomp1rFtdm/D4R8Xg6neYQHaJXAAAA//8DAOEU
-        QukyBAAA
-    headers:
-      CF-RAY:
-      - 9148d917bdd01592-SJC
-      Connection:
-      - keep-alive
-      Content-Encoding:
-      - gzip
-      Content-Type:
-      - application/json
-      Date:
-      - Wed, 19 Feb 2025 20:01:18 GMT
-      Server:
-      - cloudflare
-      Set-Cookie:
-      - __cf_bm=kPFMygIJ9KFq.oa.39WTGxUGToSD8PumNzaVzX0hEnE-1739995278-1.0.1.1-CveKy.R.7FGfpPxtqdFGaGuZeAoFLsrZCEkvS2.vXC0BApGpVEp_WO2QJONhMQwXDKaQOw8TV6th57kqD0HZQA;
-        path=/; expires=Wed, 19-Feb-25 20:31:18 GMT; domain=.api.openai.com; HttpOnly;
-        Secure; SameSite=None
-      - _cfuvid=Z.UdCvduEIRnbmzQHsSw0eRdpUzpgMDiU8xQtEVVGWw-1739995278628-0.0.1.1-604800000;
-        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
-      alt-svc:
-      - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      openai-organization:
-      - future-house-xr4tdh
-      openai-processing-ms:
-      - '470'
-      openai-version:
-      - '2020-10-01'
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      x-ratelimit-limit-requests:
-      - '10000'
-      x-ratelimit-limit-tokens:
-      - '30000000'
-      x-ratelimit-remaining-requests:
-      - '9999'
-      x-ratelimit-remaining-tokens:
-      - '29995894'
-      x-ratelimit-reset-requests:
-      - 6ms
-      x-ratelimit-reset-tokens:
-      - 8ms
-      x-request-id:
-      - req_1e878c56fa5946906b87f4805e10aa9c
-    status:
-      code: 200
-      message: OK
+  - request:
+      body:
+        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
+        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
+        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "986"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.63.0
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 1.63.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "120.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.9
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//jFPBjtowEL3nK6w5wyqEhV1y2+2lqqpWbbda1FJFxp4EF8dj2U6BRfz7
+          KgGSQLdSc4iseX5vZt6M9xFjoCSkDMSKB1FaPXxM1vMqX37Tn58eHl6e379sPnyaL7/ndrJdSxjU
+          DFr+RhHOrBtBpdUYFJkjLBzygLXq6G48m80myd19A5QkUde0wobhLQ2TOLkdjkbDJD4RV6QEekjZ
+          z4gxxvbNvy7RSNxCyuLBOVKi97xASNtLjIEjXUeAe6984CbAoAMFmYCmrtpUWveAQKQzwbXuEh+/
+          fe/c+cS1zpAeNzv1zj8trZtP4y/yxzN9tZNtL99RemebgvLKiNafHt7G06tkjIHhZcO1TpmQ+UBu
+          d0VnDLgrqhJNqEuH/QKaawtIF/CRfGBr3HmWU2UkU4Z5Q5ubBRzgQuUQvXX+1TPIYV55rk/OneKH
+          dhSaCuto6a+chVwZ5VeZQ+6bDvtGR+dsTR6oLmYJ1lFpQxZojaaWHY1Pg4du1To0OYOBAtc91uQM
+          XOhlEgNXzbDb/RJcrFB21G7PeCUV9YCo1/vf1bylfexfmeJ/5DtACLQBZWYdSiUuO+6uOaxf4r+u
+          tS43BYNH90cJzIJCV89DYs4rfXwk4Hc+YJnlyhTomp1rFtdm/D4R8Xg6neYQHaJXAAAA//8DAOEU
+          QukyBAAA
+      headers:
+        CF-RAY:
+          - 9148d917bdd01592-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Wed, 19 Feb 2025 20:01:18 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=kPFMygIJ9KFq.oa.39WTGxUGToSD8PumNzaVzX0hEnE-1739995278-1.0.1.1-CveKy.R.7FGfpPxtqdFGaGuZeAoFLsrZCEkvS2.vXC0BApGpVEp_WO2QJONhMQwXDKaQOw8TV6th57kqD0HZQA;
+            path=/; expires=Wed, 19-Feb-25 20:31:18 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=Z.UdCvduEIRnbmzQHsSw0eRdpUzpgMDiU8xQtEVVGWw-1739995278628-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        access-control-expose-headers:
+          - X-Request-ID
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "470"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-ratelimit-limit-requests:
+          - "10000"
+        x-ratelimit-limit-tokens:
+          - "30000000"
+        x-ratelimit-remaining-requests:
+          - "9999"
+        x-ratelimit-remaining-tokens:
+          - "29995894"
+        x-ratelimit-reset-requests:
+          - 6ms
+        x-ratelimit-reset-tokens:
+          - 8ms
+        x-request-id:
+          - req_1e878c56fa5946906b87f4805e10aa9c
+      status:
+        code: 200
+        message: OK
 version: 1
