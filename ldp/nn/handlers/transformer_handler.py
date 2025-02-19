@@ -17,7 +17,6 @@ import torch.distributed as dist
 import tree
 from dask import config
 from dask.distributed import Client
-from dask_jobqueue import SLURMCluster
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from torch import nn
 from torch.cuda import nccl
@@ -498,6 +497,10 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         self, config: TransformerHandlerConfig, parallel_mode_config: ParallelModeConfig
     ):
         """Initialize a SLURM-based Dask cluster with GPU allocation."""
+        # Lazy import because dask_jobqueue cannot be started in a subprocess, which
+        # happens e.g. with streamlit
+        from dask_jobqueue import SLURMCluster
+
         self.cluster = SLURMCluster(
             cores=parallel_mode_config.num_cpus_per_worker,
             memory=parallel_mode_config.memory,
