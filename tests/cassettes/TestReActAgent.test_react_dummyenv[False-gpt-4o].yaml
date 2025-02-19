@@ -12,7 +12,8 @@ interactions:
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}}]}'
+        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
       headers:
         accept:
           - application/json
@@ -21,13 +22,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1345"
+          - "1512"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.56.2
+          - AsyncOpenAI/Python 1.63.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -37,32 +38,32 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.56.2
+          - 1.63.0
         x-stainless-raw-response:
           - "true"
+        x-stainless-read-timeout:
+          - "600.0"
         x-stainless-retry-count:
           - "1"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.7
+          - 3.12.9
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFLLTsMwELznK6w9Nyh9t7kBF46o4oBAKHLtTeLieC3bQbRV/x05LX2o
-          ReLiw8zOeGbtbcIYKAk5A1HzIBqr03uZLerNyD4+NJq+NqvN4mX9Wg7fJs9y/AS9qKDlCkX4Vd0J
-          aqzGoMjsaeGQB4yu/elwOBvPZ5N5RzQkUUdZZUM6onSQDUZpNkuzyUFYkxLoIWfvCWOMbbszRjQS
-          vyFnWe8XadB7XiHkxyHGwJGOCHDvlQ/cBOidSEEmoOlSn8MOy9bzmMq0Wh/w3fEeTZV1tPQH/oiX
-          yihfFw65JxM9fSALHbtLGPvo+rQXEcE6amwoAn2iiYaD/mTvB6cNnthDVwgUuL4lurArJAautD9b
-          CAguapRXjowBb6WiMyI5K30d5pb3vrgy1X/sT4QQaAPKwjqUStws3JnH//XX2HHJXWDwax+wKUpl
-          KnTWqf0Tl7YQU8EzXHLBIdklPwAAAP//AwBFYrKZ6wIAAA==
+          H4sIAAAAAAAAAwAAAP//jFKxTsMwFNzzFdabCXJLE1BHJkQHGBADCEWu/ZIYHNuyXxAI9d+RndIW
+          tUgsHu5857v3/FUwBlrBkoHsBcnBm/J6bh9Xw+26p5u2eqgfbd+tWq/vnrr79xWcJYVbv6KkH9W5
+          dIM3SNrZiZYBBWFynV0uOOd1XfFMDE6hSbLOU7lw5ZzPFyW/Knm9FfZOS4ywZM8FY4x95TNFtAo/
+          YMmyTUYGjFF0CMvdJcYgOJMQEDHqSMISnO1J6SyhzakP4YDtGEVKZUdjtvhm945xnQ9uHbf8Dm+1
+          1bFvAorobPKM5DxkdlMw9pL7jL8igg9u8NSQe0ObDOcX9eQH+wnu2W1XIEfCnBL9smsUktAmHgwE
+          pJA9qiNHxkCMSrsDojgofRzmlPdUXNvuP/Z7Qkr0hKrxAZWWJwtn8/S//rq2G3IODBHDu5bYkMaQ
+          FqGwFaOZVg/xMxIOTatth8EHPe2/9U2Fs1nFK644FJviGwAA//8DAOgS6XoIAwAA
       headers:
-        CF-Cache-Status:
-          - DYNAMIC
         CF-RAY:
-          - 8effbad2dcbc9e56-SJC
+          - 9149eeba3df51566-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -70,7 +71,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 10 Dec 2024 19:44:29 GMT
+          - Wed, 19 Feb 2025 23:10:50 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -81,10 +82,12 @@ interactions:
           - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "896"
+          - "307"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -102,7 +105,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_6b16e63e79e61ae7b962cfe7d7a4aac2
+          - req_22bed896ec927c28cbed00429e780f13
       status:
         code: 200
         message: OK
@@ -120,7 +123,8 @@ interactions:
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}}]}'
+        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
       headers:
         accept:
           - application/json
@@ -129,13 +133,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1503"
+          - "1670"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.56.2
+          - AsyncOpenAI/Python 1.63.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -145,34 +149,35 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.56.2
+          - 1.63.0
         x-stainless-raw-response:
           - "true"
+        x-stainless-read-timeout:
+          - "600.0"
         x-stainless-retry-count:
           - "0"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.7
+          - 3.12.9
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFPBbtswDL37KwSek8JL0jj1rdiAnVpgyYBhWApDkRlbnSxpEr0mDfLv
-          g+XEdrIWqA+CwMf3SD7Rh4gxkDmkDETJSVRWje/zeFl+/V4k/svt9pvQO4MP8z8/fibJ5+UURg3D
-          bJ5R0Jl1I0xlFZI0uoWFQ07YqH5KptPF7d1ifheAyuSoGlphaTwz40k8mY3jxTien4ilkQI9pOxX
-          xBhjh3A2Leocd5CyeHSOVOg9LxDSLokxcEY1EeDeS09cE4x6UBhNqJuuda3UACBjVCa4Un3h9jsM
-          7r1PXKlsVeySh+dXuv9bvarlZEnx46NdvcwG9VrpvQ0NbWstOn8GeBdPr4oxBppXgWud1JR5Mm5/
-          RWcMuCvqCjU1rcNhDSFtDekaVrX2SOyllN6i88yjcEiekWFaFiXdrOEIF3LH6K3708Aph9vac3Wy
-          8BQ/dm+iTGGd2fgri2ErtfRl5pD7MOrQ8ehcLdSB+uJRwTpTWcrI/EbdyE5mk1YV+p0boKf1ADLE
-          1SA+P7Mu9LIcicvw6t2iCS5KzHtqv3C8zqUZANFg9v+7eUu7nV/q4iPyPSAEWsI8sw5zKS4n7tMc
-          Nr/ke2mdy6Fh8HtPWGVbqQt0Yb/CktpMJILHuOGCQ3SM/gEAAP//AwBbSysBHgQAAA==
+          H4sIAAAAAAAAAwAAAP//jFNdb9swDHz3rxD43BRO5riFH4d2QzcUw1CswLYMhiIztjpZ0iR6zQfy
+          3wvLie2kHTA/GAJPdySP1C5iDGQBGQNRcRK1VZP3M/34ufK337dPjVr/uP+UPKtl8ujfLeuHO7ho
+          GWb5hIKOrEthaquQpNEdLBxywlZ1epXEcZym8zgAtSlQtbTS0iQxk1k8Sybx9SROD8TKSIEeMvYz
+          YoyxXfi3JeoC15CxIBMiNXrPS4Ssv8QYOKPaCHDvpSeuCS4GUBhNqNuqdaPUCCBjVC64UkPi7tuN
+          zoNPXKl8vfxg/9zeFdvt1+Tb1cdtelOu0/r+yyhfJ72xoaBVo0Xvzwjv49lZMsZA8zpwrZOack/G
+          bc7ojAF3ZVOjprZ02C0gXFtAtoCHRnsk9lxJb9F55lE4JM/IMC3Lii4XsIcTuX301vnXyCmHq8Zz
+          dbDwEN/3M1GmtM4s/ZnFsJJa+ip3yH1odex4dMwW8kBzMlSwztSWcjK/Ubeys3TWqcKwcyP0sB5A
+          hrgaxa+PrBO9vEDiMky9XzTBRYXFQB0WjjeFNCMgGvX+upq3tLv+pS7/R34AhEBLWOTWYSHFacfD
+          NYftk/zXtd7lUDB4dH+lwJwkunYeBa54o7rXAn7jCet8JXWJLixf2GCbz3E6ncfzuIgh2kcvAAAA
+          //8DAGNNdls7BAAA
       headers:
-        CF-Cache-Status:
-          - DYNAMIC
         CF-RAY:
-          - 8effbad959279e56-SJC
+          - 9149eebcf8e11566-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -180,7 +185,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 10 Dec 2024 19:44:30 GMT
+          - Wed, 19 Feb 2025 23:10:50 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -191,10 +196,12 @@ interactions:
           - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "560"
+          - "492"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -212,7 +219,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_c68421e4837ba73aad651c4790c88a0d
+          - req_b877b8bd009f13259e21304516da2e88
       status:
         code: 200
         message: OK

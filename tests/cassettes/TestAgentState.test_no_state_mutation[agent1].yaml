@@ -5,7 +5,8 @@ interactions:
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}}]}'
+        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
       headers:
         accept:
           - application/json
@@ -14,13 +15,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "801"
+          - "968"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.61.1
+          - AsyncOpenAI/Python 1.63.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -30,33 +31,37 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.61.1
+          - 1.63.0
         x-stainless-raw-response:
           - "true"
+        x-stainless-read-timeout:
+          - "120.0"
         x-stainless-retry-count:
           - "1"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.7
+          - 3.12.9
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFPBbtswDL37KwSekyJ26gzxbT3ssg7D0MPaLoOhSrSjRpY0iU7rBvn3
-          wU5iO1kH1AdD4NN7JB+pXcQYKAkZA7HmJCqnp5/fHuh5+3O2MBt/78SP9LV4049fNtWisd9h0jLs
-          0zMKOrGuhK2cRlLWHGDhkRO2qvGn+TKZp2m87IDKStQtrXQ0vbbTZJZcT+N4msyOxLVVAgNk7FfE
-          GGO77t+WaCS+QsZmk1OkwhB4iZD1lxgDb3UbAR6CCsQNwWQAhTWEpq3a1FqPALJW54JrPSQ+fLvR
-          efCJa52Hlz/fvqbryj7e1bfNzf3D5k7L0CxG+Q7SjesKKmojen9GeB/PLpIxBoZXHdd5ZSgPZH1z
-          QWcMuC/rCg21pcNuBd21FWQruLWB2AabMGGFrY1kBl8Yl1s0VHsMVyvYw5naPnrv/HtklMeiDlwf
-          HTzG9/1ItC2dt0/hwmEolFFhnXvkoet0bHh0ytblgfpspuC8rRzlZDdoWtk4Pi4ADCs3oEl8BMkS
-          1yPW/ASc6eUSiatu6P2eCS7WKAfqsG+8lsqOgGjU+7/VvKd96F+Z8iPyAyAEOkKZO49SifOOh2se
-          2xf5v2u9y13BENBvlcCcFPp2HhILXuvDY4HQBMIqL5Qp0Xe71y2wyzGdY5osF4sUon30FwAA//8D
-          ABGs7IY6BAAA
+          H4sIAAAAAAAAAwAAAP//jFNNb9swDL37Vwi87JIUjpMuhY/BDvvesAJDgWUwVIq2tejDleR0SZD/
+          PthxbCfrgPlgCHx6j+QjdYgYAykgZYAlD6grNV0l5uv7L0+o8c3zndzkuLr/9PHdB327LbcaJg3D
+          Pv4iDGfWDVpdKQrSmhOMjnigRnW2XMRx/DpZLltAW0GqoRVVmC7sNImTxXQ2myZxRyytRPKQsh8R
+          Y4wd2n9TohH0G1IWT84RTd7zgiDtLzEGzqomAtx76QM3ASYDiNYEMk3VplZqBARrVYZcqSHx6TuM
+          zoNPXKlsRcbxz9/jt/Lb/kHdPZjwtC82hRzlO0nvqragvDbY+zPC+3h6lYwxMFy33MpJEzIfrNtd
+          0RkD7opakwlN6XBYQ3ttDeka7ksu7LNnghskwWojyDFtrVGyKMMrzwq+p5s1HOFC8xi9dP45sstR
+          XnuuOh+7+LEfjLJF5eyjv/IZcmmkLzNH3Lf9jm2PztnaPFBfTBYqZ3UVsmA3ZBrZ2bxbAxgWb0CT
+          eQcGG7gasW7PwIVeJihw2Y6+3zbkWJIYqMPW8VpIOwKiUe9/V/OS9ql/aYr/kR8ARKoCiaxyJCRe
+          djxcc9S8y39d611uCwZPbiuRsiDJNfMQlPNanZ4M+J0PpLNcmoJcu4HtGlfZEmd5goQ4h+gY/QEA
+          AP//AwAliCESQAQAAA==
       headers:
+        CF-Cache-Status:
+          - DYNAMIC
         CF-RAY:
-          - 91006449efa6ce68-SJC
+          - 9149e59ee8d967fe-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -64,7 +69,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 11 Feb 2025 00:58:40 GMT
+          - Wed, 19 Feb 2025 23:04:44 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -75,12 +80,10 @@ interactions:
           - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "1092"
+          - "7528"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -98,7 +101,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_18ec13eb9228510f81e0fdb7b02f36f1
+          - req_97cf4f13ed1fc985ae3d7fc4c7390d04
       status:
         code: 200
         message: OK
