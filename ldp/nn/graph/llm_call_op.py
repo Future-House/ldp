@@ -95,7 +95,7 @@ class LocalLLMCallOp(Op[Message]):
         tools_list = []
         for tool in tools:
             if tool.info.parameters is None:
-                raise NotImplementedError("Cannot serialize tools with no parameters.")
+                raise NotImplementedError("Didn't yet handle serializing tools without parameters.")
 
             tools_list.append({
                 "name": tool.info.name,
