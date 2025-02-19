@@ -104,7 +104,7 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
 )
 
 
-def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:  # noqa: C901
+def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:
     """
     Parse an Act or ReAct Message into a ToolRequestMessage.
 
@@ -121,87 +121,39 @@ def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:  # noqa:
         )
 
     message_content = m.content
-    # strip (and overwrite) up to end of action input
     loc = message_content.find("Action Input:")
     if loc != -1:
         loc = message_content.find("\n", loc)
         message_content = message_content[: loc if loc > 0 else None]
-    # we need to override the message too - don't want the model to hallucinate
     m.content = message_content
 
-    action_args: tuple[Any, ...] = ()
-    # https://regex101.com/r/qmqZ7Z/1
-    action_input = re.search(r"Input:[ \t]*([ \S]*)", m.content)
-    # only parse if it takes arguments
-    if action_input and action_input.group(1).strip():
-        input_str = action_input.group(1).strip()
-        # if it has commas and no quotes, it's almost certainly a tuple without
-        # parentheses, so we add them
+    action_args = ()
+    action_input_match = re.search(r"Input:[ \t]*([ \S]*)", m.content)
+    if action_input_match and action_input_match.group(1).strip():
+        input_str = action_input_match.group(1).strip()
         if "," in input_str and not (
             input_str.startswith("(") and input_str.endswith(")")
         ):
             input_str = f"({input_str})"
         try:
-            if input_str.startswith("(") and input_str.endswith(")"):
-                # Handle tuples and quoted strings inside
-                if '"' not in input_str and "'" not in input_str:
-                    # Add quotes around each element within parentheses if they are not already quoted
-                    # and if they are not purely numbers. There may exist a killer regex for this
-                    # but I am a simple man
-
-                    # just catches things like "1.1".isnumeric() == False
-                    # so we can't just use isnumeric
-                    def is_number(s: str) -> bool:
-                        try:
-                            float(s)
-                        except ValueError:
-                            return False
-                        return True
-
-                    input_str = ", ".join(
-                        f'"{e.strip()}"' if not is_number(e) else str(e)
-                        for e in input_str.strip("()").split(",")
-                        if e.strip()
-                    )
-                    input_str = f"({input_str})"
-                eval_result = ast.literal_eval(input_str)
-                action_args = (
-                    (eval_result,)
-                    if not isinstance(eval_result, tuple)
-                    else eval_result
-                )
-            else:
-                # Convert to int or float if possible
-                try:
-                    action_args = (ast.literal_eval(input_str),)
-                except (ValueError, SyntaxError):
-                    action_args = (input_str,)
+            action_args = eval_action_input(input_str)
         except Exception as exc:
             raise MalformedMessageError(
                 f"Action Input {input_str} could not be parsed."
             ) from exc
 
-        if len(action_args) == 1 and isinstance(action_args[0], tuple):
-            action_args = action_args[0]
-
-    action = re.search(r"Action:[ \t]*(\S*)", m.content)
-    if not action:
+    action_match = re.search(r"Action:[ \t]*(\S*)", m.content)
+    if not action_match:
         raise MalformedMessageError("Action not emitted.")
-    tool_name = action.group(1).strip()
-    # have to match up name to tool to line up args in order
-    try:
-        tool = next(t for t in tools if t.info.name == tool_name)
-    except StopIteration as exc:
-        raise MalformedMessageError(f"Tool {tool_name} not found in tools.") from exc
+    tool_name = action_match.group(1).strip()
+    tool = get_tool_by_name(tool_name, tools)
+
     required_parameters = tool.info.parameters.required if tool.info.parameters else []
     if len(action_args) < len(required_parameters):
         raise MalformedMessageError(
-            f"Action Input {action_args!r} shorter than {tool.info.name!r} tool's"
-            " parameters."
+            f"Action Input {action_args!r} shorter than {tool.info.name!r} tool's parameters."
         )
 
-    # Anecdotally we've observed thought also often captures the action
-    # NOTE: for Act agents there is no Thought, so the regex will return None
     thought = re.search(r"Thought:[ \t]*(.*)", m.content)
     return ToolRequestMessage(
         content=thought.group(1) if thought else None,
@@ -321,6 +273,40 @@ def postprocess_and_concat_resoning_msg(
         # We interleave a user message as required by Anthropic's API
         Message(content="Continue..."),
     ]
+
+
+def eval_action_input(input_str: str) -> tuple:
+    if input_str.startswith("(") and input_str.endswith(")"):
+        input_str = handle_quoted_strings(input_str)
+        eval_result = ast.literal_eval(input_str)
+        return (eval_result,) if not isinstance(eval_result, tuple) else eval_result
+    try:
+        return (ast.literal_eval(input_str),)
+    except (ValueError, SyntaxError):
+        return (input_str,)
+
+
+def handle_quoted_strings(input_str: str) -> str:
+    def is_number(s: str) -> bool:
+        try:
+            float(s)
+        except ValueError:
+            return False
+        return True
+
+    input_str = ", ".join(
+        f'"{e.strip()}"' if not is_number(e) else str(e)
+        for e in input_str.strip("()").split(",")
+        if e.strip()
+    )
+    return f"({input_str})"
+
+
+def get_tool_by_name(tool_name: str, tools: list[Tool]) -> Tool:
+    try:
+        return next(t for t in tools if t.info.name == tool_name)
+    except StopIteration as exc:
+        raise MalformedMessageError(f"Tool {tool_name} not found in tools.") from exc
 
 
 class ReActModule(ReActModuleSinglePrompt):
