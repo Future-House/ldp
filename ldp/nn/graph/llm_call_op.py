@@ -92,14 +92,16 @@ class LocalLLMCallOp(Op[Message]):
             return None
 
         # TODO: should be able to switch to tool.info.model_dump() here
-        return [
-            {
+        tools_list = []
+        for tool in tools:
+            if tool.info.parameters is None:
+                raise NotImplementedError("Cannot serialize tools with no parameters.")
+
+            tools_list.append({
                 "name": tool.info.name,
                 "description": tool.info.description,
                 "parameters": {
-                    "type": tool.info.parameters.type
-                    if tool.info.parameters
-                    else "object",
+                    "type": tool.info.parameters.type,
                     "properties": {
                         prop_name: {
                             "type": prop_details.get("type"),
@@ -108,13 +110,10 @@ class LocalLLMCallOp(Op[Message]):
                         }
                         for prop_name, prop_details in tool.info.get_properties().items()
                     },
-                    "required": tool.info.parameters.required
-                    if tool.info.parameters
-                    else [],
+                    "required": tool.info.parameters.required,
                 },
-            }
-            for tool in tools
-        ]
+            })
+        return tools_list
 
     @staticmethod
     def _parse_tool_request(out_text: str, tools: list[Tool]) -> ToolRequestMessage:
