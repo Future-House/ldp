@@ -91,28 +91,32 @@ class LocalLLMCallOp(Op[Message]):
         if not tools:
             return None
 
-        # TODO: should be able to switch to tool.info.model_dump() here
-        tools_list = []
-        for tool in tools:
-            if tool.info.parameters is None:
-                raise NotImplementedError("Cannot serialize tools with no parameters.")
-
-            tools_list.append({
+        # Prepare tools using list comprehension for faster execution.
+        tools_list = [
+            {
                 "name": tool.info.name,
                 "description": tool.info.description,
                 "parameters": {
-                    "type": tool.info.parameters.type,
+                    "type": param.type,
                     "properties": {
                         prop_name: {
                             "type": prop_details.get("type"),
                             "description": prop_details.get("description"),
                             "title": prop_details.get("title"),
                         }
-                        for prop_name, prop_details in tool.info.get_properties().items()
+                        for prop_name, prop_details in param.get_properties().items()
                     },
-                    "required": tool.info.parameters.required,
+                    "required": param.required,
                 },
-            })
+            }
+            for tool in tools
+            if (param := tool.info.parameters) is not None
+        ]
+
+        # Ensure no tools with null parameters are present.
+        if any(tool.info.parameters is None for tool in tools):
+            raise NotImplementedError("Cannot serialize tools with no parameters.")
+
         return tools_list
 
     @staticmethod
