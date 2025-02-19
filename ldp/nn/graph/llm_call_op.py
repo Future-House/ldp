@@ -97,16 +97,20 @@ class LocalLLMCallOp(Op[Message]):
                 "name": tool.info.name,
                 "description": tool.info.description,
                 "parameters": {
-                    "type": tool.info.parameters.type,
+                    "type": tool.info.parameters.type
+                    if tool.info.parameters
+                    else "object",
                     "properties": {
                         prop_name: {
                             "type": prop_details.get("type"),
                             "description": prop_details.get("description"),
                             "title": prop_details.get("title"),
                         }
-                        for prop_name, prop_details in tool.info.parameters.properties.items()
+                        for prop_name, prop_details in tool.info.get_properties().items()
                     },
-                    "required": tool.info.parameters.required,
+                    "required": tool.info.parameters.required
+                    if tool.info.parameters
+                    else [],
                 },
             }
             for tool in tools

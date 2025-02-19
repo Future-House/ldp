@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy' and sys_platform == 'linux'",
@@ -815,16 +816,16 @@ wheels = [
 
 [[package]]
 name = "fhaviary"
-version = "0.18.1"
+version = "0.18.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "docstring-parser" },
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ef/2a/c75aafd3803bff947a5c2998aa802947d899be5e6a2cc4ca5e6cac306d4b/fhaviary-0.18.1.tar.gz", hash = "sha256:29af15448ab0d19ba18a974ffa65135fc3960bcf09c50b020a31f202d2f777e8", size = 315245 }
+sdist = { url = "https://files.pythonhosted.org/packages/ab/59/bc7004c4a0616b6e523f24652910d13969857ed47e64032147f7053b20ea/fhaviary-0.18.2.tar.gz", hash = "sha256:60cf2ac9ff3d631c5a839a0619400737a7d5d7e905a813b07b9780346b3b01c0", size = 1833892 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/53/a5/a92851811c1102c1b8fdceed4ffe92e06995e19cbbf9bd2facd60a1389e5/fhaviary-0.18.1-py3-none-any.whl", hash = "sha256:cafc5d636ec3054ff9e0862583de40022698d2d6d43c89cb8af4e52c38c9ef26", size = 53466 },
+    { url = "https://files.pythonhosted.org/packages/14/3b/2435fea2b2d6ca2a03d3d698c2725f2eb7a14d40df81b5544dee2c0c6cef/fhaviary-0.18.2-py3-none-any.whl", hash = "sha256:2ed8d820c85e7fd418dd1b7c299d53220618e3fa3da00b8c6017b4678d31c328", size = 53830 },
 ]
 
 [package.optional-dependencies]
@@ -1406,7 +1407,7 @@ requires-dist = [
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.109" },
     { name = "fh-llm-client", specifier = ">=0.0.9" },
     { name = "fh-llm-client", marker = "extra == 'dev'", specifier = ">=0.0.9" },
-    { name = "fhaviary", specifier = ">=0.8.2" },
+    { name = "fhaviary", specifier = ">=0.18.2" },
     { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'", specifier = ">=0.17" },
     { name = "httpx" },
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
@@ -1447,6 +1448,7 @@ requires-dist = [
     { name = "wandb", marker = "extra == 'monitor'" },
     { name = "wandb", marker = "extra == 'nn'" },
 ]
+provides-extras = ["dev", "monitor", "nn", "rich", "server", "typing", "visualization"]
 
 [package.metadata.requires-dev]
 codeflash = [
@@ -2051,7 +2053,7 @@ name = "nvidia-cudnn-cu12"
 version = "9.1.0.70"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas-cu12" },
+    { name = "nvidia-cublas-cu12", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9f/fd/713452cd72343f682b1c7b9321e23829f00b842ceaedcda96e742ea0b0b3/nvidia_cudnn_cu12-9.1.0.70-py3-none-manylinux2014_x86_64.whl", hash = "sha256:165764f44ef8c61fcdfdfdbe769d687e06374059fbb388b6c89ecb0e28793a6f", size = 664752741 },
@@ -2062,7 +2064,7 @@ name = "nvidia-cufft-cu12"
 version = "11.2.1.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/27/94/3266821f65b92b3138631e9c8e7fe1fb513804ac934485a8d05776e1dd43/nvidia_cufft_cu12-11.2.1.3-py3-none-manylinux2014_x86_64.whl", hash = "sha256:f083fc24912aa410be21fa16d157fed2055dab1cc4b6934a0e03cba69eb242b9", size = 211459117 },
@@ -2081,9 +2083,9 @@ name = "nvidia-cusolver-cu12"
 version = "11.6.1.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas-cu12" },
-    { name = "nvidia-cusparse-cu12" },
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-cublas-cu12", marker = "sys_platform == 'linux'" },
+    { name = "nvidia-cusparse-cu12", marker = "sys_platform == 'linux'" },
+    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3a/e1/5b9089a4b2a4790dfdea8b3a006052cfecff58139d5a4e34cb1a51df8d6f/nvidia_cusolver_cu12-11.6.1.9-py3-none-manylinux2014_x86_64.whl", hash = "sha256:19e33fa442bcfd085b3086c4ebf7e8debc07cfe01e11513cc6d332fd918ac260", size = 127936057 },
@@ -2094,7 +2096,7 @@ name = "nvidia-cusparse-cu12"
 version = "12.3.1.170"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/db/f7/97a9ea26ed4bbbfc2d470994b8b4f338ef663be97b8f677519ac195e113d/nvidia_cusparse_cu12-12.3.1.170-py3-none-manylinux2014_x86_64.whl", hash = "sha256:ea4f11a2904e2a8dc4b1833cc1b5181cde564edd0d5cd33e3c168eff2d1863f1", size = 207454763 },
@@ -3549,7 +3551,7 @@ name = "triton"
 version = "3.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "filelock", marker = "python_full_version < '3.13'" },
+    { name = "filelock", marker = "python_full_version < '3.13' and sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/86/17/d9a5cf4fcf46291856d1e90762e36cbabd2a56c7265da0d1d9508c8e3943/triton-3.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f34f6e7885d1bf0eaaf7ba875a5f0ce6f3c13ba98f9503651c1e6dc6757ed5c", size = 209506424 },
