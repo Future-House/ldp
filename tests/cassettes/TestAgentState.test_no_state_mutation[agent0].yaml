@@ -1,0 +1,113 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+      a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
+      to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
+      the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
+      the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+      a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '968'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.63.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.63.0
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '120.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//jFPBitswEL37K8Sck8X2JhvWt3ShtKXQ5tCyS1OMIo0dNbJkpPGmJuTf
+        i5XEdtIt1Acj5um9mXkzOkSMgZKQMRBbTqKq9fRdar5+EB/l03IpNe4r+/xgv8vVCz09flrCpGPY
+        zS8UdGHdCVvVGklZc4KFQ07YqSaLWRzHD+liHoDKStQdraxpOrPTNE5n0ySZpvGZuLVKoIeM/YgY
+        Y+wQ/l2JRuJvyFg8uUQq9J6XCFl/iTFwVncR4N4rT9wQTAZQWENouqpNo/UIIGt1LrjWQ+LTdxid
+        B5+41vnquXrZOXxssf2ykavV7nGP397PN6N8J+m2DgUVjRG9PyO8j2c3yRgDw6vArZ0ylHuyrr2h
+        MwbclU2FhrrS4bCGcG0N2Ro+W09sh62fsMI2RjKDe8blKxpqHPq7NRzhSu0YvXX+OTLKYdF4rs8O
+        nuPHfiTalrWzG3/jMBTKKL/NHXIfOh0bHl2yhTzQXM0UamermnKyOzSdbHJ/XgAYVm5A0+QMkiWu
+        R6z5BbjSyyUSV2Ho/Z4JLrYoB+qwb7yRyo6AaNT739W8pX3qX5nyf+QHQAisCWVeO5RKXHc8XHPY
+        vch/XetdDgWDR/eqBOak0HXzkFjwRp8eC/jWE1Z5oUyJLuxeWOA6X4ikSAUKcQ/RMfoDAAD//wMA
+        8t+s9ToEAAA=
+    headers:
+      CF-Cache-Status:
+      - DYNAMIC
+      CF-RAY:
+      - 9149e5968ee1ceb5-SJC
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 19 Feb 2025 23:04:36 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=anqWX9.TGhI65FJQxRgdUV1eCX4yO6gde2LdWlBD8vc-1740006276-1.0.1.1-5v6uiBl0wSbb2VeX2HOoJkD9Vf4fTHqm4CvcrRB0XFUjOCY9PVTISh7ZSU.4ycuzhLgH5dgZBZGGq9LWFZ3x.w;
+        path=/; expires=Wed, 19-Feb-25 23:34:36 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=FBCD4CGKmzIk2JBoITGn27_mxlsuOkNYMDJGPOpniRo-1740006276474-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      access-control-expose-headers:
+      - X-Request-ID
+      alt-svc:
+      - h3=":443"; ma=86400
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '741'
+      openai-version:
+      - '2020-10-01'
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-ratelimit-limit-requests:
+      - '10000'
+      x-ratelimit-limit-tokens:
+      - '30000000'
+      x-ratelimit-remaining-requests:
+      - '9999'
+      x-ratelimit-remaining-tokens:
+      - '29999973'
+      x-ratelimit-reset-requests:
+      - 6ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_ba1516a568693a7ca7006971295458a9
+    status:
+      code: 200
+      message: OK
+version: 1
