@@ -11,7 +11,7 @@ interactions:
         host:
           - testserver
         user-agent:
-          - python-httpx/0.27.2
+          - python-httpx/0.28.1
       method: GET
       uri: http://testserver/info
     response:
@@ -27,15 +27,12 @@ interactions:
         message: OK
   - request:
       body:
-        '[{"type": "function", "info": {"name": "print_story", "description": "Print
-        a story.", "parameters": {"type": "object", "properties": {"story": {"description":
-        "Story to print.", "title": "Story", "type": "string"}}, "required": ["story"]}}},
-        {"type": "function", "info": {"name": "cast_float", "description": "Cast the
-        input argument x to a float.", "parameters": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "string"}}, "required": ["x"]}}}, {"type": "function",
-        "info": {"name": "cast_int", "description": "Cast the input argument x to an
-        integer.", "parameters": {"type": "object", "properties": {"x": {"title": "X",
-        "type": "number"}}, "required": ["x"]}}}]'
+        '[{"type":"function","info":{"name":"print_story","description":"Print a
+        story.","parameters":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","info":{"name":"cast_float","description":"Cast
+        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","info":{"name":"cast_int","description":"Cast
+        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","info":{"name":"get_random_int","description":"Get
+        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]'
       headers:
         accept:
           - "*/*"
@@ -44,13 +41,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "679"
+          - "787"
         content-type:
           - application/json
         host:
           - testserver
         user-agent:
-          - python-httpx/0.27.2
+          - python-httpx/0.28.1
       method: POST
       uri: http://testserver/init_state
     response:
@@ -60,10 +57,11 @@ interactions:
           a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
           to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
           the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-          the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}}],"messages":[]}'
+          the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+          a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}],"messages":[],"hide_old_env_states":false,"hide_old_action_content":false}'
       headers:
         content-length:
-          - "660"
+          - "887"
         content-type:
           - application/json
       status:
@@ -71,18 +69,13 @@ interactions:
         message: OK
   - request:
       body:
-        '{"messages": [{"role": "user", "content": "Cast ''5.5'' to a float, then
-        to an integer, and finally use it to write a story of that many words."}], "model":
-        "gpt-4o-2024-08-06", "temperature": 0.1, "tool_choice": "required", "tools":
-        [{"type": "function", "function": {"name": "print_story", "description": "Print
-        a story.", "parameters": {"type": "object", "properties": {"story": {"description":
-        "Story to print.", "title": "Story", "type": "string"}}, "required": ["story"]}}},
-        {"type": "function", "function": {"name": "cast_float", "description": "Cast
-        the input argument x to a float.", "parameters": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "string"}}, "required": ["x"]}}}, {"type": "function",
-        "function": {"name": "cast_int", "description": "Cast the input argument x to
-        an integer.", "parameters": {"type": "object", "properties": {"x": {"title":
-        "X", "type": "number"}}, "required": ["x"]}}}]}'
+        '{"messages":[{"role":"user","content":"Cast ''5.5'' to a float, then to
+        an integer, and finally use it to write a story of that many words."}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
+        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
+        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
       headers:
         accept:
           - application/json
@@ -91,13 +84,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "924"
+          - "1048"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.54.3
+          - AsyncOpenAI/Python 1.63.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -107,34 +100,34 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.54.3
+          - 1.63.0
         x-stainless-raw-response:
           - "true"
+        x-stainless-read-timeout:
+          - "120.0"
         x-stainless-retry-count:
           - "0"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.7
+          - 3.12.9
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA4xTTW+jMBC98yusOYcKUkhbblVXu4c9rNRkP6RmhRwzgFN/yTZSoij/fQUkQLKp
-          VA6WNW/mvZnn4RAQAryAjACrqWfSiPD5dcn2P+/F0zZKv+zZ5lXzjf3zNdo+v8glzNoKvdki8+eq
-          O6alEei5Vj3MLFKPLWv8cB/H0eN8kXSA1AWKtqwyPkx0OI/mSRg9htHiVFhrztBBRt4CQgg5dGfb
-          oipwBxmJZueIROdohZANSYSA1aKNAHWOO0+Vh9kIMq08qrZr1QgxAbzWImdUiFG4/w6T++gTFSL/
-          9UP+xpeH7yu1+lbH73q1WCx3CacTvZ56b7qGykaxwZ8JPsSzKzFCQFGJvaDzeSk09VfVhAC1VSNR
-          +bZzOKxht4ZsDelduoYjXCQfg1v3vxMbLJaNo+Lkzyl+HAwXujJWb9yVf1ByxV2dW6Sum2NqZ3BW
-          63SguXgxMFZL43Ov31G1tPH8qWeFcaEm6OIEeu2pmMSTdHaDLy/QU9496bBFjLIai7F03CbaFFxP
-          gGAy+//d3OLu5+eq+gz9CDCGxmORG4sFZ5cTj2kW2//to7TB5a5hcHvnUeYlVxVaY3m38lCaPElZ
-          mSYFUoTgGPwDAAD//wMAyPZyCPsDAAA=
+          H4sIAAAAAAAAAwAAAP//jFPBbtswDL37KwSe4yJ2kqb2rUXRw9od1w1dBkOVaUepLGkS3SUL8u+D
+          7dR2sgyYD4bAR75HPlH7gDGQOaQMxJqTqKwK72K1QaU+0W72jZbJ14cXfBI3j5v6cRNpmDQV5nWD
+          gj6qroSprEKS5ggLh5ywYY2WsyRJkpvFtAUqk6NqykpL4dyE8TSeh1EUxtNj4dpIgR5S9j1gjLF9
+          +29a1DluIWUtTRup0HteIqR9EmPgjGoiwL2XnrgmmAygMJpQN13rWqkRQMaoTHClBuHu24/Og09c
+          qWz7/PDr3m/K3+7l6XMy377/vP8ye769Hel11DvbNlTUWvT+jPA+np6JMQaaV9gJesoKZTidVTMG
+          3JV1hZqazmG/gu0K0hUsrhYrOMBJ8iG4dP4xssFhUXuujv4c44fecGVK68yrP/MPCqmlX2cOuW/n
+          GNsZfKi1OlCf3BhYZypLGZk31A1tNE86VhgWaoQujyAZ4moUv76eXODLciQu2yvtt0hwscZ8KB22
+          ide5NCMgGM3+dzeXuLv5pS7/h34AhEBLmGfWYS7F6cRDmsPmvf0rrXe5bRg8uncpMCOJrrmPHAte
+          q255wO88YZUVUpforJPte4DCZksRFbFAIWYQHII/AAAA//8DAJmRB7UYBAAA
       headers:
-        CF-Cache-Status:
-          - DYNAMIC
         CF-RAY:
-          - 8df950fb1fe4aab1-SJC
+          - 914948ba0cfcceb5-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -142,14 +135,14 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Fri, 08 Nov 2024 23:24:25 GMT
+          - Wed, 19 Feb 2025 21:17:31 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=9zGULj8Y3F50daIY7CjCPzcM9IEFzvUauxPpf57gJBA-1731108265-1.0.1.1-u7SRCAZbbRbpHV1E6hmU7Jb8VViHXb3jb1FhaWixHupzr5pP7qC1pjYjClp3wPSrN4nxUIGojmF4Id8kk3nkBg;
-            path=/; expires=Fri, 08-Nov-24 23:54:25 GMT; domain=.api.openai.com; HttpOnly;
+          - __cf_bm=zm2Yd73yDBeMg0MCsPvK6roMklffDISEFXqR0zPJKAE-1739999851-1.0.1.1-Q_J3fsibpYSxs4J1NFnh6O1i4QxImLY8pOEVHDfuUK5X1ebLL4UpdjJ9WNxsg4HCT4_xTA8eRRx1iHFNRRWTEg;
+            path=/; expires=Wed, 19-Feb-25 21:47:31 GMT; domain=.api.openai.com; HttpOnly;
             Secure; SameSite=None
-          - _cfuvid=83D3hKBYi_3jtqKX907qCD7DKu7ndvhvWZeJFe4SrAY-1731108265202-0.0.1.1-604800000;
+          - _cfuvid=cCoK6X.1sTMn234Z.7tJvSRz.k8cn8BGkaT14re1MsQ-1739999851416-0.0.1.1-604800000;
             path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
@@ -159,170 +152,12 @@ interactions:
           - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
-        openai-organization:
-          - future-house-xr4tdh
-        openai-processing-ms:
-          - "914"
-        openai-version:
-          - "2020-10-01"
-        strict-transport-security:
-          - max-age=31536000; includeSubDomains; preload
-        x-ratelimit-limit-requests:
-          - "10000"
-        x-ratelimit-limit-tokens:
-          - "30000000"
-        x-ratelimit-remaining-requests:
-          - "9999"
-        x-ratelimit-remaining-tokens:
-          - "29999958"
-        x-ratelimit-reset-requests:
-          - 6ms
-        x-ratelimit-reset-tokens:
-          - 0s
-        x-request-id:
-          - req_4d2bdd67d953a389e2bf1818e6f2d43e
-      status:
-        code: 200
-        message: OK
-  - request:
-      body:
-        '{"agent_state": {"tools": [{"type": "function", "info": {"name": "print_story",
-        "description": "Print a story.", "parameters": {"type": "object", "properties":
-        {"story": {"description": "Story to print.", "title": "Story", "type": "string"}},
-        "required": ["story"]}}}, {"type": "function", "info": {"name": "cast_float",
-        "description": "Cast the input argument x to a float.", "parameters": {"type":
-        "object", "properties": {"x": {"title": "X", "type": "string"}}, "required":
-        ["x"]}}}, {"type": "function", "info": {"name": "cast_int", "description": "Cast
-        the input argument x to an integer.", "parameters": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "number"}}, "required": ["x"]}}}], "messages":
-        []}, "obs": [{"role": "user", "content": "Cast ''5.5'' to a float, then to an
-        integer, and finally use it to write a story of that many words."}], "training":
-        false}'
-      headers:
-        accept:
-          - "*/*"
-        accept-encoding:
-          - gzip, deflate
-        connection:
-          - keep-alive
-        content-length:
-          - "882"
-        content-type:
-          - application/json
-        host:
-          - testserver
-        user-agent:
-          - python-httpx/0.27.2
-      method: POST
-      uri: http://testserver/get_asv
-    response:
-      body:
-        string:
-          '[{"call_id":{"run_id":"5a79e8ed-13ab-4890-8ef2-4328d40caedb","fwd_id":"3ff7a0e3-3282-40fd-9700-b2c81730246c"},"op_name":"_llm_call_op","op_class_name":"ldp.graph.common_ops.LLMCallOp","value":{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_VOmWeC7KTnTGh1koT66Sx4ia","type":"function","function":{"arguments":"{\"x\":
-          \"5.5\"}","name":"cast_float"}}]}},{"tools":[{"type":"function","function":{"name":"print_story","description":"Print
-          a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
-          to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
-          the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-          the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}}],"messages":[{"role":"user","content":"Cast
-          ''5.5'' to a float, then to an integer, and finally use it to write a story
-          of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_VOmWeC7KTnTGh1koT66Sx4ia","type":"function","function":{"arguments":"{\"x\":
-          \"5.5\"}","name":"cast_float"}}]}]},0.0]'
-      headers:
-        content-length:
-          - "1370"
-        content-type:
-          - application/json
-      status:
-        code: 200
-        message: OK
-  - request:
-      body:
-        '{"messages": [{"role": "user", "content": "Cast ''5.5'' to a float, then
-        to an integer, and finally use it to write a story of that many words."}], "model":
-        "gpt-4o-2024-08-06", "temperature": 0.1, "tool_choice": "required", "tools":
-        [{"type": "function", "function": {"name": "print_story", "description": "Print
-        a story.", "parameters": {"type": "object", "properties": {"story": {"description":
-        "Story to print.", "title": "Story", "type": "string"}}, "required": ["story"]}}},
-        {"type": "function", "function": {"name": "cast_float", "description": "Cast
-        the input argument x to a float.", "parameters": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "string"}}, "required": ["x"]}}}, {"type": "function",
-        "function": {"name": "cast_int", "description": "Cast the input argument x to
-        an integer.", "parameters": {"type": "object", "properties": {"x": {"title":
-        "X", "type": "number"}}, "required": ["x"]}}}]}'
-      headers:
-        accept:
-          - application/json
-        accept-encoding:
-          - gzip, deflate
-        connection:
-          - keep-alive
-        content-length:
-          - "924"
-        content-type:
-          - application/json
-        host:
-          - api.openai.com
-        user-agent:
-          - AsyncOpenAI/Python 1.54.3
-        x-stainless-arch:
-          - arm64
-        x-stainless-async:
-          - async:asyncio
-        x-stainless-lang:
-          - python
-        x-stainless-os:
-          - MacOS
-        x-stainless-package-version:
-          - 1.54.3
-        x-stainless-raw-response:
-          - "true"
-        x-stainless-retry-count:
-          - "0"
-        x-stainless-runtime:
-          - CPython
-        x-stainless-runtime-version:
-          - 3.12.7
-      method: POST
-      uri: https://api.openai.com/v1/chat/completions
-    response:
-      body:
-        string: !!binary |
-          H4sIAAAAAAAAA4xTUW+bMBB+51dY9xwqSCBJees2bWqkPmzdU5sJueYAd8b2bCO1ifLfJyABJ0ul
-          8WBZ9919393nYx8QAryAjACrqWONFuHdj0e2Y5vv8atbfsH7n9Xt6vN9+ihWlqoNzLoK9fKKzJ2q
-          bphqtEDHlRxgZpA67Fjj1SKOo/V8mfZAowoUXVmlXZiocB7NkzBah9HyWFgrztBCRp4DQgjZ92fX
-          oizwDTISzU6RBq2lFUI2JhECRokuAtRabh2VDmYTyJR0KLuuZSuEBzilRM6oEJPw8O29++QTFSKv
-          1992y83q09NTGtGFiP4skq+7B/Pg6Q3U77pvqGwlG/3x8DGeXYgRApI2OAhal5dCUXdRTQhQU7UN
-          Std1DvstvG0h20J6k27hAGfJh+Da/Zdng8GytVQc/TnGD6PhQlXaqBd74R+UXHJb5wap7efw7QxO
-          ar0OtGcvBtqoRrvcqd8oO9p4fjuwwrRQHro8gk45Krx4ks6u8OUFOsr7Jx23iFFWYzGVTttE24Ir
-          Dwi82f/t5hr3MD+X1f/QTwBjqB0WuTZYcHY+8ZRmsPvfPkobXe4bBvtuHTZ5yWWFRhverzyUOk9S
-          VqZJgRQhOAR/AQAA//8DANT8web7AwAA
-      headers:
-        CF-Cache-Status:
+        cf-cache-status:
           - DYNAMIC
-        CF-RAY:
-          - 8df95101ae31aab1-SJC
-        Connection:
-          - keep-alive
-        Content-Encoding:
-          - gzip
-        Content-Type:
-          - application/json
-        Date:
-          - Fri, 08 Nov 2024 23:24:25 GMT
-        Server:
-          - cloudflare
-        Transfer-Encoding:
-          - chunked
-        X-Content-Type-Options:
-          - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
-        alt-svc:
-          - h3=":443"; ma=86400
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "471"
+          - "664"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
@@ -334,30 +169,26 @@ interactions:
         x-ratelimit-remaining-requests:
           - "9999"
         x-ratelimit-remaining-tokens:
-          - "29999958"
+          - "29995878"
         x-ratelimit-reset-requests:
           - 6ms
         x-ratelimit-reset-tokens:
-          - 0s
+          - 8ms
         x-request-id:
-          - req_e96570b49378ab9b61709f06c48ffeb1
+          - req_bff2c4cbdfd6b035025635d6395543ac
       status:
         code: 200
         message: OK
   - request:
       body:
-        '{"agent_state": {"tools": [{"type": "function", "info": {"name": "print_story",
-        "description": "Print a story.", "parameters": {"type": "object", "properties":
-        {"story": {"description": "Story to print.", "title": "Story", "type": "string"}},
-        "required": ["story"]}}}, {"type": "function", "info": {"name": "cast_float",
-        "description": "Cast the input argument x to a float.", "parameters": {"type":
-        "object", "properties": {"x": {"title": "X", "type": "string"}}, "required":
-        ["x"]}}}, {"type": "function", "info": {"name": "cast_int", "description": "Cast
-        the input argument x to an integer.", "parameters": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "number"}}, "required": ["x"]}}}], "messages":
-        []}, "obs": [{"role": "user", "content": "Cast ''5.5'' to a float, then to an
-        integer, and finally use it to write a story of that many words."}], "training":
-        false}'
+        '{"agent_state":{"tools":[{"type":"function","info":{"name":"print_story","description":"Print
+        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","info":{"name":"cast_float","description":"Cast
+        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","info":{"name":"cast_int","description":"Cast
+        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","info":{"name":"get_random_int","description":"Get
+        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}],"messages":[],"hide_old_env_states":false,"hide_old_action_content":false},"obs":[{"role":"user","content":"Cast
+        ''5.5'' to a float, then to an integer, and finally use it to write a story
+        of that many words."}],"training":false}'
       headers:
         accept:
           - "*/*"
@@ -366,357 +197,31 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "882"
+          - "1039"
         content-type:
           - application/json
         host:
           - testserver
         user-agent:
-          - python-httpx/0.27.2
+          - python-httpx/0.28.1
       method: POST
       uri: http://testserver/get_asv
     response:
       body:
         string:
-          '[{"call_id":{"run_id":"bd7c18b4-16b8-4f66-a417-6919e6f274ad","fwd_id":"407f8aea-a4f3-4da3-bade-f38a66591293"},"op_name":"_llm_call_op","op_class_name":"ldp.graph.common_ops.LLMCallOp","value":{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_h8Gz6J7BZZ50a3l0q34FzMrM","type":"function","function":{"arguments":"{\"x\":
-          \"5.5\"}","name":"cast_float"}}]}},{"tools":[{"type":"function","function":{"name":"print_story","description":"Print
+          '[{"call_id":{"run_id":"3e8b0e2f-0289-4ef8-a97a-4a161d56d12e","fwd_id":"c6e7be34-7492-468b-8660-c9db09d5c523"},"op_name":"_llm_call_op","op_class_name":"ldp.graph.common_ops.LLMCallOp","value":{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_xVFwDsjgzrZLM94xvqDU3VAA","type":"function","function":{"arguments":"{\"x\":
+          \"5.5\"}","name":"cast_float"}}]},"logprob":null},{"tools":[{"type":"function","function":{"name":"print_story","description":"Print
           a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
           to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
           the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-          the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}}],"messages":[{"role":"user","content":"Cast
+          the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+          a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}],"messages":[{"role":"user","content":"Cast
           ''5.5'' to a float, then to an integer, and finally use it to write a story
-          of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_h8Gz6J7BZZ50a3l0q34FzMrM","type":"function","function":{"arguments":"{\"x\":
-          \"5.5\"}","name":"cast_float"}}]}]},0.0]'
+          of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_xVFwDsjgzrZLM94xvqDU3VAA","type":"function","function":{"arguments":"{\"x\":
+          \"5.5\"}","name":"cast_float"}}]}],"hide_old_env_states":false,"hide_old_action_content":false},0.0]'
       headers:
         content-length:
-          - "1370"
-        content-type:
-          - application/json
-      status:
-        code: 200
-        message: OK
-  - request:
-      body:
-        '{"messages": [{"role": "user", "content": "Cast ''5.5'' to a float, then
-        to an integer, and finally use it to write a story of that many words."}], "model":
-        "gpt-4o-2024-08-06", "temperature": 0.1, "tool_choice": "required", "tools":
-        [{"type": "function", "function": {"name": "print_story", "description": "Print
-        a story.", "parameters": {"type": "object", "properties": {"story": {"description":
-        "Story to print.", "title": "Story", "type": "string"}}, "required": ["story"]}}},
-        {"type": "function", "function": {"name": "cast_float", "description": "Cast
-        the input argument x to a float.", "parameters": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "string"}}, "required": ["x"]}}}, {"type": "function",
-        "function": {"name": "cast_int", "description": "Cast the input argument x to
-        an integer.", "parameters": {"type": "object", "properties": {"x": {"title":
-        "X", "type": "number"}}, "required": ["x"]}}}]}'
-      headers:
-        accept:
-          - application/json
-        accept-encoding:
-          - gzip, deflate
-        connection:
-          - keep-alive
-        content-length:
-          - "924"
-        content-type:
-          - application/json
-        host:
-          - api.openai.com
-        user-agent:
-          - AsyncOpenAI/Python 1.54.3
-        x-stainless-arch:
-          - arm64
-        x-stainless-async:
-          - async:asyncio
-        x-stainless-lang:
-          - python
-        x-stainless-os:
-          - MacOS
-        x-stainless-package-version:
-          - 1.54.3
-        x-stainless-raw-response:
-          - "true"
-        x-stainless-retry-count:
-          - "0"
-        x-stainless-runtime:
-          - CPython
-        x-stainless-runtime-version:
-          - 3.12.7
-      method: POST
-      uri: https://api.openai.com/v1/chat/completions
-    response:
-      body:
-        string: !!binary |
-          H4sIAAAAAAAAA4xTTW+bQBC98ytWczYROEBcblVVpe0hkVNfkrpCm2XA2+5Xd5c2ieX/HgE2YMeR
-          ymG1mjfz3szbYRsQAryEnADbUM+kEeHHu+9ldP/p6yq1t83qcvntTgq1WsrPf7+8GJi1FfrxFzJ/
-          qLpgWhqBnmvVw8wi9diyxleXcRwt5lnWAVKXKNqy2vgw0eE8midhtAijbF+40Zyhg5z8CAghZNud
-          bYuqxCfISTQ7RCQ6R2uEfEgiBKwWbQSoc9x5qjzMRpBp5VG1XatGiAngtRYFo0KMwv23ndxHn6gQ
-          RfpQX/3L/rzECz6vru+vbXWzfFjc3kz0eupn0zVUNYoN/kzwIZ6fiBECikrsBZ0vKqGpP6kmBKit
-          G4nKt53Ddg1Pa8jXkF6ka9jBUfIuOHf/ObHBYtU4Kvb+7OO7wXCha2P1ozvxDyquuNsUFqnr5pja
-          GRzUOh1ojl4MjNXS+MLr36ha2nj+oWeFcaEmaLYHvfZUTOJJOjvDV5ToKe+edNgiRtkGy7F03Cba
-          lFxPgGAy+9tuznH383NV/w/9CDCGxmNZGIslZ8cTj2kW2//tvbTB5a5hcM/Ooywqrmq0xvJu5aEy
-          RZKyKk1KpAjBLngFAAD//wMAh7lTT/sDAAA=
-      headers:
-        CF-Cache-Status:
-          - DYNAMIC
-        CF-RAY:
-          - 8df95105fa93aab1-SJC
-        Connection:
-          - keep-alive
-        Content-Encoding:
-          - gzip
-        Content-Type:
-          - application/json
-        Date:
-          - Fri, 08 Nov 2024 23:24:26 GMT
-        Server:
-          - cloudflare
-        Transfer-Encoding:
-          - chunked
-        X-Content-Type-Options:
-          - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
-        alt-svc:
-          - h3=":443"; ma=86400
-        openai-organization:
-          - future-house-xr4tdh
-        openai-processing-ms:
-          - "339"
-        openai-version:
-          - "2020-10-01"
-        strict-transport-security:
-          - max-age=31536000; includeSubDomains; preload
-        x-ratelimit-limit-requests:
-          - "10000"
-        x-ratelimit-limit-tokens:
-          - "30000000"
-        x-ratelimit-remaining-requests:
-          - "9999"
-        x-ratelimit-remaining-tokens:
-          - "29999958"
-        x-ratelimit-reset-requests:
-          - 6ms
-        x-ratelimit-reset-tokens:
-          - 0s
-        x-request-id:
-          - req_9e7756f9879bddb8c5b7d856ef8a730b
-      status:
-        code: 200
-        message: OK
-  - request:
-      body:
-        '{"agent_state": {"tools": [{"type": "function", "info": {"name": "print_story",
-        "description": "Print a story.", "parameters": {"type": "object", "properties":
-        {"story": {"description": "Story to print.", "title": "Story", "type": "string"}},
-        "required": ["story"]}}}, {"type": "function", "info": {"name": "cast_float",
-        "description": "Cast the input argument x to a float.", "parameters": {"type":
-        "object", "properties": {"x": {"title": "X", "type": "string"}}, "required":
-        ["x"]}}}, {"type": "function", "info": {"name": "cast_int", "description": "Cast
-        the input argument x to an integer.", "parameters": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "number"}}, "required": ["x"]}}}], "messages":
-        []}, "obs": [{"role": "user", "content": "Cast ''5.5'' to a float, then to an
-        integer, and finally use it to write a story of that many words."}], "training":
-        false}'
-      headers:
-        accept:
-          - "*/*"
-        accept-encoding:
-          - gzip, deflate
-        connection:
-          - keep-alive
-        content-length:
-          - "882"
-        content-type:
-          - application/json
-        host:
-          - testserver
-        user-agent:
-          - python-httpx/0.27.2
-      method: POST
-      uri: http://testserver/get_asv
-    response:
-      body:
-        string:
-          '[{"call_id":{"run_id":"87735fea-cc5a-41b1-bf41-cadb791e07bd","fwd_id":"1bc441bf-0786-4c2e-a1f9-c412db8271bf"},"op_name":"_llm_call_op","op_class_name":"ldp.graph.common_ops.LLMCallOp","value":{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_5Zg7w6qz18i2fGYGrfNQZ8ON","type":"function","function":{"arguments":"{\"x\":
-          \"5.5\"}","name":"cast_float"}}]}},{"tools":[{"type":"function","function":{"name":"print_story","description":"Print
-          a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
-          to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
-          the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-          the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}}],"messages":[{"role":"user","content":"Cast
-          ''5.5'' to a float, then to an integer, and finally use it to write a story
-          of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_5Zg7w6qz18i2fGYGrfNQZ8ON","type":"function","function":{"arguments":"{\"x\":
-          \"5.5\"}","name":"cast_float"}}]}]},0.0]'
-      headers:
-        content-length:
-          - "1370"
-        content-type:
-          - application/json
-      status:
-        code: 200
-        message: OK
-  - request:
-      body:
-        '{"messages": [{"role": "user", "content": "Cast ''5.5'' to a float, then
-        to an integer, and finally use it to write a story of that many words."}, {"role":
-        "assistant", "content": null, "function_call": null, "tool_calls": [{"id": "call_5Zg7w6qz18i2fGYGrfNQZ8ON",
-        "type": "function", "function": {"arguments": "{\"x\": \"5.5\"}", "name": "cast_float"}}]},
-        {"role": "tool", "content": "5.5", "name": "cast_float", "tool_call_id": "call_5Zg7w6qz18i2fGYGrfNQZ8ON"}],
-        "model": "gpt-4o-2024-08-06", "temperature": 0.1, "tool_choice": "required",
-        "tools": [{"type": "function", "function": {"name": "print_story", "description":
-        "Print a story.", "parameters": {"type": "object", "properties": {"story": {"description":
-        "Story to print.", "title": "Story", "type": "string"}}, "required": ["story"]}}},
-        {"type": "function", "function": {"name": "cast_float", "description": "Cast
-        the input argument x to a float.", "parameters": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "string"}}, "required": ["x"]}}}, {"type": "function",
-        "function": {"name": "cast_int", "description": "Cast the input argument x to
-        an integer.", "parameters": {"type": "object", "properties": {"x": {"title":
-        "X", "type": "number"}}, "required": ["x"]}}}]}'
-      headers:
-        accept:
-          - application/json
-        accept-encoding:
-          - gzip, deflate
-        connection:
-          - keep-alive
-        content-length:
-          - "1240"
-        content-type:
-          - application/json
-        host:
-          - api.openai.com
-        user-agent:
-          - AsyncOpenAI/Python 1.54.3
-        x-stainless-arch:
-          - arm64
-        x-stainless-async:
-          - async:asyncio
-        x-stainless-lang:
-          - python
-        x-stainless-os:
-          - MacOS
-        x-stainless-package-version:
-          - 1.54.3
-        x-stainless-raw-response:
-          - "true"
-        x-stainless-retry-count:
-          - "0"
-        x-stainless-runtime:
-          - CPython
-        x-stainless-runtime-version:
-          - 3.12.7
-      method: POST
-      uri: https://api.openai.com/v1/chat/completions
-    response:
-      body:
-        string: !!binary |
-          H4sIAAAAAAAAA4xTUW+bMBB+51dY9xwqSCFpeWs3rdtDV2mTtkjrhIx9gBNjW7aZ2kX57xOQAOky
-          aTxY1n1333f3+dgHhIDgkBFgNfWsMTK8+/KVR/fvvz9+ejTX3zZ3mw9tUsn1tt6Yp1tYdBW62CLz
-          p6orphsj0QutBphZpB471nh9HcfRzXK16oFGc5RdWWV8mOhwGS2TMLoJo9WxsNaCoYOM/AgIIWTf
-          n12LiuMLZCRanCINOkcrhGxMIgSsll0EqHPCeao8LCaQaeVRdV2rVsoZ4LWWOaNSTsLDt5/dJ5+o
-          lPnT5iH+Vezuo4+3Ht89/N7yoqg/73CmN1C/mr6hslVs9GeGj/HsjRghoGiDg6DzuTib5ZhBbdU2
-          qHzXN+yf4eUZsvQqPcBZ4iG4dP85M8Bi2Toqj84c44fRaqkrY3Xh3jgHpVDC1blF6voJ5kYGJ7Ve
-          B9qztwJjdWN87vUOVUcbp6uBFaZVmqEn0GtP5Sy+Xi4u8OUcPRX9Y477wyirkU+l0x7Rlgs9A4LZ
-          7H93c4l7mF+o6n/oJ4AxNB55bixywc4nntIsdn/av9JGl/uGwb06j01eClWhNVb0yw6lyZOUlWnC
-          kSIEh+APAAAA//8DAMAsZBz1AwAA
-      headers:
-        CF-Cache-Status:
-          - DYNAMIC
-        CF-RAY:
-          - 8df951090d4baab1-SJC
-        Connection:
-          - keep-alive
-        Content-Encoding:
-          - gzip
-        Content-Type:
-          - application/json
-        Date:
-          - Fri, 08 Nov 2024 23:24:26 GMT
-        Server:
-          - cloudflare
-        Transfer-Encoding:
-          - chunked
-        X-Content-Type-Options:
-          - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
-        alt-svc:
-          - h3=":443"; ma=86400
-        openai-organization:
-          - future-house-xr4tdh
-        openai-processing-ms:
-          - "372"
-        openai-version:
-          - "2020-10-01"
-        strict-transport-security:
-          - max-age=31536000; includeSubDomains; preload
-        x-ratelimit-limit-requests:
-          - "10000"
-        x-ratelimit-limit-tokens:
-          - "30000000"
-        x-ratelimit-remaining-requests:
-          - "9999"
-        x-ratelimit-remaining-tokens:
-          - "29999954"
-        x-ratelimit-reset-requests:
-          - 6ms
-        x-ratelimit-reset-tokens:
-          - 0s
-        x-request-id:
-          - req_d0dcc7941fc0aa525a84407be521e5b8
-      status:
-        code: 200
-        message: OK
-  - request:
-      body:
-        '{"agent_state": {"tools": [{"type": "function", "info": {"name": "print_story",
-        "description": "Print a story.", "parameters": {"type": "object", "properties":
-        {"story": {"description": "Story to print.", "title": "Story", "type": "string"}},
-        "required": ["story"]}}}, {"type": "function", "info": {"name": "cast_float",
-        "description": "Cast the input argument x to a float.", "parameters": {"type":
-        "object", "properties": {"x": {"title": "X", "type": "string"}}, "required":
-        ["x"]}}}, {"type": "function", "info": {"name": "cast_int", "description": "Cast
-        the input argument x to an integer.", "parameters": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "number"}}, "required": ["x"]}}}], "messages":
-        [{"role": "user", "content": "Cast ''5.5'' to a float, then to an integer, and
-        finally use it to write a story of that many words."}, {"role": "assistant",
-        "content": null, "function_call": null, "tool_calls": [{"id": "call_5Zg7w6qz18i2fGYGrfNQZ8ON",
-        "type": "function", "function": {"arguments": "{\"x\": \"5.5\"}", "name": "cast_float"}}]}]},
-        "obs": [{"role": "tool", "content": "5.5", "name": "cast_float", "tool_call_id":
-        "call_5Zg7w6qz18i2fGYGrfNQZ8ON"}], "training": false}'
-      headers:
-        accept:
-          - "*/*"
-        accept-encoding:
-          - gzip, deflate
-        connection:
-          - keep-alive
-        content-length:
-          - "1196"
-        content-type:
-          - application/json
-        host:
-          - testserver
-        user-agent:
-          - python-httpx/0.27.2
-      method: POST
-      uri: http://testserver/get_asv
-    response:
-      body:
-        string:
-          '[{"call_id":{"run_id":"b40a50fc-e405-4aa5-97e8-9686d40c2dee","fwd_id":"0e050c87-b8c5-4407-83fa-9cac756d6b10"},"op_name":"_llm_call_op","op_class_name":"ldp.graph.common_ops.LLMCallOp","value":{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_OXG1vbkB0H9teCGzjdbbhNke","type":"function","function":{"arguments":"{\"x\":
-          5.5}","name":"cast_int"}}]}},{"tools":[{"type":"function","function":{"name":"print_story","description":"Print
-          a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
-          to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
-          the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-          the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}}],"messages":[{"role":"user","content":"Cast
-          ''5.5'' to a float, then to an integer, and finally use it to write a story
-          of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_5Zg7w6qz18i2fGYGrfNQZ8ON","type":"function","function":{"arguments":"{\"x\":
-          \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"5.5","name":"cast_float","tool_call_id":"call_5Zg7w6qz18i2fGYGrfNQZ8ON"},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_OXG1vbkB0H9teCGzjdbbhNke","type":"function","function":{"arguments":"{\"x\":
-          5.5}","name":"cast_int"}}]}]},0.0]'
-      headers:
-        content-length:
-          - "1650"
+          - "1612"
         content-type:
           - application/json
       status:
