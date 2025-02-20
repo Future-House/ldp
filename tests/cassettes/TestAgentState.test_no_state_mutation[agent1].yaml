@@ -1,7 +1,7 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -37,7 +37,7 @@ interactions:
         x-stainless-read-timeout:
           - "120.0"
         x-stainless-retry-count:
-          - "1"
+          - "0"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
@@ -72,6 +72,12 @@ interactions:
           - Wed, 19 Feb 2025 23:04:44 GMT
         Server:
           - cloudflare
+        Set-Cookie:
+          - __cf_bm=24JoXtcIHpK4e2p.cqKP6hL4AkAq.SfUMz1rrpFn7ag-1739995279-1.0.1.1-iP2w8RgzvULjw8AlBdY2YIQUEGYVwdC9vYJv1gbySuKzkUikgY4fwJqpA203qyRyLR8wBL1rvC5ceiEusDMdmg;
+            path=/; expires=Wed, 19-Feb-25 20:31:19 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=GMKuQO8LWv4Ntimgp0ugOPfMQa6r1boUdgCHQLmYU6E-1739995279601-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -95,11 +101,11 @@ interactions:
         x-ratelimit-remaining-requests:
           - "9999"
         x-ratelimit-remaining-tokens:
-          - "29999973"
+          - "29995894"
         x-ratelimit-reset-requests:
           - 6ms
         x-ratelimit-reset-tokens:
-          - 0s
+          - 8ms
         x-request-id:
           - req_97cf4f13ed1fc985ae3d7fc4c7390d04
       status:

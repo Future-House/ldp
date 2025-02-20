@@ -21,7 +21,7 @@ from llmclient import (
     LLMResult,
     SparseEmbeddingModel,
 )
-from llmclient import MultipleCompletionLLMModel as LLMModel
+from llmclient import LiteLLMModel as LLMModel
 from pydantic import BaseModel
 
 from .gradient_estimators import assign_constant_grads
@@ -278,16 +278,16 @@ class LLMCallOp(Op[Message]):
 
         result = await self._call_single_and_maybe_validate(
             model=model,
-            num_retries=config.get("num_retries", 0),
             messages=msgs,
             tools=tools,
             tool_choice=tool_choice,
+            **config,
         )
         if result.messages is None:
             raise ValueError("No messages returned")
 
         # if not set, assume temp = 1. TODO: when would it not be set?
-        temperature: float = (result.config or {}).get("temperature", 1.0)
+        temperature: float = config.get("temperature", 1.0)
 
         # Compute a Monte Carlo estimate of the logprob of this sequence at the given temperature.
         logprob = await self.compute_logprob(
@@ -311,7 +311,7 @@ class LLMCallOp(Op[Message]):
         return result.messages[0]
 
     async def _call_single_and_maybe_validate(
-        self, model: LLMModel, num_retries: int, **kwargs
+        self, model: LLMModel, num_retries: int = 0, **kwargs
     ) -> LLMResult:
         if not self.response_validator:
             # If a response validator is not supplied, then we should not do any retries here - leave

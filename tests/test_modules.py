@@ -21,7 +21,7 @@ from ldp.graph.modules import (
 async def test_reflect_module() -> None:
     config = ReflectModuleConfig(
         llm_model={
-            "model": CommonLLMNames.ANTHROPIC_TEST.value,
+            "name": CommonLLMNames.ANTHROPIC_TEST.value,
             "temperature": 0,  # Lower temperature for more deterministic responses
         }
     )

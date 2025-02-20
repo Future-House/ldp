@@ -8,7 +8,7 @@ import tenacity
 import tree
 from aviary.core import Message
 from llmclient import CommonLLMNames
-from llmclient import MultipleCompletionLLMModel as LLMModel
+from llmclient import LiteLLMModel as LLMModel
 from pydantic import BaseModel, Field, JsonValue
 
 from ldp.agent import Agent, MemoryAgent, ReActAgent
@@ -95,8 +95,8 @@ class SquaredErrorLoss(Op[int]):
 async def test_ape_optimizer() -> None:
     sys_prompt_op = PromptOp("Guess a number based on the input word.")
     package_msg_op = FxnOp(append_to_sys)
-    llm = LLMModel()
-    llm.config["max_retries"] = 3  # we seem to be hitting rate limits frequently
+    config = {"max_retries": 3}  # we seem to be hitting rate limits frequently
+    llm = LLMModel(config=config)
     llm_call_op = LLMCallOp()
     strip_op = FxnOp(lambda x: x.content)
     loss_op = SquaredErrorLoss()
@@ -106,7 +106,7 @@ async def test_ape_optimizer() -> None:
         """Perform a forward pass through the model to the resultant SE loss."""
         s = await sys_prompt_op()
         m = await package_msg_op(xi_, s)
-        c = await llm_call_op(llm.config, m)
+        c = await llm_call_op(config, m)
         yh = await strip_op(c)
         return await loss_op(yi_, yh)
 
@@ -190,7 +190,7 @@ class NumberGuesserModule:
         msgs = await self.package_msg_op(mems, query)
         c = await self.llm_call_op(
             config={
-                "model": "gpt-4-turbo",  # this is flaky, so use a smarter model
+                "name": "gpt-4-turbo",  # this is flaky, so use a smarter model
                 "temperature": 0,
                 "max_retries": 3,
             },
@@ -297,7 +297,7 @@ class TestMemoryOpt:
 
         This test is loosely based on Reflexion (https://arxiv.org/abs/2303.11366).
         """
-        memory_distiller = LLMModel(config={"model": CommonLLMNames.OPENAI_TEST.value})
+        memory_distiller = LLMModel(config={"name": CommonLLMNames.OPENAI_TEST.value})
 
         class LessonEntry(BaseModel):
             """Entry for a lesson created from some example data."""

@@ -1,0 +1,93 @@
+interactions:
+  - request:
+      body:
+        '{"model": "claude-3-5-haiku-20241022", "messages": [{"role": "user", "content":
+        [{"type": "text", "text": "Write a 5 word story via print_story"}]}], "temperature":
+        0.1, "max_tokens": 4096, "tools": [{"name": "print_story", "input_schema": {"type":
+        "object", "properties": {"story": {"description": "Story to print.", "title":
+        "Story", "type": "string"}}, "required": ["story"]}, "description": "Print a
+        story."}, {"name": "cast_float", "input_schema": {"type": "object", "properties":
+        {"x": {"title": "X", "type": "string"}}, "required": ["x"]}, "description":
+        "Cast the input argument x to a float."}, {"name": "cast_int", "input_schema":
+        {"type": "object", "properties": {"x": {"title": "X", "type": "number"}}, "required":
+        ["x"]}, "description": "Cast the input argument x to an integer."}], "tool_choice":
+        {"type": "any"}}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "827"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.59.5
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAA2RPTWvCQBD9K2HOmxJjUmVvaqEXBW+FlrKsu4NGN7PJftjakP9eVhEqPc77mvcG
+          aDRwaP1eFJPVbPn2szi/XnZ6tXwJbrOpFvsNMAiXDpMKvZd7BAbOmgRI7xsfJAVg0FqNBjgoI6PG
+          fJrX+UE2p5iXRVlNirIEBspSQArAP4Z7ZrDWiOhT6LVJuqMoJvO6n/bv2yPSYa5mW9lX66/aAgOS
+          bfJ1rqEgfLDukqzUxQB8gBvAYW3PmO2MtS3qrKEsEn53qALqzDcGSeETjOMnS4ZOOJTe0mObK+Gx
+          j0kMnKIxDOJ1Px9uD0WwJyQPvH4uGSipDiiUQxkaS+JRUdx5h1L/52wMf5FqOo6/AAAA//8DAEbz
+          44eaAQAA
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 9093f64eed7ffa3e-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Tue, 28 Jan 2025 21:09:13 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Robots-Tag:
+          - none
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-01-28T21:09:13Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-01-28T21:09:13Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4998"
+        anthropic-ratelimit-requests-reset:
+          - "2025-01-28T21:09:12Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-01-28T21:09:13Z"
+        request-id:
+          - req_01RDaN9hSeKAcGKfk39icQK8
+        via:
+          - 1.1 google
+      status:
+        code: 200
+        message: OK
+version: 1
