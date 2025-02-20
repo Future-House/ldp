@@ -1,15 +1,15 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg?style=plastic)]()
-[![tests](https://github.com/Future-House/llm-client/actions/workflows/test.yaml/badge.svg?style=plastic)](https://github.com/Future-House/llm-client)
-[![PyPI version](https://badge.fury.io/py/fh-llm-client.svg?style=plastic)](https://badge.fury.io/py/fh-llm-client)
+[![tests](https://github.com/Future-House/llm-client/actions/workflows/test.yaml/badge.svg?style=plastic)](https://github.com/Future-House/ldp/tree/main/packages/llmi)
+[![PyPI version](https://badge.fury.io/py/lmi.svg?style=plastic)](https://badge.fury.io/py/lmi)
 
-# llm-client
+# Language Model Interface (LMI)
 
 A Python library for interacting with Large Language Models (LLMs) through an unified interface.
 
 
 ## Installation
 ```bash
-pip install fh-llm-client
+pip install lmi
 ```
 
 ## Quick start
@@ -17,7 +17,7 @@ pip install fh-llm-client
 A simple example of how to use the library with default settings is shown below.
 
 ```python
-from llmclient import LiteLLMModel
+from lmi import LiteLLMModel
 from aviary import Message
 
 llm = LiteLLMModel()
@@ -41,7 +41,7 @@ An LLM is a class that inherits from `LLMModel` and implements the following met
 These methods are used by the base class `LLMModel` to implement the LLM interface.
 Because `LLMModel` is an abstract class, it doesn't depend on any specific LLM provider. All the connection with the provider is done in the subclasses using `acompletion` and `acompletion_iter` as interfaces.
 
-Because these are the only methods that communicate with the choosen LLM provider, we use an abstraction [LLMResult](https://github.com/Future-House/llm-client/blob/main/llmclient/types.py#L35) to hold the results of the LLM call.
+Because these are the only methods that communicate with the choosen LLM provider, we use an abstraction [LLMResult](https://github.com/Future-House/ldp/blob/main/packages/lmi/src/lmi/types.py#L35) to hold the results of the LLM call.
 
 #### LLMModel
 
@@ -53,7 +53,7 @@ Adittionally, `LLMModel.call_single` can be used to return a single `LLMResult` 
 `LiteLLMModel` wrapps `LiteLLM` API usage within our `LLMModel` interface. It receives a `name` parameter, which is the name of the model to use and a `config` parameter, which is a dictionary of configuration options for the model following the [LiteLLM configuration schema](https://docs.litellm.ai/docs/routing). Common parameters such as `temperature`, `max_token`, and `n` (the number of completions to return) can be passed as part of the `config` dictionary.
 
 ```python
-from llmclient import LiteLLMModel
+from lmi import LiteLLMModel
 
 config = {
     "model_list": [
@@ -106,7 +106,7 @@ Rate limits can be configured in two ways:
 
 1. Through the LLM configuration:
 ```python
-from llmclient import LiteLLMModel
+from lmi import LiteLLMModel
 
 config = {
     "rate_limit": {
@@ -119,7 +119,7 @@ llm = LiteLLMModel(name="gpt-4", config=config)
 
 2. Through the global rate limiter configuration:
 ```python
-from llmclient.rate_limiter import GLOBAL_LIMITER
+from lmi.rate_limiter import GLOBAL_LIMITER
 
 GLOBAL_LIMITER.rate_config[("client", "gpt-4")] = "100/minute"
 ```
@@ -149,7 +149,7 @@ The rate limiter supports two storage backends:
 
 1. In-memory storage (default when Redis is not configured):
 ```python
-from llmclient.rate_limiter import GlobalRateLimiter
+from lmi.rate_limiter import GlobalRateLimiter
 
 limiter = GlobalRateLimiter(use_in_memory=True)
 ```
@@ -160,7 +160,7 @@ limiter = GlobalRateLimiter(use_in_memory=True)
 import os
 os.environ["REDIS_URL"] = "localhost:6379"
 
-from llmclient.rate_limiter import GlobalRateLimiter
+from lmi.rate_limiter import GlobalRateLimiter
 limiter = GlobalRateLimiter()  # Will automatically use Redis if REDIS_URL is set
 ```
 
@@ -169,7 +169,7 @@ limiter = GlobalRateLimiter()  # Will automatically use Redis if REDIS_URL is se
 You can monitor current rate limit status:
 
 ```python
-from llmclient.rate_limiter import GLOBAL_LIMITER
+from lmi.rate_limiter import GLOBAL_LIMITER
 
 status = await GLOBAL_LIMITER.rate_limit_status()
 
@@ -227,7 +227,7 @@ Currently, the following embedding models are supported:
 Notice that `LiteLLMEmbeddingModel` can also be rate limited.
 
 ```python
-from llmclient import LiteLLMEmbeddingModel
+from lmi import LiteLLMEmbeddingModel
 
 model = LiteLLMEmbeddingModel()
 
@@ -251,7 +251,7 @@ embeddings = await model.embed_documents(["text1", "text2", "text3"])
 `HybridEmbeddingModel` combines multiple embedding models by concatenating their outputs. It is typically used to combine a dense embedding model (like `LiteLLMEmbeddingModel`) with a sparse embedding model for improved performance. The model can be created in two ways:
 
 ```python
-from llmclient import LiteLLMEmbeddingModel, SparseEmbeddingModel, HybridEmbeddingModel
+from lmi import LiteLLMEmbeddingModel, SparseEmbeddingModel, HybridEmbeddingModel
 
 dense_model = LiteLLMEmbeddingModel(name="text-embedding-3-small")
 sparse_model = SparseEmbeddingModel()
@@ -262,4 +262,4 @@ The resulting embedding dimension will be the sum of the dimensions of all compo
 
 #### SentenceTransformerEmbeddingModel
 
-You can also use `sentence-transformer`, which is a local embedding library with support for HuggingFace models, by installing `fh-llm-client[local]`.
+You can also use `sentence-transformer`, which is a local embedding library with support for HuggingFace models, by installing `lmi[local]`.

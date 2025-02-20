@@ -222,7 +222,7 @@ class SentenceTransformerEmbeddingModel(EmbeddingModel):
             from sentence_transformers import SentenceTransformer
         except ImportError as exc:
             raise ImportError(
-                "Please install fh-llm-client[local] to use"
+                "Please install lmi[local] to use"
                 " SentenceTransformerEmbeddingModel."
             ) from exc
 

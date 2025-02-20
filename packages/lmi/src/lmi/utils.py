@@ -97,7 +97,7 @@ async def gather_with_concurrency(
             raise ImportError(
                 "Gathering with a progress bar requires 'tqdm' as a dependency, which"
                 " is in the 'progress' extra."
-                " Please run `pip install fh-llm-client[progress]`."
+                " Please run `pip install lmi[progress]`."
             ) from None
     return await asyncio.gather(*(sem_coro(c) for c in coros))
 

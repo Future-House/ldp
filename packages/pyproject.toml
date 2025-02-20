@@ -5,9 +5,9 @@ requires = ["setuptools>=64", "setuptools_scm>=8"]
 [dependency-groups]
 codeflash = [
     "codeflash>=0.8",  # Pin for --verify-setup checking formatter-cmds
-    "fh-llm-client[dev]",
+    "lmi[dev]",
 ]
-dev = ["fh-llm-client[dev]"]
+dev = ["lmi[dev]"]
 
 [project]
 authors = [
@@ -34,7 +34,7 @@ dependencies = [
 description = "A client to provide LLM responses for FutureHouse applications."
 dynamic = ["version"]
 license = {file = "LICENSE"}
-name = "fh-llm-client"
+name = "lmi"
 readme = "README.md"
 requires-python = ">=3.11"
 
@@ -43,7 +43,7 @@ deepseek = [
     "litellm>1.59.3",  # Pin for deepseek-r1 reasoning
 ]
 dev = [
-    "fh-llm-client[deepseek,local,progress,typing,vcr]",
+    "lmi[deepseek,local,progress,typing,vcr]",
     "fhaviary[xml]",
     "ipython>=8",  # Pin to keep recent
     "mypy>=1.8",  # Pin for mutable-override
