@@ -6,8 +6,8 @@
 
 A Python library for interacting with Large Language Models (LLMs) through an unified interface.
 
-
 ## Installation
+
 ```bash
 pip install lmi
 ```
@@ -35,13 +35,14 @@ assert completion.text == "42"
 ### LLMs
 
 An LLM is a class that inherits from `LLMModel` and implements the following methods:
+
 - `async acompletion(messages: list[Message], **kwargs) -> list[LLMResult]`
 - `async acompletion_iter(messages: list[Message], **kwargs) -> AsyncIterator[LLMResult]`
 
 These methods are used by the base class `LLMModel` to implement the LLM interface.
 Because `LLMModel` is an abstract class, it doesn't depend on any specific LLM provider. All the connection with the provider is done in the subclasses using `acompletion` and `acompletion_iter` as interfaces.
 
-Because these are the only methods that communicate with the choosen LLM provider, we use an abstraction [LLMResult](https://github.com/Future-House/ldp/blob/main/packages/lmi/src/lmi/types.py#L35) to hold the results of the LLM call.
+Because these are the only methods that communicate with the chosen LLM provider, we use an abstraction [LLMResult](https://github.com/Future-House/ldp/blob/main/packages/lmi/src/lmi/types.py#L35) to hold the results of the LLM call.
 
 #### LLMModel
 
@@ -50,7 +51,7 @@ Adittionally, `LLMModel.call_single` can be used to return a single `LLMResult` 
 
 #### LiteLLMModel
 
-`LiteLLMModel` wrapps `LiteLLM` API usage within our `LLMModel` interface. It receives a `name` parameter, which is the name of the model to use and a `config` parameter, which is a dictionary of configuration options for the model following the [LiteLLM configuration schema](https://docs.litellm.ai/docs/routing). Common parameters such as `temperature`, `max_token`, and `n` (the number of completions to return) can be passed as part of the `config` dictionary.
+`LiteLLMModel` wraps `LiteLLM` API usage within our `LLMModel` interface. It receives a `name` parameter, which is the name of the model to use and a `config` parameter, which is a dictionary of configuration options for the model following the [LiteLLM configuration schema](https://docs.litellm.ai/docs/routing). Common parameters such as `temperature`, `max_token`, and `n` (the number of completions to return) can be passed as part of the `config` dictionary.
 
 ```python
 from lmi import LiteLLMModel
@@ -72,7 +73,6 @@ config = {
 }
 
 llm = LiteLLMModel(name="gpt-4o", config=config)
-
 ```
 
 `config` can also be used to pass common parameters directly for the model.
@@ -87,12 +87,13 @@ config = {
     }
 }
 
-llm=LiteLLMModel(config=config)
+llm = LiteLLMModel(config=config)
 ```
 
 ### Cost tracking
 
 Cost tracking is supported in two different ways:
+
 1. Calls to the LLM returns the token usage for each call in `LLMResult.prompt_count` and `LLMResult.completion_count`. Additionally, `LLMResult.cost` can be used to get a cost estimate for the call in USD.
 2. A global cost tracker is maintained in `GLOBAL_COST_TRACKER` and can be enabled or disabled using `enable_cost_tracking()` and `cost_tracking_ctx()`.
 
@@ -105,6 +106,7 @@ Rate limiting helps control the rate of requests made to various services and LL
 Rate limits can be configured in two ways:
 
 1. Through the LLM configuration:
+
 ```python
 from lmi import LiteLLMModel
 
@@ -118,6 +120,7 @@ llm = LiteLLMModel(name="gpt-4", config=config)
 ```
 
 2. Through the global rate limiter configuration:
+
 ```python
 from lmi.rate_limiter import GLOBAL_LIMITER
 
@@ -129,16 +132,19 @@ GLOBAL_LIMITER.rate_config[("client", "gpt-4")] = "100/minute"
 Rate limits can be specified in two formats:
 
 1. As a string: `"<count> [per|/] [n (optional)] <second|minute|hour|day|month|year>"`
+
    ```python
-   "100/minute"    # 100 requests per minute
+   "100/minute"  # 100 requests per minute
+
    "5 per second"  # 5 requests per second
-   "1000/day"      # 1000 requests per day
+   "1000/day"  # 1000 requests per day
    ```
 
 2. Using RateLimitItem classes:
+
    ```python
    from limits import RateLimitItemPerSecond, RateLimitItemPerMinute
-   
+
    RateLimitItemPerSecond(30, 1)  # 30 requests per second
    RateLimitItemPerMinute(1000, 1)  # 1000 requests per minute
    ```
@@ -148,6 +154,7 @@ Rate limits can be specified in two formats:
 The rate limiter supports two storage backends:
 
 1. In-memory storage (default when Redis is not configured):
+
 ```python
 from lmi.rate_limiter import GlobalRateLimiter
 
@@ -155,12 +162,15 @@ limiter = GlobalRateLimiter(use_in_memory=True)
 ```
 
 2. Redis storage (for cross-process rate limiting):
+
 ```python
 # Set REDIS_URL environment variable
 import os
+
 os.environ["REDIS_URL"] = "localhost:6379"
 
 from lmi.rate_limiter import GlobalRateLimiter
+
 limiter = GlobalRateLimiter()  # Will automatically use Redis if REDIS_URL is set
 ```
 
@@ -175,12 +185,12 @@ status = await GLOBAL_LIMITER.rate_limit_status()
 
 # Example output:
 {
-    ('client', 'gpt-4'): {
-        'period_start': 1234567890,
-        'n_items_in_period': 50,
-        'period_seconds': 60,
-        'period_name': 'minute',
-        'period_cap': 100
+    ("client", "gpt-4"): {
+        "period_start": 1234567890,
+        "n_items_in_period": 50,
+        "period_seconds": 60,
+        "period_name": "minute",
+        "period_cap": 100,
     }
 }
 ```
@@ -191,6 +201,7 @@ The default timeout for rate limiting is 60 seconds, but can be configured:
 
 ```python
 import os
+
 os.environ["RATE_LIMITER_TIMEOUT"] = "30"  # 30 seconds timeout
 ```
 
@@ -202,7 +213,7 @@ Rate limits can account for different weights (e.g., token counts for LLM reques
 await GLOBAL_LIMITER.try_acquire(
     ("client", "gpt-4"),
     weight=token_count,  # Number of tokens in the request
-    acquire_timeout=30.0  # Optional timeout override
+    acquire_timeout=30.0,  # Optional timeout override
 )
 ```
 
@@ -236,15 +247,14 @@ model = LiteLLMEmbeddingModel(
     batch_size=16,
     config={
         "kwargs": {
-            "api_key": "your-api-key",
+            "api_key": "your-api-key",  # pragma: allowlist secret
         },
-        "rate_limit": "100/minute"
-    }
+        "rate_limit": "100/minute",
+    },
 )
 
 embeddings = await model.embed_documents(["text1", "text2", "text3"])
 ```
-
 
 #### HybridEmbeddingModel
 
