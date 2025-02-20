@@ -14,14 +14,14 @@ import numpy as np
 import tenacity
 import tree
 from aviary.core import Message, Tool, ToolRequestMessage, is_coroutine_callable
-from llmclient import (
+from lmi import (
     EmbeddingModel,
     HybridEmbeddingModel,
     LiteLLMEmbeddingModel,
     LLMResult,
     SparseEmbeddingModel,
 )
-from llmclient import LiteLLMModel as LLMModel
+from lmi import LiteLLMModel as LLMModel
 from pydantic import BaseModel
 
 from .gradient_estimators import assign_constant_grads

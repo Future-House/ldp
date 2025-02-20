@@ -8,7 +8,7 @@ from aviary.core import (
     ToolRequestMessage,
     ToolResponseMessage,
 )
-from llmclient import CommonLLMNames
+from lmi import CommonLLMNames
 from pydantic import BaseModel, ConfigDict, Field
 from tenacity import (
     Future,

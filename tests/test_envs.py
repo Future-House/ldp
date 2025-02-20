@@ -12,7 +12,7 @@ from aviary.core import (
     ToolRequestMessage,
     ToolResponseMessage,
 )
-from llmclient import CommonLLMNames
+from lmi import CommonLLMNames
 
 from ldp.agent import SimpleAgent
 

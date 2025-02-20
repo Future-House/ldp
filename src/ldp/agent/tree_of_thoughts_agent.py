@@ -17,7 +17,7 @@ from collections.abc import Callable
 from typing import Any
 
 from aviary.core import Message, Tool, ToolCall, ToolRequestMessage
-from llmclient import CommonLLMNames
+from lmi import CommonLLMNames
 from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.graph import FxnOp, LLMCallOp, OpResult, compute_graph, get_call_id, op_call

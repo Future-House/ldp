@@ -9,10 +9,10 @@ import litellm
 import tiktoken
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from llmclient.constants import CHARACTERS_PER_TOKEN_ASSUMPTION, MODEL_COST_MAP
-from llmclient.cost_tracker import track_costs
-from llmclient.rate_limiter import GLOBAL_LIMITER
-from llmclient.utils import get_litellm_retrying_config
+from lmi.constants import CHARACTERS_PER_TOKEN_ASSUMPTION, MODEL_COST_MAP
+from lmi.cost_tracker import track_costs
+from lmi.rate_limiter import GLOBAL_LIMITER
+from lmi.utils import get_litellm_retrying_config
 
 
 class EmbeddingModes(StrEnum):
@@ -163,7 +163,7 @@ class SparseEmbeddingModel(EmbeddingModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = "sparse"
-    ndim: int = 256  # type: ignore[mutable-override]
+    ndim: int = 256
     enc: tiktoken.Encoding = Field(
         default_factory=lambda: tiktoken.get_encoding("cl100k_base")
     )
@@ -193,9 +193,9 @@ class HybridEmbeddingModel(EmbeddingModel):
         return data
 
     async def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        all_embeds = await asyncio.gather(
-            *[m.embed_documents(texts) for m in self.models]
-        )
+        all_embeds = await asyncio.gather(*[
+            m.embed_documents(texts) for m in self.models
+        ])
 
         return [
             list(chain.from_iterable(embed_group))
@@ -222,8 +222,7 @@ class SentenceTransformerEmbeddingModel(EmbeddingModel):
             from sentence_transformers import SentenceTransformer
         except ImportError as exc:
             raise ImportError(
-                "Please install lmi[local] to use"
-                " SentenceTransformerEmbeddingModel."
+                "Please install lmi[local] to use SentenceTransformerEmbeddingModel."
             ) from exc
 
         self._model = SentenceTransformer(self.name)

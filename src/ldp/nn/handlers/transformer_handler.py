@@ -34,12 +34,11 @@ from transformers.generation.utils import GenerateDecoderOnlyOutput, LogitsProce
 from transformers.tokenization_utils_base import BatchEncoding
 
 from ldp.graph.async_torch import AsyncBufferedWorker, AsyncTorchModule
-
-from ..generation import LogitsProcessorWithFinalize  # noqa: TID252
-from ..lm_config import LMConfig, TorchDType  # noqa: TID252
-from ..utils import REPO_ROOT, set_seed  # noqa: TID252
-from .chunking import TensorChunker
-from .module_handler import ModuleExecutionInterface, ModuleHandler
+from ldp.nn.generation import LogitsProcessorWithFinalize
+from ldp.nn.handlers.chunking import TensorChunker
+from ldp.nn.handlers.module_handler import ModuleExecutionInterface, ModuleHandler
+from ldp.nn.lm_config import LMConfig, TorchDType
+from ldp.nn.utils import REPO_ROOT, set_seed
 
 if sys.version_info >= (3, 12):
     from typing import overload

@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from dotenv import load_dotenv
 
-from llmclient.utils import (
+from lmi.utils import (
     ANTHROPIC_API_KEY_HEADER,
     CROSSREF_KEY_HEADER,
     OPENAI_API_KEY_HEADER,

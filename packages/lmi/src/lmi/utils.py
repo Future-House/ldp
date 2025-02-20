@@ -39,14 +39,12 @@ def configure_llm_logs() -> None:
             "LiteLLM Router": {"level": "WARNING"},
         }
 
-    logging.config.dictConfig(
-        {
-            "version": 1,
-            "disable_existing_loggers": False,
-            # Lower level for httpx and LiteLLM
-            "loggers": {"httpx": {"level": "WARNING"}} | litellm_loggers_config,
-        }
-    )
+    logging.config.dictConfig({
+        "version": 1,
+        "disable_existing_loggers": False,
+        # Lower level for httpx and LiteLLM
+        "loggers": {"httpx": {"level": "WARNING"}} | litellm_loggers_config,
+    })
 
 
 def get_litellm_retrying_config(timeout: float = 60.0) -> dict[str, Any]:

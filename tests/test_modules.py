@@ -2,7 +2,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
-from llmclient import CommonLLMNames
+from lmi import CommonLLMNames
 from pytest_subtests import SubTests
 
 from ldp.agent import ReActAgent

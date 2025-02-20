@@ -10,14 +10,14 @@ import pytest
 from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
-from llmclient.exceptions import JSONSchemaValidationError
-from llmclient.llms import (
+from lmi.exceptions import JSONSchemaValidationError
+from lmi.llms import (
     CommonLLMNames,
     LiteLLMModel,
     validate_json_completion,
 )
-from llmclient.types import LLMResult
-from llmclient.utils import VCR_DEFAULT_MATCH_ON
+from lmi.types import LLMResult
+from lmi.utils import VCR_DEFAULT_MATCH_ON
 
 
 class TestLiteLLMModel:
@@ -295,9 +295,9 @@ class TestLiteLLMModel:
             side_effect=litellm.Router.acompletion,
             autospec=True,
         ) as mock_completion:
-            completions = await llm.acompletion(
-                [Message(content="Please tell me a story")]
-            )
+            completions = await llm.acompletion([
+                Message(content="Please tell me a story")
+            ])
         if bypassed_router:
             mock_completion.assert_not_awaited()
         else:
@@ -515,12 +515,12 @@ class TestMultipleCompletion:
         )
         assert len(results) == self.NUM_COMPLETIONS
         for result in results:
-            assert (
-                result.messages is not None
-            ), "Expected messages in result, but got None"
-            assert (
-                result.messages[-1].content is not None
-            ), "Expected content in message, but got None"
+            assert result.messages is not None, (
+                "Expected messages in result, but got None"
+            )
+            assert result.messages[-1].content is not None, (
+                "Expected content in message, but got None"
+            )
             assert "red" in result.messages[-1].content.lower()
 
     @pytest.mark.parametrize(
@@ -611,13 +611,13 @@ class TestTooling:
 
         tool_message = results[0].messages[0]
 
-        assert isinstance(
-            tool_message, ToolRequestMessage
-        ), "It should have selected a tool"
+        assert isinstance(tool_message, ToolRequestMessage), (
+            "It should have selected a tool"
+        )
         assert not tool_message.content
-        assert (
-            tool_message.tool_calls[0].function.arguments["x"] == 8
-        ), "LLM failed in select the correct tool or arguments"
+        assert tool_message.tool_calls[0].function.arguments["x"] == 8, (
+            "LLM failed in select the correct tool or arguments"
+        )
 
         # Simulate the observation
         observation = ToolResponseMessage(

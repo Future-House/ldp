@@ -5,11 +5,11 @@ import numpy as np
 import pytest
 from aviary.core import Message
 
-from llmclient import cost_tracking_ctx
-from llmclient.cost_tracker import GLOBAL_COST_TRACKER
-from llmclient.embeddings import LiteLLMEmbeddingModel
-from llmclient.llms import CommonLLMNames, LiteLLMModel
-from llmclient.utils import VCR_DEFAULT_MATCH_ON
+from lmi import cost_tracking_ctx
+from lmi.cost_tracker import GLOBAL_COST_TRACKER
+from lmi.embeddings import LiteLLMEmbeddingModel
+from lmi.llms import CommonLLMNames, LiteLLMModel
+from lmi.utils import VCR_DEFAULT_MATCH_ON
 
 
 @contextmanager

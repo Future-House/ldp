@@ -9,14 +9,13 @@ from ldp.agent import Agent, SimpleAgentState
 from ldp.graph import OpResult
 from ldp.graph.op_utils import compute_graph
 from ldp.llms import prepend_sys
-
-from ..graph.llm_call_op import LocalLLMCallOp  # noqa: TID252
-from ..handlers.chunking import TensorChunker  # noqa: TID252
-from ..handlers.transformer_handler import (  # noqa: TID252
+from ldp.nn.graph.llm_call_op import LocalLLMCallOp
+from ldp.nn.handlers.chunking import TensorChunker
+from ldp.nn.handlers.transformer_handler import (
     ParallelModeConfig,
     logits_to_logprobs,
 )
-from ..lm_config import LMConfig as _LMConfig  # noqa: TID252
+from ldp.nn.lm_config import LMConfig as _LMConfig
 
 
 class AgentLMConfig(_LMConfig):

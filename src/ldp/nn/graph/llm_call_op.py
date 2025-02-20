@@ -12,8 +12,7 @@ from transformers import LogitsProcessorList
 from ldp.graph.gradient_estimators import assign_constant_grads
 from ldp.graph.op_utils import CallID, get_call_id, get_training_mode
 from ldp.graph.ops import GradInType, Op, OpCtx, ResultOrValue
-
-from ..handlers.transformer_handler import (  # noqa: TID252
+from ldp.nn.handlers.transformer_handler import (
     AsyncTransformerInterface,
     LMType,
     ParallelModeConfig,
@@ -21,7 +20,7 @@ from ..handlers.transformer_handler import (  # noqa: TID252
     collate_fn_transformer_left_pad,
     decollate_fn_transformer_decoder,
 )
-from ..lm_config import LMConfig  # noqa: TID252
+from ldp.nn.lm_config import LMConfig
 
 
 class LocalLLMCallOp(Op[Message]):

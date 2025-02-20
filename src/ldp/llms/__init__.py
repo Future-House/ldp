@@ -1,17 +1,17 @@
-from llmclient import LiteLLMModel as LLMModel
-from llmclient import (
+from lmi import LiteLLMModel as LLMModel
+from lmi import (
     LLMResult,
     sum_logprobs,
     validate_json_completion,
 )
-from llmclient.embeddings import (
+from lmi.embeddings import (
     EmbeddingModel,
     EmbeddingModes,
     HybridEmbeddingModel,
     LiteLLMEmbeddingModel,
     SparseEmbeddingModel,
 )
-from llmclient.exceptions import (
+from lmi.exceptions import (
     JSONSchemaValidationError,
 )
 

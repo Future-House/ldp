@@ -32,9 +32,7 @@ class CostTracker:
         )
 
         if self.lifetime_cost_usd - self.last_report > self.report_every_usd:
-            logger.info(
-                f"Cumulative llmclient API call cost: ${self.lifetime_cost_usd:.8f}"
-            )
+            logger.info(f"Cumulative lmi API call cost: ${self.lifetime_cost_usd:.8f}")
             self.last_report = self.lifetime_cost_usd
 
 

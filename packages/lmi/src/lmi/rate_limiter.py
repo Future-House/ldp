@@ -31,7 +31,7 @@ CROSSREF_BASE_URL = f"https://{CROSSREF_HOST}"
 GLOBAL_RATE_LIMITER_TIMEOUT = float(os.environ.get("RATE_LIMITER_TIMEOUT", "60"))
 
 MATCH_ALL = None
-MatchAllInputs = Literal[None]  # noqa: PYI061
+MatchAllInputs = Literal[None]
 MATCH_MACHINE_ID = "<machine_id>"
 
 FALLBACK_RATE_LIMIT = RateLimitItemPerSecond(3, 1)
@@ -243,7 +243,7 @@ class GlobalRateLimiter:
         host, port = os.environ.get("REDIS_URL", ":").split(":", maxsplit=2)
 
         if not (host and port):
-            raise ValueError(f'Invalid REDIS_URL: {os.environ.get("REDIS_URL")}.')
+            raise ValueError(f"Invalid REDIS_URL: {os.environ.get('REDIS_URL')}.")
 
         if not isinstance(self.storage, RedisStorage):
             raise NotImplementedError(
@@ -285,7 +285,6 @@ class GlobalRateLimiter:
         return self.get_in_memory_limit_keys()
 
     async def rate_limit_status(self):
-
         limit_status = {}
 
         for rate_limit, (namespace, primary_key) in await self.get_limit_keys():

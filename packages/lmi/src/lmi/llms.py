@@ -44,16 +44,16 @@ from pydantic import (
     model_validator,
 )
 
-from llmclient.constants import (
+from lmi.constants import (
     CHARACTERS_PER_TOKEN_ASSUMPTION,
     DEFAULT_VERTEX_SAFETY_SETTINGS,
     IS_PYTHON_BELOW_312,
 )
-from llmclient.cost_tracker import track_costs, track_costs_iter
-from llmclient.exceptions import JSONSchemaValidationError
-from llmclient.rate_limiter import GLOBAL_LIMITER
-from llmclient.types import LLMResult
-from llmclient.utils import get_litellm_retrying_config
+from lmi.cost_tracker import track_costs, track_costs_iter
+from lmi.exceptions import JSONSchemaValidationError
+from lmi.rate_limiter import GLOBAL_LIMITER
+from lmi.types import LLMResult
+from lmi.utils import get_litellm_retrying_config
 
 logger = logging.getLogger(__name__)
 

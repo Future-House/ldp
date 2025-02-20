@@ -5,7 +5,7 @@ from typing import Any, Self, cast
 
 from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
 from aviary.message import EnvStateMessage
-from llmclient import CommonLLMNames
+from lmi import CommonLLMNames
 from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.graph import ConfigOp, FxnOp, LLMCallOp, OpResult, compute_graph

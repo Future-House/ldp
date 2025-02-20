@@ -7,7 +7,7 @@ from uuid import UUID
 
 import numpy as np
 import numpy.typing as npt
-from llmclient import EmbeddingModel
+from lmi import EmbeddingModel
 from pydantic import (
     BaseModel,
     ConfigDict,
