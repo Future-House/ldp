@@ -798,8 +798,8 @@ wheels = [
 
 [[package]]
 name = "fh-llm-client"
-version = "0.0.12.dev9+gf312c5d"
-source = { git = "https://github.com/Future-House/llm-client.git?rev=main#f312c5d2084008ff165731b56cbd6809065511d4" }
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "coredis" },
     { name = "fhaviary" },
@@ -808,6 +808,10 @@ dependencies = [
     { name = "pydantic" },
     { name = "tiktoken" },
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/88/e2/0cb5344f9ab2069ab6b68cc487514a2d2983fc7afdac215dca46e52f07b9/fh_llm_client-0.1.0.tar.gz", hash = "sha256:859da187b0e5b24545828fd88f9a16be9ca4f46a2443f6ba3665759609823725", size = 257930 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9e/df/85f485444aef44cd0cedfb92710af972c079df4b94f8805b6e6e553c826e/fh_llm_client-0.1.0-py3-none-any.whl", hash = "sha256:8bf7ad7a3a0778740c5ce327e37e118c186999ea9ead1688aa7e571e4d3fa18c", size = 33440 },
 ]
 
 [[package]]
@@ -1401,8 +1405,8 @@ requires-dist = [
     { name = "dask-jobqueue", marker = "extra == 'nn'" },
     { name = "dm-tree" },
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.109" },
-    { name = "fh-llm-client", git = "https://github.com/Future-House/llm-client.git?rev=main" },
-    { name = "fh-llm-client", marker = "extra == 'dev'", specifier = ">=0.0.9" },
+    { name = "fh-llm-client", specifier = ">=0.1.0" },
+    { name = "fh-llm-client", marker = "extra == 'dev'", specifier = ">=0.1.0" },
     { name = "fhaviary", specifier = ">=0.18.2" },
     { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'", specifier = ">=0.17" },
     { name = "httpx" },
