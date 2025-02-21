@@ -868,7 +868,7 @@ def prepare_model_for_fsdp_with_meta_device(model: nn.Module) -> nn.Module:
             )
 
         if reset_params is None:
-            v.reset_parameters = _dummy_reset_params.__get__(v) # pylint: disable=assignment-from-no-return
+            v.reset_parameters = _dummy_reset_params.__get__(v)  # pylint: disable=assignment-from-no-return
 
     return model
 
