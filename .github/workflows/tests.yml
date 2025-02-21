@@ -37,6 +37,10 @@ jobs:
           enable-cache: true
       - run: uv python pin ${{ matrix.python-version }}
       - run: uv sync --python-preference=only-managed
+      - uses: pre-commit/action@v3.0.1
+      - run: git checkout .python-version
+      - uses: pre-commit-ci/lite-action@v1.1.0
+        if: always()
       - name: Run refurb
         run: | # Go with this until https://github.com/astral-sh/uv/issues/6459
           cd src
