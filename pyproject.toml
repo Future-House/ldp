@@ -214,14 +214,10 @@ load-plugins = [
 # Disable the message, report, category or checker with the given id(s).
 disable = [
     "arguments-differ",  # Ops intentionally differ arguments
+    "assignment-from-no-return",  # Don't care to enforce this
     "attribute-defined-outside-init",  # Disagrees with reset pattern
     "bare-except",  # Rely on ruff E722 for this
     "broad-exception-caught",  # Don't care to enforce this
-    "undefined-loop-variable",  # Don't care to enforce this
-    "keyword-arg-before-vararg",  # Don't care to enforce this
-    "non-parent-init-called",  # Don't care to enforce this
-    "assignment-from-no-return",  # Don't care to enforce this
-    "redefined-outer-name",  # Don't care to enforce this
     "broad-exception-raised",  # Rely on ruff TRY002 for this
     "cyclic-import",  # Let Python blow up
     "expression-not-assigned",  # Rely on mypy func-returns-value for this
@@ -229,6 +225,7 @@ disable = [
     "function-redefined",  # Rely on mypy no-redef for this
     "import-outside-toplevel",  # Rely on ruff PLC0415 for this
     "invalid-name",  # Don't care to enforce this
+    "keyword-arg-before-vararg",  # Don't care to enforce this
     "line-too-long",  # Rely on ruff E501 for this
     "logging-fstring-interpolation",  # f-strings are convenient
     "logging-too-many-args",  # Rely on ruff PLE1205 for this
@@ -237,10 +234,12 @@ disable = [
     "no-else-return",  # Rely on ruff RET506 for this
     "no-member",  # Buggy, SEE: https://github.com/pylint-dev/pylint/issues/8138
     "no-value-for-parameter",  # Rely on mypy call-arg for this
+    "non-parent-init-called",  # Don't care to enforce this
     "not-callable",  # Don't care to enforce this
     "protected-access",  # Don't care to enforce this
     "raise-missing-from",  # Rely on ruff B904 for this
     "redefined-builtin",  # Rely on ruff A002 for this
+    "redefined-outer-name",  # Don't care to enforce this
     "super-init-not-called",  # Don't care to enforce this
     "too-few-public-methods",  # Don't care to enforce this
     "too-many-ancestors",  # Don't care to enforce this
@@ -252,6 +251,7 @@ disable = [
     "too-many-positional-arguments",  # Don't care to enforce this
     "too-many-return-statements",  # Rely on ruff PLR0911 for this
     "too-many-statements",  # Rely on ruff PLR0915 for this
+    "undefined-loop-variable",  # Don't care to enforce this
     "ungrouped-imports",  # Rely on ruff I001 for this
     "unidiomatic-typecheck",  # Rely on ruff E721 for this
     "unreachable",  # Rely on mypy unreachable for this
