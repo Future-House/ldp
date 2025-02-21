@@ -30,4 +30,10 @@ jobs:
           path: dist
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          password: ${{ secrets.PYPI_LDP_API_TOKEN }}
+          packages-dir: dist/ldp*
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_LMI_TOKEN }}
+          packages-dir: dist/fhlmi*
+
