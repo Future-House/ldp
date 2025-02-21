@@ -22,6 +22,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - run: echo "UV_PROJECT_ENVIRONMENT=$(python -c "import sysconfig; print(sysconfig.get_config_var('prefix'))")" >> $GITHUB_ENV
+      - run: uv python pin ${{ matrix.python-version }} # uv requires .python-version to match OS Python: https://github.com/astral-sh/uv/issues/11389
+      - run: uv sync --python-preference only-system
+      - run: git checkout .python-version # For clean git diff given `pre-commit run --show-diff-on-failure`
       - uses: pre-commit/action@v3.0.1
       - uses: pre-commit-ci/lite-action@v1.1.0
         if: always()
@@ -37,11 +44,18 @@ jobs:
           enable-cache: true
       - run: uv python pin ${{ matrix.python-version }}
       - run: uv sync --python-preference=only-managed
-      - run: uv run refurb ldp tests
-      - run: uv run pylint ldp tests
+      - name: Run refurb
+        run: | # Go with this until https://github.com/astral-sh/uv/issues/6459
+          cd src
+          uv run refurb ldp
+          cd ../packages/lmi/src
+          uv run refurb lmi
+          cd ../../..
+          uv run refurb tests packages/lmi/tests
+      - run: uv run pylint src packages
       - if: matrix.python-version == '3.11' # Only need to run this on one version
         uses: suzuki-shunsuke/github-action-renovate-config-validator@v1.1.1
-  test:
+  test-ldp:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +63,20 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync
-      - run: uv run pytest -n 16 --dist=loadfile # auto only launches 8 workers in CI, despite runners have 16 cores
+      - run: uv run pytest -n 16 --dist=loadfile tests
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  test-lmi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - run: uv sync
+      - run: |
+          uv run pytest -n 16 --dist=loadfile packages/lmi/tests
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

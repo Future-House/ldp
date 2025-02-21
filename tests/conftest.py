@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import torch
 from aviary.core import DummyEnv
-from llmclient import configure_llm_logs
+from lmi import configure_llm_logs
 
 from ldp.nn.handlers.transformer_handler import ExecutionMode, ParallelModeConfig
 

@@ -1,0 +1,112 @@
+interactions:
+  - request:
+      body:
+        '{"messages": [{"role": "user", "content": "Please win."}], "model": "gpt-3.5-turbo",
+        "max_tokens": 4096, "n": 2, "temperature": 0.1, "tool_choice": "required", "tools":
+        [{"type": "function", "function": {"name": "play", "description": "Play one
+        turn by choosing a move.", "parameters": {"type": "object", "properties": {"move":
+        {"anyOf": [{"type": "integer"}, {"type": "null"}], "description": "Choose an
+        integer to lose, choose None to win.", "title": "Move"}}, "required": ["move"]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "488"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.59.7
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 1.59.7
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.7
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//7FRNb9swDL37Vwg8J0U+lmTxbR26AuuCIlu7YlsHQ5FpR62+JslJ0yD/
+          fZCd2k6aATvuMB8MgY98JB8lbiNCgKcQE2BL6pk0ovvul1hfPn+/+/R2dDVaLxfz23wzUf5jLqbz
+          b9AJEXrxgMy/RJ0xLY1Az7WqYGaRegys/clw0n/TG0/HJSB1iiKE5cZ3h2ejri/sQnd7/cFoH7nU
+          nKGDmPyICCFkW/5DjSrFJ4hJr/NikegczRHi2okQsFoEC1DnuPNUeeg0INPKowplq0KIFuC1Fgmj
+          QjSJq2/bOjdCUSESvPj6xfW15Hfnj9Kt5rPzz082na5a+SrqjSkLygrFaoFaeG2Pj5IRAorKMtYI
+          ujmKIwSozQuJyoeaYXsPUq/wHuLQ2g4OnHfRqfPPlgAWs8JRsVdmb9/VUgudG6sX7kg5yLjibplY
+          pK7soC1k1KJ4NcX+PzLF2aXE66trOlhfzNjDc/b+w83tVE16/6d4MMVonweKg1mBsVoan3j9iCrQ
+          jicVKTQLoQEH4z3otaeisU+HnRNsSYqe8nKU9e1hlC0xbSKbXUCLlOsW0L58r4s5xV11z1X+N/QN
+          wBgaj2liLKacHTbcuFkM6/JPbrXGZcHg0K44w8RztGEaKWa0ENUTALdxHmWScZWjNZbX7yDaRb8B
+          AAD//wMAQlJFlcwFAAA=
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 90389d2abfe0ebf3-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 17 Jan 2025 19:04:57 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=l5909NAXUnjyBXMA6ARBnrRTn.y3f213kSeoTBjCTPo-1737140697-1.0.1.1-ktz76ihEvY05s31JT4KVMjTCe6hj7j5W6EFGc5SoetOpPsBSbOJm8RVuptmf_ib5PNakVZ8OWP6g.dvJe6eiwA;
+            path=/; expires=Fri, 17-Jan-25 19:34:57 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=q8djkrKUvzNVxXkZ7T3o2fWM3n_V31e0UrUvxoTgGUY-1737140697121-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        access-control-expose-headers:
+          - X-Request-ID
+        alt-svc:
+          - h3=":443"; ma=86400
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "273"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-ratelimit-limit-requests:
+          - "12000"
+        x-ratelimit-limit-tokens:
+          - "1000000"
+        x-ratelimit-remaining-requests:
+          - "11999"
+        x-ratelimit-remaining-tokens:
+          - "991811"
+        x-ratelimit-reset-requests:
+          - 5ms
+        x-ratelimit-reset-tokens:
+          - 491ms
+        x-request-id:
+          - req_ebd15ea4b7af56101b7b91293d5b48a3
+      status:
+        code: 200
+        message: OK
+version: 1

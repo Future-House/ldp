@@ -18,8 +18,12 @@ repos:
       - id: end-of-file-fixer
       - id: mixed-line-ending
       - id: trailing-whitespace
+  - repo: https://github.com/jsh9/markdown-toc-creator
+    rev: 0.0.10
+    hooks:
+      - id: markdown-toc-creator
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.2
+    rev: v0.9.2
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -42,6 +46,10 @@ repos:
     hooks:
       - id: blacken-docs
         files: README\..* # because ruff already handles docstrings
+  - repo: https://github.com/jsh9/markdown-toc-creator
+    rev: 0.0.10
+    hooks:
+      - id: markdown-toc-creator
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
     rev: 3.0.0
     hooks:
@@ -69,23 +77,10 @@ repos:
     rev: 0.5.31
     hooks:
       - id: uv-lock
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.13.0
+  - repo: local
     hooks:
       - id: mypy
-        additional_dependencies:
-          - accelerate
-          - fastapi>=0.109 # Match pyproject.toml
-          - fh-llm-client>=0.1.0 # Match pyproject.toml
-          - fhaviary[xml]>=0.18.2 # Match pyproject.toml
-          - httpx
-          - numpy>=1.20 # Match pyproject.toml
-          - pydantic~=2.0 # Match pyproject.toml
-          - tenacity
-          - torch>=2.5,<2.6 # Match pyproject.toml
-          - tokenizers>=0.20
-          - transformers>=4.46
-          - types-aiofiles
-          - types-tqdm
-          - usearch>=2.13 # Match pyproject.toml
-          - wandb
+        name: mypy
+        entry: mypy
+        language: system
+        types_or: [python, pyi]

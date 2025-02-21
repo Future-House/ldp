@@ -16,6 +16,12 @@ resolution-markers = [
     "python_full_version < '3.12' and platform_python_implementation != 'PyPy' and sys_platform != 'linux'",
 ]
 
+[manifest]
+members = [
+    "ldp",
+    "lmi",
+]
+
 [[package]]
 name = "absl-py"
 version = "2.1.0"
@@ -797,24 +803,6 @@ wheels = [
 ]
 
 [[package]]
-name = "fh-llm-client"
-version = "0.1.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "coredis" },
-    { name = "fhaviary" },
-    { name = "limits" },
-    { name = "litellm" },
-    { name = "pydantic" },
-    { name = "tiktoken" },
-    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/88/e2/0cb5344f9ab2069ab6b68cc487514a2d2983fc7afdac215dca46e52f07b9/fh_llm_client-0.1.0.tar.gz", hash = "sha256:859da187b0e5b24545828fd88f9a16be9ca4f46a2443f6ba3665759609823725", size = 257930 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9e/df/85f485444aef44cd0cedfb92710af972c079df4b94f8805b6e6e553c826e/fh_llm_client-0.1.0-py3-none-any.whl", hash = "sha256:8bf7ad7a3a0778740c5ce327e37e118c186999ea9ead1688aa7e571e4d3fa18c", size = 33440 },
-]
-
-[[package]]
 name = "fhaviary"
 version = "0.18.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1202,6 +1190,15 @@ wheels = [
 ]
 
 [[package]]
+name = "joblib"
+version = "1.4.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/33/60135848598c076ce4b231e1b1895170f45fbcaeaa2c9d5e38b04db70c35/joblib-1.4.2.tar.gz", hash = "sha256:2382c5816b2636fbd20a09e0f4e9dad4736765fdfb7dca582943b9c1366b3f0e", size = 2116621 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/29/df4b9b42f2be0b623cbd5e2140cafcaa2bef0759a00b7b70104dcfe2fb51/joblib-1.4.2-py3-none-any.whl", hash = "sha256:06d478d5674cbc267e7496a410ee875abd68e4340feff4490bcb7afb88060ae6", size = 301817 },
+]
+
+[[package]]
 name = "jsonschema"
 version = "4.23.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1309,9 +1306,9 @@ source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
     { name = "dm-tree" },
-    { name = "fh-llm-client" },
     { name = "fhaviary" },
     { name = "httpx" },
+    { name = "lmi" },
     { name = "networkx", extra = ["default"] },
     { name = "numpy" },
     { name = "pydantic" },
@@ -1329,7 +1326,6 @@ dev = [
     { name = "dask-cuda" },
     { name = "dask-jobqueue" },
     { name = "fastapi" },
-    { name = "fh-llm-client" },
     { name = "fhaviary", extra = ["xml"] },
     { name = "ipython" },
     { name = "litellm" },
@@ -1394,6 +1390,7 @@ codeflash = [
 ]
 dev = [
     { name = "ldp", extra = ["dev"] },
+    { name = "lmi", extra = ["dev"] },
 ]
 
 [package.metadata]
@@ -1405,14 +1402,13 @@ requires-dist = [
     { name = "dask-jobqueue", marker = "extra == 'nn'" },
     { name = "dm-tree" },
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.109" },
-    { name = "fh-llm-client", specifier = ">=0.1.0" },
-    { name = "fh-llm-client", marker = "extra == 'dev'", specifier = ">=0.1.0" },
     { name = "fhaviary", specifier = ">=0.18.2" },
     { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'", specifier = ">=0.17" },
     { name = "httpx" },
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "ldp", extras = ["monitor", "nn", "rich", "server", "typing", "visualization"], marker = "extra == 'dev'" },
+    { name = "ldp", extras = ["monitor", "nn", "rich", "server", "typing", "visualization"], marker = "extra == 'dev'", editable = "." },
     { name = "litellm", marker = "extra == 'dev'", specifier = ">=1.52.15" },
+    { name = "lmi", editable = "packages/lmi" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
     { name = "networkx", extras = ["default"], specifier = "~=3.4" },
     { name = "numpy", specifier = ">=1.20" },
@@ -1453,9 +1449,12 @@ provides-extras = ["dev", "monitor", "nn", "rich", "server", "typing", "visualiz
 [package.metadata.requires-dev]
 codeflash = [
     { name = "codeflash", specifier = ">=0.8" },
-    { name = "ldp", extras = ["dev"] },
+    { name = "ldp", extras = ["dev"], editable = "." },
 ]
-dev = [{ name = "ldp", extras = ["dev"] }]
+dev = [
+    { name = "ldp", extras = ["dev"], editable = "." },
+    { name = "lmi", extras = ["dev"], editable = "packages/lmi" },
+]
 
 [[package]]
 name = "libcst"
@@ -1547,6 +1546,112 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/d8/e1/12c5f20cb9168fb3464a34310411d5ad86e4163c8ff2d14a2b57e5cc6bac/llvmlite-0.44.0-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:aa0097052c32bf721a4efc03bd109d335dfa57d9bffb3d4c24cc680711b8b4fc", size = 41184245 },
     { url = "https://files.pythonhosted.org/packages/d0/81/e66fc86539293282fd9cb7c9417438e897f369e79ffb62e1ae5e5154d4dd/llvmlite-0.44.0-cp313-cp313-win_amd64.whl", hash = "sha256:2fb7c4f2fb86cbae6dca3db9ab203eeea0e22d73b99bc2341cdf9de93612e930", size = 30331193 },
 ]
+
+[[package]]
+name = "lmi"
+source = { editable = "packages/lmi" }
+dependencies = [
+    { name = "coredis" },
+    { name = "fhaviary" },
+    { name = "limits" },
+    { name = "litellm" },
+    { name = "pydantic" },
+    { name = "tiktoken" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
+]
+
+[package.optional-dependencies]
+deepseek = [
+    { name = "litellm" },
+]
+dev = [
+    { name = "fhaviary", extra = ["xml"] },
+    { name = "ipython" },
+    { name = "litellm" },
+    { name = "mypy" },
+    { name = "numpy" },
+    { name = "pre-commit" },
+    { name = "pylint-pydantic" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-recording" },
+    { name = "pytest-rerunfailures" },
+    { name = "pytest-subtests" },
+    { name = "pytest-sugar" },
+    { name = "pytest-timer", extra = ["colorama"] },
+    { name = "pytest-xdist" },
+    { name = "python-dotenv" },
+    { name = "refurb" },
+    { name = "sentence-transformers" },
+    { name = "tqdm" },
+    { name = "typeguard" },
+    { name = "types-tqdm" },
+    { name = "vcrpy" },
+]
+local = [
+    { name = "numpy" },
+    { name = "sentence-transformers" },
+]
+progress = [
+    { name = "tqdm" },
+]
+typing = [
+    { name = "types-tqdm" },
+]
+vcr = [
+    { name = "vcrpy" },
+]
+
+[package.dev-dependencies]
+codeflash = [
+    { name = "codeflash" },
+    { name = "lmi", extra = ["dev"] },
+]
+dev = [
+    { name = "lmi", extra = ["dev"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "coredis" },
+    { name = "fhaviary", specifier = ">=0.14.0" },
+    { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'" },
+    { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "limits" },
+    { name = "litellm", specifier = ">=1.60.2" },
+    { name = "litellm", marker = "extra == 'deepseek'", specifier = ">1.59.3" },
+    { name = "lmi", extras = ["deepseek", "local", "progress", "typing", "vcr"], marker = "extra == 'dev'", editable = "packages/lmi" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
+    { name = "numpy", marker = "extra == 'local'" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.4" },
+    { name = "pydantic", specifier = "~=2.0,>=2.10.1,<2.10.2" },
+    { name = "pylint-pydantic", marker = "extra == 'dev'" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'" },
+    { name = "pytest-recording", marker = "extra == 'dev'" },
+    { name = "pytest-rerunfailures", marker = "extra == 'dev'" },
+    { name = "pytest-subtests", marker = "extra == 'dev'" },
+    { name = "pytest-sugar", marker = "extra == 'dev'" },
+    { name = "pytest-timer", extras = ["colorama"], marker = "extra == 'dev'" },
+    { name = "pytest-xdist", marker = "extra == 'dev'" },
+    { name = "python-dotenv", marker = "extra == 'dev'" },
+    { name = "refurb", marker = "extra == 'dev'", specifier = ">=2" },
+    { name = "sentence-transformers", marker = "extra == 'local'" },
+    { name = "tiktoken", specifier = ">=0.4.0" },
+    { name = "tqdm", marker = "extra == 'progress'" },
+    { name = "typeguard", marker = "extra == 'dev'" },
+    { name = "types-tqdm", marker = "extra == 'typing'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
+    { name = "vcrpy", marker = "extra == 'vcr'", specifier = ">=6" },
+]
+provides-extras = ["deepseek", "dev", "local", "progress", "typing", "vcr"]
+
+[package.metadata.requires-dev]
+codeflash = [
+    { name = "codeflash", specifier = ">=0.8" },
+    { name = "lmi", extras = ["dev"], editable = "packages/lmi" },
+]
+dev = [{ name = "lmi", extras = ["dev"], editable = "packages/lmi" }]
 
 [[package]]
 name = "locket"
@@ -3102,6 +3207,39 @@ wheels = [
 ]
 
 [[package]]
+name = "scikit-learn"
+version = "1.6.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "joblib" },
+    { name = "numpy" },
+    { name = "scipy" },
+    { name = "threadpoolctl" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9e/a5/4ae3b3a0755f7b35a280ac90b28817d1f380318973cff14075ab41ef50d9/scikit_learn-1.6.1.tar.gz", hash = "sha256:b4fc2525eca2c69a59260f583c56a7557c6ccdf8deafdba6e060f94c1c59738e", size = 7068312 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6c/2a/e291c29670795406a824567d1dfc91db7b699799a002fdaa452bceea8f6e/scikit_learn-1.6.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:72abc587c75234935e97d09aa4913a82f7b03ee0b74111dcc2881cba3c5a7b33", size = 12102620 },
+    { url = "https://files.pythonhosted.org/packages/25/92/ee1d7a00bb6b8c55755d4984fd82608603a3cc59959245068ce32e7fb808/scikit_learn-1.6.1-cp311-cp311-macosx_12_0_arm64.whl", hash = "sha256:b3b00cdc8f1317b5f33191df1386c0befd16625f49d979fe77a8d44cae82410d", size = 11116234 },
+    { url = "https://files.pythonhosted.org/packages/30/cd/ed4399485ef364bb25f388ab438e3724e60dc218c547a407b6e90ccccaef/scikit_learn-1.6.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:dc4765af3386811c3ca21638f63b9cf5ecf66261cc4815c1db3f1e7dc7b79db2", size = 12592155 },
+    { url = "https://files.pythonhosted.org/packages/a8/f3/62fc9a5a659bb58a03cdd7e258956a5824bdc9b4bb3c5d932f55880be569/scikit_learn-1.6.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:25fc636bdaf1cc2f4a124a116312d837148b5e10872147bdaf4887926b8c03d8", size = 13497069 },
+    { url = "https://files.pythonhosted.org/packages/a1/a6/c5b78606743a1f28eae8f11973de6613a5ee87366796583fb74c67d54939/scikit_learn-1.6.1-cp311-cp311-win_amd64.whl", hash = "sha256:fa909b1a36e000a03c382aade0bd2063fd5680ff8b8e501660c0f59f021a6415", size = 11139809 },
+    { url = "https://files.pythonhosted.org/packages/0a/18/c797c9b8c10380d05616db3bfb48e2a3358c767affd0857d56c2eb501caa/scikit_learn-1.6.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:926f207c804104677af4857b2c609940b743d04c4c35ce0ddc8ff4f053cddc1b", size = 12104516 },
+    { url = "https://files.pythonhosted.org/packages/c4/b7/2e35f8e289ab70108f8cbb2e7a2208f0575dc704749721286519dcf35f6f/scikit_learn-1.6.1-cp312-cp312-macosx_12_0_arm64.whl", hash = "sha256:2c2cae262064e6a9b77eee1c8e768fc46aa0b8338c6a8297b9b6759720ec0ff2", size = 11167837 },
+    { url = "https://files.pythonhosted.org/packages/a4/f6/ff7beaeb644bcad72bcfd5a03ff36d32ee4e53a8b29a639f11bcb65d06cd/scikit_learn-1.6.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1061b7c028a8663fb9a1a1baf9317b64a257fcb036dae5c8752b2abef31d136f", size = 12253728 },
+    { url = "https://files.pythonhosted.org/packages/29/7a/8bce8968883e9465de20be15542f4c7e221952441727c4dad24d534c6d99/scikit_learn-1.6.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2e69fab4ebfc9c9b580a7a80111b43d214ab06250f8a7ef590a4edf72464dd86", size = 13147700 },
+    { url = "https://files.pythonhosted.org/packages/62/27/585859e72e117fe861c2079bcba35591a84f801e21bc1ab85bce6ce60305/scikit_learn-1.6.1-cp312-cp312-win_amd64.whl", hash = "sha256:70b1d7e85b1c96383f872a519b3375f92f14731e279a7b4c6cfd650cf5dffc52", size = 11110613 },
+    { url = "https://files.pythonhosted.org/packages/2e/59/8eb1872ca87009bdcdb7f3cdc679ad557b992c12f4b61f9250659e592c63/scikit_learn-1.6.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:2ffa1e9e25b3d93990e74a4be2c2fc61ee5af85811562f1288d5d055880c4322", size = 12010001 },
+    { url = "https://files.pythonhosted.org/packages/9d/05/f2fc4effc5b32e525408524c982c468c29d22f828834f0625c5ef3d601be/scikit_learn-1.6.1-cp313-cp313-macosx_12_0_arm64.whl", hash = "sha256:dc5cf3d68c5a20ad6d571584c0750ec641cc46aeef1c1507be51300e6003a7e1", size = 11096360 },
+    { url = "https://files.pythonhosted.org/packages/c8/e4/4195d52cf4f113573fb8ebc44ed5a81bd511a92c0228889125fac2f4c3d1/scikit_learn-1.6.1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c06beb2e839ecc641366000ca84f3cf6fa9faa1777e29cf0c04be6e4d096a348", size = 12209004 },
+    { url = "https://files.pythonhosted.org/packages/94/be/47e16cdd1e7fcf97d95b3cb08bde1abb13e627861af427a3651fcb80b517/scikit_learn-1.6.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e8ca8cb270fee8f1f76fa9bfd5c3507d60c6438bbee5687f81042e2bb98e5a97", size = 13171776 },
+    { url = "https://files.pythonhosted.org/packages/34/b0/ca92b90859070a1487827dbc672f998da95ce83edce1270fc23f96f1f61a/scikit_learn-1.6.1-cp313-cp313-win_amd64.whl", hash = "sha256:7a1c43c8ec9fde528d664d947dc4c0789be4077a3647f232869f41d9bf50e0fb", size = 11071865 },
+    { url = "https://files.pythonhosted.org/packages/12/ae/993b0fb24a356e71e9a894e42b8a9eec528d4c70217353a1cd7a48bc25d4/scikit_learn-1.6.1-cp313-cp313t-macosx_10_13_x86_64.whl", hash = "sha256:a17c1dea1d56dcda2fac315712f3651a1fea86565b64b48fa1bc090249cbf236", size = 11955804 },
+    { url = "https://files.pythonhosted.org/packages/d6/54/32fa2ee591af44507eac86406fa6bba968d1eb22831494470d0a2e4a1eb1/scikit_learn-1.6.1-cp313-cp313t-macosx_12_0_arm64.whl", hash = "sha256:6a7aa5f9908f0f28f4edaa6963c0a6183f1911e63a69aa03782f0d924c830a35", size = 11100530 },
+    { url = "https://files.pythonhosted.org/packages/3f/58/55856da1adec655bdce77b502e94a267bf40a8c0b89f8622837f89503b5a/scikit_learn-1.6.1-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0650e730afb87402baa88afbf31c07b84c98272622aaba002559b614600ca691", size = 12433852 },
+    { url = "https://files.pythonhosted.org/packages/ff/4f/c83853af13901a574f8f13b645467285a48940f185b690936bb700a50863/scikit_learn-1.6.1-cp313-cp313t-win_amd64.whl", hash = "sha256:3f59fe08dc03ea158605170eb52b22a105f238a5d512c4470ddeca71feae8e5f", size = 11337256 },
+]
+
+[[package]]
 name = "scipy"
 version = "1.15.1"
 source = { registry = "https://pypi.org/simple" }
@@ -3141,6 +3279,24 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/84/9d/8f539002b5e203723af6a6f513a45e0a7671e9dabeedb08f417ac17e4edc/scipy-1.15.1-cp313-cp313t-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f735bc41bd1c792c96bc426dece66c8723283695f02df61dcc4d0a707a42fc54", size = 39883261 },
     { url = "https://files.pythonhosted.org/packages/97/c0/62fd3bab828bcccc9b864c5997645a3b86372a35941cdaf677565c25c98d/scipy-1.15.1-cp313-cp313t-musllinux_1_2_x86_64.whl", hash = "sha256:2722a021a7929d21168830790202a75dbb20b468a8133c74a2c0230c72626b6c", size = 42093299 },
     { url = "https://files.pythonhosted.org/packages/e4/1f/5d46a8d94e9f6d2c913cbb109e57e7eed914de38ea99e2c4d69a9fc93140/scipy-1.15.1-cp313-cp313t-win_amd64.whl", hash = "sha256:bc7136626261ac1ed988dca56cfc4ab5180f75e0ee52e58f1e6aa74b5f3eacd5", size = 43181730 },
+]
+
+[[package]]
+name = "sentence-transformers"
+version = "3.4.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "pillow" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "torch" },
+    { name = "tqdm" },
+    { name = "transformers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/16/74/aca6f8a2b8d62b4daf8c9a0c49d2aa573381caf47dc35cbb343389229376/sentence_transformers-3.4.1.tar.gz", hash = "sha256:68daa57504ff548340e54ff117bd86c1d2f784b21e0fb2689cf3272b8937b24b", size = 223898 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/05/89/7eb147a37b7f31d3c815543df539d8b8d0425e93296c875cc87719d65232/sentence_transformers-3.4.1-py3-none-any.whl", hash = "sha256:e026dc6d56801fd83f74ad29a30263f401b4b522165c19386d8bc10dcca805da", size = 275896 },
 ]
 
 [[package]]
@@ -3370,6 +3526,15 @@ wheels = [
 ]
 
 [[package]]
+name = "threadpoolctl"
+version = "3.5.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bd/55/b5148dcbf72f5cde221f8bfe3b6a540da7aa1842f6b491ad979a6c8b84af/threadpoolctl-3.5.0.tar.gz", hash = "sha256:082433502dd922bf738de0d8bcc4fdcbf0979ff44c42bd40f5af8a282f6fa107", size = 41936 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4b/2c/ffbf7a134b9ab11a67b0cf0726453cedd9c5043a4fe7a35d1cefa9a1bcfb/threadpoolctl-3.5.0-py3-none-any.whl", hash = "sha256:56c1e26c150397e58c4926da8eeee87533b1e32bef131bd4bf6a2f45f3185467", size = 18414 },
+]
+
+[[package]]
 name = "tiktoken"
 version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3556,6 +3721,18 @@ dependencies = [
 wheels = [
     { url = "https://files.pythonhosted.org/packages/86/17/d9a5cf4fcf46291856d1e90762e36cbabd2a56c7265da0d1d9508c8e3943/triton-3.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f34f6e7885d1bf0eaaf7ba875a5f0ce6f3c13ba98f9503651c1e6dc6757ed5c", size = 209506424 },
     { url = "https://files.pythonhosted.org/packages/78/eb/65f5ba83c2a123f6498a3097746607e5b2f16add29e36765305e4ac7fdd8/triton-3.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c8182f42fd8080a7d39d666814fa36c5e30cc00ea7eeeb1a2983dbb4c99a0fdc", size = 209551444 },
+]
+
+[[package]]
+name = "typeguard"
+version = "4.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/70/60/8cd6a3d78d00ceeb2193c02b7ed08f063d5341ccdfb24df88e61f383048e/typeguard-4.4.2.tar.gz", hash = "sha256:a6f1065813e32ef365bc3b3f503af8a96f9dd4e0033a02c28c4a4983de8c6c49", size = 75746 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cf/4b/9a77dc721aa0b7f74440a42e4ef6f9a4fae7324e17f64f88b96f4c25cc05/typeguard-4.4.2-py3-none-any.whl", hash = "sha256:77a78f11f09777aeae7fa08585f33b5f4ef0e7335af40005b0c422ed398ff48c", size = 35801 },
 ]
 
 [[package]]

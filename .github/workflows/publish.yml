@@ -10,12 +10,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - id: build
+      - id: build-ldp
         uses: hynek/build-and-inspect-python-package@v2
+        with:
+          upload-name-suffix: -ldp
       - name: Download built artifact to dist/
         uses: actions/download-artifact@v4
         with:
-          name: ${{ steps.build.outputs.artifact-name }}
+          name: ${{ steps.build-ldp.outputs.artifact-name }}
+          path: dist
+      - id: build-lmi
+        uses: hynek/build-and-inspect-python-package@v2
+        with:
+          upload-name-suffix: -lmi
+      - name: Download built artifact to dist/
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.build-lmi.outputs.artifact-name }}
           path: dist
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:

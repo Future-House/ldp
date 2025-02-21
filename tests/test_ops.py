@@ -10,8 +10,8 @@ import pytest
 import tenacity
 import tree
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
-from llmclient import CommonLLMNames, LLMResult
-from llmclient import LiteLLMModel as LLMModel
+from lmi import CommonLLMNames, LLMResult
+from lmi import LiteLLMModel as LLMModel
 
 from ldp.graph import (
     CallID,

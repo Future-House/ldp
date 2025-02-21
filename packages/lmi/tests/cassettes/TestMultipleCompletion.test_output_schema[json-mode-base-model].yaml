@@ -1,0 +1,111 @@
+interactions:
+  - request:
+      body:
+        '{"messages": [{"role": "system", "content": "Respond following this JSON
+        schema:\n\n{\"properties\": {\"name\": {\"title\": \"Name\", \"type\": \"string\"},
+        \"age\": {\"description\": \"Age in years.\", \"title\": \"Age\", \"type\":
+        \"integer\"}}, \"required\": [\"name\", \"age\"], \"title\": \"DummyOutputSchema\",
+        \"type\": \"object\"}"}, {"role": "user", "content": "My name is Claude and
+        I am 1 year old. What is my name and age?"}], "model": "gpt-3.5-turbo", "max_tokens":
+        4096, "n": 2, "response_format": {"type": "json_object"}, "temperature": 0.1}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "556"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.59.7
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 1.59.7
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.7
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//3FO7buMwEOz1FcTWciDZcXxQFxxwxRUpAqRIokCgyZXMHEUy5Mp5GP73
+          A2XZkpEccHUaFTM7gxnuapcwBkpCwUBsOInW6dn1i96+/mizu4fu5vdH/ev2Rq3nd+/b53r+dg9p
+          VNj1Mwo6qi6EbZ1GUtYcaOGRE0bXfLVY5ZfZ1eqqJ1orUUdZ42i2uFjOqPNrO8vy+XJQbqwSGKBg
+          jwljjO36b8xoJL5BwbL0iLQYAm8QitMQY+CtjgjwEFQgbgjSkRTWEJo+9q40ESrB8BZLKFgJPzXv
+          JJaQHine9Exemv3UxWPdBR5bmE7rAd+fYmnbOG/XYeBPeK2MCpvKIw/WxAiBrINkIv7UNf+OXRPG
+          nvpVd2eNwHnbOqrI/kETDfNsqA/jdY3s4nIgyRLXE9VimX7hV0kkrnSYPCAILjYoR+l4WbyTyk6I
+          6ZI+p/nK+9BcmeZ/7EdCCHSEsnIepRLnjccxj/Hn+9fY6ZX7wBDQb5XAihT6uAmJNe/04VQgvAfC
+          tqqVadA7r/p76Te9T/4CAAD//wMAjfRWRBoEAAA=
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 90389cad2a13d025-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 17 Jan 2025 19:04:37 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=xDic39gCmAtKTGYfcvFUvqrcOApCbkfBWjfOByxWqXA-1737140677-1.0.1.1-LuyPgp3x3gBEddS7Cf_FJz1CHv0MzwdExPcbrPhByl8rBLSszT2006DX8.neElAAWV5hwtqUksaxSUc32gyAwA;
+            path=/; expires=Fri, 17-Jan-25 19:34:37 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=v8zT_Hk4twWW1eB13bRitNkDpIyBFCtqyIakFNTE3oo-1737140677081-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        access-control-expose-headers:
+          - X-Request-ID
+        alt-svc:
+          - h3=":443"; ma=86400
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "304"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-ratelimit-limit-requests:
+          - "12000"
+        x-ratelimit-limit-tokens:
+          - "1000000"
+        x-ratelimit-remaining-requests:
+          - "11999"
+        x-ratelimit-remaining-tokens:
+          - "991889"
+        x-ratelimit-reset-requests:
+          - 5ms
+        x-ratelimit-reset-tokens:
+          - 486ms
+        x-request-id:
+          - req_3bbb82d264406baed69bca8e2cab0d1d
+      status:
+        code: 200
+        message: OK
+version: 1
