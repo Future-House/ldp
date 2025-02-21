@@ -5,9 +5,9 @@ requires = ["setuptools>=64", "setuptools_scm>=8"]
 [dependency-groups]
 codeflash = [
     "codeflash>=0.8",  # Pin for --verify-setup checking formatter-cmds
-    "lmi[dev]",
+    "fhlmi[dev]",
 ]
-dev = ["lmi[dev]"]
+dev = ["fhlmi[dev]"]
 
 [project]
 authors = [
@@ -32,11 +32,12 @@ dependencies = [
     "typing-extensions; python_version <= '3.11'",  # for typing.override
 ]
 description = "A client to provide LLM responses for FutureHouse applications."
-dynamic = ["version"]
 license = {file = "LICENSE"}
-name = "lmi"
+name = "fhlmi"
 readme = "README.md"
 requires-python = ">=3.11"
+# dynamic = ["version"]
+version = "0.0.1"
 
 [project.optional-dependencies]
 deepseek = [
@@ -44,8 +45,8 @@ deepseek = [
 ]
 dev = [
     "fhaviary[xml]",
+    "fhlmi[deepseek,local,progress,typing,vcr]",
     "ipython>=8",  # Pin to keep recent
-    "lmi[deepseek,local,progress,typing,vcr]",
     "mypy>=1.8",  # Pin for mutable-override
     "pre-commit>=3.4",  # Pin to keep recent
     "pylint-pydantic",

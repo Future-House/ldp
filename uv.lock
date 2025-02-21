@@ -18,8 +18,8 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "fhlmi",
     "ldp",
-    "lmi",
 ]
 
 [[package]]
@@ -822,6 +822,113 @@ xml = [
 ]
 
 [[package]]
+name = "fhlmi"
+version = "0.0.1"
+source = { editable = "packages/lmi" }
+dependencies = [
+    { name = "coredis" },
+    { name = "fhaviary" },
+    { name = "limits" },
+    { name = "litellm" },
+    { name = "pydantic" },
+    { name = "tiktoken" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
+]
+
+[package.optional-dependencies]
+deepseek = [
+    { name = "litellm" },
+]
+dev = [
+    { name = "fhaviary", extra = ["xml"] },
+    { name = "ipython" },
+    { name = "litellm" },
+    { name = "mypy" },
+    { name = "numpy" },
+    { name = "pre-commit" },
+    { name = "pylint-pydantic" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-recording" },
+    { name = "pytest-rerunfailures" },
+    { name = "pytest-subtests" },
+    { name = "pytest-sugar" },
+    { name = "pytest-timer", extra = ["colorama"] },
+    { name = "pytest-xdist" },
+    { name = "python-dotenv" },
+    { name = "refurb" },
+    { name = "sentence-transformers" },
+    { name = "tqdm" },
+    { name = "typeguard" },
+    { name = "types-tqdm" },
+    { name = "vcrpy" },
+]
+local = [
+    { name = "numpy" },
+    { name = "sentence-transformers" },
+]
+progress = [
+    { name = "tqdm" },
+]
+typing = [
+    { name = "types-tqdm" },
+]
+vcr = [
+    { name = "vcrpy" },
+]
+
+[package.dev-dependencies]
+codeflash = [
+    { name = "codeflash" },
+    { name = "fhlmi", extra = ["dev"] },
+]
+dev = [
+    { name = "fhlmi", extra = ["dev"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "coredis" },
+    { name = "fhaviary", specifier = ">=0.14.0" },
+    { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'" },
+    { name = "fhlmi", extras = ["deepseek", "local", "progress", "typing", "vcr"], marker = "extra == 'dev'", editable = "packages/lmi" },
+    { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "limits" },
+    { name = "litellm", specifier = ">=1.60.2" },
+    { name = "litellm", marker = "extra == 'deepseek'", specifier = ">1.59.3" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
+    { name = "numpy", marker = "extra == 'local'" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.4" },
+    { name = "pydantic", specifier = "~=2.0,>=2.10.1,<2.10.2" },
+    { name = "pylint-pydantic", marker = "extra == 'dev'" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'" },
+    { name = "pytest-recording", marker = "extra == 'dev'" },
+    { name = "pytest-rerunfailures", marker = "extra == 'dev'" },
+    { name = "pytest-subtests", marker = "extra == 'dev'" },
+    { name = "pytest-sugar", marker = "extra == 'dev'" },
+    { name = "pytest-timer", extras = ["colorama"], marker = "extra == 'dev'" },
+    { name = "pytest-xdist", marker = "extra == 'dev'" },
+    { name = "python-dotenv", marker = "extra == 'dev'" },
+    { name = "refurb", marker = "extra == 'dev'", specifier = ">=2" },
+    { name = "sentence-transformers", marker = "extra == 'local'" },
+    { name = "tiktoken", specifier = ">=0.4.0" },
+    { name = "tqdm", marker = "extra == 'progress'" },
+    { name = "typeguard", marker = "extra == 'dev'" },
+    { name = "types-tqdm", marker = "extra == 'typing'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
+    { name = "vcrpy", marker = "extra == 'vcr'", specifier = ">=6" },
+]
+provides-extras = ["deepseek", "dev", "local", "progress", "typing", "vcr"]
+
+[package.metadata.requires-dev]
+codeflash = [
+    { name = "codeflash", specifier = ">=0.8" },
+    { name = "fhlmi", extras = ["dev"], editable = "packages/lmi" },
+]
+dev = [{ name = "fhlmi", extras = ["dev"], editable = "packages/lmi" }]
+
+[[package]]
 name = "filelock"
 version = "3.17.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1307,8 +1414,8 @@ dependencies = [
     { name = "aiofiles" },
     { name = "dm-tree" },
     { name = "fhaviary" },
+    { name = "fhlmi" },
     { name = "httpx" },
-    { name = "lmi" },
     { name = "networkx", extra = ["default"] },
     { name = "numpy" },
     { name = "pydantic" },
@@ -1389,8 +1496,8 @@ codeflash = [
     { name = "ldp", extra = ["dev"] },
 ]
 dev = [
+    { name = "fhlmi", extra = ["dev"] },
     { name = "ldp", extra = ["dev"] },
-    { name = "lmi", extra = ["dev"] },
 ]
 
 [package.metadata]
@@ -1404,11 +1511,11 @@ requires-dist = [
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.109" },
     { name = "fhaviary", specifier = ">=0.18.2" },
     { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'", specifier = ">=0.17" },
+    { name = "fhlmi", editable = "packages/lmi" },
     { name = "httpx" },
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "ldp", extras = ["monitor", "nn", "rich", "server", "typing", "visualization"], marker = "extra == 'dev'", editable = "." },
     { name = "litellm", marker = "extra == 'dev'", specifier = ">=1.52.15" },
-    { name = "lmi", editable = "packages/lmi" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
     { name = "networkx", extras = ["default"], specifier = "~=3.4" },
     { name = "numpy", specifier = ">=1.20" },
@@ -1452,8 +1559,8 @@ codeflash = [
     { name = "ldp", extras = ["dev"], editable = "." },
 ]
 dev = [
+    { name = "fhlmi", extras = ["dev"], editable = "packages/lmi" },
     { name = "ldp", extras = ["dev"], editable = "." },
-    { name = "lmi", extras = ["dev"], editable = "packages/lmi" },
 ]
 
 [[package]]
@@ -1546,112 +1653,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/d8/e1/12c5f20cb9168fb3464a34310411d5ad86e4163c8ff2d14a2b57e5cc6bac/llvmlite-0.44.0-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:aa0097052c32bf721a4efc03bd109d335dfa57d9bffb3d4c24cc680711b8b4fc", size = 41184245 },
     { url = "https://files.pythonhosted.org/packages/d0/81/e66fc86539293282fd9cb7c9417438e897f369e79ffb62e1ae5e5154d4dd/llvmlite-0.44.0-cp313-cp313-win_amd64.whl", hash = "sha256:2fb7c4f2fb86cbae6dca3db9ab203eeea0e22d73b99bc2341cdf9de93612e930", size = 30331193 },
 ]
-
-[[package]]
-name = "lmi"
-source = { editable = "packages/lmi" }
-dependencies = [
-    { name = "coredis" },
-    { name = "fhaviary" },
-    { name = "limits" },
-    { name = "litellm" },
-    { name = "pydantic" },
-    { name = "tiktoken" },
-    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
-]
-
-[package.optional-dependencies]
-deepseek = [
-    { name = "litellm" },
-]
-dev = [
-    { name = "fhaviary", extra = ["xml"] },
-    { name = "ipython" },
-    { name = "litellm" },
-    { name = "mypy" },
-    { name = "numpy" },
-    { name = "pre-commit" },
-    { name = "pylint-pydantic" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-recording" },
-    { name = "pytest-rerunfailures" },
-    { name = "pytest-subtests" },
-    { name = "pytest-sugar" },
-    { name = "pytest-timer", extra = ["colorama"] },
-    { name = "pytest-xdist" },
-    { name = "python-dotenv" },
-    { name = "refurb" },
-    { name = "sentence-transformers" },
-    { name = "tqdm" },
-    { name = "typeguard" },
-    { name = "types-tqdm" },
-    { name = "vcrpy" },
-]
-local = [
-    { name = "numpy" },
-    { name = "sentence-transformers" },
-]
-progress = [
-    { name = "tqdm" },
-]
-typing = [
-    { name = "types-tqdm" },
-]
-vcr = [
-    { name = "vcrpy" },
-]
-
-[package.dev-dependencies]
-codeflash = [
-    { name = "codeflash" },
-    { name = "lmi", extra = ["dev"] },
-]
-dev = [
-    { name = "lmi", extra = ["dev"] },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "coredis" },
-    { name = "fhaviary", specifier = ">=0.14.0" },
-    { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'" },
-    { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "limits" },
-    { name = "litellm", specifier = ">=1.60.2" },
-    { name = "litellm", marker = "extra == 'deepseek'", specifier = ">1.59.3" },
-    { name = "lmi", extras = ["deepseek", "local", "progress", "typing", "vcr"], marker = "extra == 'dev'", editable = "packages/lmi" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
-    { name = "numpy", marker = "extra == 'local'" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.4" },
-    { name = "pydantic", specifier = "~=2.0,>=2.10.1,<2.10.2" },
-    { name = "pylint-pydantic", marker = "extra == 'dev'" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'" },
-    { name = "pytest-recording", marker = "extra == 'dev'" },
-    { name = "pytest-rerunfailures", marker = "extra == 'dev'" },
-    { name = "pytest-subtests", marker = "extra == 'dev'" },
-    { name = "pytest-sugar", marker = "extra == 'dev'" },
-    { name = "pytest-timer", extras = ["colorama"], marker = "extra == 'dev'" },
-    { name = "pytest-xdist", marker = "extra == 'dev'" },
-    { name = "python-dotenv", marker = "extra == 'dev'" },
-    { name = "refurb", marker = "extra == 'dev'", specifier = ">=2" },
-    { name = "sentence-transformers", marker = "extra == 'local'" },
-    { name = "tiktoken", specifier = ">=0.4.0" },
-    { name = "tqdm", marker = "extra == 'progress'" },
-    { name = "typeguard", marker = "extra == 'dev'" },
-    { name = "types-tqdm", marker = "extra == 'typing'" },
-    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
-    { name = "vcrpy", marker = "extra == 'vcr'", specifier = ">=6" },
-]
-provides-extras = ["deepseek", "dev", "local", "progress", "typing", "vcr"]
-
-[package.metadata.requires-dev]
-codeflash = [
-    { name = "codeflash", specifier = ">=0.8" },
-    { name = "lmi", extras = ["dev"], editable = "packages/lmi" },
-]
-dev = [{ name = "lmi", extras = ["dev"], editable = "packages/lmi" }]
 
 [[package]]
 name = "locket"
