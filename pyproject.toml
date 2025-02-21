@@ -7,7 +7,7 @@ codeflash = [
     "codeflash>=0.8",  # Pin for --verify-setup checking formatter-cmds
     "ldp[dev]",
 ]
-dev = ["ldp[dev]", "lmi[dev]"]
+dev = ["fhlmi[dev]", "ldp[dev]"]
 
 [project]
 authors = [
@@ -25,8 +25,8 @@ dependencies = [
     "aiofiles",
     "dm-tree",
     "fhaviary>=0.18.2",  # For FunctionInfo.parameters.get_properties()
+    "fhlmi",  # For new LLM client interface
     "httpx",
-    "lmi",  # For new LLM client interface
     "networkx[default]~=3.4",  # Pin for pydot fix
     "numpy>=1.20",  # For numpy.typing
     "pydantic~=2.0",
@@ -542,8 +542,8 @@ spaces_indent_inline_array = 4  # Match Python PEP 8
 trailing_comma_inline_array = true
 
 [tool.uv.sources]
+fhlmi = {workspace = true}
 ldp = {workspace = true}
-lmi = {workspace = true}
 
 [tool.uv.workspace]
 members = ["packages/*"]
