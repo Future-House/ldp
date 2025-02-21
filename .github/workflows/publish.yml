@@ -18,7 +18,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ steps.build-ldp.outputs.artifact-name }}
-          path: dist
+          path: dist_ldp
       - id: build-fhlmi
         uses: hynek/build-and-inspect-python-package@v2
         with:
@@ -27,7 +27,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ steps.build-fhlmi.outputs.artifact-name }}
-          path: dist
+          path: dist_fhlmi
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.PYPI_LMI_API_TOKEN }}
+          password: ${{ secrets.PYPI_API_LDP_TOKEN }}
+          packages-dir: dist_ldp
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_LMI_TOKEN }}
+          packages-dir: dist_fhlmi
