@@ -214,7 +214,6 @@ load-plugins = [
 # Disable the message, report, category or checker with the given id(s).
 disable = [
     "arguments-differ",  # Ops intentionally differ arguments
-    "assignment-from-no-return",  # Don't care to enforce this
     "attribute-defined-outside-init",  # Disagrees with reset pattern
     "bare-except",  # Rely on ruff E722 for this
     "broad-exception-caught",  # Don't care to enforce this
@@ -225,7 +224,7 @@ disable = [
     "function-redefined",  # Rely on mypy no-redef for this
     "import-outside-toplevel",  # Rely on ruff PLC0415 for this
     "invalid-name",  # Don't care to enforce this
-    "keyword-arg-before-vararg",  # Don't care to enforce this
+    "keyword-arg-before-vararg",  # Rely on ruff B026 for this
     "line-too-long",  # Rely on ruff E501 for this
     "logging-fstring-interpolation",  # f-strings are convenient
     "logging-too-many-args",  # Rely on ruff PLE1205 for this
@@ -296,7 +295,7 @@ filterwarnings = [
 # files or test ids are given in the command line when executing pytest from the rootdir
 # directory. File system paths may use shell-style wildcards, including the recursive **
 # pattern.
-testpaths = ["packages/lmi/tests", "src", "tests"]
+testpaths = ["packages/lmi", "src", "tests"]
 
 [tool.refurb]
 enable_all = true

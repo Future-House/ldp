@@ -12,6 +12,31 @@ A Python library for interacting with Large Language Models (LLMs) through an un
 pip install lmi
 ```
 
+<!--TOC-->
+
+- [Language Model Interface (LMI)](#language-model-interface-lmi)
+  - [Installation](#installation)
+  - [Quick start](#quick-start)
+  - [Documentation](#documentation)
+    - [LLMs](#llms)
+      - [LLMModel](#llmmodel)
+      - [LiteLLMModel](#litellmmodel)
+    - [Cost tracking](#cost-tracking)
+    - [Rate limiting](#rate-limiting)
+      - [Basic Usage](#basic-usage)
+      - [Rate Limit Format](#rate-limit-format)
+      - [Storage Options](#storage-options)
+      - [Monitoring Rate Limits](#monitoring-rate-limits)
+      - [Timeout Configuration](#timeout-configuration)
+      - [Weight-based Rate Limiting](#weight-based-rate-limiting)
+    - [Tool calling](#tool-calling)
+    - [Embedding models](#embedding-models)
+      - [LiteLLMEmbeddingModel](#litellmembeddingmodel)
+      - [HybridEmbeddingModel](#hybridembeddingmodel)
+      - [SentenceTransformerEmbeddingModel](#sentencetransformerembeddingmodel)
+
+<!--TOC-->
+
 ## Quick start
 
 A simple example of how to use the library with default settings is shown below.
@@ -22,9 +47,7 @@ from aviary import Message
 
 llm = LiteLLMModel()
 
-messages = [
-    Message(content="What is the meaning of life?"),
-]
+messages = [Message(content="What is the meaning of life?")]
 
 completion = await llm.call_single(messages)
 assert completion.text == "42"
