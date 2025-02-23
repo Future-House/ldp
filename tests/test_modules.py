@@ -2,7 +2,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
-from llmclient import CommonLLMNames
+from lmi import CommonLLMNames
 from pytest_subtests import SubTests
 
 from ldp.agent import ReActAgent
@@ -21,7 +21,7 @@ from ldp.graph.modules import (
 async def test_reflect_module() -> None:
     config = ReflectModuleConfig(
         llm_model={
-            "model": CommonLLMNames.ANTHROPIC_TEST.value,
+            "name": CommonLLMNames.ANTHROPIC_TEST.value,
             "temperature": 0,  # Lower temperature for more deterministic responses
         }
     )
@@ -81,9 +81,9 @@ class TestReActModule:
                     " provided.\n\nNAME: cast_int\n\nSYNOPSIS:\n   "
                     " cast_int(number x)\n\nDESCRIPTION:\n    Cast the input argument x to"
                     " an integer.\n\nPARAMETERS:\n    x (number): No description"
-                    " provided.\n\nUse the following format:\n\nThought: you should"
+                    " provided.\n\nNAME: get_random_int\n\nSYNOPSIS:\n    get_random_int()\n\nDESCRIPTION:\n    Get a random integer in 1 to 10.\n\nPARAMETERS:\n\nUse the following format:\n\nThought: you should"
                     " always think about what to do\nAction: the action to take, should be"
-                    " one of [print_story, cast_float, cast_int]\nAction Input: comma"
+                    " one of [print_story, cast_float, cast_int, get_random_int]\nAction Input: comma"
                     " separated list of inputs to action as python tuple\nObservation: the"
                     " result of the action\n... (this Thought/Action/Action"
                     " Input/Observation can repeat N times)\n\nExample:\n\nThought: I need"

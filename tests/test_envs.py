@@ -12,7 +12,7 @@ from aviary.core import (
     ToolRequestMessage,
     ToolResponseMessage,
 )
-from llmclient import CommonLLMNames
+from lmi import CommonLLMNames
 
 from ldp.agent import SimpleAgent
 
@@ -113,7 +113,7 @@ class TestParallelism:
         right_hand_tool = tools[1]
         agent = SimpleAgent(
             llm_model=SimpleAgent.model_fields["llm_model"].default
-            | {"model": model_name}
+            | {"name": model_name}
         )
         agent_state = await agent.init_state(tools=tools)
 

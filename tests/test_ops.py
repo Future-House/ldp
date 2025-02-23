@@ -10,8 +10,8 @@ import pytest
 import tenacity
 import tree
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
-from llmclient import CommonLLMNames, LLMResult
-from llmclient import MultipleCompletionLLMModel as LLMModel
+from lmi import CommonLLMNames, LLMResult
+from lmi import LiteLLMModel as LLMModel
 
 from ldp.graph import (
     CallID,
@@ -144,7 +144,7 @@ class TestLLMCallOp:
 
         env = LLMCallingEnv()
         obs, tools = await env.reset()
-        config = {"model": model_name, "temperature": 0.1}
+        config = {"name": model_name, "temperature": 0.1}
         llm_op = LLMCallOp()
 
         # Perform one step
@@ -175,7 +175,11 @@ class TestLLMCallOp:
     @pytest.mark.asyncio
     @pytest.mark.parametrize("temperature", [0.0, 0.5, 1.0])
     async def test_compute_logprob(self, temperature) -> None:
-        config = {"model": CommonLLMNames.OPENAI_TEST.value, "temperature": temperature}
+        config = {
+            "name": CommonLLMNames.OPENAI_TEST.value,
+            "temperature": temperature,
+            "logprobs": True,
+        }
         llm_op = LLMCallOp()
         output = await llm_op(config, msgs=[Message(content="Hello")])
         logp = llm_op.ctx.get(output.call_id, "logprob")
@@ -190,13 +194,13 @@ class TestLLMCallOp:
     @pytest.mark.vcr
     @pytest.mark.asyncio
     async def test_validation(self) -> None:
-        config = {"model": CommonLLMNames.OPENAI_TEST.value, "num_retries": 1}
+        config = {"name": CommonLLMNames.OPENAI_TEST.value, "num_retries": 1}
         validator = StatefulValidator()
         llm_op = LLMCallOp(response_validator=validator)
         await llm_op(config, msgs=[Message(content="Hello")])
         assert validator.counter == 2  # first attempt should have failed
 
-        config = {"model": CommonLLMNames.OPENAI_TEST.value, "num_retries": 0}
+        config = {"name": CommonLLMNames.OPENAI_TEST.value, "num_retries": 0}
         llm_op = LLMCallOp(response_validator=StatefulValidator())
         with pytest.raises(tenacity.RetryError, match="ResponseValidationError"):
             await llm_op(config, msgs=[Message(content="Hello")])
@@ -239,7 +243,7 @@ async def test_llm_call_graph() -> None:
 
     package_msg_op = FxnOp(append_to_sys)
     config = {
-        "model": "gpt-3.5-turbo-0125",
+        "name": "gpt-3.5-turbo-0125",
         "temperature": 0.1,
         "logprobs": True,
         "top_logprobs": 1,
@@ -417,12 +421,12 @@ async def test_clear_contexts():
 @pytest.mark.vcr
 @pytest.mark.parametrize("dense_embedding_size", [0, 256, 512])
 @pytest.mark.parametrize("sparse_embedding_size", [0, 32, 64])
-@pytest.mark.parametrize("model", ["text-embedding-3-small", "text-embedding-3-large"])
-async def test_embedding_op(model, dense_embedding_size, sparse_embedding_size) -> None:
+@pytest.mark.parametrize("name", ["text-embedding-3-small", "text-embedding-3-large"])
+async def test_embedding_op(name, dense_embedding_size, sparse_embedding_size) -> None:
     if dense_embedding_size == sparse_embedding_size == 0:
         return
     op = EmbeddingOp(
-        dense_embedding=model,
+        dense_embedding=name,
         dense_embedding_dim=dense_embedding_size,
         sparse_embedding_dim=sparse_embedding_size,
     )

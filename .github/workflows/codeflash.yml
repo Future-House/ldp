@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "ldp/**"
+      - "src/**"
+      - "packages/**"
   workflow_dispatch:
 
 concurrency: # Cancel prior if new push, SEE: https://stackoverflow.com/a/72408109
@@ -40,4 +42,8 @@ jobs:
       - if: steps.bot_check.outputs.skip_remaining_steps == 'no'
         run: uv sync --group=codeflash
       - if: steps.bot_check.outputs.skip_remaining_steps == 'no'
-        run: uv run codeflash
+        name: Run CodeFlash on ldp
+        run: uv run codeflash --module-root=src/ldp --tests-root=tests
+      - if: steps.bot_check.outputs.skip_remaining_steps == 'no'
+        name: Run CodeFlash on lmi
+        run: uv run codeflash --module-root=packages/lmi/src/lmi --tests-root=packages/lmi/tests
