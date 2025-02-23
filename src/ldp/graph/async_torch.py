@@ -122,7 +122,7 @@ class AsyncBufferedWorker(ABC):
         """
         # Technically should not happen, but if a coroutine crashes, it could release
         # self._lock before placing results in _results_buffer and additional process
-        # coming inside will crash.
+        # coming inside this func will crash as self._work_buffer will be empty.
         if not self._work_buffer:
             return
 
@@ -131,8 +131,9 @@ class AsyncBufferedWorker(ABC):
         # sort by oldest requests first
         self._work_buffer.sort(key=operator.itemgetter(0))
 
-        if len(self._work_buffer) >= self.batch_size or (
-            (now - self._work_buffer[0][0] > self.timeout)
+        if (
+            len(self._work_buffer) >= self.batch_size
+            or now - self._work_buffer[0][0] > self.timeout
         ):
             # if we're over batch size or have at least one input waiting for
             # more than timeout, pull out a batch to run
