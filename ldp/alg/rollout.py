@@ -206,16 +206,11 @@ class RolloutManager:
             for traj_id, env in zip(traj_ids, environments, strict=True)
         ]
 
-        bar_format = (
-            "{l_bar}{bar} {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}]"
-            " {postfix}"
-        )
-
         with tqdm(
             total=len(tasks),
             desc="Rollouts",
             unit="rollout",
-            bar_format=bar_format,
+            ncols=0,
         ) as pbar:
             for task in asyncio.as_completed(tasks):
                 trajectory = await task
@@ -225,8 +220,7 @@ class RolloutManager:
                     last_step = trajectory.steps[-1]
                     if last_step.metadata.get("exception"):
                         # We'll keep it short but still have something to categorize
-                        exc_str: str = str(last_step.metadata["exception"])[:500]
-                        exc_str = exc_str.replace('"', "'")
+                        exc_str: str = str(last_step.metadata["exception"])[:500].replace('"', "'")
                         exception_counter[exc_str] += 1
                         num_exceptions = sum(exception_counter.values())
                         pbar.set_postfix({"num_exceptions": num_exceptions})
