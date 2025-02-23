@@ -2,6 +2,7 @@ from typing import cast
 
 import torch
 import torch.distributed as dist
+from litellm import token_counter
 from aviary.core import Message, Tool, ToolRequestMessage
 from pydantic import Field, field_validator
 
@@ -40,6 +41,11 @@ class AgentLMConfig(_LMConfig):
         "Note that the validator defaults top_k=None and top_p=1.0, which "
         "are better defaults than HF's.",
         validate_default=True,
+    )
+    
+    max_traj_token_count: int | None = Field(
+        default=None,
+        description="If set, raise an error if the total tokens in the trajectory exceed this value."
     )
 
     @field_validator("llm_call_kwargs")
@@ -110,6 +116,20 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
 
         # Update state messages with result and return the new state
         next_state.messages = [*next_state.messages, result.value]
+        
+          
+        import ipdb; ipdb.set_trace()              
+        if self.llm_model.max_traj_token_count is not None:
+            total_tokens = token_counter(
+                model=self.llm_model.llm_for_sft,  # or any field referencing the model name
+                messages=next_state.messages,
+                tools=next_state.tools,
+            )
+            if total_tokens > self.llm_model.max_traj_token_count:
+                raise ValueError(
+                    f"Token limit exceeded for trajectory: {total_tokens} > {self.llm_model.max_traj_token_count}"
+                )
+        
         return cast(OpResult[ToolRequestMessage], result), next_state, 0.0
 
     # TODO: maybe remove these recomputation methods. I added them to debug some things. But idk,

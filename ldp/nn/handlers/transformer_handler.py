@@ -47,6 +47,7 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import overload  # noqa: UP035
 
+logger = logging.getLogger(__name__)
 
 config.set({
     # We have no use for rebooting workers in aviary for now, and rebooting workers
@@ -60,7 +61,10 @@ config.set({
     "distributed.comm.timeouts.tcp": "300s",
 })
 
-logger = logging.getLogger(__name__)
+compression = os.getenv("USE_DASK_COMPRESSION")
+if compression is not None:
+    config.set({"distributed.comm.compression": compression})
+    logger.info(f"Setting Dask compression to {compression}")
 
 TReturn = TypeVar("TReturn")
 TParams = ParamSpec("TParams")
@@ -201,6 +205,9 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
             elif not synced_gpus:
                 raise ValueError("synced_gpus must be True when using FSDP.")
             kwargs["synced_gpus"] = True
+            if os.getenv("USE_DASK_BARRIER"):
+                logger.info("Waiting for all workers to reach this point.")
+                dist.barrier()
 
         # Summoning params per https://github.com/pytorch/pytorch/issues/100069
         # If model is not FSDP, this context manager is a no-op.

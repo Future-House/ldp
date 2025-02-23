@@ -245,6 +245,7 @@ class RolloutManager:
         traj_id: str,
         env: Environment,
         max_steps: int | None,
+        max_tokens: int | None = None,  # <-- new argument
     ) -> Trajectory:
         trajectory = Trajectory(traj_id=traj_id)
 
