@@ -3,6 +3,7 @@ from typing import cast
 import torch
 import torch.distributed as dist
 from aviary.core import Message, Tool, ToolRequestMessage
+from litellm import token_counter
 from pydantic import Field, field_validator
 
 from ldp.agent import Agent, SimpleAgentState
@@ -39,6 +40,10 @@ class AgentLMConfig(_LMConfig):
         "Note that the validator defaults top_k=None and top_p=1.0, which "
         "are better defaults than HF's.",
         validate_default=True,
+    )
+    max_traj_token_count: int | None = Field(
+        default=None,
+        description="If set, raise an error if the total tokens in the trajectory exceed this value.",
     )
 
     @field_validator("llm_call_kwargs")
@@ -109,6 +114,32 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
 
         # Update state messages with result and return the new state
         next_state.messages = [*next_state.messages, result.value]
+
+        if self.llm_model.max_traj_token_count is not None:
+            messages_for_tokenizer = self._llm_call_op.prep_messages_for_tokenizer(
+                next_state.messages
+            )
+            tools_for_tokenizer = self._llm_call_op.prep_tools_for_tokenizer(
+                next_state.tools
+            )
+            total_tokens = token_counter(
+                model=self.llm_model.model,  # or any field referencing the model name
+                messages=messages_for_tokenizer,
+                tools=tools_for_tokenizer,
+            )
+            # TODO remove
+            print(
+                "The traj size is %d tokens, with a limit of %d tokens"
+                % (total_tokens, self.llm_model.max_traj_token_count)
+            )
+            if total_tokens > self.llm_model.max_traj_token_count:
+                import ipdb
+
+                ipdb.set_trace()  # TODO remove
+                raise ValueError(
+                    f"Token limit exceeded for trajectory: {total_tokens} > {self.llm_model.max_traj_token_count}"
+                )
+
         return cast(OpResult[ToolRequestMessage], result), next_state, 0.0
 
     # TODO: maybe remove these recomputation methods. I added them to debug some things. But idk,

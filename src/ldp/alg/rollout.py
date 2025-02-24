@@ -2,15 +2,16 @@ import asyncio
 import itertools
 import logging
 import uuid
+from collections import Counter
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager, nullcontext
 from typing import Any, TypeVar, overload
 
 from aviary.core import Environment, Message
+from tqdm import tqdm
 
 from ldp.agent import Agent
 from ldp.data_structures import Trajectory, Transition
-from ldp.utils import format_error_details
 
 from .callbacks import Callback
 
@@ -24,6 +25,7 @@ class CaughtError(Exception):
     """Base class for reraised exceptions when catching is enabled."""
 
     def __init__(self, original_exc: Exception):
+        super().__init__(str(original_exc))
         self.original_exc = original_exc
 
     exc_type = "undefined"
@@ -39,12 +41,13 @@ class EnvError(CaughtError):
 
 @contextmanager
 def reraise_exc_as(reraise: type[CaughtError], enabled: bool) -> Iterator[None]:
+    """Context manager that reraises exceptions as a custom CaughtError type if enabled."""
     try:
         yield
     except Exception as e:
         if enabled:
-            error_details = format_error_details(e)
-            logger.exception(f"Caught {reraise.exc_type} exception:\n{error_details}")
+            # Minimal logging instead of spamming. Detailed error stored in the trajectory's metadata.
+            logger.debug(f"Reraising {reraise.exc_type} exception.")
             raise reraise(e) from None
         raise
 
@@ -193,14 +196,44 @@ class RolloutManager:
         max_steps: int | None = None,
     ) -> list[Trajectory]:
         self.traj_buffer.clear()
+        exception_counter: Counter = Counter()
 
-        traj_ids = [uuid.uuid4().hex for _ in range(len(environments))]
-        await asyncio.gather(
-            *(
-                self._rollout(*args, max_steps=max_steps)
-                for args in zip(traj_ids, environments, strict=True)
-            )
-        )
+        traj_ids = [uuid.uuid4().hex for _ in environments]
+
+        # Create all tasks first
+        tasks = [
+            asyncio.create_task(self._rollout(traj_id, env, max_steps=max_steps))
+            for traj_id, env in zip(traj_ids, environments, strict=True)
+        ]
+
+        with tqdm(
+            total=len(tasks),
+            desc="Rollouts",
+            unit="rollout",
+            ncols=0,
+        ) as pbar:
+            for task in asyncio.as_completed(tasks):
+                trajectory = await task
+                pbar.update(1)
+                # Check if this trajectory ended with an exception
+                if trajectory.steps:
+                    last_step = trajectory.steps[-1]
+                    if last_step.metadata.get("exception"):
+                        # We'll keep it short but still have something to categorize
+                        exc_str: str = str(last_step.metadata["exception"])[
+                            :500
+                        ].replace('"', "'")
+                        exception_counter[exc_str] += 1
+                        num_exceptions = sum(exception_counter.values())
+                        pbar.set_postfix({"num_exceptions": num_exceptions})
+
+        # Final summary of exceptions (if any)
+        if exception_counter:
+            logger.info("Caught exceptions:")
+            logger.info("%-6s %-50s", "Count", "Exception")
+            for exc, count in exception_counter.items():
+                logger.info("%-6d %-50s", count, exc)
+
         return [self.traj_buffer[traj_id] for traj_id in traj_ids]
 
     async def _rollout(
@@ -208,6 +241,7 @@ class RolloutManager:
         traj_id: str,
         env: Environment,
         max_steps: int | None,
+        max_tokens: int | None = None,  # <-- new argument
     ) -> Trajectory:
         trajectory = Trajectory(traj_id=traj_id)
 
