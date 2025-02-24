@@ -358,10 +358,12 @@ class GlobalRateLimiter:
             TimeoutError: if the acquire_timeout is exceeded.
             ValueError: if the weight exceeds the rate limit and raise_impossible_limits is True.
         """
-        new_namespace, primary_key, rate_limit = (
-            await self._get_resource_and_rate_limit(
-                namespace_and_key, rate_limit, machine_id
-            )
+        (
+            new_namespace,
+            primary_key,
+            rate_limit,
+        ) = await self._get_resource_and_rate_limit(
+            namespace_and_key, rate_limit, machine_id
         )
 
         if rate_limit.amount < weight and raise_impossible_limits:
