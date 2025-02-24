@@ -60,11 +60,6 @@ config.set({
     "distributed.comm.timeouts.tcp": "300s",
 })
 
-compression = os.getenv("USE_DASK_COMPRESSION")
-if compression is not None:
-    config.set({"distributed.comm.compression": compression})
-    logger.info(f"Setting Dask compression to {compression}")
-
 TReturn = TypeVar("TReturn")
 TParams = ParamSpec("TParams")
 
@@ -204,6 +199,7 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
             elif not synced_gpus:
                 raise ValueError("synced_gpus must be True when using FSDP.")
             kwargs["synced_gpus"] = True
+            # TODO remove
             if os.getenv("USE_DASK_BARRIER"):
                 logger.info("Waiting for all workers to reach this point.")
                 dist.barrier()

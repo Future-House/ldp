@@ -220,7 +220,9 @@ class RolloutManager:
                     last_step = trajectory.steps[-1]
                     if last_step.metadata.get("exception"):
                         # We'll keep it short but still have something to categorize
-                        exc_str: str = str(last_step.metadata["exception"])[:500].replace('"', "'")
+                        exc_str: str = str(last_step.metadata["exception"])[
+                            :500
+                        ].replace('"', "'")
                         exception_counter[exc_str] += 1
                         num_exceptions = sum(exception_counter.values())
                         pbar.set_postfix({"num_exceptions": num_exceptions})
