@@ -246,6 +246,19 @@ class LLMModel(ABC, BaseModel):
         if n < 1:
             raise ValueError("Number of completions (n) must be >= 1.")
 
+        # NOTE: Checking if the model is a deepseek-r1-like model so that we can pass include_reasoning=True
+        # This hard-coded check will be removed once we have a better way to check if the model supports reasoning
+        # See: https://github.com/BerriAI/litellm/issues/8765
+        # Only reasoning with deepseek-r1 model is supported so far
+        if "deepseek" in self.name:
+            chat_kwargs["include_reasoning"] = True
+        if "openrouter" in self.name and callbacks:
+            raise NotImplementedError(
+                "Reasoning with OpenRouter is not supported in streaming mode."
+                "https://github.com/BerriAI/litellm/issues/8631"
+                "Consider using LiteLLMModel(name='deepseek/deepseek-reasoner') instead."
+            )
+
         # deal with tools
         if tools:
             chat_kwargs["tools"] = ToolsAdapter.dump_python(
@@ -634,12 +647,6 @@ class LiteLLMModel(LLMModel):
     async def acompletion_iter(
         self, messages: list[Message], **kwargs
     ) -> AsyncIterable[LLMResult]:
-        if kwargs.get("include_reasoning"):
-            raise NotImplementedError(
-                "Reasoning with OpenRouter via `include_reasoning` is not supported in streaming mode."
-                "https://github.com/BerriAI/litellm/issues/8631"
-                "Consider `model=deepseek/deepseek-r1` instead."
-            )
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
         prompts = cast(
             list[litellm.types.llms.openai.AllMessageValues],
@@ -648,6 +655,7 @@ class LiteLLMModel(LLMModel):
         stream_options = {
             "include_usage": True,
         }
+        # NOTE: Specifically requesting reasoning for deepseek-r1 models
         if kwargs.get("include_reasoning"):
             stream_options["include_reasoning"] = True
 
