@@ -257,7 +257,7 @@ await GLOBAL_LIMITER.try_acquire(
 
 ### Tool calling
 
-LMI supports function calling through tools, which are functions that the LLM can invoke. Tools are passed to `LLMModel.call` or `LLMModel.call_single` as a list of [`aviary.core.Tool`](https://github.com/Future-House/aviary/blob/1a50b116fb317c3ef27b45ea628781eb53c0b7ae/src/aviary/tools/base.py#L334) objects, along with an optional `tool_choice` parameter that controls how the LLM uses these tools.
+LMI supports function calling through tools, which are functions that the LLM can invoke. Tools are passed to `LLMModel.call` or `LLMModel.call_single` as a list of [`Tool` objects from `aviary`](https://github.com/Future-House/aviary/blob/1a50b116fb317c3ef27b45ea628781eb53c0b7ae/src/aviary/tools/base.py#L334), along with an optional `tool_choice` parameter that controls how the LLM uses these tools.
 
 The `tool_choice` parameter follows `OpenAI`'s definition. It can be:
 
@@ -272,9 +272,9 @@ The `tool_choice` parameter follows `OpenAI`'s definition. It can be:
 When tools are provided, the LLM's response will be wrapped in a `ToolRequestMessage` instead of a regular `Message`. The key differences are:
 
 - `Message` represents a basic chat message with a role (system/user/assistant) and content
-- `ToolRequestMessage` extends `Message` to include `tool_calls`, which contains a list of `aviary.core.ToolCall` objects, which contains the tools the LLM chose to invoke and their arguments
+- `ToolRequestMessage` extends `Message` to include `tool_calls`, which contains a list of `ToolCall` objects, which contains the tools the LLM chose to invoke and their arguments
 
-Further details about how to define a tool and use the `ToolRequestMessage` can be found in the [Aviary documentation](https://github.com/Future-House/aviary?tab=readme-ov-file#tool).
+Further details about how to define a tool, use the `ToolRequestMessage` and the `ToolCall` objects can be found in the [Aviary documentation](https://github.com/Future-House/aviary?tab=readme-ov-file#tool).
 
 Here is a minimal example usage:
 
