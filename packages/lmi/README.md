@@ -242,7 +242,54 @@ await GLOBAL_LIMITER.try_acquire(
 
 ### Tool calling
 
-🚧 [ WIP ] 🚧
+LMI supports function calling through tools, which are functions that the LLM can invoke. Tools are passed to `LLMModel.call` or `LLMModel.call_single` as a list of [`aviary.Tool`](https://github.com/Future-House/aviary/blob/1a50b116fb317c3ef27b45ea628781eb53c0b7ae/src/aviary/tools/base.py#L334) objects, along with an optional `tool_choice` parameter that controls how the LLM uses these tools.
+
+The `tool_choice` parameter follows `OpenAI`'s definition. It can be:
+
+- `"none"` (or `LLMModel.NO_TOOL_CHOICE`): The model will not call any tools and instead generates a message
+- `"auto"` (or `LLMModel.MODEL_CHOOSES_TOOL`): The model can choose between generating a message or calling one or more tools
+- `"required"` (or `LLMModel.TOOL_CHOICE_REQUIRED`): The model must call one or more tools
+- A specific `aviary.Tool` object: The model must call this specific tool
+- `None` (or `LLMModel.UNSPECIFIED_TOOL_CHOICE`): No tool choice preference is provided to the LLM API
+
+When tools are provided, the LLM's response will be wrapped in a `ToolRequestMessage` instead of a regular `Message`. The key differences are:
+
+- `Message` represents a basic chat message with a role (system/user/assistant) and content
+- `ToolRequestMessage` extends `Message` to include `tool_calls`, which contains a list of `aviary.ToolCall` objects, which contains the tools the LLM chose to invoke and their arguments
+
+Further details about how to define a tool and use the `ToolRequestMessage` can be found in the [Aviary documentation](https://github.com/Future-House/aviary?tab=readme-ov-file#tool).
+
+Example usage:
+
+```python
+from lmi import LiteLLMModel
+from aviary import Message, Tool
+
+# Define a tool
+calculator_tool = Tool(
+    name="calculator",
+    description="Performs basic arithmetic",
+    parameters={
+        "operation": {"type": "string", "enum": ["+", "-", "*", "/"]},
+        "x": {"type": "number"},
+        "y": {"type": "number"},
+    },
+)
+
+llm = LiteLLMModel()
+
+# The LLM must use the calculator tool
+result = await llm.call_single(
+    messages=[Message(content="What is 2 + 2?")],
+    tools=[calculator_tool],
+    tool_choice=LiteLLMModel.TOOL_CHOICE_REQUIRED,
+)
+
+# result.messages[0] will be a ToolRequestMessage with tool_calls containing
+# the calculator invocation with x=2, y=2, operation="+"
+```
+
+Note: If an empty list of tools is provided, the `tools` parameter will be passed through to the LLM API. However, any `ToolRequestMessage` in the input messages that has an empty `tool_calls` list will be automatically converted to a regular `Message` since most LLM providers don't allow empty tool calls lists.
 
 ### Embedding models
 
