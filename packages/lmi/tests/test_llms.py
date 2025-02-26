@@ -580,7 +580,7 @@ class TestMultipleCompletion:
 
 class TestTooling:
     @pytest.mark.asyncio
-    @pytest.mark.vcr
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     async def test_tool_selection(self) -> None:
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value, config={"n": 1})
 
