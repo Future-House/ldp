@@ -1,6 +1,6 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg?style=plastic)]()
-[![tests](https://github.com/Future-House/llm-client/actions/workflows/test.yaml/badge.svg?style=plastic)](https://github.com/Future-House/ldp/tree/main/packages/lmi)
-[![PyPI version](https://badge.fury.io/py/lmi.svg?style=plastic)](https://badge.fury.io/py/lmi)
+[![tests](https://github.com/Future-House/ldp/actions/workflows/tests.yml/badge.svg?style=plastic)](https://github.com/Future-House/ldp/tree/main/packages/lmi)
+[![PyPI version](https://badge.fury.io/py/fhlmi.svg?style=plastic)](https://pypi.org/project/fhlmi/)
 
 # Language Model Interface (LMI)
 
