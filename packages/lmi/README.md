@@ -122,7 +122,8 @@ Cost tracking is supported in two different ways:
 
 ### Rate limiting
 
-Rate limiting helps control the rate of requests made to various services and LLMs. The rate limiter supports both in-memory and Redis-based storage for cross-process rate limiting.
+Rate limiting helps control the rate of tokens used to various services and LLMs. The rate limiter supports both in-memory and Redis-based storage for cross-process rate limiting.
+Currently, `lmi` only take into account the tokens used (hence, it only limits Tokens Per Minute (TPM)).
 
 #### Basic Usage
 
@@ -157,10 +158,10 @@ Rate limits can be specified in two formats:
 1. As a string: `"<count> [per|/] [n (optional)] <second|minute|hour|day|month|year>"`
 
    ```python
-   "100/minute"  # 100 requests per minute
+   "100/minute"  # 100 tokens per minute
 
-   "5 per second"  # 5 requests per second
-   "1000/day"  # 1000 requests per day
+   "5 per second"  # 5 tokens per second
+   "1000/day"  # 1000 tokens per day
    ```
 
 2. Using RateLimitItem classes:
@@ -168,8 +169,8 @@ Rate limits can be specified in two formats:
    ```python
    from limits import RateLimitItemPerSecond, RateLimitItemPerMinute
 
-   RateLimitItemPerSecond(30, 1)  # 30 requests per second
-   RateLimitItemPerMinute(1000, 1)  # 1000 requests per minute
+   RateLimitItemPerSecond(30, 1)  # 30 tokens per second
+   RateLimitItemPerMinute(1000, 1)  # 1000 tokens per minute
    ```
 
 #### Storage Options
