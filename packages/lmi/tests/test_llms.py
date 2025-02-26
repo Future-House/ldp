@@ -669,7 +669,7 @@ class TestTooling:
 
 
 class TestReasoning:
-    # @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
     async def test_deepseek_model(self) -> None:
         llm = LiteLLMModel(
@@ -702,7 +702,7 @@ class TestReasoning:
         for result in results:
             assert result.reasoning_content
 
-    # @pytest.mark.vcr
+    @pytest.mark.vcr
     @pytest.mark.asyncio
     async def test_openrouter_reasoning(self) -> None:
         llm = LiteLLMModel(name="openrouter/deepseek/deepseek-r1", config={"n": 1})
@@ -743,28 +743,3 @@ def test_json_schema_validation() -> None:
     with pytest.raises(JSONSchemaValidationError):
         validate_json_completion(mock_completion2, DummyModel)
     validate_json_completion(mock_completion3, DummyModel)
-
-import traceback
-@pytest.mark.asyncio
-async def test_openrouter_deepseek_reasoning_content_acompletion():
-    litellm._turn_on_debug()
-    try:
-        resp = await litellm.acompletion(
-            model="openrouter/deepseek/deepseek-r1",
-            messages=[{"role": "user", "content": "Tell me a joke."}],
-            stream=True,
-            include_reasoning=True,
-        )
-
-        reasoning_content_exists = False
-        async for chunk in resp:
-            if chunk.get("reasoning_content", None) is not None:
-                print(f"chunk reasoning_content: {chunk}")
-                reasoning_content_exists = True
-                break
-        assert reasoning_content_exists
-    except litellm.Timeout:
-        pytest.skip("Model is timing out")
-    except Exception as e:
-        print("ERROR traceback", traceback.format_exc())
-        pytest.fail(f"Error occurred: {e}")
