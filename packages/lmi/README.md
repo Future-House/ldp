@@ -49,8 +49,8 @@ llm = LiteLLMModel()
 
 messages = [Message(content="What is the meaning of life?")]
 
-completion = await llm.call_single(messages)
-# assert completion.text == "42"
+result = await llm.call_single(messages)
+# assert result.text == "42"
 ```
 
 ## Documentation
@@ -104,11 +104,12 @@ llm = LiteLLMModel(name="gpt-4o", config=config)
 
 ```python
 from lmi import LiteLLMModel
+
 config = {
-        "name": "gpt-4o",
-        "temperature": 0.1,
-        "max_tokens": 512,
-        "n": 5,
+    "name": "gpt-4o",
+    "temperature": 0.1,
+    "max_tokens": 512,
+    "n": 5,
 }
 
 llm = LiteLLMModel(config=config)
@@ -217,7 +218,7 @@ config = {
 }
 
 llm = LiteLLMModel(name="gpt-4", config=config)
-response = await llm.call([Message(content="Hello, world!")]) #Consume some tokens
+results = await llm.call([Message(content="Hello, world!")])  # Consume some tokens
 
 status = await GLOBAL_LIMITER.rate_limit_status()
 
@@ -261,13 +262,13 @@ LMI supports function calling through tools, which are functions that the LLM ca
 
 The `tool_choice` parameter follows `OpenAI`'s definition. It can be:
 
-| Tool Choice Value | Constant | Behavior |
-|-------------------|----------|----------|
-| `"none"` | `LLMModel.NO_TOOL_CHOICE` | The model will not call any tools and instead generates a message |
-| `"auto"` | `LLMModel.MODEL_CHOOSES_TOOL` | The model can choose between generating a message or calling one or more tools |
-| `"required"` | `LLMModel.TOOL_CHOICE_REQUIRED` | The model must call one or more tools |
-| A specific `aviary.Tool` object | N/A | The model must call this specific tool |
-| `None` | `LLMModel.UNSPECIFIED_TOOL_CHOICE` | No tool choice preference is provided to the LLM API |
+| Tool Choice Value               | Constant                           | Behavior                                                                       |
+| ------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------ |
+| `"none"`                        | `LLMModel.NO_TOOL_CHOICE`          | The model will not call any tools and instead generates a message              |
+| `"auto"`                        | `LLMModel.MODEL_CHOOSES_TOOL`      | The model can choose between generating a message or calling one or more tools |
+| `"required"`                    | `LLMModel.TOOL_CHOICE_REQUIRED`    | The model must call one or more tools                                          |
+| A specific `aviary.Tool` object | N/A                                | The model must call this specific tool                                         |
+| `None`                          | `LLMModel.UNSPECIFIED_TOOL_CHOICE` | No tool choice preference is provided to the LLM API                           |
 
 When tools are provided, the LLM's response will be wrapped in a `ToolRequestMessage` instead of a regular `Message`. The key differences are:
 
@@ -281,6 +282,7 @@ Here is a minimal example usage:
 ```python
 from lmi import LiteLLMModel
 from aviary.core import Message, Tool
+
 
 # Define a function that will be used as a tool
 def calculator(operation: str, x: float, y: float) -> float:
@@ -303,9 +305,10 @@ def calculator(operation: str, x: float, y: float) -> float:
         "+": lambda x, y: x + y,
         "-": lambda x, y: x - y,
         "*": lambda x, y: x * y,
-        "/": lambda x, y: x / y
+        "/": lambda x, y: x / y,
     }
     return operations[operation](x, y)
+
 
 # Create a tool from the calculator function
 calculator_tool = Tool.from_function(calculator)
@@ -321,7 +324,6 @@ result = await llm.call_single(
 # result.messages[0] will be a ToolRequestMessage with tool_calls containing
 # the calculator invocation with x=2, y=2, operation="+"
 ```
-
 
 ### Embedding models
 
