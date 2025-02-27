@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 from collections.abc import Collection
-from typing import ClassVar, Literal
+from typing import ClassVar, Literal, cast
 from urllib.parse import urlparse
 
 import aiohttp
@@ -256,6 +256,10 @@ class GlobalRateLimiter:
     ) -> list[tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]]:
         """Returns a list of current RateLimitItems with tuples of namespace and primary key."""
         redis_url = self.redis_url or os.environ.get("REDIS_URL", ":")
+        redis_url = cast(str, redis_url)
+        if redis_url is None:
+            raise ValueError("Redis URL is not set correctly.")
+
         try:
             host, port = redis_url.split(":", maxsplit=2)
         except ValueError as exc:
