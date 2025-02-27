@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 from collections.abc import Collection
-from typing import ClassVar, Literal
+from typing import ClassVar, Literal, cast
 from urllib.parse import urlparse
 
 import aiohttp
@@ -85,9 +85,23 @@ class GlobalRateLimiter:
             dict[tuple[str, str | MatchAllInputs], RateLimitItem] | None
         ) = None,
         use_in_memory: bool = False,
+        redis_url: str | None = None,
     ):
+        """Initialize a GlobalRateLimiter instance.
+
+        Args:
+            rate_config: Optional dictionary mapping (namespace, primary_key) tuples to
+                RateLimitItem instances. If not provided, the default RATE_CONFIG is used.
+            use_in_memory: If True, use in-memory storage instead of Redis, even if
+                Redis URL is available.
+            redis_url: Optional Redis URL to use for storage. If not provided, the
+                REDIS_URL environment variable will be used. This parameter allows
+                direct specification of the Redis URL without relying on environment
+                variables.
+        """
         self.rate_config = RATE_CONFIG if rate_config is None else rate_config
         self.use_in_memory = use_in_memory
+        self.redis_url = redis_url
         self._storage: RedisStorage | MemoryStorage | None = None
         self._rate_limiter: MovingWindowRateLimiter | None = None
         self._current_ip: str | None = None
@@ -121,8 +135,9 @@ class GlobalRateLimiter:
     @property
     def storage(self) -> RedisStorage | MemoryStorage:
         if self._storage is None:
-            if os.environ.get("REDIS_URL") and not self.use_in_memory:
-                self._storage = RedisStorage(f"async+redis://{os.environ['REDIS_URL']}")
+            redis_url = self.redis_url or os.environ.get("REDIS_URL")
+            if redis_url and not self.use_in_memory:
+                self._storage = RedisStorage(f"async+redis://{redis_url}")
                 logger.info("Connected to redis instance for rate limiting.")
             else:
                 self._storage = MemoryStorage()
@@ -240,10 +255,21 @@ class GlobalRateLimiter:
         self, cursor_scan_count: int = 100
     ) -> list[tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]]:
         """Returns a list of current RateLimitItems with tuples of namespace and primary key."""
-        host, port = os.environ.get("REDIS_URL", ":").split(":", maxsplit=2)
+        redis_url = self.redis_url or os.environ.get("REDIS_URL", ":")
+        redis_url = cast(str, redis_url)
+        if redis_url is None:
+            raise ValueError("Redis URL is not set correctly.")
+
+        try:
+            host, port = redis_url.split(":", maxsplit=2)
+        except ValueError as exc:
+            raise ValueError(
+                f"Failed to parse host and port from Redis URL {redis_url!r},"
+                " correctly pass at initialization or set env variable REDIS_URL."
+            ) from exc
 
         if not (host and port):
-            raise ValueError(f"Invalid REDIS_URL: {os.environ.get('REDIS_URL')}.")
+            raise ValueError(f"Invalid Redis URL: {redis_url}.")
 
         if not isinstance(self.storage, RedisStorage):
             raise NotImplementedError(
@@ -280,7 +306,8 @@ class GlobalRateLimiter:
     async def get_limit_keys(
         self,
     ) -> list[tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]]:
-        if os.environ.get("REDIS_URL") and not self.use_in_memory:
+        redis_url = self.redis_url or os.environ.get("REDIS_URL")
+        if redis_url and not self.use_in_memory:
             return await self.get_rate_limit_keys()
         return self.get_in_memory_limit_keys()
 
