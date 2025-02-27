@@ -710,6 +710,8 @@ class TestReasoning:
             Message(content="What is the meaning of life?"),
         ]
         results = await llm.call(messages)
+        assert isinstance(results, list)
+        assert isinstance(results[0], LLMResult)
         assert results[0].reasoning_content
 
         outputs: list[str] = []
