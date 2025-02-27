@@ -35,6 +35,10 @@ from aviary.core import (
     ToolSelector,
     is_coroutine_callable,
 )
+from litellm import (
+    LlmProviders,
+    get_llm_provider,
+)
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -250,9 +254,9 @@ class LLMModel(ABC, BaseModel):
         # This hard-coded check will be removed once we have a better way to check if the model supports reasoning
         # See: https://github.com/BerriAI/litellm/issues/8765
         # Only reasoning with deepseek-r1 model is supported so far
-        if "deepseek" in self.name:
+        if LlmProviders.DEEPSEEK.value in get_llm_provider(self.name):
             chat_kwargs["include_reasoning"] = True
-        if "openrouter" in self.name and callbacks:
+        if LlmProviders.OPENROUTER.value in get_llm_provider(self.name) and callbacks:
             raise NotImplementedError(
                 "Reasoning with OpenRouter is not supported in streaming mode."
                 "https://github.com/BerriAI/litellm/issues/8631"
