@@ -1,6 +1,6 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg?style=plastic)]()
-[![tests](https://github.com/Future-House/llm-client/actions/workflows/test.yaml/badge.svg?style=plastic)](https://github.com/Future-House/ldp/tree/main/packages/lmi)
-[![PyPI version](https://badge.fury.io/py/lmi.svg?style=plastic)](https://badge.fury.io/py/lmi)
+[![tests](https://github.com/Future-House/ldp/actions/workflows/tests.yml/badge.svg?style=plastic)](https://github.com/Future-House/ldp/tree/main/packages/lmi)
+[![PyPI version](https://badge.fury.io/py/fhlmi.svg?style=plastic)](https://pypi.org/project/fhlmi/)
 
 # Language Model Interface (LMI)
 
@@ -43,14 +43,14 @@ A simple example of how to use the library with default settings is shown below.
 
 ```python
 from lmi import LiteLLMModel
-from aviary import Message
+from aviary.core import Message
 
 llm = LiteLLMModel()
 
 messages = [Message(content="What is the meaning of life?")]
 
-completion = await llm.call_single(messages)
-assert completion.text == "42"
+result = await llm.call_single(messages)
+# assert result.text == "42"
 ```
 
 ## Documentation
@@ -77,6 +77,7 @@ Adittionally, `LLMModel.call_single` can be used to return a single `LLMResult` 
 `LiteLLMModel` wraps `LiteLLM` API usage within our `LLMModel` interface. It receives a `name` parameter, which is the name of the model to use and a `config` parameter, which is a dictionary of configuration options for the model following the [LiteLLM configuration schema](https://docs.litellm.ai/docs/routing). Common parameters such as `temperature`, `max_token`, and `n` (the number of completions to return) can be passed as part of the `config` dictionary.
 
 ```python
+import os
 from lmi import LiteLLMModel
 
 config = {
@@ -84,6 +85,7 @@ config = {
         {
             "model_name": "gpt-4o",
             "litellm_params": {
+                "model": "gpt-4o",
                 "api_key": os.getenv("OPENAI_API_KEY"),
                 "frequency_penalty": 1.5,
                 "top_p": 0.9,
@@ -101,13 +103,13 @@ llm = LiteLLMModel(name="gpt-4o", config=config)
 `config` can also be used to pass common parameters directly for the model.
 
 ```python
+from lmi import LiteLLMModel
+
 config = {
-    {
-        "name": "gpt-4o",
-        "temperature": 0.1,
-        "max_tokens": 512,
-        "n": 5,
-    }
+    "name": "gpt-4o",
+    "temperature": 0.1,
+    "max_tokens": 512,
+    "n": 5,
 }
 
 llm = LiteLLMModel(config=config)
@@ -198,12 +200,25 @@ from lmi.rate_limiter import GlobalRateLimiter
 limiter = GlobalRateLimiter()  # Will automatically use Redis if REDIS_URL is set
 ```
 
+This `limiter` can be used in within the `LLMModel.check_rate_limit` method to check the rate limit before making a request, similarly to how it is done in the [`LiteLLMModel` class](https://github.com/Future-House/ldp/blob/18138af155bef7686d1eb2b486edbc02d62037eb/packages/lmi/src/lmi/llms.py#L555).
+
 #### Monitoring Rate Limits
 
 You can monitor current rate limit status:
 
 ```python
 from lmi.rate_limiter import GLOBAL_LIMITER
+from lmi import LiteLLMModel
+from aviary.core import Message
+
+config = {
+    "rate_limit": {
+        "gpt-4": "100/minute",  # 100 tokens per minute
+    }
+}
+
+llm = LiteLLMModel(name="gpt-4", config=config)
+results = await llm.call([Message(content="Hello, world!")])  # Consume some tokens
 
 status = await GLOBAL_LIMITER.rate_limit_status()
 
@@ -243,7 +258,73 @@ await GLOBAL_LIMITER.try_acquire(
 
 ### Tool calling
 
-🚧 [ WIP ] 🚧
+LMI supports function calling through tools, which are functions that the LLM can invoke. Tools are passed to `LLMModel.call` or `LLMModel.call_single` as a list of [`Tool` objects from `aviary`](https://github.com/Future-House/aviary/blob/1a50b116fb317c3ef27b45ea628781eb53c0b7ae/src/aviary/tools/base.py#L334), along with an optional `tool_choice` parameter that controls how the LLM uses these tools.
+
+The `tool_choice` parameter follows `OpenAI`'s definition. It can be:
+
+| Tool Choice Value               | Constant                           | Behavior                                                                       |
+| ------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------ |
+| `"none"`                        | `LLMModel.NO_TOOL_CHOICE`          | The model will not call any tools and instead generates a message              |
+| `"auto"`                        | `LLMModel.MODEL_CHOOSES_TOOL`      | The model can choose between generating a message or calling one or more tools |
+| `"required"`                    | `LLMModel.TOOL_CHOICE_REQUIRED`    | The model must call one or more tools                                          |
+| A specific `aviary.Tool` object | N/A                                | The model must call this specific tool                                         |
+| `None`                          | `LLMModel.UNSPECIFIED_TOOL_CHOICE` | No tool choice preference is provided to the LLM API                           |
+
+When tools are provided, the LLM's response will be wrapped in a `ToolRequestMessage` instead of a regular `Message`. The key differences are:
+
+- `Message` represents a basic chat message with a role (system/user/assistant) and content
+- `ToolRequestMessage` extends `Message` to include `tool_calls`, which contains a list of `ToolCall` objects, which contains the tools the LLM chose to invoke and their arguments
+
+Further details about how to define a tool, use the `ToolRequestMessage` and the `ToolCall` objects can be found in the [Aviary documentation](https://github.com/Future-House/aviary?tab=readme-ov-file#tool).
+
+Here is a minimal example usage:
+
+```python
+from lmi import LiteLLMModel
+from aviary.core import Message, Tool
+import operator
+
+
+# Define a function that will be used as a tool
+def calculator(operation: str, x: float, y: float) -> float:
+    """
+    Performs basic arithmetic operations on two numbers.
+
+    Args:
+        operation (str): The arithmetic operation to perform ("+", "-", "*", or "/")
+        x (float): The first number
+        y (float): The second number
+
+    Returns:
+        float: The result of applying the operation to x and y
+
+    Raises:
+        KeyError: If operation is not one of "+", "-", "*", "/"
+        ZeroDivisionError: If operation is "/" and y is 0
+    """
+    operations = {
+        "+": operator.add,
+        "-": operator.sub,
+        "*": operator.mul,
+        "/": operator.truediv,
+    }
+    return operations[operation](x, y)
+
+
+# Create a tool from the calculator function
+calculator_tool = Tool.from_function(calculator)
+
+# The LLM must use the calculator tool
+llm = LiteLLMModel()
+result = await llm.call_single(
+    messages=[Message(content="What is 2 + 2?")],
+    tools=[calculator_tool],
+    tool_choice=LiteLLMModel.TOOL_CHOICE_REQUIRED,
+)
+
+# result.messages[0] will be a ToolRequestMessage with tool_calls containing
+# the calculator invocation with x=2, y=2, operation="+"
+```
 
 ### Embedding models
 
@@ -262,17 +343,13 @@ Currently, the following embedding models are supported:
 Notice that `LiteLLMEmbeddingModel` can also be rate limited.
 
 ```python
+import os
 from lmi import LiteLLMEmbeddingModel
 
-model = LiteLLMEmbeddingModel()
-
 model = LiteLLMEmbeddingModel(
-    name="text-embedding-ada-002",
+    name="text-embedding-3-small",
     batch_size=16,
     config={
-        "kwargs": {
-            "api_key": "your-api-key",  # pragma: allowlist secret
-        },
         "rate_limit": "100/minute",
     },
 )
