@@ -256,11 +256,13 @@ class GlobalRateLimiter:
     ) -> list[tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]]:
         """Returns a list of current RateLimitItems with tuples of namespace and primary key."""
         redis_url = self.redis_url or os.environ.get("REDIS_URL", ":")
-        if not redis_url:
+        try:
+            host, port = redis_url.split(":", maxsplit=2)
+        except ValueError as exc:
             raise ValueError(
-                "Missing Redis URL, pass at initialization or set env variable REDIS_URL"
-            )
-        host, port = redis_url.split(":", maxsplit=2)
+                f"Failed to parse host and port from Redis URL {redis_url!r},"
+                " correctly pass at initialization or set env variable REDIS_URL."
+            ) from exc
 
         if not (host and port):
             raise ValueError(f"Invalid Redis URL: {redis_url}.")
