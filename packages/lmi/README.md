@@ -282,6 +282,7 @@ Here is a minimal example usage:
 ```python
 from lmi import LiteLLMModel
 from aviary.core import Message, Tool
+import operator
 
 
 # Define a function that will be used as a tool
@@ -302,10 +303,10 @@ def calculator(operation: str, x: float, y: float) -> float:
         ZeroDivisionError: If operation is "/" and y is 0
     """
     operations = {
-        "+": lambda x, y: x + y,
-        "-": lambda x, y: x - y,
-        "*": lambda x, y: x * y,
-        "/": lambda x, y: x / y,
+        "+": operator.add,
+        "-": operator.sub,
+        "*": operator.mul,
+        "/": operator.truediv,
     }
     return operations[operation](x, y)
 
