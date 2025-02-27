@@ -699,8 +699,9 @@ class TestReasoning:
 
         outputs: list[str] = []
         results = await llm.call(messages, callbacks=[outputs.append])
-        for result in results:
+        for i, result in enumerate(results):
             assert result.reasoning_content
+            assert outputs[i] == result.text
 
     @pytest.mark.vcr
     @pytest.mark.asyncio
@@ -719,6 +720,10 @@ class TestReasoning:
             NotImplementedError,
             match=r"Reasoning with OpenRouter is not supported in streaming mode.*",
         ):
+            # NOTE: We invoke the call with a callback to test the streaming
+            #  from LiteLLMModel.acompletion_iter().
+            # Because it is still not supported for OpenRouter models, we test
+            #  that it raises a NotImplementedError.
             await llm.call(messages, callbacks=[outputs.append])
 
 
