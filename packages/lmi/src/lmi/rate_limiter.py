@@ -64,14 +64,6 @@ class GlobalRateLimiter:
     Supports both Redis and in-memory storage.
     'Global' refers to being able to limit the rate
     of requests across processes with Redis.
-
-    Args:
-        rate_config: Optional dictionary mapping (namespace, primary_key) tuples to
-            RateLimitItem instances. If not provided, the default RATE_CONFIG is used.
-        use_in_memory: If True, use in-memory storage instead of Redis, even if
-            Redis URL is available.
-        redis_url: Optional Redis URL to use for storage. If not provided, the
-            REDIS_URL environment variable will be used unless use_in_memory is set.
     """
 
     WAIT_INCREMENT: ClassVar[float] = 0.01  # seconds
@@ -95,6 +87,18 @@ class GlobalRateLimiter:
         use_in_memory: bool = False,
         redis_url: str | None = None,
     ):
+        """Initialize a GlobalRateLimiter instance.
+
+        Args:
+            rate_config: Optional dictionary mapping (namespace, primary_key) tuples to
+                RateLimitItem instances. If not provided, the default RATE_CONFIG is used.
+            use_in_memory: If True, use in-memory storage instead of Redis, even if
+                Redis URL is available.
+            redis_url: Optional Redis URL to use for storage. If not provided, the
+                REDIS_URL environment variable will be used. This parameter allows
+                direct specification of the Redis URL without relying on environment
+                variables.
+        """
         self.rate_config = RATE_CONFIG if rate_config is None else rate_config
         self.use_in_memory = use_in_memory
         self.redis_url = redis_url
@@ -253,7 +257,9 @@ class GlobalRateLimiter:
         """Returns a list of current RateLimitItems with tuples of namespace and primary key."""
         redis_url = self.redis_url or os.environ.get("REDIS_URL", ":")
         if not redis_url:
-            raise ValueError("Missing Redis URL, pass at initialization or set env variable REDIS_URL")
+            raise ValueError(
+                "Missing Redis URL, pass at initialization or set env variable REDIS_URL"
+            )
         host, port = redis_url.split(":", maxsplit=2)
 
         if not (host and port):
