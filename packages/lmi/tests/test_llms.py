@@ -718,11 +718,10 @@ class TestReasoning:
         outputs: list[str] = []
         # NOTE: We invoke the call with a callback to test the streaming
         #  from LiteLLMModel.acompletion_iter().
-        #     Reasoning with OpenRouter is not supported in streaming mode.
-        #     https://github.com/BerriAI/litellm/issues/8631
-        #     Consider using LiteLLMModel(name='deepseek/deepseek-reasoner') instead.
-        # Because it is still not supported for OpenRouter models, we assert
-        #  that the reasoning content is not present in the result.
+        #  We don't assert reasoning_content here since it's tested in
+        #  test_openrouter_stream_reasoning_fails() which verifies that
+        #  streaming with reasoning is not yet supported by LiteLLM for
+        #  OpenRouter models.
         results = await llm.call(messages, callbacks=[outputs.append])
         assert isinstance(results, list)
         assert isinstance(results[0], LLMResult)
