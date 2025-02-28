@@ -695,7 +695,7 @@ class TestReasoning:
             ),
         ],
     )
-    # @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
     async def test_deepseek_model(
         self, llm_name: str, llm_settings: dict[str, Any]
