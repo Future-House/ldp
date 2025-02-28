@@ -703,7 +703,7 @@ class TestReasoning:
             assert result.reasoning_content
             assert outputs[i] == result.text
 
-    @pytest.mark.vcr
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
     async def test_openrouter_reasoning(self) -> None:
         llm = LiteLLMModel(name="openrouter/deepseek/deepseek-r1", config={"n": 1})
@@ -718,13 +718,30 @@ class TestReasoning:
         outputs: list[str] = []
         # NOTE: We invoke the call with a callback to test the streaming
         #  from LiteLLMModel.acompletion_iter().
+        #     Reasoning with OpenRouter is not supported in streaming mode.
+        #     https://github.com/BerriAI/litellm/issues/8631
+        #     Consider using LiteLLMModel(name='deepseek/deepseek-reasoner') instead.
         # Because it is still not supported for OpenRouter models, we assert
         #  that the reasoning content is not present in the result.
         results = await llm.call(messages, callbacks=[outputs.append])
         assert isinstance(results, list)
         assert isinstance(results[0], LLMResult)
-        assert not results[0].reasoning_content
         assert outputs
+
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(
+        reason="LiteLLM still doesn't support OpenRouter reasoning with streaming"
+    )
+    async def test_openrouter_stream_reasoning_fails(self) -> None:
+        llm = LiteLLMModel(name="openrouter/deepseek/deepseek-r1", config={"n": 1})
+        messages = [
+            Message(content="What is the meaning of life?"),
+        ]
+        outputs: list[str] = []
+        results = await llm.call(messages, callbacks=[outputs.append])
+
+        assert results[0].reasoning_content
 
 
 def test_json_schema_validation() -> None:
