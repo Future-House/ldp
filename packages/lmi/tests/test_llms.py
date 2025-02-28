@@ -716,15 +716,15 @@ class TestReasoning:
         assert results[0].reasoning_content
 
         outputs: list[str] = []
-        with pytest.raises(
-            NotImplementedError,
-            match=r"Reasoning with OpenRouter is not supported in streaming mode.*",
-        ):
-            # NOTE: We invoke the call with a callback to test the streaming
-            #  from LiteLLMModel.acompletion_iter().
-            # Because it is still not supported for OpenRouter models, we test
-            #  that it raises a NotImplementedError.
-            await llm.call(messages, callbacks=[outputs.append])
+        # NOTE: We invoke the call with a callback to test the streaming
+        #  from LiteLLMModel.acompletion_iter().
+        # Because it is still not supported for OpenRouter models, we assert
+        #  that the reasoning content is not present in the result.
+        results = await llm.call(messages, callbacks=[outputs.append])
+        assert isinstance(results, list)
+        assert isinstance(results[0], LLMResult)
+        assert not results[0].reasoning_content
+        assert outputs
 
 
 def test_json_schema_validation() -> None:
