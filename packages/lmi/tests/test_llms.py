@@ -8,6 +8,7 @@ import litellm
 import numpy as np
 import pytest
 from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
+from litellm import LlmProviders, get_llm_provider
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
 from lmi.exceptions import JSONSchemaValidationError
@@ -669,23 +670,37 @@ class TestTooling:
 
 
 class TestReasoning:
+    @pytest.mark.parametrize(
+        ("llm_name", "llm_settings"),
+        [
+            pytest.param(
+                "deepseek/deepseek-reasoner",
+                {
+                    "model_list": [
+                        {
+                            "model_name": "deepseek/deepseek-reasoner",
+                            "litellm_params": {
+                                "model": "deepseek/deepseek-reasoner",
+                                "api_base": "https://api.deepseek.com/v1",
+                            },
+                        }
+                    ]
+                },
+                id="deepseek-reasoner",
+            ),
+            pytest.param(
+                "openrouter/deepseek/deepseek-r1",
+                {},
+                id="openrouter-deepseek",
+            ),
+        ],
+    )
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
-    async def test_deepseek_model(self) -> None:
-        llm = LiteLLMModel(
-            name="deepseek/deepseek-reasoner",
-            config={
-                "model_list": [
-                    {
-                        "model_name": "deepseek/deepseek-reasoner",
-                        "litellm_params": {
-                            "model": "deepseek/deepseek-reasoner",
-                            "api_base": "https://api.deepseek.com/v1",
-                        },
-                    }
-                ]
-            },
-        )
+    async def test_deepseek_model(
+        self, llm_name: str, llm_settings: dict[str, Any]
+    ) -> None:
+        llm = LiteLLMModel(name=llm_name, config=llm_settings)
         messages = [
             Message(
                 role="system",
@@ -699,32 +714,20 @@ class TestReasoning:
 
         outputs: list[str] = []
         results = await llm.call(messages, callbacks=[outputs.append])
-        for i, result in enumerate(results):
-            assert result.reasoning_content
-            assert outputs[i] == result.text
 
-    @pytest.mark.vcr
-    @pytest.mark.asyncio
-    async def test_openrouter_reasoning(self) -> None:
-        llm = LiteLLMModel(name="openrouter/deepseek/deepseek-r1", config={"n": 1})
-        messages = [
-            Message(content="What is the meaning of life?"),
-        ]
-        results = await llm.call(messages)
-        assert isinstance(results, list)
-        assert isinstance(results[0], LLMResult)
-        assert results[0].reasoning_content
-
-        outputs: list[str] = []
-        with pytest.raises(
-            NotImplementedError,
-            match=r"Reasoning with OpenRouter is not supported in streaming mode.*",
-        ):
-            # NOTE: We invoke the call with a callback to test the streaming
-            #  from LiteLLMModel.acompletion_iter().
-            # Because it is still not supported for OpenRouter models, we test
-            #  that it raises a NotImplementedError.
-            await llm.call(messages, callbacks=[outputs.append])
+        if LlmProviders.OPENROUTER.value in get_llm_provider(llm.name):
+            # If using OpenRouter, we expect the streaming to fail populating the reasoning_content
+            with pytest.raises(
+                AssertionError,
+                match="OpenRouter models with streaming are not supported",
+            ):
+                assert results[0].reasoning_content, (
+                    "OpenRouter models with streaming are not supported"
+                )
+        else:
+            for i, result in enumerate(results):
+                assert result.reasoning_content
+                assert outputs[i] == result.text
 
 
 def test_json_schema_validation() -> None:

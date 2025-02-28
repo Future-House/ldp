@@ -256,12 +256,6 @@ class LLMModel(ABC, BaseModel):
         # Only reasoning with deepseek-r1 model is supported so far
         if LlmProviders.DEEPSEEK.value in get_llm_provider(self.name):
             chat_kwargs["include_reasoning"] = True
-        if LlmProviders.OPENROUTER.value in get_llm_provider(self.name) and callbacks:
-            raise NotImplementedError(
-                "Reasoning with OpenRouter is not supported in streaming mode."
-                "https://github.com/BerriAI/litellm/issues/8631"
-                "Consider using LiteLLMModel(name='deepseek/deepseek-reasoner') instead."
-            )
 
         # deal with tools
         if tools:
