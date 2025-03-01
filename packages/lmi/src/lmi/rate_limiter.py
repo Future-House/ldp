@@ -47,9 +47,19 @@ TOKEN_FALLBACK_RATE_LIMIT = RateLimitItemPerMinute(30_000, 1)
 # the dynamic IP of the machine will be used to limit the rate of requests, otherwise the
 # user input machine_id will be used.
 
+# Default rate limits for various LLM providers
+OPENAI_DEFAULT_RPM = RateLimitItemPerMinute(3500, 1)  # OpenAI default RPM for most models
+ANTHROPIC_DEFAULT_RPM = RateLimitItemPerMinute(2400, 1)  # Anthropic Claude default RPM
+AZURE_DEFAULT_RPM = RateLimitItemPerMinute(1800, 1)  # Azure OpenAI default RPM
+GOOGLE_DEFAULT_RPM = RateLimitItemPerMinute(60, 1)  # Google PaLM/Gemini default RPM
+
 RATE_CONFIG: dict[tuple[str, str | MatchAllInputs], RateLimitItem] = {
     ("get", CROSSREF_BASE_URL): RateLimitItemPerSecond(30, 1),
     ("get", SEMANTIC_SCHOLAR_BASE_URL): RateLimitItemPerSecond(15, 1),
+    ("client", "gpt-3.5-turbo"): OPENAI_DEFAULT_RPM,
+    ("client", "gpt-4"): RateLimitItemPerMinute(500, 1),  # Lower RPM for GPT-4
+    ("client", "claude-3"): ANTHROPIC_DEFAULT_RPM,
+    ("client", "gemini-pro"): GOOGLE_DEFAULT_RPM,
     ("client", MATCH_ALL): TOKEN_FALLBACK_RATE_LIMIT,
     # MATCH_MACHINE_ID is a sentinel for the machine_id passed in by the caller
     (f"get|{MATCH_MACHINE_ID}", MATCH_ALL): FALLBACK_RATE_LIMIT,
