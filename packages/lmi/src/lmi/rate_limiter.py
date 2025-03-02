@@ -31,7 +31,7 @@ CROSSREF_BASE_URL = f"https://{CROSSREF_HOST}"
 GLOBAL_RATE_LIMITER_TIMEOUT = float(os.environ.get("RATE_LIMITER_TIMEOUT", "60"))
 
 MATCH_ALL = None
-MatchAllInputs = Literal[None]
+MatchAllInputs = Literal[None]  # noqa: PYI061
 MATCH_MACHINE_ID = "<machine_id>"
 
 FALLBACK_RATE_LIMIT = RateLimitItemPerSecond(3, 1)
@@ -256,7 +256,7 @@ class GlobalRateLimiter:
     ) -> list[tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]]:
         """Returns a list of current RateLimitItems with tuples of namespace and primary key."""
         redis_url = self.redis_url or os.environ.get("REDIS_URL", ":")
-        redis_url = cast(str, redis_url)
+        redis_url = cast("str", redis_url)
         if redis_url is None:
             raise ValueError("Redis URL is not set correctly.")
 

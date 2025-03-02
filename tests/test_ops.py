@@ -127,7 +127,7 @@ class TestLLMCallOp:
             async def reset(self) -> tuple[list[Message], list[Tool]]:
                 async def generate_story() -> str:
                     """Generate a story."""
-                    response = litellm.completion(
+                    response = await litellm.acompletion(
                         model=model_name,
                         messages=[
                             {"content": "Please write a 5 word story", "role": "user"}
@@ -150,7 +150,7 @@ class TestLLMCallOp:
         # Perform one step
         async with compute_graph():
             op_result = await llm_op(config, msgs=obs, tools=tools)
-        await env.exec_tool_calls(cast(ToolRequestMessage, op_result.value))
+        await env.exec_tool_calls(cast("ToolRequestMessage", op_result.value))
 
         # LLMCallOp track cost using run context
         result = llm_op.ctx.get(op_result.call_id, "result")

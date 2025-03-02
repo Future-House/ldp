@@ -599,7 +599,11 @@ class TestTooling:
         messages = [
             Message(
                 role="system",
-                content="You are a helpful assistant who can use tools to do math. Use a tool if needed. If you don't need a tool, just respond with the answer.",
+                content=(
+                    "You are a helpful assistant who can use tools to do math. Use a"
+                    " tool if needed. If you don't need a tool, just respond with the"
+                    " answer."
+                ),
             ),
             Message(role="user", content="What is double of 8?"),
         ]

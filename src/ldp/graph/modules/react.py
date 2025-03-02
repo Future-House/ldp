@@ -81,7 +81,8 @@ _DEFAULT_PROMPT_TEMPLATE = textwrap.dedent(
 REACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
     fields=(
         "Thought: you should always think about what to do"
-        "\nAction: the action to take, should be one of the provided tools with necessary arguments"
+        "\nAction: the action to take,"
+        " should be one of the provided tools with necessary arguments"
         "\nObservation: the result of the action"
     ),
     fields_description="Thought/Action/Observation",
@@ -93,7 +94,8 @@ REACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
 )
 ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
     fields=(
-        "Action: the action to take, should be one of the provided tools with necessary arguments"
+        "Action: the action to take,"
+        " should be one of the provided tools with necessary arguments"
         "\nObservation: the result of the action"
     ),
     fields_description="Action/Observation",
@@ -314,7 +316,11 @@ def postprocess_and_concat_resoning_msg(
     return [
         *msgs,
         Message(
-            content=f"Thought: {reasoning}. Based on this reasoning, let's select the appropriate tool!\nAction: ",
+            content=(
+                f"Thought: {reasoning}."
+                " Based on this reasoning, let's select the appropriate tool!"
+                "\nAction: "
+            ),
             # Role is 'assistant' here (normally 'user') since we use the model's reasoning to ask for an action.
             role="assistant",
         ),
@@ -372,7 +378,7 @@ class ReActModule(ReActModuleSinglePrompt):
         tool_selection_msg = await self.llm_call_op(
             self.llm_config, msgs=packaged_msgs_with_reasoning, tools=tools
         )
-        return cast(OpResult[ToolRequestMessage], tool_selection_msg), [
+        return cast("OpResult[ToolRequestMessage]", tool_selection_msg), [
             # We return the 3 new messages: reasoning (assistant) message,
             # the "continue..." (user) message from user,
             # and tool selection (assistant) message

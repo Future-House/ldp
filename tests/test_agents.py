@@ -192,7 +192,7 @@ class TestSimpleAgent:
 
         graph = to_network(action)
         with (
-            tempfile.NamedTemporaryFile(mode="w", suffix=".png") as f,
+            tempfile.NamedTemporaryFile(mode="w", suffix=".png", encoding="utf-8") as f,
             contextlib.suppress(
                 FileNotFoundError  # Allow tests to run without graphviz on OS
             ),
@@ -245,8 +245,8 @@ class TestSimpleAgent:
         obs, *_ = await dummy_env.step(action.value)
         _, agent_state_2, _ = await agent.get_asv(agent_state_1, obs)
 
-        orig_action = cast(ToolRequestMessage, agent_state_1.messages[1])
-        modified_action = cast(ToolRequestMessage, agent_state_2.messages[1])
+        orig_action = cast("ToolRequestMessage", agent_state_1.messages[1])
+        modified_action = cast("ToolRequestMessage", agent_state_2.messages[1])
 
         # tool calls shouldn't have been modified
         assert orig_action.tool_calls == modified_action.tool_calls
@@ -438,7 +438,7 @@ class TestReActAgent:
                 # we want to force longer trajectories. In single_prompt mode, parallel tool
                 # calling is not possible, and OpenAI requires parallel_tool_calls=None
                 # if no tools are provided.
-                "parallel_tool_calls": (None if single_prompt else False),
+                "parallel_tool_calls": None if single_prompt else False,
             },
         )
         agent_state = await agent.init_state(tools=tools)
@@ -539,7 +539,7 @@ class TestReActAgent:
 
         graph = to_network(action, max_label_height=4, max_label_width=50)
         with (
-            tempfile.NamedTemporaryFile(mode="w", suffix=".png") as f,
+            tempfile.NamedTemporaryFile(mode="w", suffix=".png", encoding="utf-8") as f,
             contextlib.suppress(
                 FileNotFoundError  # Allow tests to run without graphviz on OS
             ),
