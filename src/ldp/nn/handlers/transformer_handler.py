@@ -17,7 +17,7 @@ import torch
 import torch.distributed as dist
 import tree
 from dask import config
-from dask.distributed import Client
+from dask.distributed import Client, as_completed, wait
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from torch import nn
 from torch.cuda import nccl
@@ -196,13 +196,10 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
             synced_gpus = kwargs.pop("synced_gpus", None)
             if synced_gpus is None:
                 logger.debug("synced_gpus not defined, defaulting to True.")
+                kwargs["synced_gpus"] = True
             elif not synced_gpus:
                 raise ValueError("synced_gpus must be True when using FSDP.")
-            kwargs["synced_gpus"] = True
-            # TODO remove
-            if os.getenv("USE_DASK_BARRIER"):
-                logger.info("Waiting for all workers to reach this point.")
-                dist.barrier()
+           
 
         # Summoning params per https://github.com/pytorch/pytorch/issues/100069
         # If model is not FSDP, this context manager is a no-op.
@@ -585,7 +582,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
             futures.append(future_op)
             worker_ids.append(worker_id)
 
-        self.handlers = self.client.gather(futures)
+        self.handlers = self.client_gather(futures)
         self.worker_ids = worker_ids
 
     async def __call__(
@@ -656,7 +653,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
                 self.handlers, self.worker_ids, split_args, split_kwargs, strict=True
             )
         ]
-        results = self.client.gather(futures)
+        results = self.client_gather(futures)
         results = cast(list[TReturn], [res.result().result() for res in results])
 
         if split_data:
@@ -767,12 +764,31 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
     def teardown(self) -> None:
         if self._initialized:
-            self.client.close()
+            self.client.shutdown()
             self.cluster.close()
             self._initialized = False
 
     def __del__(self) -> None:
         self.teardown()
+
+    def client_gather(self, futures):
+        """Gather results from futures, propagating exceptions as they arrive.
+
+        Unlike client.gather() which waits for all futures to complete before raising
+        any exceptions, this method processes futures as they complete and raises
+        exceptions immediately. This is crucial when using FSDP where workers may
+        be stuck waiting for each other where one worker crashes, causing long hangs.
+        """
+        # Initialize a list to hold results
+        results = [None] * len(futures)
+        for completed_future, result in as_completed(
+            futures, with_results=True, raise_errors=True
+        ):
+            # Find the index of the completed future
+            index = futures.index(completed_future)
+            # Store the result directly from as_completed
+            results[index] = result
+        return results
 
 
 # Helpers

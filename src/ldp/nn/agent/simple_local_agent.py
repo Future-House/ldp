@@ -1,3 +1,4 @@
+import logging
 from typing import cast
 
 import torch
@@ -17,6 +18,8 @@ from ldp.nn.handlers.transformer_handler import (
     logits_to_logprobs,
 )
 from ldp.nn.lm_config import LMConfig as _LMConfig
+
+logger = logging.getLogger(__name__)
 
 
 class AgentLMConfig(_LMConfig):
@@ -94,6 +97,8 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
             else next_state.messages
         )
 
+        self._validate_token_count(messages, next_state.tools)
+
         # Execute the LLM operation call
         result = cast(
             OpResult[Message | ToolRequestMessage],
@@ -114,33 +119,27 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
 
         # Update state messages with result and return the new state
         next_state.messages = [*next_state.messages, result.value]
-
-        if self.llm_model.max_traj_token_count is not None:
-            messages_for_tokenizer = self._llm_call_op.prep_messages_for_tokenizer(
-                next_state.messages
-            )
-            tools_for_tokenizer = self._llm_call_op.prep_tools_for_tokenizer(
-                next_state.tools
-            )
-            total_tokens = token_counter(
-                model=self.llm_model.model,  # or any field referencing the model name
-                messages=messages_for_tokenizer,
-                tools=tools_for_tokenizer,
-            )
-            # TODO remove
-            print(
-                "The traj size is %d tokens, with a limit of %d tokens"
-                % (total_tokens, self.llm_model.max_traj_token_count)
-            )
-            if total_tokens > self.llm_model.max_traj_token_count:
-                import ipdb
-
-                ipdb.set_trace()  # TODO remove
-                raise ValueError(
-                    f"Token limit exceeded for trajectory: {total_tokens} > {self.llm_model.max_traj_token_count}"
-                )
+        self._validate_token_count(next_state.messages, next_state.tools)
 
         return cast(OpResult[ToolRequestMessage], result), next_state, 0.0
+
+    def _validate_token_count(self, messages: list[Message], tools: list[Tool]):
+        if self.llm_model.max_traj_token_count is None:
+            return
+        messages_for_tokenizer = self._llm_call_op.prep_messages_for_tokenizer(messages)
+        tools_for_tokenizer = self._llm_call_op.prep_tools_for_tokenizer(tools)
+        total_tokens = token_counter(
+            model=self.llm_model.model,
+            messages=messages_for_tokenizer,
+            tools=tools_for_tokenizer,
+        )
+        if total_tokens > self.llm_model.max_traj_token_count:
+            logger.error(
+                f"Token limit exceeded for trajectory: {total_tokens} > {self.llm_model.max_traj_token_count}"
+            )
+            raise ValueError(
+                f"Token limit exceeded for trajectory: {total_tokens} > {self.llm_model.max_traj_token_count}"
+            )
 
     # TODO: maybe remove these recomputation methods. I added them to debug some things. But idk,
     # maybe they'll come in handy later.
