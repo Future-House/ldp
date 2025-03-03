@@ -179,7 +179,7 @@ class APEOpt(BaseModel, Optimizer):
             d_returns = trajectory.compute_discounted_returns(self.reward_discount)
 
         for i_step, step in enumerate(trajectory.steps):
-            action = cast(OpResult, step.action)
+            action = cast("OpResult", step.action)
 
             if self.score_fn == APEScoreFn.GRADIENT:
                 prompt_op_result, *extra = action.get_upstream_results(self.prompt_op)
@@ -187,7 +187,7 @@ class APEOpt(BaseModel, Optimizer):
 
             for op_result in action.get_upstream_results(self.llm_call_op):
                 result = cast(
-                    LLMResult | None,
+                    "LLMResult | None",
                     self.llm_call_op.ctx.get(op_result.call_id, "result"),
                 )
                 if result is None or not result.messages or not result.prompt:
@@ -196,11 +196,11 @@ class APEOpt(BaseModel, Optimizer):
                 x = next(
                     # m is a Message with a result of the LLM. Which completes only strings.
                     # and we checked the result exists above.
-                    cast(str, m.content)
+                    cast("str", m.content)
                     for m in result.prompt
                     if (isinstance(m, Message) and m.role == "user")
                 )
-                y = cast(str, result.messages[0].content)
+                y = cast("str", result.messages[0].content)
 
                 if self.score_fn == APEScoreFn.GRADIENT:
                     score = self.prompt_op.ctx.get(
@@ -212,7 +212,7 @@ class APEOpt(BaseModel, Optimizer):
                     is_good = score == 0
                 else:
                     score = d_returns[i_step]  # pylint: disable=possibly-used-before-assignment
-                    is_good = score >= cast(float, self.good_reward_threshold)
+                    is_good = score >= cast("float", self.good_reward_threshold)
 
                 example = Example(input=x, output=y, score=score)
                 (self.good_examples if is_good else self.examples).append(example)
@@ -291,7 +291,9 @@ class APEOpt(BaseModel, Optimizer):
             ),
         ]
         result = await self.llm.call_single(messages, output_type=OutputPrompt)
-        message_content = cast(str, cast(list[Message], result.messages)[-1].content)
+        message_content = cast(
+            "str", cast("list[Message]", result.messages)[-1].content
+        )
         try:
             return OutputPrompt.model_validate_json(message_content).prompt
         except ValidationError:

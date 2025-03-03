@@ -57,7 +57,7 @@ class PoissonSamplerOp(Op):
         grad_lam_k = 1.0
 
         # delta_{j,i}
-        delta_lam = grad_lam_lnp + (grad_lam_k * cast(float, grad_output))
+        delta_lam = grad_lam_lnp + (grad_lam_k * cast("float", grad_output))
 
         return [], {"lam": delta_lam}
 
@@ -91,7 +91,7 @@ class SGDOptimizer:
 
             # These are delta_{k,j} in equation 20
             grads = [
-                cast(float, g)
+                cast("float", g)
                 for g in (
                     self.op.ctx.get(call_id, "grad_output") for call_id in call_ids
                 )
@@ -106,7 +106,7 @@ class SGDOptimizer:
             self.accumulated_updates.append(reward * sum(grads))
 
     def update(self):
-        self.op.param += self.lr * cast(float, np.mean(self.accumulated_updates))
+        self.op.param += self.lr * cast("float", np.mean(self.accumulated_updates))
         self.accumulated_updates.clear()
         self.lr *= self.lr_decay
 
@@ -229,7 +229,7 @@ async def test_nested_dict_kwargs_missing_inner_grad_aggregation_fail():
 @pytest.mark.asyncio
 async def test_nested_dict_kwargs_missing_or_extra_inner_grad_ok():
     """Tests that missing or extra gradients for a dict input are not failing."""
-    _input_dict = {"a": {"b": [1, 2, 3], "c": 4}}
+    input_dict = {"a": {"b": [1, 2, 3], "c": 4}}
 
     op = FxnOp[int](lambda _input_dict: 4)
     op.set_name("op")
@@ -245,7 +245,7 @@ async def test_nested_dict_kwargs_missing_or_extra_inner_grad_ok():
 
     @compute_graph()
     async def fwd() -> OpResult[int]:
-        a = await op(_input_dict)
+        a = await op(input_dict)
         return await agg_op(a)
 
     output = await fwd()
@@ -304,8 +304,8 @@ async def test_args_missing_or_extra_grad():
 
 @pytest.mark.asyncio
 async def test_kwargs_missing_or_extra_grad() -> None:
-    _input1 = 1
-    _input2 = 2
+    input1 = 1
+    input2 = 2
     # Don't use FURB118 here because we assert on kwargs below
     op = FxnOp[int](lambda _input1, _input2: _input1 + _input2)  # noqa: FURB118
     op.set_name("op")
@@ -320,7 +320,7 @@ async def test_kwargs_missing_or_extra_grad() -> None:
 
     @compute_graph()
     async def fwd() -> OpResult[int]:
-        return await op(_input1, _input2)
+        return await op(input1, input2)
 
     output = await fwd()
     with pytest.raises(ValueError, match="Mismatch between grads"):
@@ -340,7 +340,7 @@ async def test_kwargs_missing_or_extra_grad() -> None:
 
 
 @pytest.mark.asyncio
-async def test_assign_default_grads():
+async def test_assign_default_grads():  # noqa: RUF029
     input_args: list[ResultOrValue] = [1, 2]
     input_kwargs: dict[str, ResultOrValue] = {
         "a": {"b": 3, "c": 4},

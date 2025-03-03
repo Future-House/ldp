@@ -28,8 +28,10 @@ class LMConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     model: str = Field(
-        description="Name of the model to load. Must be available "
-        "on the Huggingface Hub or the path to a local directory."
+        description=(
+            "Name of the model to load. Must be available "
+            "on the Huggingface Hub or the path to a local directory."
+        )
     )
     load_args: dict[str, Any] = Field(
         default_factory=dict,
@@ -37,12 +39,16 @@ class LMConfig(BaseModel):
     )
     tokenizer_args: dict[str, Any] = Field(
         default_factory=dict,
-        description="Passed as AutoTokenizer.from_pretrained(self.model, **tokenizer_args)",
+        description=(
+            "Passed as AutoTokenizer.from_pretrained(self.model, **tokenizer_args)"
+        ),
     )
     chat_template: str | None = Field(
         default=None,
-        description="Name of a jinja file defining a chat template. "
-        "Leave as None to not use a chat template.",
+        description=(
+            "Name of a jinja file defining a chat template. "
+            "Leave as None to not use a chat template."
+        ),
     )
 
     device: str | int | None = None
@@ -54,10 +60,12 @@ class LMConfig(BaseModel):
     )
     pad_token: str | None = Field(
         default=None,
-        description="If set, will override the pad token in the tokenizer. "
-        "Must be a valid token already in the vocabulary. Should be primarily "
-        "used for tokenizers that do not predefine a pad token; will throw a "
-        "warning otherwise.",
+        description=(
+            "If set, will override the pad token in the tokenizer. "
+            "Must be a valid token already in the vocabulary. Should be primarily "
+            "used for tokenizers that do not predefine a pad token; will throw a "
+            "warning otherwise."
+        ),
     )
     gradient_checkpointing: bool = False
     compile: bool = False
@@ -139,7 +147,8 @@ class LMConfig(BaseModel):
                 )
             if tokenizer.pad_token is not None:
                 logger.warning(
-                    f"Overriding tokenizer pad token {tokenizer.pad_token!r} with {self.pad_token!r}"
+                    f"Overriding tokenizer pad token {tokenizer.pad_token!r} with"
+                    f" {self.pad_token!r}"
                 )
             tokenizer.pad_token = self.pad_token
 

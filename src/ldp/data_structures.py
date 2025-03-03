@@ -121,7 +121,7 @@ class Trajectory(BaseModel):
 
     @classmethod
     def from_jsonl(cls, filename: str | os.PathLike) -> Self:
-        with open(filename) as f:
+        with open(filename, encoding="utf-8") as f:
             reader = iter(f)
             traj = cls(traj_id=json.loads(next(reader)))
             for json_line in reader:
@@ -181,10 +181,10 @@ class TransitionTree:
         if step_id == self.root_id:
             raise ValueError("Root node has no transition.")
 
-        return cast(Transition, self.tree.nodes[step_id]["transition"])
+        return cast("Transition", self.tree.nodes[step_id]["transition"])
 
     def get_weight(self, step_id: str) -> float:
-        return cast(float, self.tree.nodes[step_id]["weight"])
+        return cast("float", self.tree.nodes[step_id]["weight"])
 
     def add_transition(
         self, step_id: str, step: Transition, weight: float = 1.0
@@ -306,7 +306,7 @@ class TransitionTree:
         """
         state_values: dict[str, float] = {}
 
-        for step_id in cast(Iterable[str], nx.topological_sort(self.tree)):
+        for step_id in cast("Iterable[str]", nx.topological_sort(self.tree)):
             # topological sort means we will update a parent node in-place before
             # descending to its children
 
@@ -347,7 +347,7 @@ class TransitionTree:
             if not trajectory.done:
                 continue
 
-            traj_id_parts = cast(str, trajectory.traj_id).split(":")
+            traj_id_parts = cast("str", trajectory.traj_id).split(":")
 
             for step in trajectory.steps:
                 step_id = ":".join(traj_id_parts[: step.timestep + 2])

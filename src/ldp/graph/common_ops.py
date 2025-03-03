@@ -331,7 +331,7 @@ class LLMCallOp(Op[Message]):
             result = await model.call_single(**kwargs)
 
             try:
-                validated = cast(Callable, self.response_validator)(result)
+                validated = cast("Callable", self.response_validator)(result)
                 if inspect.isawaitable(validated):
                     validated = await validated
             except Exception as e:
@@ -375,7 +375,7 @@ class LLMCallOp(Op[Message]):
         # Partition function estimate:
         # Z_T = E_P[ e^(lnP/T - lnP) ]
         log_Z_T = logsumexp([
-            temp_factor * cast(float, result.logprob) for result in results
+            temp_factor * cast("float", result.logprob) for result in results
         ]) - np.log(self.num_samples_partition_estimate)
 
         return (raw_log_p / temperature) - log_Z_T

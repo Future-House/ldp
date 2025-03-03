@@ -338,7 +338,7 @@ class TrajectoryMetricsCallback(Callback):
     ) -> None:
         for ds in (ds for ds in self._datasets if ds):
             if self._track_tool_usage:
-                cast(ComputeTrajectoryMetricsMixin, ds).tools_to_track = {
+                cast("ComputeTrajectoryMetricsMixin", ds).tools_to_track = {
                     t.info.name for t in tools
                 }
 
@@ -433,7 +433,7 @@ class WandBLoggingCallback(TrajectoryMetricsCallback):
             return
 
         wandb.log({
-            f"eval/{key}_mean": (sum(vals) / len(vals) if vals else None)
+            f"eval/{key}_mean": sum(vals) / len(vals) if vals else None
             for key, vals in self._eval_metrics.items()
         })
 

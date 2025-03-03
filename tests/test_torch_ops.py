@@ -12,7 +12,7 @@ from torch import nn
 from ldp.graph import ConfigOp, FxnOp, PromptOp, compute_graph, set_training_mode
 from ldp.graph.async_torch import (
     AsyncTorchModule,
-    _get_autocast_context,
+    _get_autocast_context,  # noqa: PLC2701
     async_protect_torch_call,
 )
 from ldp.graph.gradient_estimators import straight_through_estimator as ste

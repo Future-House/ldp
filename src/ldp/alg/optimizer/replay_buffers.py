@@ -135,7 +135,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             result = result.item()
 
         pbar.update()
-        return cast(float, result)
+        return cast("float", result)
 
     async def prepare_for_sampling(self):
         if self.buf_size is None:
