@@ -176,7 +176,7 @@ class UIndexMemoryModel(MemoryModel[Index]):
     async def _add_to_index(self, embedding: np.ndarray) -> int:
         async with self.safe_access_index() as index:
             added_value = cast(
-                npt.NDArray[np.int_], index.add(len(self.memories), embedding)
+                "npt.NDArray[np.int_]", index.add(len(self.memories), embedding)
             )
             return added_value.item()
 

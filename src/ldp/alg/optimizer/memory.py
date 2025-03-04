@@ -41,7 +41,7 @@ class MemoryFactory(Protocol):
         """
 
 
-async def _default_memory_factory(
+async def _default_memory_factory(  # noqa: RUF029
     memory_op: MemoryOp,
     output_op: Op[TOutput_co],
     memory_template: str,
@@ -113,12 +113,12 @@ class MemoryOpt(BaseModel, Optimizer):
         d_returns = trajectory.compute_discounted_returns(self.reward_discount)
 
         for step, d_return in zip(trajectory.steps, d_returns, strict=True):
-            output_run_id = cast(OpResult, step.action).call_id.run_id
+            output_run_id = cast("OpResult", step.action).call_id.run_id
             output_call_ids = self.output_op.get_call_ids({output_run_id})
 
             for output_call_id in output_call_ids:
                 output = cast(
-                    OpResult, self.output_op.ctx.get(output_call_id, "output")
+                    "OpResult", self.output_op.ctx.get(output_call_id, "output")
                 )
                 mem_call_ids = {
                     m.call_id

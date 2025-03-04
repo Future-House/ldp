@@ -46,5 +46,6 @@ class TestLocalLLMCallOp:
             "Expected the number of results to match between the two calls."
         )
         assert results_first_call[0].value == results_second_call[0].value, (
-            "Expected the results to match between the two calls, but got differing results."
+            "Expected the results to match between the two calls, but got differing"
+            " results."
         )

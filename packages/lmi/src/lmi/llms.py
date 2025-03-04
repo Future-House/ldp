@@ -86,8 +86,8 @@ class CommonLLMNames(StrEnum):
 
     # Use these in unit testing
     OPENAI_TEST = "gpt-4o-mini-2024-07-18"  # Cheap, fast, and not OpenAI's cutting edge
-    ANTHROPIC_TEST = (
-        "claude-3-5-haiku-20241022"  # Cheap, fast, and not Anthropic's cutting edge
+    ANTHROPIC_TEST = (  # Cheap, fast, and not Anthropic's cutting edge
+        "claude-3-5-haiku-20241022"
     )
 
 
@@ -354,7 +354,7 @@ class LLMModel(ABC, BaseModel):
         for result in results:
             usage = result.prompt_count, result.completion_count
             if not sum(usage):
-                result.completion_count = self.count_tokens(cast(str, result.text))
+                result.completion_count = self.count_tokens(cast("str", result.text))
             result.seconds_to_last_token = (
                 asyncio.get_running_loop().time() - start_clock
             )
@@ -527,16 +527,18 @@ class LiteLLMModel(LLMModel):
                 "model_list": [
                     {
                         "model_name": data["name"],
-                        "litellm_params": {
-                            "model": data["name"],
-                            "n": data["config"].get("n", 1),
-                            "temperature": data["config"].get("temperature", 0.1),
-                            "max_tokens": data["config"].get("max_tokens", 4096),
-                        }
-                        | (
-                            {}
-                            if "gemini" not in data["name"]
-                            else {"safety_settings": DEFAULT_VERTEX_SAFETY_SETTINGS}
+                        "litellm_params": (
+                            {
+                                "model": data["name"],
+                                "n": data["config"].get("n", 1),
+                                "temperature": data["config"].get("temperature", 0.1),
+                                "max_tokens": data["config"].get("max_tokens", 4096),
+                            }
+                            | (
+                                {}
+                                if "gemini" not in data["name"]
+                                else {"safety_settings": DEFAULT_VERTEX_SAFETY_SETTINGS}
+                            )
                         ),
                     }
                 ],
@@ -623,7 +625,7 @@ class LiteLLMModel(LLMModel):
 
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
         prompts = cast(
-            list[litellm.types.llms.openai.AllMessageValues],
+            "list[litellm.types.llms.openai.AllMessageValues]",
             [m.model_dump(by_alias=True) for m in messages],
         )
         completions = await track_costs(self.router.acompletion)(
@@ -632,7 +634,7 @@ class LiteLLMModel(LLMModel):
         results: list[LLMResult] = []
 
         # We are not streaming here, so we can cast to list[litellm.utils.Choices]
-        choices = cast(list[litellm.utils.Choices], completions.choices)
+        choices = cast("list[litellm.utils.Choices]", completions.choices)
         for completion in choices:
             if (
                 tools is not None  # Allows for empty tools list
@@ -689,7 +691,7 @@ class LiteLLMModel(LLMModel):
     ) -> AsyncIterable[LLMResult]:
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
         prompts = cast(
-            list[litellm.types.llms.openai.AllMessageValues],
+            "list[litellm.types.llms.openai.AllMessageValues]",
             [m.model_dump(by_alias=True) for m in messages if m.content],
         )
         stream_options = {

@@ -25,7 +25,7 @@ GradOutType: TypeAlias = tree.Structure | None  # None means the gradient has te
 GradInType: TypeAlias = tuple[Sequence[GradOutType], Mapping[str, GradOutType]]
 BackwardsType: TypeAlias = Callable[
     # Call signature of Op.backward
-    ["OpCtx", list, dict, tree.Structure, "CallID"],
+    ["OpCtx", list, dict, tree.Structure, CallID],
     GradInType,
 ]
 TOutput_co = TypeVar("TOutput_co", covariant=True)
@@ -433,7 +433,7 @@ class Op(ABC, Generic[TOutput_co]):
         super().__init_subclass__(**kwargs)
         _OP_CLASS_REGISTRY[resolve_fully_qualified_name(cls)] = cls
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs):  # noqa: ARG004
         instance = super().__new__(cls)
 
         # Needs to be overridden by caller if this Op is to have

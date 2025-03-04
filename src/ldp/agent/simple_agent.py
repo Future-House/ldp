@@ -149,7 +149,7 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
             else next_state.messages
         )
         result = cast(
-            OpResult[ToolRequestMessage],
+            "OpResult[ToolRequestMessage]",
             await self._llm_call_op(
                 await self._config_op(), msgs=messages, tools=next_state.tools
             ),

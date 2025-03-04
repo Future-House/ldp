@@ -105,7 +105,7 @@ def make_simple_agent_server(
     )
     auth_scheme = HTTPBearer()
 
-    async def validate_token(
+    def validate_token(
         token: Annotated[HTTPAuthorizationCredentials, Depends(auth_scheme)],
     ) -> HTTPAuthorizationCredentials:
         # NOTE: don't use os.environ.get() to avoid possible empty string matches, and

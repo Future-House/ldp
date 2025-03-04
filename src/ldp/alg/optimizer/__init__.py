@@ -55,7 +55,7 @@ def default_optimizer_factory(
         optimizer_cls = _DEFAULT_OPTIMIZER_MAP.get(agent.__class__)
 
     # convince mypy that optimizer_cls is a type from here on
-    optimizer_cls = cast(type, optimizer_cls)
+    optimizer_cls = cast("type", optimizer_cls)
 
     if isinstance(agent, MemoryAgent):
         if optimizer_cls != MemoryOpt:
