@@ -9,7 +9,7 @@ import time
 
 import pytest
 
-from lmi.llms import LiteLLMModel
+from lmi.llms import CommonLLMNames, LiteLLMModel
 from lmi.types import Message
 
 
@@ -25,9 +25,9 @@ def _setup_model_config(rpm_limit: int | None) -> tuple[dict, str]:
     model_config = {
         "model_list": [
             {
-                "model_name": "deepseek/deepseek-chat",
+                "model_name": CommonLLMNames.OPENAI_TEST.value,
                 "litellm_params": {
-                    "model": "deepseek/deepseek-chat",
+                    "model": CommonLLMNames.OPENAI_TEST.value,
                     "temperature": 0.1,
                     "max_tokens": 4096,
                 },
@@ -88,7 +88,7 @@ async def _run_request_test(
 
     # Test without RPM limit
     model_config, test_name = _setup_model_config(None)
-    model = LiteLLMModel(name="deepseek/deepseek-chat", config=model_config)
+    model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value, config=model_config)
 
     start_time = time.perf_counter()
     try:
@@ -104,7 +104,7 @@ async def _run_request_test(
 
     # Test with RPM limit
     model_config, test_name = _setup_model_config(req_limit)
-    model = LiteLLMModel(name="deepseek/deepseek-chat", config=model_config)
+    model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value, config=model_config)
 
     # Wait for rate limit to reset and ensure we start at the beginning of a minute
     await asyncio.sleep(60)
