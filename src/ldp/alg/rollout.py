@@ -246,7 +246,7 @@ class RolloutManager:
                         pbar.set_postfix({"num_exceptions": num_exceptions})
 
         # Final summary of exceptions (if any)
-        if exception_counter:
+        if exception_counter and not log_exceptions_immediately:
             summary = ["Caught exceptions:", "Count  Exception"]
             summary.extend(
                 f"{count:<6d} {exc:<50s}" for exc, count in exception_counter.items()
