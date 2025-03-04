@@ -26,8 +26,8 @@ dependencies = [
     "coredis",
     "fhaviary>=0.14.0",  # For multi-image support
     "limits",
-    "litellm>=1.60.2",  # Pin for reasoning_content in OpenRouter
-    "pydantic~=2.0,>=2.10.1,<2.10.2",
+    "litellm>=1.60.2,<1.61.16",  # Pin lower for reasoning_content in OpenRouter, upper for https://github.com/BerriAI/litellm/issues/8939
+    "pydantic~=2.0,>=2.10.1",
     "tiktoken>=0.4.0",
     "typing-extensions; python_version <= '3.11'",  # for typing.override
 ]

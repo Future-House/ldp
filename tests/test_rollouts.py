@@ -25,7 +25,7 @@ class DummyEnv(Environment[None]):
         self, action: ToolRequestMessage
     ) -> tuple[list[Message], float, bool, bool]:
         if action.tool_calls:
-            responses = cast(list[Message], await self.exec_tool_calls(action))
+            responses = cast("list[Message]", await self.exec_tool_calls(action))
         else:
             responses = [Message(content="Use the 'talk' tool to speak.")]
 
@@ -46,9 +46,9 @@ class DummyEnv(Environment[None]):
         return Frame()
 
 
-async def count_exclamations(traj: Trajectory) -> float:
+async def count_exclamations(traj: Trajectory) -> float:  # noqa: RUF029
     last_step = traj.steps[-1]
-    agent_state = cast(SimpleAgentState, last_step.next_agent_state)
+    agent_state = cast("SimpleAgentState", last_step.next_agent_state)
     return float(
         sum(m.content.count("!") for m in agent_state.messages if m.content is not None)
     )
@@ -82,7 +82,7 @@ async def test_rollout(training: bool) -> None:
     assert all(v == 2 for v in callback.fn_invocations.values())
 
 
-async def adeepcopy(x):
+async def adeepcopy(x):  # noqa: RUF029
     return deepcopy(x)
 
 
@@ -190,7 +190,7 @@ class CountingAgent(Agent[CountingAgentState]):
     async def get_asv(
         self, agent_state: CountingAgentState, obs: list[Message]
     ) -> tuple[OpResult[ToolRequestMessage], CountingAgentState, float]:
-        new_state = CountingAgentState(count=float(cast(str, obs[0].content)) + 1)
+        new_state = CountingAgentState(count=float(cast("str", obs[0].content)) + 1)
         action = await self.op()
         return action, new_state, 0.0
 
@@ -258,7 +258,7 @@ class TestTreeSearch:
         assert len(trajs) == 8
 
         traj_ids_wo_root: set[str] = {
-            cast(str, traj.traj_id).replace(tree.root_id, "").lstrip(":")
+            cast("str", traj.traj_id).replace(tree.root_id, "").lstrip(":")
             for traj in trajs
         }
         # IDs should be 0:0:0, 0:0:1, ... 1:1:1 (order doesn't matter)
@@ -268,7 +268,7 @@ class TestTreeSearch:
 
         observations: dict[tuple[str, ...], str] = {}
         for traj in trajs:
-            branch_path = tuple(cast(str, traj.traj_id).split(":")[1:])
+            branch_path = tuple(cast("str", traj.traj_id).split(":")[1:])
 
             prev_step: Transition | None = None
             for i_step, step in enumerate(traj.steps):

@@ -31,7 +31,7 @@ async def test_circular_buffer() -> None:
     assert not buf, "Failed to clear data"
 
 
-async def _dummy_q_function(*args, **kwargs) -> float:  # noqa: ARG001
+async def _dummy_q_function(*args, **kwargs) -> float:  # noqa: ARG001, RUF029
     return 1.0
 
 

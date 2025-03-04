@@ -71,37 +71,40 @@ class TestReActModule:
             expected_message = Message(
                 role="system",
                 content=(
-                    "Answer the following questions as best you can. You have access to the"
-                    " following tools:\n\nNAME: print_story\n\nSYNOPSIS:\n   "
+                    "Answer the following questions as best you can. You have access to"
+                    " the following tools:\n\nNAME: print_story\n\nSYNOPSIS:\n   "
                     " print_story(string story)\n\nDESCRIPTION:\n    Print a"
-                    " story.\n\nPARAMETERS:\n    story (string): Story to print.\n\nNAME:"
-                    " cast_float\n\nSYNOPSIS:\n    cast_float(string"
+                    " story.\n\nPARAMETERS:\n    story (string): Story to"
+                    " print.\n\nNAME: cast_float\n\nSYNOPSIS:\n    cast_float(string"
                     " x)\n\nDESCRIPTION:\n    Cast the input argument x to a"
                     " float.\n\nPARAMETERS:\n    x (string): No description"
-                    " provided.\n\nNAME: cast_int\n\nSYNOPSIS:\n   "
-                    " cast_int(number x)\n\nDESCRIPTION:\n    Cast the input argument x to"
-                    " an integer.\n\nPARAMETERS:\n    x (number): No description"
-                    " provided.\n\nNAME: get_random_int\n\nSYNOPSIS:\n    get_random_int()\n\nDESCRIPTION:\n    Get a random integer in 1 to 10.\n\nPARAMETERS:\n\nUse the following format:\n\nThought: you should"
-                    " always think about what to do\nAction: the action to take, should be"
-                    " one of [print_story, cast_float, cast_int, get_random_int]\nAction Input: comma"
-                    " separated list of inputs to action as python tuple\nObservation: the"
-                    " result of the action\n... (this Thought/Action/Action"
-                    " Input/Observation can repeat N times)\n\nExample:\n\nThought: I need"
-                    ' to use the get_weather tool\nAction: get_weather\nAction Input: "New'
-                    ' York", 7\nObservation: The 7 day forecast for New York is [...]'
+                    " provided.\n\nNAME: cast_int\n\nSYNOPSIS:\n    cast_int(number"
+                    " x)\n\nDESCRIPTION:\n    Cast the input argument x to an"
+                    " integer.\n\nPARAMETERS:\n    x (number): No description"
+                    " provided.\n\nNAME: get_random_int\n\nSYNOPSIS:\n   "
+                    " get_random_int()\n\nDESCRIPTION:\n    Get a random integer in 1"
+                    " to 10.\n\nPARAMETERS:\n\nUse the following format:\n\nThought:"
+                    " you should always think about what to do\nAction: the action to"
+                    " take, should be one of [print_story, cast_float, cast_int,"
+                    " get_random_int]\nAction Input: comma separated list of inputs to"
+                    " action as python tuple\nObservation: the result of the"
+                    " action\n... (this Thought/Action/Action Input/Observation can"
+                    " repeat N times)\n\nExample:\n\nThought: I need to use the"
+                    ' get_weather tool\nAction: get_weather\nAction Input: "New York",'
+                    " 7\nObservation: The 7 day forecast for New York is [...]"
                 ),
             )
         else:
             expected_message = Message(
                 role="system",
                 content=(
-                    "Answer the following questions as best you can, using the provided tools."
-                    "\n\nUse the following format:\n\nThought: you should"
-                    " always think about what to do\nAction: the action to take, should be"
-                    " one of the provided tools with necessary arguments"
-                    "\nObservation: the result of the action\n... (this Thought/Action"
-                    "/Observation can repeat N times)\n\nExample:\n\nThought: I need"
-                    ' to use the get_weather tool\nAction: get_weather("New York",'
+                    "Answer the following questions as best you can, using the provided"
+                    " tools.\n\nUse the following format:\n\nThought: you should always"
+                    " think about what to do\nAction: the action to take, should be one"
+                    " of the provided tools with necessary arguments\nObservation: the"
+                    " result of the action\n... (this Thought/Action/Observation can"
+                    " repeat N times)\n\nExample:\n\nThought: I need to use the"
+                    ' get_weather tool\nAction: get_weather("New York",'
                     " 7)\nObservation: The 7 day forecast for New York is [...]"
                 ),
             )

@@ -91,8 +91,10 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         description="Starting configuration for the LLM model.",
     )
     sys_prompt: str = Field(
-        description="Learnable system prompt template. If not provided, a default ReAct prompt "
-        "template will be assigned, depending on the single_prompt setting.",
+        description=(
+            "Learnable system prompt template. If not provided, a default ReAct prompt "
+            "template will be assigned, depending on the single_prompt setting."
+        ),
     )
     tool_description_method: ToolDescriptionMethods = Field(
         default=ToolDescriptionMethods.STR,
@@ -101,11 +103,12 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
     single_prompt: bool = Field(
         default=False,
         description=(
-            "Specifies whether to use a single prompt for both reasoning and action selection, "
-            "or to use 2 sequential prompts. When set to True, a single API call is made, and ldp "
-            "handles the message parsing to extract the action. If set to False, a second API call "
-            "is made specifically to request the action, with parsing done on the API side. "
-            "Defaults to False, as it results in fewer action selection failures."
+            "Specifies whether to use a single prompt for both reasoning and action"
+            " selection, or to use 2 sequential prompts. When set to True, a single API"
+            " call is made, and ldp handles the message parsing to extract the action."
+            " If set to False, a second API call is made specifically to request the"
+            " action, with parsing done on the API side. Defaults to False, as it"
+            " results in fewer action selection failures."
         ),
     )
 
@@ -118,9 +121,11 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
     def make_act_agent(cls, **kwargs) -> Self:
         single_prompt = kwargs.pop("single_prompt", False)
         return cls(
-            sys_prompt=ACT_DEFAULT_SINGLE_PROMPT_TEMPLATE
-            if single_prompt
-            else ACT_DEFAULT_PROMPT_TEMPLATE,
+            sys_prompt=(
+                ACT_DEFAULT_SINGLE_PROMPT_TEMPLATE
+                if single_prompt
+                else ACT_DEFAULT_PROMPT_TEMPLATE
+            ),
             **kwargs,
         )
 
@@ -157,7 +162,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         )
         # NOTE: this blows up with the underlying exception... it isn't wrapped in a
         # RetryError like normal tenacity
-        return cast(Future, retry_state.outcome).result()
+        return cast("Future", retry_state.outcome).result()
 
     @retry(
         retry=retry_if_exception_type(MalformedMessageError),

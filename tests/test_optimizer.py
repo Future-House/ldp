@@ -266,7 +266,7 @@ class TestMemoryOpt:
             "Incorrect number of stored memories after optimization step."
         )
         assert all(
-            not cast(dict, m.metadata)["done"]
+            not cast("dict", m.metadata)["done"]
             for m in model.mem_op.memory_model.memories.values()
         )
         assert not opt.example_buffer, (

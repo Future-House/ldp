@@ -38,7 +38,7 @@ _CALL_ID = contextvars.ContextVar[CallID]("call_id")
 
 
 @asynccontextmanager
-async def compute_graph() -> AsyncIterator[UUID]:
+async def compute_graph() -> AsyncIterator[UUID]:  # noqa: RUF029
     """Initialize a compute graph by setting a run ID.
 
     If a run ID is already set (i.e. we are already inside a
@@ -74,7 +74,7 @@ def get_run_id() -> UUID:
 
 
 @asynccontextmanager
-async def op_call() -> AsyncIterator[CallID]:
+async def op_call() -> AsyncIterator[CallID]:  # noqa: RUF029
     """Decorate an op call with a call ID.
 
     If a call ID is already set (i.e. we are already inside an op call),

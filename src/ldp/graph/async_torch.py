@@ -167,7 +167,7 @@ class AsyncTorchModule(AsyncBufferedWorker):
 
         result = await asyncio.gather(*[
             async_model(input=torch.rand(2)) for _ in range(10)
-        ])
+        ])  # fmt: skip
         ```
         In the above example, note that we are making 10 calls with a batch size of 4.
         The first two groups of 4 will be batched and executed as they arrive. The last 2

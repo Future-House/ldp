@@ -39,9 +39,11 @@ class AgentLMConfig(_LMConfig):
 
     llm_call_kwargs: dict = Field(
         default_factory=dict,
-        description="Additional kwargs to pass to LocalLLMCallOp.forward. "
-        "Note that the validator defaults top_k=None and top_p=1.0, which "
-        "are better defaults than HF's.",
+        description=(
+            "Additional kwargs to pass to LocalLLMCallOp.forward. "
+            "Note that the validator defaults top_k=None and top_p=1.0, which "
+            "are better defaults than HF's."
+        ),
         validate_default=True,
     )
     max_traj_token_count: int | None = Field(
@@ -101,7 +103,7 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
 
         # Execute the LLM operation call
         result = cast(
-            OpResult[Message | ToolRequestMessage],
+            "OpResult[Message | ToolRequestMessage]",
             await self._llm_call_op(
                 xi=messages,
                 temperature=self.llm_model.temperature,
@@ -114,14 +116,15 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
         # Type-checking for expected output
         if not isinstance(result.value, ToolRequestMessage):
             raise TypeError(
-                f"Expected ToolRequestMessage, got {type(result.value)}: {result.value}, history: {messages}"
+                f"Expected ToolRequestMessage, got {type(result.value)}:"
+                f" {result.value}, history: {messages}"
             )
 
         # Update state messages with result and return the new state
         next_state.messages = [*next_state.messages, result.value]
         self._validate_token_count(next_state.messages, next_state.tools)
 
-        return cast(OpResult[ToolRequestMessage], result), next_state, 0.0
+        return cast("OpResult[ToolRequestMessage]", result), next_state, 0.0
 
     def _validate_token_count(self, messages: list[Message], tools: list[Tool]):
         if self.llm_model.max_traj_token_count is None:

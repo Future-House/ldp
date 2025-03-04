@@ -24,7 +24,7 @@ from ldp.llms.prompts import indent_xml
 from .simple_agent import SimpleAgent, SimpleAgentState
 
 
-async def _default_query_factory(messages: Iterable[Message]) -> str:
+async def _default_query_factory(messages: Iterable[Message]) -> str:  # noqa: RUF029
     return "\n\n".join([str(m) for m in messages if m.role != "system"])
 
 
@@ -120,7 +120,7 @@ class MemoryAgent(SimpleAgent):
             use_memories=bool(memories.value),
         )
         result = cast(
-            OpResult[ToolRequestMessage],
+            "OpResult[ToolRequestMessage]",
             await self._llm_call_op(
                 await self._config_op(), msgs=packaged_messages, tools=next_state.tools
             ),

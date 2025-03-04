@@ -8,6 +8,7 @@ import litellm
 import numpy as np
 import pytest
 from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
+from litellm import LlmProviders, get_llm_provider
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
 from lmi.exceptions import JSONSchemaValidationError
@@ -580,7 +581,7 @@ class TestMultipleCompletion:
 
 class TestTooling:
     @pytest.mark.asyncio
-    # @pytest.mark.vcr
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     async def test_tool_selection(self) -> None:
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value, config={"n": 1})
 
@@ -598,7 +599,11 @@ class TestTooling:
         messages = [
             Message(
                 role="system",
-                content="You are a helpful assistant who can use tools to do math. Use a tool if needed. If you don't need a tool, just respond with the answer.",
+                content=(
+                    "You are a helpful assistant who can use tools to do math. Use a"
+                    " tool if needed. If you don't need a tool, just respond with the"
+                    " answer."
+                ),
             ),
             Message(role="user", content="What is double of 8?"),
         ]
@@ -668,6 +673,67 @@ class TestTooling:
             assert not result.messages[0].tool_calls
 
 
+class TestReasoning:
+    @pytest.mark.parametrize(
+        ("llm_name", "llm_settings"),
+        [
+            pytest.param(
+                "deepseek/deepseek-reasoner",
+                {
+                    "model_list": [
+                        {
+                            "model_name": "deepseek/deepseek-reasoner",
+                            "litellm_params": {
+                                "model": "deepseek/deepseek-reasoner",
+                                "api_base": "https://api.deepseek.com/v1",
+                            },
+                        }
+                    ]
+                },
+                id="deepseek-reasoner",
+            ),
+            pytest.param(
+                "openrouter/deepseek/deepseek-r1",
+                {},
+                id="openrouter-deepseek",
+            ),
+        ],
+    )
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.asyncio
+    async def test_deepseek_model(
+        self, llm_name: str, llm_settings: dict[str, Any]
+    ) -> None:
+        llm = LiteLLMModel(name=llm_name, config=llm_settings)
+        messages = [
+            Message(
+                role="system",
+                content="Think deeply about the following question and answer it.",
+            ),
+            Message(content="What is the meaning of life?"),
+        ]
+        results = await llm.call(messages)
+        for result in results:
+            assert result.reasoning_content
+
+        outputs: list[str] = []
+        results = await llm.call(messages, callbacks=[outputs.append])
+
+        if LlmProviders.OPENROUTER.value in get_llm_provider(llm.name):
+            # If using OpenRouter, we expect the streaming to fail populating the reasoning_content
+            with pytest.raises(
+                AssertionError,
+                match="OpenRouter models with streaming are not supported",
+            ):
+                assert results[0].reasoning_content, (
+                    "OpenRouter models with streaming are not supported"
+                )
+        else:
+            for i, result in enumerate(results):
+                assert result.reasoning_content
+                assert outputs[i] == result.text
+
+
 def test_json_schema_validation() -> None:
     # Invalid JSON
     mock_completion1 = Mock()
@@ -691,55 +757,3 @@ def test_json_schema_validation() -> None:
     with pytest.raises(JSONSchemaValidationError):
         validate_json_completion(mock_completion2, DummyModel)
     validate_json_completion(mock_completion3, DummyModel)
-
-
-@pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
-@pytest.mark.asyncio
-async def test_deepseek_model():
-    llm = LiteLLMModel(
-        name="deepseek/deepseek-reasoner",
-        config={
-            "model_list": [
-                {
-                    "model_name": "deepseek/deepseek-reasoner",
-                    "litellm_params": {
-                        "model": "deepseek/deepseek-reasoner",
-                        "api_base": "https://api.deepseek.com/v1",
-                    },
-                }
-            ]
-        },
-    )
-    messages = [
-        Message(
-            role="system",
-            content="Think deeply about the following question and answer it.",
-        ),
-        Message(content="What is the meaning of life?"),
-    ]
-    results = await llm.call(messages)
-    for result in results:
-        assert result.reasoning_content
-
-    outputs: list[str] = []
-    results = await llm.call(messages, callbacks=[outputs.append])
-    for result in results:
-        assert result.reasoning_content
-
-
-@pytest.mark.vcr
-@pytest.mark.asyncio
-async def test_openrouter_reasoning():
-    llm = LiteLLMModel(name="openrouter/deepseek/deepseek-r1", config={"n": 1})
-    messages = [
-        Message(content="What is the meaning of life?"),
-    ]
-    results = await llm.call(messages, include_reasoning=True)
-    assert results[0].reasoning_content
-
-    outputs: list[str] = []
-    with pytest.raises(
-        NotImplementedError,
-        match=r"Reasoning with OpenRouter via `include_reasoning` is not supported in streaming mode.*",
-    ):
-        await llm.call(messages, include_reasoning=True, callbacks=[outputs.append])

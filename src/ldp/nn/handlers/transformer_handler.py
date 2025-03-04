@@ -205,7 +205,8 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
         # If model is not FSDP, this context manager is a no-op.
         with FullyShardedDataParallel.summon_full_params(model, recurse=False):
             logger.debug(
-                f"model.generate() input_ids shape: {kwargs['input_ids'].shape}, rank {os.environ.get('RANK')}"
+                f"model.generate() input_ids shape: {kwargs['input_ids'].shape}, rank"
+                f" {os.environ.get('RANK')}"
             )
             return model.generate(
                 *args,
@@ -654,7 +655,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
             )
         ]
         results = self.client_gather(futures)
-        results = cast(list[TReturn], [res.result().result() for res in results])
+        results = cast("list[TReturn]", [res.result().result() for res in results])
 
         if split_data:
             return chunker.dechunkify(results, dummy_flags)
@@ -694,8 +695,9 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
     def wrap_func(
         self,
-        func: Callable[Concatenate[ParallelTransformerHandler, TParams], TReturn]
-        | None = None,
+        func: (
+            Callable[Concatenate[ParallelTransformerHandler, TParams], TReturn] | None
+        ) = None,
         *,
         worker_agg_fn: Callable[[list[TReturn]], TReturn] | None = None,
         **kwargs,
@@ -859,13 +861,15 @@ def decollate_fn_transformer_decoder(
     return [
         GenerateDecoderOnlyOutput({
             "sequences": batched_output.sequences[i][None, :],
-            "scores": [
-                score[i][None, :]
-                for score in batched_output.scores
-                if (score[i] is not None)
-            ]
-            if batched_output.scores
-            else None,
+            "scores": (
+                [
+                    score[i][None, :]
+                    for score in batched_output.scores
+                    if (score[i] is not None)
+                ]
+                if batched_output.scores
+                else None
+            ),
             # There are other fields in the batched output that we can add here,
             # but no calling code is using them, so ignore for now.
         })
@@ -1056,8 +1060,9 @@ def maybe_set_tokenizer_chat_template(
     if not tokenizer.chat_template or "{% generation %}" in tokenizer.chat_template:
         # Warn the user about potential training issues
         logger.warning(
-            "Tokenizer does not have a chat template with '{% generation %}'. "
-            "Generative training will have issues as the tag does not exist, which means "
-            "HuggingFace's internal code for retrieving the assistant_mask for training will be invalid. "
-            "Fine-tuning for other purposes, like regression, will not be affected."
+            "Tokenizer does not have a chat template with '{% generation %}'."
+            " Generative training will have issues as the tag does not exist, which"
+            " means HuggingFace's internal code for retrieving the assistant_mask for"
+            " training will be invalid. Fine-tuning for other purposes, like"
+            " regression, will not be affected."
         )

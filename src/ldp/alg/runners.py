@@ -238,7 +238,7 @@ class OnlineTrainer:
     @eval_mode()
     async def evaluate(self, **kwargs) -> None:
         await _run_eval_loop(
-            dataset=cast(TaskDataset, self.eval_dataset),
+            dataset=cast("TaskDataset", self.eval_dataset),
             rollout_manager=self.rollout_manager,
             batch_size=self.config.batch_size,
             num_iterations=self.config.num_eval_iterations,
@@ -276,7 +276,7 @@ class OnlineTrainer:
             for step in traj.steps:
                 # TODO: make this async
                 # step.action is not None because we checked traj.failed above
-                cast(OpResult, step.action).compute_grads()
+                cast("OpResult", step.action).compute_grads()
 
         self.optimizer.aggregate(training_batch)
 
