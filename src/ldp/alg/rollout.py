@@ -79,6 +79,8 @@ class RolloutManager:
         environment_factory: Callable[[], TEnv],
         batch_size: int = 1,
         max_steps: int | None = None,
+        *,
+        log_exceptions_immediately: bool = False,
     ) -> list[tuple[Trajectory, TEnv]]:
         """Run rollouts in parallel, using a factory to construct environments.
 
@@ -92,6 +94,8 @@ class RolloutManager:
                 an environment instance
             batch_size (int, optional): Defaults to 1.
             max_steps (int | None, optional): Max steps per rollout. Defaults to None (see above).
+            log_exceptions_immediately (bool, optional): Whether to log exceptions as they occur
+                or only at the end of the rollouts. Defaults to False.
 
         Returns:
             list[tuple[Trajectory, Environment]]: A list of (trajectory, environment) tuples: one per rollout.
@@ -102,6 +106,8 @@ class RolloutManager:
         self,
         environments: Sequence[Environment],
         max_steps: int | None = None,
+        *,
+        log_exceptions_immediately: bool = False,
     ) -> list[Trajectory]:
         """Run rollouts in parallel on a list of provided environments.
 
@@ -109,26 +115,35 @@ class RolloutManager:
             environments: A list of environments to run rollouts on.
             max_steps: Max steps per rollout. Defaults to None, in which case the rollouts are run
                 until environment returns done.
+            log_exceptions_immediately (bool, optional): Whether to log exceptions as they occur
+                or only at the end of the rollouts. Defaults to False.
         """
 
-    async def sample_trajectories(self, **kwargs):
-        if "environment_factory" in kwargs:
-            assert "environments" not in kwargs, (
-                "Cannot use environment_factory with environments"
-            )
-
+    async def sample_trajectories(
+        self,
+        environment_factory: Callable[[], Environment] | None = None,
+        environments: Sequence[Environment] | None = None,
+        batch_size: int = 1,
+        max_steps: int | None = None,
+        *,
+        log_exceptions_immediately: bool = False,
+    ) -> list[tuple[Trajectory, Environment]] | list[Trajectory]:
+        """Sample trajectories from environments, either via factory or pre-created."""
+        if environment_factory is not None:
+            assert environments is None, "Cannot use environment_factory with environments"
             return await self._sample_trajectories_from_env_factory(
-                kwargs["environment_factory"],
-                kwargs.get("batch_size", 1),
-                kwargs.get("max_steps"),
+                environment_factory,
+                batch_size,
+                max_steps,
+                log_exceptions_immediately=log_exceptions_immediately,
             )
 
-        if "environments" in kwargs:
-            assert "environment_factory" not in kwargs, (
-                "Cannot use environments with environment_factory"
-            )
+        if environments is not None:
+            assert environment_factory is None, "Cannot use environments with environment_factory"
             return await self._sample_trajectories_from_envs(
-                kwargs["environments"], kwargs.get("max_steps")
+                environments, 
+                max_steps,
+                log_exceptions_immediately=log_exceptions_immediately,
             )
 
         raise TypeError(
@@ -141,6 +156,8 @@ class RolloutManager:
         environment_factory: Callable[[], Environment],
         batch_size: int = 1,
         max_steps: int | None = None,
+        *,
+        log_exceptions_immediately: bool = False,
     ) -> list[tuple[Trajectory, Environment]]:
         self.traj_buffer.clear()
 
@@ -156,6 +173,7 @@ class RolloutManager:
                     traj_id=uuid.uuid4().hex,
                     env=environment_factory(),
                     max_steps=max_steps,
+                    log_exceptions_immediately=log_exceptions_immediately,
                 )
             )
             for idx in range(batch_size)
@@ -182,6 +200,7 @@ class RolloutManager:
                             traj_id=uuid.uuid4().hex,
                             env=environment_factory(),
                             max_steps=remaining_steps,
+                            log_exceptions_immediately=log_exceptions_immediately,
                         )
                     )
                     new_tasks.append(new_task)
@@ -194,6 +213,8 @@ class RolloutManager:
         self,
         environments: Sequence[Environment],
         max_steps: int | None = None,
+        *,
+        log_exceptions_immediately: bool = False,
     ) -> list[Trajectory]:
         self.traj_buffer.clear()
         exception_counter: Counter = Counter()
@@ -202,7 +223,14 @@ class RolloutManager:
 
         # Create all tasks first
         tasks = [
-            asyncio.create_task(self._rollout(traj_id, env, max_steps=max_steps))
+            asyncio.create_task(
+                self._rollout(
+                    traj_id, 
+                    env, 
+                    max_steps=max_steps,
+                    log_exceptions_immediately=log_exceptions_immediately
+                )
+            )
             for traj_id, env in zip(traj_ids, environments, strict=True)
         ]
 
@@ -229,10 +257,12 @@ class RolloutManager:
 
         # Final summary of exceptions (if any)
         if exception_counter:
-            logger.info("Caught exceptions:")
-            logger.info("%-6s %-50s", "Count", "Exception")
-            for exc, count in exception_counter.items():
-                logger.info("%-6d %-50s", count, exc)
+            summary = ["Caught exceptions:", "Count  Exception"]
+            summary.extend(
+                f"{count:<6d} {exc:<50s}"
+                for exc, count in exception_counter.items()
+            )
+            logger.info("\n".join(summary))
 
         return [self.traj_buffer[traj_id] for traj_id in traj_ids]
 
@@ -294,6 +324,9 @@ class RolloutManager:
         except CaughtError as e:
             # NOTE: This trajectory should not be used for regular training.
             # We save the last transition here for debugging, etc.
+            if log_exceptions_immediately:
+                logger.exception(f"Exception in rollout {traj_id}: {e.original_exc}")
+                
             await store_step(
                 Transition(
                     timestep=len(trajectory.steps),

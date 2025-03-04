@@ -120,12 +120,6 @@ class AsyncBufferedWorker(ABC):
 
         If neither condition is met, do nothing.
         """
-        # Technically should not happen, but if a coroutine crashes, it could release
-        # self._lock before placing results in _results_buffer and additional process
-        # coming inside this func will crash as self._work_buffer will be empty.
-        if not self._work_buffer:
-            return
-
         now = time.time()
 
         # sort by oldest requests first
