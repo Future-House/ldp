@@ -154,18 +154,27 @@ class TensorChunker:
         """
         if isinstance(value, torch.Tensor):
             chunks = list(torch.chunk(value, self.num_chunks, dim=0))
-            dummy_chunk_flags = []
-            for i in range(self.num_chunks):
-                if i >= len(chunks):
-                    # Chunk 0 will always exist, and we need only a batch of one ([:1])
-                    # to activate the model.
-                    # We use the first element of the existing chunks as real data to avoid
-                    # errors in the model that may expect a specific token structure.
-                    chunks.append(chunks[0][:1])
-                    dummy_chunk_flags.append(True)
-                else:
-                    dummy_chunk_flags.append(False)
+            num_existing_chunks = len(chunks)
+
+            if num_existing_chunks < self.num_chunks:
+                # Calculate the number of dummy chunks required
+                num_dummy_chunks = self.num_chunks - num_existing_chunks
+
+                # Create the dummy chunks from the first chunk
+                real_data_chunk = chunks[0][:1]
+                dummy_chunks = [real_data_chunk] * num_dummy_chunks
+
+                # Append dummy chunks to the existing chunks
+                chunks.extend(dummy_chunks)
+
+                # Generate dummy_chunk_flags with the required True/False values
+                dummy_chunk_flags = [False] * num_existing_chunks + [
+                    True
+                ] * num_dummy_chunks
+            else:
+                dummy_chunk_flags = [False] * self.num_chunks
 
             return chunks, dummy_chunk_flags
+
         # Non-tensor values are replicated
         return [value] * self.num_chunks, None
