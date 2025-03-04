@@ -411,15 +411,17 @@ def request_limited(func):
         await self.check_request_limit()
 
         if isasyncgenfunction(func):
-            async def request_limited_generator() -> AsyncIterable[LLMResult]:
 
+            async def request_limited_generator() -> AsyncIterable[LLMResult]:
                 first_item = True
                 async for item in func(self, *args, **kwargs):
+                    # Skip rate limit check for first item since we already checked at generator start
                     if not first_item:
                         await self.check_request_limit()
                     else:
                         first_item = False
                     yield item
+
             return request_limited_generator()
         return await func(self, *args, **kwargs)
 
@@ -614,6 +616,7 @@ class LiteLLMModel(LLMModel):
                 weight=max(int(token_count), 1),
                 **kwargs,
             )
+
     @request_limited
     @rate_limited
     async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:
