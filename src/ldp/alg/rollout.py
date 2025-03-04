@@ -80,7 +80,7 @@ class RolloutManager:
         batch_size: int = 1,
         max_steps: int | None = None,
         *,
-        log_exceptions_immediately: bool = False,
+        log_exceptions_immediately: bool = True,
     ) -> list[tuple[Trajectory, Environment]] | list[Trajectory]:
         """Sample trajectories from environments, either via factory or pre-created.
 
@@ -106,7 +106,7 @@ class RolloutManager:
             max_steps: Max steps per rollout. Defaults to None, in which case the rollouts are run
                 until environment returns done.
             log_exceptions_immediately: Whether to log exceptions as they occur
-                or only at the end of the rollouts. Defaults to False.
+                or only at the end of the rollouts.
 
         Returns:
             Either list[tuple[Trajectory, Environment]] or list[Trajectory] depending on whether
@@ -147,14 +147,17 @@ class RolloutManager:
         batch_size: int = 1,
         max_steps: int | None = None,
         *,
-        log_exceptions_immediately: bool = False,
+        log_exceptions_immediately: bool = True,
     ) -> list[tuple[Trajectory, Environment]]:
         self.traj_buffer.clear()
+        exception_counter: Counter = Counter()
 
         async def rollout_with_args(idx: int, **rollout_kwargs):
             return idx, await self._rollout(**rollout_kwargs), rollout_kwargs
 
         accumulated_steps = [0] * batch_size
+        total_trajectories = 0  # Counter for completed trajectories
+
         # submit initial batch of tasks
         tasks = [
             asyncio.create_task(
@@ -170,32 +173,59 @@ class RolloutManager:
         ]
 
         results = []
-        while tasks:
-            done, pending = await asyncio.wait(
-                tasks, return_when=asyncio.FIRST_COMPLETED
-            )
-            new_tasks = []
-            for task in done:
-                idx, traj, kwargs = await task
-                results.append((traj, kwargs["env"]))
-                accumulated_steps[idx] += len(traj.steps)
-                if (
-                    max_steps is not None
-                    and (remaining_steps := max_steps - accumulated_steps[idx]) > 0
-                ):
-                    # submit another task if we haven't reached max_steps
-                    new_task = asyncio.create_task(
-                        rollout_with_args(
-                            idx,
-                            traj_id=uuid.uuid4().hex,
-                            env=environment_factory(),
-                            max_steps=remaining_steps,
-                            log_exceptions_immediately=log_exceptions_immediately,
-                        )
-                    )
-                    new_tasks.append(new_task)
+        with tqdm(
+            desc="Rollouts",
+            unit="rollout",
+            ncols=0,
+        ) as pbar:
+            while tasks:
+                done, pending = await asyncio.wait(
+                    tasks, return_when=asyncio.FIRST_COMPLETED
+                )
+                new_tasks = []
+                for task in done:
+                    idx, traj, kwargs = await task
+                    results.append((traj, kwargs["env"]))
+                    total_trajectories += 1
+                    pbar.update(1)
 
-            tasks = list(pending) + new_tasks
+                    steps_in_traj = len(traj.steps)
+                    accumulated_steps[idx] += steps_in_traj
+
+                    # Check for exceptions in this trajectory
+                    if traj.steps and traj.steps[-1].metadata.get("exception"):
+                        exc_str: str = str(traj.steps[-1].metadata["exception"])[
+                            :500
+                        ].replace('"', "'")
+                        exception_counter[exc_str] += 1
+                        num_exceptions = sum(exception_counter.values())
+                        pbar.set_postfix({"num_exceptions": num_exceptions})
+
+                    if (
+                        max_steps is not None
+                        and (remaining_steps := max_steps - accumulated_steps[idx]) > 0
+                    ):
+                        # submit another task if we haven't reached max_steps
+                        new_task = asyncio.create_task(
+                            rollout_with_args(
+                                idx,
+                                traj_id=uuid.uuid4().hex,
+                                env=environment_factory(),
+                                max_steps=remaining_steps,
+                                log_exceptions_immediately=log_exceptions_immediately,
+                            )
+                        )
+                        new_tasks.append(new_task)
+
+                tasks = list(pending) + new_tasks
+
+        # Final summary of exceptions (if any)
+        if exception_counter and not log_exceptions_immediately:
+            summary = ["Caught exceptions:", "Count  Exception"]
+            summary.extend(
+                f"{count:<6d} {exc:<50s}" for exc, count in exception_counter.items()
+            )
+            logger.info("\n".join(summary))
 
         return results
 
@@ -204,7 +234,7 @@ class RolloutManager:
         environments: Sequence[Environment],
         max_steps: int | None = None,
         *,
-        log_exceptions_immediately: bool = False,
+        log_exceptions_immediately: bool = True,
     ) -> list[Trajectory]:
         self.traj_buffer.clear()
         exception_counter: Counter = Counter()
@@ -261,7 +291,7 @@ class RolloutManager:
         env: Environment,
         max_steps: int | None,
         *,
-        log_exceptions_immediately: bool = False,
+        log_exceptions_immediately: bool = True,
     ) -> Trajectory:
         trajectory = Trajectory(traj_id=traj_id)
 
