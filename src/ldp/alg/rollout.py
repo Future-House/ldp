@@ -5,7 +5,7 @@ import uuid
 from collections import Counter
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager, nullcontext
-from typing import Any, TypeVar, overload
+from typing import Any, TypeVar
 
 from aviary.core import Environment, Message
 from tqdm import tqdm
@@ -73,64 +73,52 @@ class RolloutManager:
         self.traj_buffer: dict[str, Trajectory] = {}
         self.callbacks = callbacks or []
 
-    @overload
-    async def sample_trajectories(  # noqa: D418
-        self,
-        environment_factory: Callable[[], TEnv],
-        batch_size: int = 1,
-        max_steps: int | None = None,
-        *,
-        log_exceptions_immediately: bool = False,
-    ) -> list[tuple[Trajectory, TEnv]]:
-        """Run rollouts in parallel, using a factory to construct environments.
-
-        We will construct `batch_size` environments and run rollouts on each of them.
-        If `max_steps` is set, rollouts will be truncated at this value. If a rollout
-        has fewer than `max_steps`, then a new environment will be constructed and another
-        rollout will be started until `max_steps` is reached.
-
-        Args:
-            environment_factory: A no-argument callable that returns
-                an environment instance
-            batch_size (int, optional): Defaults to 1.
-            max_steps (int | None, optional): Max steps per rollout. Defaults to None (see above).
-            log_exceptions_immediately (bool, optional): Whether to log exceptions as they occur
-                or only at the end of the rollouts. Defaults to False.
-
-        Returns:
-            list[tuple[Trajectory, Environment]]: A list of (trajectory, environment) tuples: one per rollout.
-        """
-
-    @overload
-    async def sample_trajectories(  # noqa: D418
-        self,
-        environments: Sequence[Environment],
-        max_steps: int | None = None,
-        *,
-        log_exceptions_immediately: bool = False,
-    ) -> list[Trajectory]:
-        """Run rollouts in parallel on a list of provided environments.
-
-        Args:
-            environments: A list of environments to run rollouts on.
-            max_steps: Max steps per rollout. Defaults to None, in which case the rollouts are run
-                until environment returns done.
-            log_exceptions_immediately (bool, optional): Whether to log exceptions as they occur
-                or only at the end of the rollouts. Defaults to False.
-        """
-
     async def sample_trajectories(
         self,
-        environment_factory: Callable[[], Environment] | None = None,
-        environments: Sequence[Environment] | None = None,
+        environment_factory: Callable[[], TEnv] | None = None,
+        environments: Sequence[TEnv] | None = None,
         batch_size: int = 1,
         max_steps: int | None = None,
         *,
         log_exceptions_immediately: bool = False,
     ) -> list[tuple[Trajectory, Environment]] | list[Trajectory]:
-        """Sample trajectories from environments, either via factory or pre-created."""
+        """Sample trajectories from environments, either via factory or pre-created.
+
+        There are two main ways to use this method:
+
+        1. Using an environment factory:
+            Run rollouts in parallel, using a factory to construct environments.
+            We will construct `batch_size` environments and run rollouts on each of them.
+            If `max_steps` is set, rollouts will be truncated at this value. If a rollout
+            has fewer than `max_steps`, then a new environment will be constructed and another
+            rollout will be started until `max_steps` is reached.
+
+            In this case, returns a list of (trajectory, environment) tuples.
+
+        2. Using a sequence of environments:
+            Run rollouts in parallel on a list of provided environments.
+            In this case, returns a list of trajectories.
+
+        Args:
+            environment_factory: A no-argument callable that returns an environment instance
+            environments: A list of environments to run rollouts on
+            batch_size: Number of parallel environments to run when using environment_factory. Defaults to 1.
+            max_steps: Max steps per rollout. Defaults to None, in which case the rollouts are run
+                until environment returns done.
+            log_exceptions_immediately: Whether to log exceptions as they occur
+                or only at the end of the rollouts. Defaults to False.
+
+        Returns:
+            Either list[tuple[Trajectory, Environment]] or list[Trajectory] depending on whether
+            environment_factory or environments is provided.
+
+        Raises:
+            TypeError: If neither environment_factory nor environments is provided.
+        """
         if environment_factory is not None:
-            assert environments is None, "Cannot use environment_factory with environments"
+            assert environments is None, (
+                "Cannot use environment_factory with environments"
+            )
             return await self._sample_trajectories_from_env_factory(
                 environment_factory,
                 batch_size,
@@ -139,9 +127,11 @@ class RolloutManager:
             )
 
         if environments is not None:
-            assert environment_factory is None, "Cannot use environments with environment_factory"
+            assert environment_factory is None, (
+                "Cannot use environments with environment_factory"
+            )
             return await self._sample_trajectories_from_envs(
-                environments, 
+                environments,
                 max_steps,
                 log_exceptions_immediately=log_exceptions_immediately,
             )
@@ -225,10 +215,10 @@ class RolloutManager:
         tasks = [
             asyncio.create_task(
                 self._rollout(
-                    traj_id, 
-                    env, 
+                    traj_id,
+                    env,
                     max_steps=max_steps,
-                    log_exceptions_immediately=log_exceptions_immediately
+                    log_exceptions_immediately=log_exceptions_immediately,
                 )
             )
             for traj_id, env in zip(traj_ids, environments, strict=True)
@@ -259,8 +249,7 @@ class RolloutManager:
         if exception_counter:
             summary = ["Caught exceptions:", "Count  Exception"]
             summary.extend(
-                f"{count:<6d} {exc:<50s}"
-                for exc, count in exception_counter.items()
+                f"{count:<6d} {exc:<50s}" for exc, count in exception_counter.items()
             )
             logger.info("\n".join(summary))
 
@@ -271,7 +260,8 @@ class RolloutManager:
         traj_id: str,
         env: Environment,
         max_steps: int | None,
-        max_tokens: int | None = None,  # <-- new argument
+        *,
+        log_exceptions_immediately: bool = False,
     ) -> Trajectory:
         trajectory = Trajectory(traj_id=traj_id)
 
@@ -326,7 +316,7 @@ class RolloutManager:
             # We save the last transition here for debugging, etc.
             if log_exceptions_immediately:
                 logger.exception(f"Exception in rollout {traj_id}: {e.original_exc}")
-                
+
             await store_step(
                 Transition(
                     timestep=len(trajectory.steps),

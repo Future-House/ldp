@@ -17,7 +17,7 @@ import torch
 import torch.distributed as dist
 import tree
 from dask import config
-from dask.distributed import Client, as_completed, wait
+from dask.distributed import Client, as_completed
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from torch import nn
 from torch.cuda import nccl
@@ -192,14 +192,13 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
     @staticmethod
     def model_generate(model: PreTrainedModel, *args, **kwargs):
         """A method that can be used as module_call_fn to sample from an LLM."""
-        if dist.get_world_size() > 1:
+        if int(os.environ.get("WORLD_SIZE", "1")) > 1:
             synced_gpus = kwargs.pop("synced_gpus", None)
             if synced_gpus is None:
                 logger.debug("synced_gpus not defined, defaulting to True.")
                 kwargs["synced_gpus"] = True
             elif not synced_gpus:
                 raise ValueError("synced_gpus must be True when using FSDP.")
-           
 
         # Summoning params per https://github.com/pytorch/pytorch/issues/100069
         # If model is not FSDP, this context manager is a no-op.

@@ -39,12 +39,8 @@ class TestTensorChunker:
         assert torch.equal(split_args[0][0], sample_tensor[:1])
         assert torch.equal(split_args[1][0], sample_tensor[1:2])
         assert torch.equal(split_args[2][0], sample_tensor[2:3])
-        assert torch.equal(
-            split_args[3][0], sample_tensor[:1]
-        )
-        assert torch.equal(
-            split_args[4][0], sample_tensor[:1]
-        )
+        assert torch.equal(split_args[3][0], sample_tensor[:1])
+        assert torch.equal(split_args[4][0], sample_tensor[:1])
 
     def test_chunkify_no_dummy_chunks(self):
         batch_size = 9
@@ -85,15 +81,10 @@ class TestTensorChunker:
         assert dummy_chunk_flags == [False, False, True]
         assert torch.equal(split_args[0][0], sample_tensor[:1])
         assert torch.equal(split_args[1][0], sample_tensor[1:2])
-        assert torch.equal(
-            split_args[2][0], sample_tensor[:1]
-        )
+        assert torch.equal(split_args[2][0], sample_tensor[:1])
         assert torch.equal(split_kwargs[0]["key1"], sample_tensor_kwarg[:1])
         assert torch.equal(split_kwargs[1]["key1"], sample_tensor_kwarg[1:2])
-        assert torch.equal(
-            split_kwargs[2]["key1"],
-            sample_tensor_kwarg[:1]
-        )
+        assert torch.equal(split_kwargs[2]["key1"], sample_tensor_kwarg[:1])
         assert all(split_kwargs[i]["key2"] == "Not split" for i in range(num_chunks))
 
     def test_dechunkify(self):
