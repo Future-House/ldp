@@ -43,36 +43,6 @@ def _setup_model_config(rpm_limit: int | None) -> tuple[dict, str]:
     return model_config, f"RPM={rpm_limit}" if rpm_limit else "No Limit"
 
 
-def _validate_rpm_results(results: dict[str, float]) -> None:
-    """Validate the results of RPM-limited tests.
-
-    Args:
-        results: Dictionary mapping test names to elapsed times.
-    """
-    # Get time with RPM limit (any key starting with "RPM=")
-    time_with_limit = next(
-        (v for k, v in results.items() if k.startswith("RPM=")), None
-    )
-    time_no_limit = results.get("No Limit")
-
-    if time_with_limit is None or time_no_limit is None:
-        pytest.fail("Missing test results for either rate-limited or unlimited case")
-
-    # With RPM limit, completing requests should take appropriate time
-    min_expected_time = 60.0
-    error_msg = (
-        f"With RPM limit, requests should take at least {min_expected_time} seconds, "
-        f"but only took {time_with_limit:.2f} seconds"
-    )
-    assert time_with_limit >= min_expected_time, error_msg
-
-    # The time with limit should be significantly longer than without limit
-    error_msg = (
-        "Expected time with RPM limit to be significantly longer than without limit"
-    )
-    assert time_with_limit > time_no_limit * 1.5, error_msg
-
-
 async def _run_request_test(
     is_concurrent: bool, req_count: int, req_limit: int
 ) -> None:
@@ -121,7 +91,29 @@ async def _run_request_test(
     except (ValueError, RuntimeError) as e:
         pytest.fail(f"Rate-limited requests failed: {e!s}")
 
-    _validate_rpm_results(results)
+    # Validate RPM test results
+    # Get time with RPM limit (any key starting with "RPM=")
+    time_with_limit = next(
+        (v for k, v in results.items() if k.startswith("RPM=")), None
+    )
+    time_no_limit = results.get("No Limit")
+
+    if time_with_limit is None or time_no_limit is None:
+        pytest.fail("Missing test results for either rate-limited or unlimited case")
+
+    # With RPM limit, completing requests should take appropriate time
+    min_expected_time = 60.0
+    error_msg = (
+        f"With RPM limit, requests should take at least {min_expected_time} seconds, "
+        f"but only took {time_with_limit:.2f} seconds"
+    )
+    assert time_with_limit >= min_expected_time, error_msg
+
+    # The time with limit should be significantly longer than without limit
+    error_msg = (
+        "Expected time with RPM limit to be significantly longer than without limit"
+    )
+    assert time_with_limit > time_no_limit * 1.5, error_msg
 
 
 @pytest.mark.asyncio
