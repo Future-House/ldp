@@ -13,7 +13,7 @@ from lmi.llms import CommonLLMNames, LiteLLMModel
 from lmi.types import Message
 
 
-def _setup_model_config(rpm_limit: int | None) -> tuple[dict, str]:
+def _setup_model_config(rpm_limit: int | None = None) -> tuple[dict, str]:
     """Set up the model configuration based on RPM limit.
 
     Args:
@@ -57,7 +57,7 @@ async def _run_request_test(
     results = {}
 
     # Test without RPM limit
-    model_config, test_name = _setup_model_config(None)
+    model_config, test_name = _setup_model_config()
     model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value, config=model_config)
 
     start_time = time.perf_counter()
