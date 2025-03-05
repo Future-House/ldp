@@ -36,9 +36,9 @@ def _setup_model_config(rpm_limit: int | None) -> tuple[dict, str]:
     }
 
     if rpm_limit is not None:
-        model_config["request_limit"] = {
+        model_config["request_limit"] = {  # type: ignore[assignment]
             "deepseek/deepseek-chat": f"{rpm_limit}/minute"
-        }  # type: ignore[assignment]
+        }
 
     return model_config, f"RPM={rpm_limit}" if rpm_limit else "No Limit"
 
