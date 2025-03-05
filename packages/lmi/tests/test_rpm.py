@@ -61,16 +61,13 @@ async def _run_request_test(
     model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value, config=model_config)
 
     start_time = time.perf_counter()
-    try:
-        if is_concurrent:
-            concurrent_tasks = [model.call_single(messages) for _ in range(req_count)]
-            await asyncio.gather(*concurrent_tasks)
-        else:
-            for _ in range(req_count):
-                await model.call_single(messages)
-        results[test_name] = time.perf_counter() - start_time
-    except (ValueError, RuntimeError) as e:
-        pytest.fail(f"Requests without rate limit failed: {e!s}")
+    if is_concurrent:
+        concurrent_tasks = [model.call_single(messages) for _ in range(req_count)]
+        await asyncio.gather(*concurrent_tasks)
+    else:
+        for _ in range(req_count):
+            await model.call_single(messages)
+    results[test_name] = time.perf_counter() - start_time
 
     # Test with RPM limit
     model_config, test_name = _setup_model_config(req_limit)
@@ -80,16 +77,13 @@ async def _run_request_test(
     await asyncio.sleep(60)
 
     start_time = time.perf_counter()
-    try:
-        if is_concurrent:
-            concurrent_tasks = [model.call_single(messages) for _ in range(req_count)]
-            await asyncio.gather(*concurrent_tasks)
-        else:
-            for _ in range(req_count):
-                await model.call_single(messages)
-        results[test_name] = time.perf_counter() - start_time
-    except (ValueError, RuntimeError) as e:
-        pytest.fail(f"Rate-limited requests failed: {e!s}")
+    if is_concurrent:
+        concurrent_tasks = [model.call_single(messages) for _ in range(req_count)]
+        await asyncio.gather(*concurrent_tasks)
+    else:
+        for _ in range(req_count):
+            await model.call_single(messages)
+    results[test_name] = time.perf_counter() - start_time
 
     # Validate RPM test results
     # Get time with RPM limit (any key starting with "RPM=")
