@@ -2,6 +2,7 @@ import asyncio
 import time
 from itertools import product
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from aviary.core import Message
@@ -10,6 +11,7 @@ from limits import RateLimitItemPerSecond
 from lmi.constants import CHARACTERS_PER_TOKEN_ASSUMPTION
 from lmi.embeddings import LiteLLMEmbeddingModel
 from lmi.llms import CommonLLMNames, LiteLLMModel
+from lmi.rate_limiter import GLOBAL_LIMITER
 from lmi.types import LLMResult
 
 LLM_CONFIG_W_RATE_LIMITS = [
@@ -293,3 +295,22 @@ async def test_embedding_rate_limits(
         )
     else:
         assert estimated_tokens_per_second > 0
+
+
+@pytest.mark.asyncio
+async def test_try_acquire():
+    TEST_RATE_CONFIG = {
+        ("get", "test"): RateLimitItemPerSecond(30, 4),
+    }
+
+    with patch.object(GLOBAL_LIMITER, "rate_config", TEST_RATE_CONFIG):
+        # We can acquire 30 in less than 10 seconds
+        for _ in range(30):
+            await GLOBAL_LIMITER.try_acquire(("get", "test"))
+
+        # But if we try for one more we hit the limit
+        with pytest.raises(TimeoutError):
+            await GLOBAL_LIMITER.try_acquire(("get", "test"), acquire_timeout=2)
+
+        # Then we pass an impossible limit, but with a timeour high enough to succeed
+        await GLOBAL_LIMITER.try_acquire(("get", "test"), weight=40, acquire_timeout=20)
