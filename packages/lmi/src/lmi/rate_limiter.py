@@ -48,9 +48,9 @@ TOKEN_FALLBACK_RATE_LIMIT = RateLimitItemPerMinute(30_000, 1)
 # user input machine_id will be used.
 
 # Default rate limits for various LLM providers
-OPENAI_DEFAULT_RPM = RateLimitItemPerMinute(
+OPENAI_DEFAULT_RPM = RateLimitItemPerMinute(  # OpenAI default RPM for most models
     3500, 1
-)  # OpenAI default RPM for most models
+)
 ANTHROPIC_DEFAULT_RPM = RateLimitItemPerMinute(2400, 1)  # Anthropic Claude default RPM
 AZURE_DEFAULT_RPM = RateLimitItemPerMinute(1800, 1)  # Azure OpenAI default RPM
 GOOGLE_DEFAULT_RPM = RateLimitItemPerMinute(60, 1)  # Google PaLM/Gemini default RPM
