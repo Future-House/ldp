@@ -101,6 +101,38 @@ EMBEDDING_CONFIG_W_RATE_LIMITS = [
     {},
 ]
 
+# Test configurations with different request counts and scenarios
+SEQUENTIAL_REQUEST_LIMITS = {
+    "name": CommonLLMNames.OPENAI_TEST.value,
+    "config": {
+        "model_list": [
+            {
+                "model_name": CommonLLMNames.OPENAI_TEST.value,
+                "litellm_params": {"model": CommonLLMNames.OPENAI_TEST.value},
+            }
+        ],
+        "request_limit": {
+            CommonLLMNames.OPENAI_TEST.value: RateLimitItemPerSecond(1, 20)
+        },
+    },
+}
+
+CONCURRENT_REQUEST_LIMITS = {
+    "name": CommonLLMNames.OPENAI_TEST.value,
+    "config": {
+        "model_list": [
+            {
+                "model_name": CommonLLMNames.OPENAI_TEST.value,
+                "litellm_params": {"model": CommonLLMNames.OPENAI_TEST.value},
+            }
+        ],
+        "request_limit": {
+            CommonLLMNames.OPENAI_TEST.value: RateLimitItemPerSecond(4, 20)
+        },
+    },
+}
+
+
 ACCEPTABLE_RATE_LIMIT_ERROR: float = 0.10  # 10% error margin for token estimate error
 
 
@@ -293,3 +325,64 @@ async def test_embedding_rate_limits(
         )
     else:
         assert estimated_tokens_per_second > 0
+
+
+async def _run_rpm_request_test(
+    is_concurrent: bool, llm_config_w_request_limits: dict[str, Any]
+) -> None:
+    """Run request test with RPM limit.
+
+    Args:
+        is_concurrent: Whether to run requests concurrently.
+        llm_config_w_request_limits: llm config with request configuration parameters.
+    """
+    rate_limit_item = next(
+        iter(llm_config_w_request_limits["config"]["request_limit"].values())
+    )
+    req_request = rate_limit_item.amount
+    req_count = req_request + 1
+
+    messages = [Message.create_message(role="user", text=RATE_LIMITER_PROMPT)]
+    model = LiteLLMModel(**llm_config_w_request_limits)
+
+    start_time = time.perf_counter()
+    if is_concurrent:
+        concurrent_tasks = [model.call_single(messages) for _ in range(req_count)]
+        await asyncio.gather(*concurrent_tasks)
+    else:
+        for _ in range(req_count):
+            await model.call_single(messages)
+    time_with_limit = time.perf_counter() - start_time
+
+    min_expected_time = rate_limit_item.multiples
+    error_msg = (
+        f"With rate limit of {rate_limit_item}, {req_count} requests "
+        f"take at least {min_expected_time} seconds, but only took {time_with_limit:.2f} seconds"
+    )
+    assert time_with_limit >= min_expected_time, error_msg
+
+
+@pytest.mark.parametrize("llm_config_w_request_limits", [SEQUENTIAL_REQUEST_LIMITS])
+@pytest.mark.asyncio
+async def test_rpm_sequential_requests(llm_config_w_request_limits: dict[str, Any]):
+    """Test sequential requests with RPM limit.
+
+    This test sends requests one after another and verifies that rate limiting
+    properly throttles the requests.
+    """
+    await _run_rpm_request_test(
+        is_concurrent=False, llm_config_w_request_limits=llm_config_w_request_limits
+    )
+
+
+@pytest.mark.parametrize("llm_config_w_request_limits", [CONCURRENT_REQUEST_LIMITS])
+@pytest.mark.asyncio
+async def test_rpm_concurrent_requests(llm_config_w_request_limits: dict[str, Any]):
+    """Test concurrent requests with RPM limit.
+
+    This test sends multiple requests simultaneously and verifies that rate limiting
+    properly throttles the requests.
+    """
+    await _run_rpm_request_test(
+        is_concurrent=True, llm_config_w_request_limits=llm_config_w_request_limits
+    )
