@@ -26,7 +26,7 @@ dependencies = [
     "coredis",
     "fhaviary>=0.14.0",  # For multi-image support
     "limits",
-    "litellm>=1.60.2,<1.61.16",  # Pin lower for reasoning_content in OpenRouter, upper for https://github.com/BerriAI/litellm/issues/8939
+    "litellm>=1.62.4",  # Pin lower for reasoning + streaming fix
     "pydantic~=2.0,>=2.10.1",
     "tiktoken>=0.4.0",
     "typing-extensions; python_version <= '3.11'",  # for typing.override
@@ -39,12 +39,9 @@ readme = "README.md"
 requires-python = ">=3.11"
 
 [project.optional-dependencies]
-deepseek = [
-    "litellm>1.59.3",  # Pin for deepseek-r1 reasoning
-]
 dev = [
     "fhaviary[xml]",
-    "fhlmi[deepseek,local,progress,typing,vcr]",
+    "fhlmi[local,progress,typing,vcr]",
     "ipython>=8",  # Pin to keep recent
     "mypy>=1.8",  # Pin for mutable-override
     "pre-commit>=3.4",  # Pin to keep recent
