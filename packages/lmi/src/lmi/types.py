@@ -6,6 +6,9 @@ from uuid import UUID, uuid4
 
 import litellm
 from aviary.core import Message
+from limits import (
+    RateLimitItemPerMinute,
+)
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -109,3 +112,18 @@ class LLMResult(BaseModel):
     def get_supported_openai_params(self) -> list[str] | None:
         """Get the supported OpenAI parameters for the model."""
         return litellm.get_supported_openai_params(self.model)
+
+
+# Following classes allow you to adjust the "resolution" of weights
+# for counting tokens this increases performance, and lowers your
+# resolution to the nearest multiple of the resolution.
+class RateLimit1kItemPerMinute(RateLimitItemPerMinute):
+    resolution: int = 1_000
+
+
+class RateLimit10kItemPerMinute(RateLimitItemPerMinute):
+    resolution: int = 10_000
+
+
+class RateLimit100kItemPerMinute(RateLimitItemPerMinute):
+    resolution: int = 100_000

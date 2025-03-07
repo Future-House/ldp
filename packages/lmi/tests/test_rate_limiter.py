@@ -10,7 +10,8 @@ from limits import RateLimitItemPerSecond
 from lmi.constants import CHARACTERS_PER_TOKEN_ASSUMPTION
 from lmi.embeddings import LiteLLMEmbeddingModel
 from lmi.llms import CommonLLMNames, LiteLLMModel
-from lmi.types import LLMResult
+from lmi.rate_limiter import GlobalRateLimiter
+from lmi.types import LLMResult, RateLimit1kItemPerMinute
 
 LLM_CONFIG_W_RATE_LIMITS = [
     # following ensures that "short-form" rate limits are also supported
@@ -108,7 +109,7 @@ async def time_n_llm_methods(
     llm: LiteLLMModel, method: str, n: int, use_gather: bool = False, *args, **kwargs
 ) -> float:
     """Give the token per second rate of a method call."""
-    start_time = time.time()
+    start_time = time.perf_counter()
     outputs = []
 
     if not use_gather:
@@ -141,7 +142,7 @@ async def time_n_llm_methods(
         (character_count / CHARACTERS_PER_TOKEN_ASSUMPTION)
         if token_count == 0
         else token_count
-    ) / (time.time() - start_time)
+    ) / (time.perf_counter() - start_time)
 
 
 @pytest.mark.parametrize("llm_config_w_rate_limits", LLM_CONFIG_W_RATE_LIMITS)
@@ -277,11 +278,11 @@ async def test_embedding_rate_limits(
 ) -> None:
     embedding_model = LiteLLMEmbeddingModel(**embedding_config_w_rate_limits)
     texts_to_embed = ["the duck says"] * 10
-    start = time.time()
+    start = time.perf_counter()
     await embedding_model.embed_documents(texts=texts_to_embed, batch_size=5)
     estimated_tokens_per_second = sum(
         len(t) / CHARACTERS_PER_TOKEN_ASSUMPTION for t in texts_to_embed
-    ) / (time.time() - start)
+    ) / (time.perf_counter() - start)
 
     if "rate_limit" in embedding_config_w_rate_limits:
         max_tokens_per_second = (
@@ -293,3 +294,64 @@ async def test_embedding_rate_limits(
         )
     else:
         assert estimated_tokens_per_second > 0
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_resolution_weight_conversion():
+    """Test that weights are properly scaled down by the resolution factor."""
+    limiter = GlobalRateLimiter(use_in_memory=True)
+    namespace_and_key = ("client", "test-client")
+    rate_limit = RateLimit1kItemPerMinute(5, 1)  # 5 * 1k = 5,000 tokens per minute
+    original_weight = 3000  # 3000 tokens
+    adjusted_weight = limiter.maybe_lower_weight_with_rate_resolution(
+        original_weight, rate_limit
+    )
+
+    # Should be original_weight / resolution = 3000 / 1000 = 3
+    assert adjusted_weight == 3, (
+        f"Expected adjusted weight to be 3, got {adjusted_weight}"
+    )
+
+    start_time = time.perf_counter()
+    await limiter.try_acquire(
+        namespace_and_key,
+        rate_limit=rate_limit,
+        weight=original_weight,
+        acquire_timeout=5.0,
+    )
+
+    first_acquire_time = time.perf_counter() - start_time
+
+    assert first_acquire_time < 1.0, "Acquiring weight under limit took too long"
+
+    start_time = time.perf_counter()
+
+    # try again with a new entry, which should also be under the limit
+    namespace_and_key_2 = ("client", "test-client2")
+
+    await limiter.try_acquire(
+        namespace_and_key_2,
+        rate_limit=rate_limit,
+        weight=4500,  # Should be adjusted to 4.5, which is under the limit of 5
+        acquire_timeout=5.0,
+    )
+    second_acquire_time = time.perf_counter() - start_time
+
+    assert second_acquire_time < 1.0, "Acquiring weight under limit took too long"
+
+    with pytest.raises(TimeoutError):
+        await limiter.try_acquire(
+            namespace_and_key_2,
+            rate_limit=rate_limit,
+            weight=6000,  # Should be adjusted to 6, which exceeds limit of 5
+            acquire_timeout=0.5,  # Short timeout to fail quickly
+        )
+
+    # Test edge case: very small weight should be at least 1
+    small_weight = 500  # Less than resolution
+    adjusted_small_weight = limiter.maybe_lower_weight_with_rate_resolution(
+        small_weight, rate_limit
+    )
+    assert adjusted_small_weight == 1, (
+        f"Expected minimum adjusted weight to be 1, got {adjusted_small_weight}"
+    )
