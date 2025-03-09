@@ -386,7 +386,7 @@ class LLMModel(ABC, BaseModel):
 P = ParamSpec("P")
 
 
-@overload
+@overload  # type: ignore[no-overload-impl]
 def rate_limited(
     func: Callable[P, Coroutine[Any, Any, list[LLMResult]]],
 ) -> Callable[P, Coroutine[Any, Any, list[LLMResult]]]: ...
@@ -428,7 +428,7 @@ def request_limited(func):
     return wrapper
 
 
-def rate_limited(func):
+def rate_limited(func):  # type: ignore[no-redef]
     """Decorator to rate limit relevant methods of an LLMModel."""
 
     @functools.wraps(func)
