@@ -342,7 +342,7 @@ async def _run_rpm_request_test(
     req_request = rate_limit_item.amount
     req_count = req_request + 1
 
-    messages = [Message.create_message(role="user", text=RATE_LIMITER_PROMPT)]
+    messages = [Message(content=RATE_LIMITER_PROMPT)]
     model = LiteLLMModel(**llm_config_w_request_limits)
 
     start_time = time.perf_counter()
