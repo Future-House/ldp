@@ -386,7 +386,7 @@ class LLMModel(ABC, BaseModel):
 P = ParamSpec("P")
 
 
-@overload  # type: ignore[no-overload-impl]
+@overload
 def rate_limited(
     func: Callable[P, Coroutine[Any, Any, list[LLMResult]]],
 ) -> Callable[P, Coroutine[Any, Any, list[LLMResult]]]: ...
@@ -398,37 +398,7 @@ def rate_limited(
 ) -> Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]]: ...
 
 
-def request_limited(func):
-    """Decorator to limit requests per minute for LLMModel methods."""
-
-    @functools.wraps(func)
-    async def wrapper(self, *args, **kwargs):
-        if not hasattr(self, "check_request_limit"):
-            raise NotImplementedError(
-                f"Model {self.name} must have a `check_request_limit` method."
-            )
-
-        await self.check_request_limit()
-
-        if isasyncgenfunction(func):
-
-            async def request_limited_generator() -> AsyncIterable[LLMResult]:
-                first_item = True
-                async for item in func(self, *args, **kwargs):
-                    # Skip rate limit check for first item since we already checked at generator start
-                    if not first_item:
-                        await self.check_request_limit()
-                    else:
-                        first_item = False
-                    yield item
-
-            return request_limited_generator()
-        return await func(self, *args, **kwargs)
-
-    return wrapper
-
-
-def rate_limited(func):  # type: ignore[no-redef]
+def rate_limited(func):
     """Decorator to rate limit relevant methods of an LLMModel."""
 
     @functools.wraps(func)
@@ -468,6 +438,36 @@ def rate_limited(func):  # type: ignore[no-redef]
         if func.__name__ == "acompletion" and isinstance(result, list):
             await self.check_rate_limit(sum(r.completion_count for r in result))
         return result
+
+    return wrapper
+
+
+def request_limited(func):
+    """Decorator to limit requests per minute for LLMModel methods."""
+
+    @functools.wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        if not hasattr(self, "check_request_limit"):
+            raise NotImplementedError(
+                f"Model {self.name} must have a `check_request_limit` method."
+            )
+
+        await self.check_request_limit()
+
+        if isasyncgenfunction(func):
+
+            async def request_limited_generator() -> AsyncIterable[LLMResult]:
+                first_item = True
+                async for item in func(self, *args, **kwargs):
+                    # Skip rate limit check for first item since we already checked at generator start
+                    if not first_item:
+                        await self.check_request_limit()
+                    else:
+                        first_item = False
+                    yield item
+
+            return request_limited_generator()
+        return await func(self, *args, **kwargs)
 
     return wrapper
 
