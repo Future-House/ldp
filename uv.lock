@@ -836,13 +836,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-deepseek = [
-    { name = "litellm" },
-]
 dev = [
     { name = "fhaviary", extra = ["xml"] },
     { name = "ipython" },
-    { name = "litellm" },
     { name = "mypy" },
     { name = "numpy" },
     { name = "pre-commit" },
@@ -891,11 +887,10 @@ requires-dist = [
     { name = "coredis" },
     { name = "fhaviary", specifier = ">=0.14.0" },
     { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'" },
-    { name = "fhlmi", extras = ["deepseek", "local", "progress", "typing", "vcr"], marker = "extra == 'dev'", editable = "packages/lmi" },
+    { name = "fhlmi", extras = ["local", "progress", "typing", "vcr"], marker = "extra == 'dev'", editable = "packages/lmi" },
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "limits" },
-    { name = "litellm", specifier = ">=1.60.2,<1.61.16" },
-    { name = "litellm", marker = "extra == 'deepseek'", specifier = ">1.59.3" },
+    { name = "litellm", specifier = ">=1.62.4" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
     { name = "numpy", marker = "extra == 'local'" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.4" },
@@ -919,7 +914,7 @@ requires-dist = [
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
     { name = "vcrpy", marker = "extra == 'vcr'", specifier = ">=6" },
 ]
-provides-extras = ["deepseek", "dev", "local", "progress", "typing", "vcr"]
+provides-extras = ["dev", "local", "progress", "typing", "vcr"]
 
 [package.metadata.requires-dev]
 codeflash = [
@@ -1624,7 +1619,7 @@ wheels = [
 
 [[package]]
 name = "litellm"
-version = "1.61.15"
+version = "1.63.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1639,9 +1634,9 @@ dependencies = [
     { name = "tiktoken" },
     { name = "tokenizers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/23/3a/3e299244bb048bbe63e6342a34b5974ab551b24ca0cbafdd5aaf81c0c81d/litellm-1.61.15.tar.gz", hash = "sha256:f10ff155d8bca6cb0e2a1cc8d9aedbe6b390f73b30b9603e9cadb66b11472d44", size = 6561672 }
+sdist = { url = "https://files.pythonhosted.org/packages/6a/78/ff6d5439168bce504fb28bad1bc6f596dd76fbfacbc330367a1c08a250a7/litellm-1.63.2.tar.gz", hash = "sha256:cf9ab581198a12a5584571e0b2ad83869c7621684936ed26d7bf59015d0a8d2b", size = 6587491 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ac/b8/2908528ce280a1554162bffaec47514c71a01d76867e0b3fefd096c9cd00/litellm-1.61.15-py3-none-any.whl", hash = "sha256:977fd4e37491dd5adf14ed7c4d55bd099dd5ee7d40b8b8af5eba515d448013bb", size = 6871062 },
+    { url = "https://files.pythonhosted.org/packages/d9/50/5b8a1ad1ca3851b979b2fbd1a66d6f458dc5edd478101a06a8becff1df2d/litellm-1.63.2-py3-none-any.whl", hash = "sha256:1224e15b351a0f194bd5d908ccf4ff5d0e16b583f120519a5e68158bd44da071", size = 6898192 },
 ]
 
 [[package]]
@@ -2172,7 +2167,7 @@ name = "nvidia-cudnn-cu12"
 version = "9.1.0.70"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas-cu12" },
+    { name = "nvidia-cublas-cu12", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9f/fd/713452cd72343f682b1c7b9321e23829f00b842ceaedcda96e742ea0b0b3/nvidia_cudnn_cu12-9.1.0.70-py3-none-manylinux2014_x86_64.whl", hash = "sha256:165764f44ef8c61fcdfdfdbe769d687e06374059fbb388b6c89ecb0e28793a6f", size = 664752741 },
@@ -2183,7 +2178,7 @@ name = "nvidia-cufft-cu12"
 version = "11.2.1.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/27/94/3266821f65b92b3138631e9c8e7fe1fb513804ac934485a8d05776e1dd43/nvidia_cufft_cu12-11.2.1.3-py3-none-manylinux2014_x86_64.whl", hash = "sha256:f083fc24912aa410be21fa16d157fed2055dab1cc4b6934a0e03cba69eb242b9", size = 211459117 },
@@ -2202,9 +2197,9 @@ name = "nvidia-cusolver-cu12"
 version = "11.6.1.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-cublas-cu12" },
-    { name = "nvidia-cusparse-cu12" },
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-cublas-cu12", marker = "sys_platform == 'linux'" },
+    { name = "nvidia-cusparse-cu12", marker = "sys_platform == 'linux'" },
+    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3a/e1/5b9089a4b2a4790dfdea8b3a006052cfecff58139d5a4e34cb1a51df8d6f/nvidia_cusolver_cu12-11.6.1.9-py3-none-manylinux2014_x86_64.whl", hash = "sha256:19e33fa442bcfd085b3086c4ebf7e8debc07cfe01e11513cc6d332fd918ac260", size = 127936057 },
@@ -2215,7 +2210,7 @@ name = "nvidia-cusparse-cu12"
 version = "12.3.1.170"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "nvidia-nvjitlink-cu12" },
+    { name = "nvidia-nvjitlink-cu12", marker = "sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/db/f7/97a9ea26ed4bbbfc2d470994b8b4f338ef663be97b8f677519ac195e113d/nvidia_cusparse_cu12-12.3.1.170-py3-none-manylinux2014_x86_64.whl", hash = "sha256:ea4f11a2904e2a8dc4b1833cc1b5181cde564edd0d5cd33e3c168eff2d1863f1", size = 207454763 },
@@ -3753,7 +3748,7 @@ name = "triton"
 version = "3.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "filelock", marker = "python_full_version < '3.13'" },
+    { name = "filelock", marker = "python_full_version < '3.13' and sys_platform == 'linux'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/86/17/d9a5cf4fcf46291856d1e90762e36cbabd2a56c7265da0d1d9508c8e3943/triton-3.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f34f6e7885d1bf0eaaf7ba875a5f0ce6f3c13ba98f9503651c1e6dc6757ed5c", size = 209506424 },
