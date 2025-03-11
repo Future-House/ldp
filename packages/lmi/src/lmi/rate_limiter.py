@@ -329,6 +329,13 @@ class GlobalRateLimiter:
             }
         return limit_status
 
+    def maybe_lower_weight_with_rate_resolution(
+        self, weight: int, rate_limit: RateLimitItem
+    ) -> int:
+        if hasattr(rate_limit, "resolution"):
+            return max(1, weight // rate_limit.resolution)
+        return weight
+
     async def try_acquire(
         self,
         namespace_and_key: tuple[str, str],
@@ -378,9 +385,13 @@ class GlobalRateLimiter:
 
         rate_limit = rate_limit or rate_limit_
 
-        if rate_limit.amount < weight and raise_impossible_limits:
+        adjusted_weight = self.maybe_lower_weight_with_rate_resolution(
+            weight, rate_limit
+        )
+
+        if rate_limit.amount < adjusted_weight and raise_impossible_limits:
             raise ValueError(
-                f"Weight ({weight}) > RateLimit ({rate_limit}), cannot satisfy rate"
+                f"Weight ({adjusted_weight}) > RateLimit ({rate_limit}), cannot satisfy rate"
                 " limit."
             )
         while True:
@@ -391,7 +402,7 @@ class GlobalRateLimiter:
                         rate_limit,
                         new_namespace,
                         primary_key,
-                        cost=min(weight, rate_limit.amount),
+                        cost=min(adjusted_weight, rate_limit.amount),
                     )
                 )
                 and elapsed < acquire_timeout
@@ -409,11 +420,11 @@ class GlobalRateLimiter:
                 rate_limit,
                 new_namespace,
                 primary_key,
-                cost=min(weight, rate_limit.amount),
+                cost=min(adjusted_weight, rate_limit.amount),
             ):
                 # we need to keep trying when we have an "impossible" limit
-                if rate_limit.amount < weight:
-                    weight -= rate_limit.amount
+                if rate_limit.amount < adjusted_weight:
+                    adjusted_weight -= rate_limit.amount
                     acquire_timeout = max(acquire_timeout - elapsed, 1.0)
                     continue
                 break
