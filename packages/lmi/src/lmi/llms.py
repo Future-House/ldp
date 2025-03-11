@@ -442,6 +442,18 @@ def rate_limited(func):
     return wrapper
 
 
+@overload
+def request_limited(
+    func: Callable[P, Coroutine[Any, Any, list[LLMResult]]],
+) -> Callable[P, Coroutine[Any, Any, list[LLMResult]]]: ...
+
+
+@overload
+def request_limited(
+    func: Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]],
+) -> Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]]: ...
+
+
 def request_limited(func):
     """Decorator to limit requests per minute for LLMModel methods."""
 
@@ -617,6 +629,7 @@ class LiteLLMModel(LLMModel):
                 **kwargs,
             )
 
+    # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
     async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:
@@ -687,6 +700,7 @@ class LiteLLMModel(LLMModel):
             )
         return results
 
+    # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
     async def acompletion_iter(
