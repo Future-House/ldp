@@ -614,7 +614,7 @@ class LiteLLMModel(LLMModel):
         """Check if the request is within the request rate limit."""
         if "request_limit" in self.config:
             await GLOBAL_LIMITER.try_acquire(
-                ("request", self.name),
+                ("client|request", self.name),
                 self.config["request_limit"].get(self.name, None),
                 weight=1,
                 **kwargs,
