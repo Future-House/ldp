@@ -8,7 +8,7 @@ from contextlib import contextmanager, nullcontext
 from typing import Any, TypeVar
 
 from aviary.core import Environment, Message
-from tqdm import tqdm
+from tqdm.asyncio import tqdm
 
 from ldp.agent import Agent
 from ldp.data_structures import Trajectory, Transition
