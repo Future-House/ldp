@@ -124,8 +124,8 @@ Cost tracking is supported in two different ways:
 
 ### Rate limiting
 
-Rate limiting helps control the rate of tokens used to various services and LLMs. The rate limiter supports both in-memory and Redis-based storage for cross-process rate limiting.
-Currently, `lmi` only take into account the tokens used (hence, it only limits Tokens Per Minute (TPM)).
+Rate limiting helps regulate the usage of resources to various services and LLMs. The rate limiter supports both in-memory and Redis-based storage for cross-process rate limiting.
+Currently, `lmi` take into account the tokens used (the Token per Minute(TPM)) and the request handled (the Request per Minute (RPM)).
 
 #### Basic Usage
 
@@ -139,19 +139,29 @@ from lmi import LiteLLMModel
 config = {
     "rate_limit": {
         "gpt-4": "100/minute",  # 100 tokens per minute
-    }
+    },
+    "request_limit": {
+        "gpt-4": "5/minute",  # 5 request per minute
+    },
 }
 
 llm = LiteLLMModel(name="gpt-4", config=config)
 ```
+
+With `rate_limit` and `request_limit`, you can control both token consumption and request volume. You can also configure only one of them if needed.
 
 2. Through the global rate limiter configuration:
 
 ```python
 from lmi.rate_limiter import GLOBAL_LIMITER
 
-GLOBAL_LIMITER.rate_config[("client", "gpt-4")] = "100/minute"
+GLOBAL_LIMITER.rate_config[("client", "gpt-4")] = "100/minute"  # 100 tokens per minute
+GLOBAL_LIMITER.rate_config[("client|request", "gpt-4")] = (
+    "5/minute"  # 5 request per minute
+)
 ```
+
+With `client` and `client|request`, you can control both token consumption and request volume. You can also configure only one of them if needed.
 
 #### Rate Limit Format
 
@@ -214,7 +224,10 @@ from aviary.core import Message
 config = {
     "rate_limit": {
         "gpt-4": "100/minute",  # 100 tokens per minute
-    }
+    },
+    "request_limit": {
+        "gpt-4": "5/minute",  # 5 request per minute
+    },
 }
 
 llm = LiteLLMModel(name="gpt-4", config=config)
@@ -224,13 +237,20 @@ status = await GLOBAL_LIMITER.rate_limit_status()
 
 # Example output:
 {
+    ("client|request", "gpt-4"): {
+        "period_start": 1234567890,
+        "n_items_in_period": 1,
+        "period_seconds": 60,
+        "period_name": "minute",
+        "period_cap": 5,
+    },
     ("client", "gpt-4"): {
         "period_start": 1234567890,
         "n_items_in_period": 50,
         "period_seconds": 60,
         "period_name": "minute",
         "period_cap": 100,
-    }
+    },
 }
 ```
 
