@@ -127,6 +127,7 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
         return cast("OpResult[ToolRequestMessage]", result), next_state, 0.0
 
     def _validate_token_count(self, messages: list[Message], tools: list[Tool]):
+        """Asserts token count for the trajectory is within the limit."""
         if self.llm_model.max_traj_token_count is None:
             return
         messages_for_tokenizer = self._llm_call_op.prep_messages_for_tokenizer(messages)

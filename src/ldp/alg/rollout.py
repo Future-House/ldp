@@ -46,7 +46,6 @@ def reraise_exc_as(reraise: type[CaughtError], enabled: bool) -> Iterator[None]:
         yield
     except Exception as e:
         if enabled:
-            # Minimal logging instead of spamming. Detailed error stored in the trajectory's metadata.
             logger.debug(f"Reraising {reraise.exc_type} exception.")
             raise reraise(e) from None
         raise
@@ -81,7 +80,7 @@ class RolloutManager:
         max_steps: int | None = None,
         *,
         log_exceptions_immediately: bool = True,
-    ) -> list[tuple[Trajectory, Environment]] | list[Trajectory]:
+    ):
         """Sample trajectories from environments, either via factory or pre-created.
 
         There are two main ways to use this method:
