@@ -8,7 +8,6 @@ import litellm
 import numpy as np
 import pytest
 from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
-from litellm import LlmProviders, get_llm_provider
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
 from lmi.exceptions import JSONSchemaValidationError
@@ -719,19 +718,9 @@ class TestReasoning:
         outputs: list[str] = []
         results = await llm.call(messages, callbacks=[outputs.append])
 
-        if LlmProviders.OPENROUTER.value in get_llm_provider(llm.name):
-            # If using OpenRouter, we expect the streaming to fail populating the reasoning_content
-            with pytest.raises(
-                AssertionError,
-                match="OpenRouter models with streaming are not supported",
-            ):
-                assert results[0].reasoning_content, (
-                    "OpenRouter models with streaming are not supported"
-                )
-        else:
-            for i, result in enumerate(results):
-                assert result.reasoning_content
-                assert outputs[i] == result.text
+        for i, result in enumerate(results):
+            assert result.reasoning_content
+            assert outputs[i] == result.text
 
 
 def test_json_schema_validation() -> None:
