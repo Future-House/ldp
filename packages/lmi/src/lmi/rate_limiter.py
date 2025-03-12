@@ -284,7 +284,7 @@ class GlobalRateLimiter:
             while cursor:
                 cursor, keys = await client.scan(
                     int(cursor),
-                    match=f"{self.storage.PREFIX}*",
+                    match=f"{RedisStorage.PREFIX}*",
                     count=cursor_scan_count,
                 )
                 matching_keys.extend(list(keys))
