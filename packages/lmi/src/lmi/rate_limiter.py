@@ -329,6 +329,26 @@ class GlobalRateLimiter:
             }
         return limit_status
 
+    async def _get_resource_and_rate_limit(
+        self,
+        namespace_and_key: tuple[str, str],
+        rate_limit: RateLimitItem | str | None = None,
+        machine_id: int = 0,
+    ) -> tuple[str, str, RateLimitItem]:
+        namespace, primary_key = await self.parse_namespace_and_primary_key(
+            namespace_and_key, machine_id=machine_id
+        )
+
+        rate_limit_, new_namespace = self.parse_rate_limits_and_namespace(
+            namespace, primary_key
+        )
+
+        if isinstance(rate_limit, str):
+            rate_limit = limit_parse(rate_limit)
+
+        rate_limit = rate_limit or rate_limit_
+        return new_namespace, primary_key, rate_limit
+
     async def try_acquire(
         self,
         namespace_and_key: tuple[str, str],
@@ -365,59 +385,39 @@ class GlobalRateLimiter:
             TimeoutError: if the acquire_timeout is exceeded.
             ValueError: if the weight exceeds the rate limit and raise_impossible_limits is True.
         """
-        namespace, primary_key = await self.parse_namespace_and_primary_key(
-            namespace_and_key, machine_id=machine_id
+        (
+            new_namespace,
+            primary_key,
+            rate_limit,
+        ) = await self._get_resource_and_rate_limit(
+            namespace_and_key, rate_limit, machine_id
         )
-
-        rate_limit_, new_namespace = self.parse_rate_limits_and_namespace(
-            namespace, primary_key
-        )
-
-        if isinstance(rate_limit, str):
-            rate_limit = limit_parse(rate_limit)
-
-        rate_limit = rate_limit or rate_limit_
 
         if rate_limit.amount < weight and raise_impossible_limits:
             raise ValueError(
                 f"Weight ({weight}) > RateLimit ({rate_limit}), cannot satisfy rate"
                 " limit."
             )
-        while True:
-            elapsed = 0.0
-            while (
-                not (
-                    await self.rate_limiter.test(
-                        rate_limit,
-                        new_namespace,
-                        primary_key,
-                        cost=min(weight, rate_limit.amount),
-                    )
-                )
-                and elapsed < acquire_timeout
-            ):
-                await asyncio.sleep(self.WAIT_INCREMENT)
-                elapsed += self.WAIT_INCREMENT
-            if elapsed >= acquire_timeout:
-                raise TimeoutError(
-                    f"Timeout ({elapsed} secs): rate limit for key: {namespace_and_key}"
-                )
 
-            # If the rate limit hit is False, then we're violating the limit, so we
-            # need to wait again. This can happen in race conditions.
-            if await self.rate_limiter.hit(
+        elapsed = 0.0
+        while elapsed < acquire_timeout and weight > 0:
+            cost = min(weight, rate_limit.amount)
+            could_consume = await self.rate_limiter.hit(
                 rate_limit,
                 new_namespace,
                 primary_key,
-                cost=min(weight, rate_limit.amount),
-            ):
-                # we need to keep trying when we have an "impossible" limit
-                if rate_limit.amount < weight:
-                    weight -= rate_limit.amount
-                    acquire_timeout = max(acquire_timeout - elapsed, 1.0)
-                    continue
-                break
-            acquire_timeout = max(acquire_timeout - elapsed, 1.0)
+                cost=cost,
+            )
+            if could_consume:
+                weight -= cost
+            else:
+                await asyncio.sleep(self.WAIT_INCREMENT)
+                elapsed += self.WAIT_INCREMENT
+
+        if weight > 0:
+            raise TimeoutError(
+                f"Timeout ({elapsed} secs): rate limit for key: {namespace_and_key}"
+            )
 
 
 GLOBAL_LIMITER = GlobalRateLimiter()
