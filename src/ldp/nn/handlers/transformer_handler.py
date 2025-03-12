@@ -201,7 +201,6 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
                 kwargs["synced_gpus"] = True
             elif not synced_gpus:
                 raise ValueError("synced_gpus must be True when using FSDP.")
-        raise torch.OutOfMemoryError("yoyoyoyoyoyoyo test test test TODO")  # TODO remove
 
         # Summoning params per https://github.com/pytorch/pytorch/issues/100069
         # If model is not FSDP, this context manager is a no-op.
@@ -240,14 +239,22 @@ class TransformerHandler(ModuleHandler):
                 assert_never(config.lm_type)
         super().__init__(model)
         self.tokenizer = tokenizer
+        logger.info(
+            f"Initialized tokenizer: {type(tokenizer).__name__}, vocab size: {len(tokenizer)}"
+        )
+
         maybe_set_tokenizer_chat_template(
             self.tokenizer, self.config.lm_config.chat_template
         )
+        logger.info(f"Chat template: {self.config.lm_config.chat_template}")
 
         self._setup_accelerator()
+        logger.info(f"Accelerator set up with device: {self.accelerator.device}")
 
         if config.checkpoint is not None:
+            logger.info(f"Loading checkpoint from: {config.checkpoint}")
             self.load_checkpoint(config.checkpoint)
+        logger.info("Initialization complete")
 
     def _setup_accelerator(self):
         self.accelerator = accelerate.Accelerator(
@@ -391,6 +398,13 @@ class ParallelTransformerHandler(TransformerHandler):
                 buffer_dtype=torch.bfloat16,
             )
 
+        logger.info(f"Setting up accelerator with bf16={bf16}")
+        logger.info(f"Worker config: offload_cpu={self.worker_config.offload_cpu}, "
+                   f"activation_checkpointing={self.worker_config.activation_checkpointing}, "
+                   f"cpu_ram_efficient_loading={self.worker_config.cpu_ram_efficient_loading}, "
+                   f"state_dict_type={self.worker_config.state_dict_type}, "
+                   f"backward_prefetch={self.worker_config.backward_prefetch}")
+        
         self.accelerator = accelerate.Accelerator(
             # See note in TransformerHandler._setup_accelerator() about this
             # mixed_precision=("bf16" if bf16 else "no"),
@@ -406,11 +420,16 @@ class ParallelTransformerHandler(TransformerHandler):
                 backward_prefetch=self.worker_config.backward_prefetch,
             ),
         )
+        logger.info(f"Accelerator setup complete on rank {self.worker_config.rank}")
 
         if self.config.lm_config.device == "meta":
+            logger.info(f"Preparing model for FSDP with meta device on rank {self.worker_config.rank}")
             self.module = prepare_model_for_fsdp_with_meta_device(self.module)
+            logger.info(f"Meta device preparation complete on rank {self.worker_config.rank}")
 
+        logger.info(f"Preparing model with accelerator on rank {self.worker_config.rank}")
         self.module = self.accelerator.prepare(self.module)
+        logger.info(f"Model preparation complete on rank {self.worker_config.rank}, model device: {self.module.device}, dtype: {self.module.dtype}")
 
     def set_seed(self, seed: int) -> None:
         """Set the seed for the current worker."""
@@ -770,6 +789,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         self._submit_and_gather("save_checkpoint", ckpt, **kwargs)
 
     def teardown(self) -> None:
+        logger.info(f"Shutting down Dask cluster, is_initialized: {self._initialized}")
         if self._initialized:
             self.client.shutdown()
             self.cluster.close()
@@ -800,14 +820,14 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         """
 
         async def _gather_with_exception_handling(futures):
-            wrapped_futures = [self._wrap_dask_future(f) for f in futures]
-
             try:
+                wrapped_futures = [self._wrap_dask_future(f) for f in futures]
+
                 # Use asyncio.wait with FIRST_EXCEPTION instead of gather
                 done, pending = await asyncio.wait(
-                    wrapped_futures, timeout=120, return_when=asyncio.FIRST_EXCEPTION
+                    wrapped_futures, timeout=1200, return_when=asyncio.FIRST_EXCEPTION
                 )
-                                
+
                 exceptions = []
                 for future in done:
                     exc = future.exception()
@@ -819,9 +839,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
                     raise ExceptionGroup("Multiple actor exceptions", exceptions)
 
                 if pending:
-                    pending_indices = sorted([
-                        wrapped_futures.index(p) for p in pending
-                    ])
+                    pending_indices = sorted([wrapped_futures.index(p) for p in pending])
                     raise TimeoutError(
                         f"Tasks didn't complete within timeout. {len(pending)} out of {len(wrapped_futures)} "
                         f"still pending. Pending task indices: {pending_indices}"
@@ -829,17 +847,19 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
                 return await asyncio.gather(*wrapped_futures)
             except Exception as e:
-                logger.exception("Error in dask workers")
-                for f in wrapped_futures:
-                    if not f.done():
-                        f.cancel()         
+                logger.exception("Error in dask workers: %s")
+                for future in wrapped_futures:
+                    future.cancel()
                 self.teardown()
                 # sys.exit(1) would wait for dask to finish, which can cause hanging
                 # when workers are in a deadlock. Use os._exit to force immediate termination
-                os._exit(1) 
+                # TODO: this is more of a hack, we should propagate special exception that is 
+                # not caught by the rollout manager.
+                os._exit(1)
 
         # Use distributed.utils.sync to run the async function in the current thread
         return sync(self.client.loop, _gather_with_exception_handling, futures)  # type: ignore[arg-type]
+
 
 
 # Helpers
