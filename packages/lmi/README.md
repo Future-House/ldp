@@ -125,7 +125,7 @@ Cost tracking is supported in two different ways:
 ### Rate limiting
 
 Rate limiting helps regulate the usage of resources to various services and LLMs. The rate limiter supports both in-memory and Redis-based storage for cross-process rate limiting.
-Currently, `lmi` take into account the tokens used (the Token per Minute(TPM)) and the request handled (the Request per Minute (RPM)).
+Currently, `lmi` take into account the tokens used (Tokens per Minute (TPM)) and the requests handled (Requests per Minute (RPM)).
 
 #### Basic Usage
 
