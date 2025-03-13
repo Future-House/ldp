@@ -161,7 +161,9 @@ GLOBAL_LIMITER.rate_config[("client|request", "gpt-4")] = (
 )
 ```
 
-With `client` and `client|request`, you can control both token consumption and request volume. You can also configure only one of them if needed.
+With `client` we rate limit only token consumption,
+and with `client|request` we rate limit both token consumption and request volume.
+You can also configure only one of them if needed.
 
 #### Rate Limit Format
 
