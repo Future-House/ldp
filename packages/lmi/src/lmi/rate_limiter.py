@@ -271,7 +271,8 @@ class GlobalRateLimiter:
         if not (host and port):
             raise ValueError(f"Invalid Redis URL: {redis_url}.")
 
-        if not isinstance(self.storage, RedisStorage):
+        storage = self.storage
+        if not isinstance(storage, RedisStorage):
             raise NotImplementedError(
                 "get_rate_limit_keys only works with RedisStorage."
             )
@@ -284,7 +285,7 @@ class GlobalRateLimiter:
             while cursor:
                 cursor, keys = await client.scan(
                     int(cursor),
-                    match=f"{self.storage.PREFIX}*",
+                    match=f"{storage.bridge.PREFIX}*",
                     count=cursor_scan_count,
                 )
                 matching_keys.extend(list(keys))
