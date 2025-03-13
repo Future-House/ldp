@@ -157,7 +157,7 @@ from lmi.rate_limiter import GLOBAL_LIMITER
 
 GLOBAL_LIMITER.rate_config[("client", "gpt-4")] = "100/minute"  # 100 tokens per minute
 GLOBAL_LIMITER.rate_config[("client|request", "gpt-4")] = (
-    "5/minute"  # 5 request per minute
+    "5/minute"  # 5 requests per minute
 )
 ```
 
