@@ -226,7 +226,7 @@ config = {
         "gpt-4": "100/minute",  # 100 tokens per minute
     },
     "request_limit": {
-        "gpt-4": "5/minute",  # 5 request per minute
+        "gpt-4": "5/minute",  # 5 requests per minute
     },
 }
 
