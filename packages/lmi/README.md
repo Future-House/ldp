@@ -148,7 +148,9 @@ config = {
 llm = LiteLLMModel(name="gpt-4", config=config)
 ```
 
-With `rate_limit` and `request_limit`, you can control both token consumption and request volume. You can also configure only one of them if needed.
+With `rate_limit` we rate limit only token consumption,
+and with `request_limit` we rate limit only request volume.
+You can configure both of them or only one of them as you need.
 
 2. Through the global rate limiter configuration:
 
@@ -162,8 +164,8 @@ GLOBAL_LIMITER.rate_config[("client|request", "gpt-4")] = (
 ```
 
 With `client` we rate limit only token consumption,
-and with `client|request` we rate limit both token consumption and request volume.
-You can also configure only one of them if needed.
+and with `client|request` we rate limit only request volume.
+You can configure both of them or only one of them as you need.
 
 #### Rate Limit Format
 
@@ -239,14 +241,14 @@ status = await GLOBAL_LIMITER.rate_limit_status()
 
 # Example output:
 {
-    ("client|request", "gpt-4"): {
+    ("client|request", "gpt-4"): {  # the limit status for requests
         "period_start": 1234567890,
         "n_items_in_period": 1,
         "period_seconds": 60,
         "period_name": "minute",
         "period_cap": 5,
     },
-    ("client", "gpt-4"): {
+    ("client", "gpt-4"): {  # the limit status for tokens
         "period_start": 1234567890,
         "n_items_in_period": 50,
         "period_seconds": 60,
