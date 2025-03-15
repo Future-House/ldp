@@ -4,6 +4,7 @@ __all__ = [
     "LiteLLMModel",
     "PassThroughRouter",
     "rate_limited",
+    "request_limited",
     "sum_logprobs",
     "validate_json_completion",
 ]
@@ -441,6 +442,48 @@ def rate_limited(func):
     return wrapper
 
 
+@overload
+def request_limited(
+    func: Callable[P, Coroutine[Any, Any, list[LLMResult]]],
+) -> Callable[P, Coroutine[Any, Any, list[LLMResult]]]: ...
+
+
+@overload
+def request_limited(
+    func: Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]],
+) -> Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]]: ...
+
+
+def request_limited(func):
+    """Decorator to limit requests per minute for LLMModel methods."""
+
+    @functools.wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        if not hasattr(self, "check_request_limit"):
+            raise NotImplementedError(
+                f"Model {self.name} must have a `check_request_limit` method."
+            )
+
+        await self.check_request_limit()
+
+        if isasyncgenfunction(func):
+
+            async def request_limited_generator() -> AsyncIterable[LLMResult]:
+                first_item = True
+                async for item in func(self, *args, **kwargs):
+                    # Skip rate limit check for first item since we already checked at generator start
+                    if not first_item:
+                        await self.check_request_limit()
+                    else:
+                        first_item = False
+                    yield item
+
+            return request_limited_generator()
+        return await func(self, *args, **kwargs)
+
+    return wrapper
+
+
 class PassThroughRouter(litellm.Router):  # TODO: add rate_limited
     """Router that is just a wrapper on LiteLLM's normal free functions."""
 
@@ -473,7 +516,9 @@ class LiteLLMModel(LLMModel):
             " regardless of `pass_through_router` being present. The optional"
             " `rate_limit` key is a dictionary keyed by model group name with values"
             " of type limits.RateLimitItem (in tokens / minute) or valid"
-            " limits.RateLimitItem string for parsing."
+            " limits.RateLimitItem string for parsing. The optional `request_limit`"
+            " key is a dictionary keyed by model group name with values representing"
+            " the maximum number of requests per minute."
         ),
     )
     _router: litellm.Router | None = None
@@ -565,6 +610,16 @@ class LiteLLMModel(LLMModel):
                 )
         return self._router
 
+    async def check_request_limit(self, **kwargs) -> None:
+        """Check if the request is within the request rate limit."""
+        if "request_limit" in self.config:
+            await GLOBAL_LIMITER.try_acquire(
+                ("client|request", self.name),
+                self.config["request_limit"].get(self.name, None),
+                weight=1,
+                **kwargs,
+            )
+
     async def check_rate_limit(self, token_count: float, **kwargs) -> None:
         if "rate_limit" in self.config:
             await GLOBAL_LIMITER.try_acquire(
@@ -574,6 +629,8 @@ class LiteLLMModel(LLMModel):
                 **kwargs,
             )
 
+    # the order should be first request and then rate(token)
+    @request_limited
     @rate_limited
     async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:
         tools = kwargs.get("tools")
@@ -643,6 +700,8 @@ class LiteLLMModel(LLMModel):
             )
         return results
 
+    # the order should be first request and then rate(token)
+    @request_limited
     @rate_limited
     async def acompletion_iter(
         self, messages: list[Message], **kwargs
