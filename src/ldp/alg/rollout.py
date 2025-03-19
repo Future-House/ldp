@@ -121,7 +121,9 @@ class RolloutManager:
                 kwargs["environment_factory"],
                 kwargs.get("batch_size", 1),
                 kwargs.get("max_steps"),
-                log_exceptions_immediately=kwargs.get("log_exceptions_immediately", True)
+                log_exceptions_immediately=kwargs.get(
+                    "log_exceptions_immediately", True
+                ),
             )
 
         if "environments" in kwargs:
@@ -131,7 +133,9 @@ class RolloutManager:
             return await self._sample_trajectories_from_envs(
                 kwargs["environments"],
                 kwargs.get("max_steps"),
-                log_exceptions_immediately=kwargs.get("log_exceptions_immediately", True),
+                log_exceptions_immediately=kwargs.get(
+                    "log_exceptions_immediately", True
+                ),
             )
 
         raise TypeError(
