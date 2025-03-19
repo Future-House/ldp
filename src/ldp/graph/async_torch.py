@@ -109,10 +109,6 @@ class AsyncBufferedWorker(ABC):
                 # Only one coroutine allowed in here when:
                 # - modifying the result buffer
                 # - modifying the work buffer
-                if self._exception_raised is not None:
-                    logger.info("Exception raised in another coroutine")
-                    raise self._exception_raised
-
                 if request_id in self._result_buffer:
                     # Our request was fulfilled by this or another coroutine!
                     return self._result_buffer.pop(request_id)
