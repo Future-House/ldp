@@ -109,6 +109,9 @@ class RolloutManager:
             environments: A list of environments to run rollouts on.
             max_steps: Max steps per rollout. Defaults to None, in which case the rollouts are run
                 until environment returns done.
+            log_exceptions_immediately: Whether to log exceptions in the rollout immediately 
+                to the console. Defaults to True. If False, progress bar will show and a summary
+                will be logged after all rollouts are complete.
         """
 
     async def sample_trajectories(self, **kwargs):
