@@ -27,11 +27,10 @@ class TestTensorChunker:
     def test_chunkify_add_dummy_chunks(self):
         batch_size = 3
         num_chunks = 5
-        dummy_value = 0
 
         sample_tensor = torch.arange(1, batch_size * 10 + 1).reshape(batch_size, 10)
 
-        chunker = ldp.nn.TensorChunker(num_chunks=num_chunks, dummy_value=dummy_value)
+        chunker = ldp.nn.TensorChunker(num_chunks=num_chunks)
         split_args, split_kwargs, dummy_chunk_flags = chunker.chunkify(sample_tensor)
 
         assert len(split_args) == num_chunks
@@ -40,21 +39,16 @@ class TestTensorChunker:
         assert torch.equal(split_args[0][0], sample_tensor[:1])
         assert torch.equal(split_args[1][0], sample_tensor[1:2])
         assert torch.equal(split_args[2][0], sample_tensor[2:3])
-        assert torch.equal(
-            split_args[3][0], torch.full_like(sample_tensor[:1], dummy_value)
-        )
-        assert torch.equal(
-            split_args[4][0], torch.full_like(sample_tensor[:1], dummy_value)
-        )
+        assert torch.equal(split_args[3][0], sample_tensor[:1])
+        assert torch.equal(split_args[4][0], sample_tensor[:1])
 
     def test_chunkify_no_dummy_chunks(self):
         batch_size = 9
         num_chunks = 5
-        dummy_value = 0
 
         sample_tensor = torch.arange(1, batch_size * 10 + 1).reshape(batch_size, 10)
 
-        chunker = ldp.nn.TensorChunker(num_chunks=num_chunks, dummy_value=dummy_value)
+        chunker = ldp.nn.TensorChunker(num_chunks=num_chunks)
         split_args, split_kwargs, dummy_chunk_flags = chunker.chunkify(sample_tensor)
 
         assert len(split_args) == num_chunks
@@ -69,7 +63,6 @@ class TestTensorChunker:
     def test_chunkify_with_args_and_kwargs(self):
         batch_size = 2
         num_chunks = 3
-        dummy_value = 0
 
         sample_tensor = torch.arange(1, batch_size * 10 + 1).reshape(batch_size, 10)
         sample_tensor_kwarg = torch.arange(1, batch_size * 5 + 1).reshape(batch_size, 5)
@@ -78,7 +71,7 @@ class TestTensorChunker:
             "key2": "Not split",
         }
 
-        chunker = ldp.nn.TensorChunker(num_chunks=num_chunks, dummy_value=dummy_value)
+        chunker = ldp.nn.TensorChunker(num_chunks=num_chunks)
         split_args, split_kwargs, dummy_chunk_flags = chunker.chunkify(
             sample_tensor, **sample_kwargs
         )
@@ -88,15 +81,10 @@ class TestTensorChunker:
         assert dummy_chunk_flags == [False, False, True]
         assert torch.equal(split_args[0][0], sample_tensor[:1])
         assert torch.equal(split_args[1][0], sample_tensor[1:2])
-        assert torch.equal(
-            split_args[2][0], torch.full_like(sample_tensor[:1], dummy_value)
-        )
+        assert torch.equal(split_args[2][0], sample_tensor[:1])
         assert torch.equal(split_kwargs[0]["key1"], sample_tensor_kwarg[:1])
         assert torch.equal(split_kwargs[1]["key1"], sample_tensor_kwarg[1:2])
-        assert torch.equal(
-            split_kwargs[2]["key1"],
-            torch.full_like(sample_tensor_kwarg[:1], dummy_value),
-        )
+        assert torch.equal(split_kwargs[2]["key1"], sample_tensor_kwarg[:1])
         assert all(split_kwargs[i]["key2"] == "Not split" for i in range(num_chunks))
 
     def test_dechunkify(self):

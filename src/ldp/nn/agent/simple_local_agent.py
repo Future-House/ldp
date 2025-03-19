@@ -1,8 +1,10 @@
+import logging
 from typing import cast
 
 import torch
 import torch.distributed as dist
 from aviary.core import Message, Tool, ToolRequestMessage
+from litellm.utils import token_counter
 from pydantic import Field, field_validator
 
 from ldp.agent import Agent, SimpleAgentState
@@ -16,6 +18,8 @@ from ldp.nn.handlers.transformer_handler import (
     logits_to_logprobs,
 )
 from ldp.nn.lm_config import LMConfig as _LMConfig
+
+logger = logging.getLogger(__name__)
 
 
 class AgentLMConfig(_LMConfig):
@@ -41,6 +45,10 @@ class AgentLMConfig(_LMConfig):
             "are better defaults than HF's."
         ),
         validate_default=True,
+    )
+    max_messages_token_count: int | None = Field(
+        default=None,
+        description="If set, raise an error if the total tokens in the trajectory exceed this value.",
     )
 
     @field_validator("llm_call_kwargs")
@@ -91,6 +99,8 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
             else next_state.messages
         )
 
+        self._validate_token_count(messages, next_state.tools)
+
         # Execute the LLM operation call
         result = cast(
             "OpResult[Message | ToolRequestMessage]",
@@ -112,7 +122,29 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
 
         # Update state messages with result and return the new state
         next_state.messages = [*next_state.messages, result.value]
+        self._validate_token_count(next_state.messages, next_state.tools)
+
         return cast("OpResult[ToolRequestMessage]", result), next_state, 0.0
+
+    def _validate_token_count(self, messages: list[Message], tools: list[Tool]):
+        """Asserts token count for the trajectory is within the limit."""
+        if self.llm_model.max_messages_token_count is None:
+            return
+        messages_for_tokenizer = self._llm_call_op.prep_messages_for_tokenizer(messages)
+        tools_for_tokenizer = self._llm_call_op.prep_tools_for_tokenizer(tools)
+
+        total_tokens = token_counter(
+            model=self.llm_model.model,
+            messages=messages_for_tokenizer,
+            tools=tools_for_tokenizer,  # type: ignore[arg-type]
+        )
+        if total_tokens > self.llm_model.max_messages_token_count:
+            logger.error(
+                f"Token limit exceeded for trajectory: {total_tokens} > {self.llm_model.max_messages_token_count}"
+            )
+            raise ValueError(
+                f"Token limit exceeded for trajectory: {total_tokens} > {self.llm_model.max_messages_token_count}"
+            )
 
     # TODO: maybe remove these recomputation methods. I added them to debug some things. But idk,
     # maybe they'll come in handy later.
