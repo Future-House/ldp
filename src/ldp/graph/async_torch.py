@@ -106,6 +106,10 @@ class AsyncBufferedWorker(ABC):
 
         while True:
             async with self._lock:
+                if self._exception_raised is not None:
+                    logger.info("Exception raised in another coroutine")
+                    raise self._exception_raised
+
                 # Only one coroutine allowed in here when:
                 # - modifying the result buffer
                 # - modifying the work buffer
