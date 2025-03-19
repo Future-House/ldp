@@ -59,7 +59,7 @@ config.set({
     # Gives us more time to debug a downed worker. TODO: see if there are negative consequences
     # of having this always enabled
     "distributed.comm.timeouts.connect": "300s",
-    "distributed.comm.timeouts.tcp": "300s",
+    "distributed.comm.timeouts.tcp": "1200s",
 })
 
 TReturn = TypeVar("TReturn")
