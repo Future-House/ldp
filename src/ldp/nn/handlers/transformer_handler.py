@@ -194,14 +194,6 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
     @staticmethod
     def model_generate(model: PreTrainedModel, *args, **kwargs):
         """A method that can be used as module_call_fn to sample from an LLM."""
-        if int(os.environ.get("WORLD_SIZE", "1")) > 1:
-            synced_gpus = kwargs.pop("synced_gpus", None)
-            if synced_gpus is None:
-                logger.debug("synced_gpus not defined, defaulting to True.")
-                kwargs["synced_gpus"] = True
-            elif not synced_gpus:
-                raise ValueError("synced_gpus must be True when using FSDP.")
-
         # Summoning params per https://github.com/pytorch/pytorch/issues/100069
         # If model is not FSDP, this context manager is a no-op.
         with FullyShardedDataParallel.summon_full_params(model, recurse=False):
@@ -239,7 +231,6 @@ class TransformerHandler(ModuleHandler):
                 assert_never(config.lm_type)
         super().__init__(model)
         self.tokenizer = tokenizer
-
         maybe_set_tokenizer_chat_template(
             self.tokenizer, self.config.lm_config.chat_template
         )
