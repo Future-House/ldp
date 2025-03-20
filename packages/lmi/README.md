@@ -9,7 +9,7 @@ A Python library for interacting with Large Language Models (LLMs) through an un
 ## Installation
 
 ```bash
-pip install lmi
+pip install fhlmi
 ```
 
 <!--TOC-->
