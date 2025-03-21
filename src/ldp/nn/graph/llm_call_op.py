@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 from functools import partial
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
-import tree
 from aviary.core import MalformedMessageError, Message, Messages
 from aviary.tools import Tool, ToolCall, ToolRequestMessage
 from transformers import LogitsProcessorList
@@ -21,6 +20,9 @@ from ldp.nn.handlers.transformer_handler import (
     decollate_fn_transformer_decoder,
 )
 from ldp.nn.lm_config import LMConfig
+
+if TYPE_CHECKING:
+    import tree
 
 
 class LocalLLMCallOp(Op[Message]):
