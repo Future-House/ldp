@@ -46,7 +46,7 @@ class AgentLMConfig(_LMConfig):
         ),
         validate_default=True,
     )
-    max_messages_token_count: int | None = Field(
+    max_token_count: int | None = Field(
         default=None,
         description="If set, raise an error if the total tokens in the message history and tool description exceed this value.",
     )
@@ -126,7 +126,7 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
 
     def _validate_token_count(self, messages: list[Message], tools: list[Tool]):
         """Asserts token count for the trajectory is within the limit."""
-        if self.llm_model.max_messages_token_count is None:
+        if self.llm_model.max_token_count is None:
             return
         messages_for_tokenizer = self._llm_call_op.prep_messages_for_tokenizer(messages)
         tools_for_tokenizer = self._llm_call_op.prep_tools_for_tokenizer(tools)
@@ -136,12 +136,12 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
             messages=messages_for_tokenizer,
             tools=tools_for_tokenizer,  # type: ignore[arg-type]
         )
-        if total_tokens > self.llm_model.max_messages_token_count:
+        if total_tokens > self.llm_model.max_token_count:
             logger.error(
-                f"Token limit exceeded for trajectory: {total_tokens} > {self.llm_model.max_messages_token_count}"
+                f"Token limit exceeded: {total_tokens} > {self.llm_model.max_token_count}"
             )
             raise ValueError(
-                f"Token limit exceeded for trajectory: {total_tokens} > {self.llm_model.max_messages_token_count}"
+                f"Token limit exceeded: {total_tokens} > {self.llm_model.max_token_count}"
             )
 
     # TODO: maybe remove these recomputation methods. I added them to debug some things. But idk,
