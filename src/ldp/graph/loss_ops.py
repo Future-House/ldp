@@ -2,14 +2,13 @@
 
 from typing import TYPE_CHECKING
 
-import tree
-
 from .op_utils import CallID
 from .ops import GradInType, Op, OpCtx
 
 if TYPE_CHECKING:
     import numpy.typing as npt
     import torch
+    import tree
 
 
 class MSELossOp(Op):
@@ -26,7 +25,7 @@ class MSELossOp(Op):
         ctx: OpCtx,
         input_args,
         input_kwargs,
-        grad_output: tree.Structure,
+        grad_output: "tree.Structure",
         call_id: CallID,
     ) -> GradInType:
         prediction = input_kwargs["prediction"]
