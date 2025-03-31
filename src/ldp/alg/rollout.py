@@ -109,9 +109,9 @@ class RolloutManager:
             environments: A list of environments to run rollouts on.
             max_steps: Max steps per rollout. Defaults to None, in which case the rollouts are run
                 until environment returns done.
-            log_exceptions_immediately: Whether to log exceptions in the rollout immediately 
-                to the console. Defaults to True. If False, progress bar will show and a summary
-                will be logged after all rollouts are complete.
+            summarize_exceptions: Whether to collect exceptions and show a summary at the end.
+                Defaults to True. If False, exceptions will be logged immediately as they occur
+                during rollout.
         """
 
     async def sample_trajectories(self, **kwargs):
@@ -124,8 +124,8 @@ class RolloutManager:
                 kwargs["environment_factory"],
                 kwargs.get("batch_size", 1),
                 kwargs.get("max_steps"),
-                log_exceptions_immediately=kwargs.get(
-                    "log_exceptions_immediately", True
+                summarize_exceptions=kwargs.get(
+                    "summarize_exceptions", False
                 ),
             )
 
@@ -136,8 +136,9 @@ class RolloutManager:
             return await self._sample_trajectories_from_envs(
                 kwargs["environments"],
                 kwargs.get("max_steps"),
-                log_exceptions_immediately=kwargs.get(
-                    "log_exceptions_immediately", True
+                summarize_exceptions=kwargs.get(
+                    "summarize_exceptions",
+                    False,
                 ),
             )
 
@@ -152,7 +153,7 @@ class RolloutManager:
         batch_size: int = 1,
         max_steps: int | None = None,
         *,
-        log_exceptions_immediately: bool = True,
+        summarize_exceptions: bool = False,
     ) -> list[tuple[Trajectory, Environment]]:
         self.traj_buffer.clear()
         exception_counter: Counter = Counter()
@@ -171,7 +172,7 @@ class RolloutManager:
                     traj_id=uuid.uuid4().hex,
                     env=environment_factory(),
                     max_steps=max_steps,
-                    log_exceptions_immediately=log_exceptions_immediately,
+                    summarize_exceptions=summarize_exceptions,
                 )
             )
             for idx in range(batch_size)
@@ -182,7 +183,7 @@ class RolloutManager:
             desc="Rollouts",
             unit="rollout",
             ncols=0,
-            disable=log_exceptions_immediately,
+            disable=not summarize_exceptions,
         ) as pbar:
             while tasks:
                 done, pending = await asyncio.wait(
@@ -218,7 +219,7 @@ class RolloutManager:
                                 traj_id=uuid.uuid4().hex,
                                 env=environment_factory(),
                                 max_steps=remaining_steps,
-                                log_exceptions_immediately=log_exceptions_immediately,
+                                summarize_exceptions=summarize_exceptions,
                             )
                         )
                         new_tasks.append(new_task)
@@ -226,7 +227,7 @@ class RolloutManager:
                 tasks = list(pending) + new_tasks
 
         # Final summary of exceptions (if any)
-        if exception_counter and not log_exceptions_immediately:
+        if exception_counter and summarize_exceptions:
             summary = ["Caught exceptions:", "Count  Exception"]
             summary.extend(
                 f"{count:<6d} {exc:<50s}" for exc, count in exception_counter.items()
@@ -240,7 +241,7 @@ class RolloutManager:
         environments: Sequence[Environment],
         max_steps: int | None = None,
         *,
-        log_exceptions_immediately: bool = True,
+        summarize_exceptions: bool = False,
     ) -> list[Trajectory]:
         self.traj_buffer.clear()
         exception_counter: Counter = Counter()
@@ -254,7 +255,7 @@ class RolloutManager:
                     traj_id,
                     env,
                     max_steps=max_steps,
-                    log_exceptions_immediately=log_exceptions_immediately,
+                    summarize_exceptions=summarize_exceptions,
                 )
             )
             for traj_id, env in zip(traj_ids, environments, strict=True)
@@ -265,7 +266,7 @@ class RolloutManager:
             desc="Rollouts",
             unit="rollout",
             ncols=0,
-            disable=log_exceptions_immediately,
+            disable=not summarize_exceptions,
         ) as pbar:
             for task in asyncio.as_completed(tasks):
                 trajectory = await task
@@ -283,7 +284,7 @@ class RolloutManager:
                         pbar.set_postfix({"num_exceptions": num_exceptions})
 
         # Final summary of exceptions (if any)
-        if exception_counter and not log_exceptions_immediately:
+        if exception_counter and summarize_exceptions:
             summary = ["Caught exceptions:", "Count  Exception"]
             summary.extend(
                 f"{count:<6d} {exc:<50s}" for exc, count in exception_counter.items()
@@ -298,7 +299,7 @@ class RolloutManager:
         env: Environment,
         max_steps: int | None,
         *,
-        log_exceptions_immediately: bool = True,
+        summarize_exceptions: bool = False,
     ) -> Trajectory:
         trajectory = Trajectory(traj_id=traj_id)
 
@@ -351,7 +352,7 @@ class RolloutManager:
         except CaughtError as e:
             # NOTE: This trajectory should not be used for regular training.
             # We save the last transition here for debugging, etc.
-            if log_exceptions_immediately:
+            if not summarize_exceptions:
                 error_details = format_error_details(e.original_exc)
                 logger.exception(f"Exception in rollout {traj_id}:\n{error_details}")
 

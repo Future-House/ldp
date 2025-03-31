@@ -122,8 +122,6 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
 
         # Update state messages with result and return the new state
         next_state.messages = [*next_state.messages, result.value]
-        self._validate_token_count(next_state.messages, next_state.tools)
-
         return cast("OpResult[ToolRequestMessage]", result), next_state, 0.0
 
     def _validate_token_count(self, messages: list[Message], tools: list[Tool]):

@@ -20,9 +20,6 @@ except ImportError:
         "Please run `pip install ldp[nn]`."
     ) from None
 
-
-logger = logging.getLogger(__name__)
-
 _TORCH_LOCK = asyncio.Lock()
 
 # Supported devices here: https://pytorch.org/docs/stable/amp.html#torch.autocast
