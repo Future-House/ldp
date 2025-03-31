@@ -48,7 +48,7 @@ class AgentLMConfig(_LMConfig):
     )
     max_messages_token_count: int | None = Field(
         default=None,
-        description="If set, raise an error if the total tokens in the trajectory exceed this value.",
+        description="If set, raise an error if the total tokens in the message history and tool description exceed this value.",
     )
 
     @field_validator("llm_call_kwargs")
