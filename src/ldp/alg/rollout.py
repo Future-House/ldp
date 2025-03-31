@@ -124,9 +124,7 @@ class RolloutManager:
                 kwargs["environment_factory"],
                 kwargs.get("batch_size", 1),
                 kwargs.get("max_steps"),
-                summarize_exceptions=kwargs.get(
-                    "summarize_exceptions", False
-                ),
+                summarize_exceptions=kwargs.get("summarize_exceptions", False),
             )
 
         if "environments" in kwargs:

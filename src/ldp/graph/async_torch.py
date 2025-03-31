@@ -1,7 +1,6 @@
 __all__ = ["AsyncTorchModule", "async_protect_torch_call"]
 
 import asyncio
-import logging
 import operator
 import time
 from abc import ABC, abstractmethod
