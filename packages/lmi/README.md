@@ -69,9 +69,9 @@ Because these are the only methods that communicate with the chosen LLM provider
 
 #### LLMModel
 
-An `LLMModel` implements `call`, which receives a list of `aviary.Message`s and returns a list of `LLMResult`s. 
+An `LLMModel` implements `call`, which receives a list of `aviary` `Message`s and returns a list of `LLMResult`s.
 `LLMModel.call` can receive callbacks, tools, and output schemas to control its behavior, as better explained below.
-Because we support interacting with the LLMs using `Message` objects, we can use the modalities available in `aviary`, which currently include text and images. 
+Because we support interacting with the LLMs using `Message` objects, we can use the modalities available in `aviary`, which currently include text and images.
 `lmi` supports these modalities but does not support other modalities yet.
 Adittionally, `LLMModel.call_single` can be used to return a single `LLMResult` completion.
 
