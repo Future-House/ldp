@@ -9,8 +9,9 @@ TOutputType = TypeVar("TOutputType", torch.Tensor, GenerateDecoderOnlyOutput)
 class TensorChunker:
     """Splits tensors into chunks and adds dummy chunks as needed for parallel processing frameworks like FSDP."""
 
-    def __init__(self, num_chunks: int):
+    def __init__(self, num_chunks: int, dummy_value: int = 0):
         self.num_chunks = num_chunks
+        self.dummy_value = dummy_value
 
     def chunkify(self, *args, **kwargs) -> tuple[list[tuple], list[dict], list[bool]]:
         """Splits the args into self.num_chunks chunks, adding dummy chunks as needed.
@@ -158,10 +159,8 @@ class TensorChunker:
             for i in range(self.num_chunks):
                 if i >= len(chunks):
                     # Chunk 0 will always exist, and we need only a batch of one ([:1])
-                    # to activate the model.
-                    # We use the first element of the existing chunks as real data to avoid
-                    # errors in the model that may expect a specific token structure.
-                    chunks.append(chunks[0][:1])
+                    # to activate the model
+                    chunks.append(torch.full_like(chunks[0][:1], self.dummy_value))
                     dummy_chunk_flags.append(True)
                 else:
                     dummy_chunk_flags.append(False)
