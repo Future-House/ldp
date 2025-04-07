@@ -181,7 +181,7 @@ class TransformerHandlerConfig(BaseModel):
 
     batch_size: int
     max_wait_interval: float = 0.1
-    module_call_fn: Callable | None = None
+    _module_call_fn: Callable | None = None
     collate_fn: Callable
     decollate_fn: Callable
 
@@ -193,21 +193,20 @@ class TransformerHandlerConfig(BaseModel):
         ),
     )
     
-    @field_validator("module_call_fn", mode="before")
-    def set_default_module_call_fn(cls, v, info):
-        """Set default module_call_fn based on implementation if not provided."""
-        if v is None:
-            # Get the implementation value from the validation context
-            implementation = info.data.get("implementation", TransformerImplementation.ACCELERATOR)
-            
-            # For now, both implementations use the same model_generate function
-            # but this allows for future differentiation based on implementation
-            if implementation == TransformerImplementation.FSDP2:
+    @property
+    def module_call_fn(self) -> Callable:
+        """Get the module call function based on implementation."""
+        if self._module_call_fn is None:
+            if self.implementation == TransformerImplementation.FSDP2:
                 from .transformer_handler_fsdp2 import AsyncTransformerInterface as FSDP2AsyncTransformerInterface 
                 return FSDP2AsyncTransformerInterface.model_generate
             else:  # Default or ACCELERATOR
                 return AsyncTransformerInterface.model_generate
-        return v
+        return self._module_call_fn
+
+    @module_call_fn.setter
+    def module_call_fn(self, value: Callable | None) -> None:
+        self._module_call_fn = value
 
     def make_async_module(self, **kwargs) -> AsyncTransformerInterface:
         if self.parallel_mode_config:
