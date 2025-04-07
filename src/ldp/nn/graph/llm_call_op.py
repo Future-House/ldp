@@ -12,7 +12,6 @@ from ldp.graph.gradient_estimators import assign_constant_grads
 from ldp.graph.op_utils import CallID, get_call_id, get_training_mode
 from ldp.graph.ops import GradInType, Op, OpCtx, ResultOrValue
 from ldp.nn.handlers.transformer_handler import (
-    AsyncTransformerInterface,
     LMType,
     ParallelModeConfig,
     TransformerHandlerConfig,
@@ -53,7 +52,6 @@ class LocalLLMCallOp(Op[Message]):
             parallel_mode_config=parallel_mode_config,
             # constant configuration
             lm_type=LMType.GENERATION,
-            module_call_fn=AsyncTransformerInterface.model_generate,
             collate_fn=partial(
                 collate_fn_transformer_left_pad, pad_token_id=pad_token_id
             ),
