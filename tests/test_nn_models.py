@@ -155,7 +155,6 @@ class TestHandlers:
             lm_config=model_config,
             lm_type=ldp.nn.LMType.GENERATION,
             batch_size=4,
-            module_call_fn=ldp.nn.AsyncTransformerInterface.model_generate,
             collate_fn=partial(
                 ldp.nn.collate_fn_transformer_left_pad,
                 pad_token_id=tokenizer.pad_token_id,
@@ -201,7 +200,6 @@ class TestHandlers:
             lm_config=model_config,
             lm_type=ldp.nn.LMType.GENERATION,
             batch_size=1,
-            module_call_fn=ldp.nn.AsyncTransformerInterface.model_generate,
             collate_fn=partial(
                 ldp.nn.collate_fn_transformer_left_pad,
                 pad_token_id=model_config.get_tokenizer().pad_token_id,
@@ -242,7 +240,6 @@ class TestHandlers:
             lm_config=model_config,
             lm_type=ldp.nn.LMType.GENERATION,
             batch_size=1,
-            module_call_fn=ldp.nn.AsyncTransformerInterface.model_generate,
             collate_fn=partial(
                 ldp.nn.collate_fn_transformer_left_pad,
                 pad_token_id=model_config.get_tokenizer().pad_token_id,
@@ -332,7 +329,6 @@ class TestHandlers:
                 lm_config=model_config,
                 lm_type=ldp.nn.LMType.GENERATION,
                 batch_size=1,
-                module_call_fn=ldp.nn.AsyncTransformerInterface.model_generate,
                 collate_fn=partial(
                     ldp.nn.collate_fn_transformer_left_pad,
                     pad_token_id=model_config.get_tokenizer().pad_token_id,
