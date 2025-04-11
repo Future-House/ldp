@@ -1,6 +1,7 @@
 __all__ = ["AsyncTorchModule", "async_protect_torch_call"]
 
 import asyncio
+import logging
 import operator
 import time
 from abc import ABC, abstractmethod
@@ -18,6 +19,9 @@ except ImportError:
         "ldp.graph.async_torch requires PyTorch as a dependency. "
         "Please run `pip install ldp[nn]`."
     ) from None
+
+
+logger = logging.getLogger(__name__)
 
 _TORCH_LOCK = asyncio.Lock()
 
@@ -90,6 +94,7 @@ class AsyncBufferedWorker(ABC):
         self._work_buffer: list[tuple[float, UUID, dict[str, Any]]] = []
         self._result_buffer: dict[UUID, Any] = {}
         self._lock = asyncio.Lock()
+        self._exception_raised: Exception | None = None
 
     async def __call__(self, **kwargs):
         request_id = uuid4()
@@ -101,16 +106,23 @@ class AsyncBufferedWorker(ABC):
 
         while True:
             async with self._lock:
+                if self._exception_raised is not None:
+                    logger.info("Exception raised in another coroutine")
+                    raise self._exception_raised
+
                 # Only one coroutine allowed in here when:
                 # - modifying the result buffer
                 # - modifying the work buffer
-
                 if request_id in self._result_buffer:
                     # Our request was fulfilled by this or another coroutine!
                     return self._result_buffer.pop(request_id)
 
                 # Try to run a batch.
-                await self._maybe_process_batch()
+                try:
+                    await self._maybe_process_batch()
+                except Exception as e:
+                    self._exception_raised = e
+                    raise
 
             # Sleep, to let another coroutine take over if it needs to
             await asyncio.sleep(0.0)
