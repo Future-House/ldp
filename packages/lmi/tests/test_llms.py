@@ -144,9 +144,7 @@ class TestLiteLLMModel:
                             "model_name": CommonLLMNames.OPENAI_TEST.value,
                             "litellm_params": {
                                 "model": CommonLLMNames.OPENAI_TEST.value,
-                                "mock_response": Exception(
-                                    "Mock exception to force fallback"
-                                ),
+                                "api_key": "invalid_key_to_force_fallback",  # pragma: allowlist secret
                             },
                         },
                         {
