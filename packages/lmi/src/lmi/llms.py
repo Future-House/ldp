@@ -250,6 +250,8 @@ class LLMModel(ABC, BaseModel):
         n = chat_kwargs.get("n") or self.config.get("n", 1)
         if n < 1:
             raise ValueError("Number of completions (n) must be >= 1.")
+        if "fallbacks" not in chat_kwargs and "fallbacks" in self.config:
+            chat_kwargs["fallbacks"] = self.config.get("fallbacks", [])
 
         # NOTE: Checking if the model is a deepseek-r1-like model so that we can pass include_reasoning=True
         # This hard-coded check will be removed once we have a better way to check if the model supports reasoning
