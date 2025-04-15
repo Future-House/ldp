@@ -645,6 +645,7 @@ class LiteLLMModel(LLMModel):
         completions = await track_costs(self.router.acompletion)(
             self.name, prompts, **kwargs
         )
+        used_model = completions.model or self.name
         results: list[LLMResult] = []
 
         # We are not streaming here, so we can cast to list[litellm.utils.Choices]
@@ -685,7 +686,7 @@ class LiteLLMModel(LLMModel):
 
             results.append(
                 LLMResult(
-                    model=self.name,
+                    model=used_model,
                     text=completion.message.content,
                     prompt=messages,
                     messages=output_messages,
@@ -728,7 +729,10 @@ class LiteLLMModel(LLMModel):
         logprobs = []
         role = None
         reasoning_content = []
+        used_model = None
         async for completion in stream_completions:
+            if not used_model:
+                used_model = completion.model or self.name
             choice = completion.choices[0]
             delta = choice.delta
             if hasattr(choice.logprobs, "content"):
@@ -741,7 +745,7 @@ class LiteLLMModel(LLMModel):
                 reasoning_content.append(delta.reasoning_content or "")
         text = "".join(outputs)
         result = LLMResult(
-            model=self.name,
+            model=used_model,
             text=text,
             prompt=messages,
             messages=[Message(role=role, content=text)],

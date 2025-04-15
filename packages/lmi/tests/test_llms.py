@@ -164,7 +164,8 @@ class TestLiteLLMModel:
         assert results[0].model == CommonLLMNames.OPENAI_TEST.value
 
         llm.name = CommonLLMNames.ANTHROPIC_TEST.value
-        results = await llm.call(messages)
+        outputs: list[str] = []
+        results = await llm.call(messages, callbacks=[outputs.append])
         assert isinstance(results, list)
         assert isinstance(results[0], LLMResult)
         assert results[0].model == CommonLLMNames.ANTHROPIC_TEST.value
