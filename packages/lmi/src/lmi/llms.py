@@ -577,8 +577,6 @@ class LiteLLMModel(LLMModel):
         else:
             # pylint: disable-next=possibly-used-before-assignment
             _DeploymentTypedDictValidator.validate_python(model_list)
-        if len({m["model_name"] for m in model_list}) > 1:
-            raise ValueError("Only one model name per model list is supported for now.")
         return data
 
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
