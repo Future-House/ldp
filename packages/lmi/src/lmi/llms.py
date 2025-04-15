@@ -250,6 +250,8 @@ class LLMModel(ABC, BaseModel):
         n = chat_kwargs.get("n") or self.config.get("n", 1)
         if n < 1:
             raise ValueError("Number of completions (n) must be >= 1.")
+        if "fallbacks" not in chat_kwargs and "fallbacks" in self.config:
+            chat_kwargs["fallbacks"] = self.config.get("fallbacks", [])
 
         # NOTE: Checking if the model is a deepseek-r1-like model so that we can pass include_reasoning=True
         # This hard-coded check will be removed once we have a better way to check if the model supports reasoning
@@ -577,8 +579,6 @@ class LiteLLMModel(LLMModel):
         else:
             # pylint: disable-next=possibly-used-before-assignment
             _DeploymentTypedDictValidator.validate_python(model_list)
-        if len({m["model_name"] for m in model_list}) > 1:
-            raise ValueError("Only one model name per model list is supported for now.")
         return data
 
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
@@ -647,6 +647,7 @@ class LiteLLMModel(LLMModel):
         completions = await track_costs(self.router.acompletion)(
             self.name, prompts, **kwargs
         )
+        used_model = completions.model or self.name
         results: list[LLMResult] = []
 
         # We are not streaming here, so we can cast to list[litellm.utils.Choices]
@@ -687,7 +688,7 @@ class LiteLLMModel(LLMModel):
 
             results.append(
                 LLMResult(
-                    model=self.name,
+                    model=used_model,
                     text=completion.message.content,
                     prompt=messages,
                     messages=output_messages,
@@ -730,7 +731,10 @@ class LiteLLMModel(LLMModel):
         logprobs = []
         role = None
         reasoning_content = []
+        used_model = None
         async for completion in stream_completions:
+            if not used_model:
+                used_model = completion.model or self.name
             choice = completion.choices[0]
             delta = choice.delta
             if hasattr(choice.logprobs, "content"):
@@ -743,7 +747,7 @@ class LiteLLMModel(LLMModel):
                 reasoning_content.append(delta.reasoning_content or "")
         text = "".join(outputs)
         result = LLMResult(
-            model=self.name,
+            model=used_model,
             text=text,
             prompt=messages,
             messages=[Message(role=role, content=text)],

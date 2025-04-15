@@ -125,6 +125,66 @@ class TestLiteLLMModel:
         result = await llm.call_single(messages)
         assert isinstance(result, LLMResult)
 
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "config",
+        [
+            pytest.param(
+                {
+                    "name": CommonLLMNames.OPENAI_TEST.value,
+                    "fallbacks": [
+                        {
+                            CommonLLMNames.OPENAI_TEST.value: [
+                                CommonLLMNames.ANTHROPIC_TEST.value
+                            ]
+                        }
+                    ],
+                    "model_list": [
+                        {
+                            "model_name": CommonLLMNames.OPENAI_TEST.value,
+                            "litellm_params": {
+                                "model": CommonLLMNames.OPENAI_TEST.value,
+                                "mock_response": Exception(
+                                    "Mock exception to force fallback"
+                                ),
+                            },
+                        },
+                        {
+                            "model_name": CommonLLMNames.ANTHROPIC_TEST.value,
+                            "litellm_params": {
+                                "model": CommonLLMNames.ANTHROPIC_TEST.value,
+                                "max_tokens": 56,
+                            },
+                        },
+                    ],
+                },
+                id="multiple-models",
+            ),
+        ],
+    )
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    async def test_call_w_multiple_models(self, config: dict[str, Any]) -> None:
+        llm = LiteLLMModel(config=config)
+        messages = [
+            Message(role="system", content="Respond with single words."),
+            Message(role="user", content="What is the meaning of the universe?"),
+        ]
+        results = await llm.call(messages)
+        assert isinstance(results, list)
+        assert isinstance(results[0], LLMResult)
+        assert results[0].model == CommonLLMNames.ANTHROPIC_TEST.value, (
+            "Expected Anthropic to be used as fallback"
+        )
+
+        llm.name = CommonLLMNames.ANTHROPIC_TEST.value
+        outputs: list[str] = []
+        results = await llm.call(messages, callbacks=[outputs.append])
+        assert isinstance(results, list)
+        assert isinstance(results[0], LLMResult)
+        assert results[0].model == CommonLLMNames.ANTHROPIC_TEST.value, (
+            "Expected Anthropic to be used after changing llm.name"
+        )
+
     # @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON])
     @pytest.mark.asyncio
     async def test_call_w_figure(self) -> None:
