@@ -124,7 +124,51 @@ class TestLiteLLMModel:
         assert result.name == result_name
         result = await llm.call_single(messages)
         assert isinstance(result, LLMResult)
+    
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "config", 
+        [
+            pytest.param(
+                {
+                    "name": CommonLLMNames.OPENAI_TEST.value,
+                    "model_list": [
+                        {"model_name": CommonLLMNames.ANTHROPIC_TEST.value, 
+                        "litellm_params": {
+                            "model": CommonLLMNames.ANTHROPIC_TEST.value, 
+                            "max_tokens": 56,
+                            },
+                        },
+                        {"model_name": CommonLLMNames.OPENAI_TEST.value, 
+                        "litellm_params": {
+                            "model": CommonLLMNames.OPENAI_TEST.value,
+                            "max_tokens": 56,
+                            },
+                        },
+                    ],
+                },
+                id="multiple-models",
+            ),
+        ],
+    )
+    async def test_call_w_multiple_models(self, config: dict[str, Any]) -> None:
+        llm = LiteLLMModel(config=config)
+        messages = [
+            Message(role="system", content="Respond with single words."),
+            Message(role="user", content="What is the meaning of the universe?"),
+        ]
+        llm.name = CommonLLMNames.OPENAI_TEST.value
+        results = await llm.call(messages)
+        assert isinstance(results, list)
+        assert isinstance(results[0], LLMResult)
+        assert results[0].model == CommonLLMNames.OPENAI_TEST.value
 
+        llm.name = CommonLLMNames.ANTHROPIC_TEST.value
+        results = await llm.call(messages)
+        assert isinstance(results, list)
+        assert isinstance(results[0], LLMResult)
+        assert results[0].model == CommonLLMNames.ANTHROPIC_TEST.value
+        
     # @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON])
     @pytest.mark.asyncio
     async def test_call_w_figure(self) -> None:
