@@ -134,7 +134,6 @@ async def test_fallbacks_working(fallback: bool) -> None:
     rollout_manager = RolloutManager(
         agent,
         catch_agent_failures=fallback,
-        catch_env_failures=True,
         callbacks=[callback],
     )
     if fallback:
