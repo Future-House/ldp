@@ -90,6 +90,7 @@ class AsyncBufferedWorker(ABC):
         self._work_buffer: list[tuple[float, UUID, dict[str, Any]]] = []
         self._result_buffer: dict[UUID, Any] = {}
         self._lock = asyncio.Lock()
+        self._exception_raised: Exception | None = None
 
     async def __call__(self, **kwargs):
         request_id = uuid4()
@@ -104,13 +105,16 @@ class AsyncBufferedWorker(ABC):
                 # Only one coroutine allowed in here when:
                 # - modifying the result buffer
                 # - modifying the work buffer
-
                 if request_id in self._result_buffer:
                     # Our request was fulfilled by this or another coroutine!
                     return self._result_buffer.pop(request_id)
 
                 # Try to run a batch.
-                await self._maybe_process_batch()
+                try:
+                    await self._maybe_process_batch()
+                except Exception as e:
+                    self._exception_raised = e
+                    raise
 
             # Sleep, to let another coroutine take over if it needs to
             await asyncio.sleep(0.0)
