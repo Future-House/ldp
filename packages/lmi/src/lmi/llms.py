@@ -252,7 +252,7 @@ class LLMModel(ABC, BaseModel):
         # if using the config for an LLMModel,
         # there may be a nested 'config' key
         # that can't be used by chat
-        chat_kwargs.pop("config")
+        chat_kwargs.pop("config", None)
         n = chat_kwargs.get("n") or self.config.get("n", 1)
         if n < 1:
             raise ValueError("Number of completions (n) must be >= 1.")
