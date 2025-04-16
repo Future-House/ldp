@@ -83,7 +83,7 @@ async def test_rollout(training: bool) -> None:
     assert all(v == 2 for v in callback.fn_invocations.values())
 
 
-# @pytest.mark.vcr
+@pytest.mark.vcr
 @pytest.mark.parametrize("fallback", [True, False])
 @pytest.mark.asyncio
 async def test_fallbacks_working(fallback: bool) -> None:
