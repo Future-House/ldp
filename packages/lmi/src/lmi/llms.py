@@ -11,6 +11,7 @@ __all__ = [
 
 import asyncio
 import contextlib
+import copy
 import functools
 import json
 import logging
@@ -231,7 +232,7 @@ class LLMModel(ABC, BaseModel):
         output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = None,
         tools: list[Tool] | None = None,
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
-        **chat_kwargs,
+        **kwargs,
     ) -> list[LLMResult]:
         """Call the LLM model with the given messages and configuration.
 
@@ -247,6 +248,11 @@ class LLMModel(ABC, BaseModel):
         Raises:
             ValueError: If the LLM type is unknown.
         """
+        chat_kwargs = copy.deepcopy(kwargs)
+        # if using the config for an LLMModel,
+        # there may be a nested 'config' key
+        # that can't be used by chat
+        chat_kwargs.pop("config", None)
         n = chat_kwargs.get("n") or self.config.get("n", 1)
         if n < 1:
             raise ValueError("Number of completions (n) must be >= 1.")
@@ -527,13 +533,20 @@ class LiteLLMModel(LLMModel):
 
     @model_validator(mode="before")
     @classmethod
-    def maybe_set_config_attribute(cls, data: dict[str, Any]) -> dict[str, Any]:
+    def maybe_set_config_attribute(cls, input_data: dict[str, Any]) -> dict[str, Any]:
         """
         Set the config attribute if it is not provided.
 
         If name is not provided, uses the default name.
         If a user only gives a name, make a sensible config dict for them.
         """
+        data = copy.deepcopy(input_data)
+
+        # unnest the config key if it's nested
+        if "config" in data and "config" in data["config"]:
+            data["config"].update(data["config"]["config"])
+            data["config"].pop("config")
+
         if "config" not in data:
             data["config"] = {}
         if "name" not in data:

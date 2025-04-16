@@ -6,6 +6,7 @@ from typing import Any, cast
 
 import pytest
 from aviary.core import Environment, Frame, Message, Tool, ToolRequestMessage
+from litellm import AuthenticationError
 from pydantic import BaseModel
 
 from ldp.agent import Agent, SimpleAgent, SimpleAgentState
@@ -80,6 +81,70 @@ async def test_rollout(training: bool) -> None:
             assert traj.traj_id == rehydrated_traj.traj_id
 
     assert all(v == 2 for v in callback.fn_invocations.values())
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize("fallback", [True, False])
+@pytest.mark.asyncio
+async def test_fallbacks_working(fallback: bool) -> None:
+    AGENT_MODEL_LIST = [
+        {
+            "model_name": "openai/gpt-4o-mini",
+            "litellm_params": {"model": "openai/gpt-4o-mini", "api_key": "abc123"},
+        },
+        {
+            "model_name": "openai/gpt-4o",
+            "litellm_params": {
+                "model": "openai/gpt-4o",
+            },
+        },
+    ]
+    AGENT_ROUTER_KWARGS: dict[str, bool | list[dict[str, list[str]]]] = {
+        "set_verbose": True,
+    }
+    if fallback:
+        AGENT_ROUTER_KWARGS["fallbacks"] = [
+            {
+                "openai/gpt-4o-mini": [
+                    "openai/gpt-4o",
+                ]
+            }
+        ]
+
+    AGENT_CONFIG = {
+        "llm_model": {
+            "name": "openai/gpt-4o-mini",
+            "config": {
+                "model_list": AGENT_MODEL_LIST,
+                "router_kwargs": AGENT_ROUTER_KWARGS,
+            },
+        }
+    }
+    if fallback:
+        AGENT_CONFIG["llm_model"]["config"]["fallbacks"] = [  # type: ignore[index]
+            {
+                "openai/gpt-4o-mini": [
+                    "openai/gpt-4o",
+                ]
+            }
+        ]
+    agent = SimpleAgent(**AGENT_CONFIG)
+    callback = DummyCallback()
+
+    rollout_manager = RolloutManager(
+        agent,
+        catch_agent_failures=fallback,
+        callbacks=[callback],
+    )
+    if fallback:
+        assert await rollout_manager.sample_trajectories(
+            environments=[DummyEnv()], max_steps=2
+        )
+    else:
+        with pytest.raises(AuthenticationError):
+            await rollout_manager.sample_trajectories(
+                environments=[DummyEnv()], max_steps=2
+            )
 
 
 async def adeepcopy(x):  # noqa: RUF029
