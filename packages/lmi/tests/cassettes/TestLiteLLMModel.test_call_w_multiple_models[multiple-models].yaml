@@ -1,0 +1,284 @@
+interactions:
+  - request:
+      body:
+        '{"messages":[{"role":"system","content":"Respond with single words."},{"role":"user","content":"What
+        is the meaning of the universe?"}],"model":"gpt-4o-mini-2024-07-18"}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "169"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.65.2
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 1.65.2
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "60.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.9
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string:
+          "{\n    \"error\": {\n        \"message\": \"Incorrect API key provided:
+          invalid_*****************back. You can find your API key at https://platform.openai.com/account/api-keys.\",\n
+          \       \"type\": \"invalid_request_error\",\n        \"param\": null,\n        \"code\":
+          \"invalid_api_key\"\n    }\n}\n"
+      headers:
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-RAY:
+          - 930d89f668806895-SJC
+        Connection:
+          - keep-alive
+        Content-Length:
+          - "279"
+        Content-Type:
+          - application/json; charset=utf-8
+        Date:
+          - Tue, 15 Apr 2025 18:34:46 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=Au_ya_OFPPlyTreX.2Xi5JQQyf7WN115dyunJ_6vJpA-1744742086-1.0.1.1-9NoFwch2ff4uDk2cF_R1Ap_Z8drsD0ARH6y.TjModdUOAg.U2_spXSLvkUmGF1PkFl4rXrEB1muLLI4KM1mNkecrheSYUu2mqu6P5.iGYvY;
+            path=/; expires=Tue, 15-Apr-25 19:04:46 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=mxbZrBQcyXuzZYOicoSbq7.xwbms8rnnNLCtYz4kIcs-1744742086254-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        vary:
+          - Origin
+        x-request-id:
+          - req_9e033137bb847047c49f8f1aeb3fcacf
+      status:
+        code: 401
+        message: Unauthorized
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"What
+        is the meaning of the universe?"}]}],"max_tokens":56,"system":[{"type":"text","text":"Respond
+        with single words."}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "219"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.63.5
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//ZI5BS8QwFIT/y5xTabMqmKNn97R4WEVCTB/d2OxLN3kRl9L/Ll1cUDwN
+          zDczzIzQw+BYBtt2D8MwfG7r5PXu/L572ewfx+3TBxTkPNGaolLcQFDIKa6GKyUUcSxQOKaeIgx8
+          dLWnZtPcNQcXxtroVt92rdZQ8ImFWGBe5+um0NfavojBM3vK4gLfYHlTKJImm8mVxDAg7q3UzPgB
+          hU6V2BMM1xgV6uWcmRF4qmIljcQFRncK3vkDWZ/JSUhs/wbaK8/k+v8sVfnt3C/LNwAAAP//AwCi
+          zFCHNQEAAA==
+      headers:
+        CF-RAY:
+          - 930d89f7bfefcf27-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Tue, 15 Apr 2025 18:34:46 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-04-15T18:34:46Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-04-15T18:34:46Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-04-15T18:34:46Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-04-15T18:34:46Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_01CDGUDMyfs9ckF7G7WsqtxF
+        via:
+          - 1.1 google
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model": "claude-3-5-haiku-20241022", "messages": [{"role": "user", "content":
+        [{"type": "text", "text": "What is the meaning of the universe?"}]}], "max_tokens":
+        56, "system": [{"type": "text", "text": "Respond with single words."}], "stream":
+        true}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "251"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.63.5
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: 'event: message_start
+
+          data: {"type":"message_start","message":{"id":"msg_01LJf2oa8U6Cz6eNeVEAgrsg","type":"message","role":"assistant","model":"claude-3-5-haiku-20241022","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":21,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":1}}              }
+
+
+          event: content_block_start
+
+          data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}
+          }
+
+
+          event: ping
+
+          data: {"type": "ping"}
+
+
+          event: content_block_delta
+
+          data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Unknown"}           }
+
+
+          event: content_block_stop
+
+          data: {"type":"content_block_stop","index":0               }
+
+
+          event: message_delta
+
+          data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":4}    }
+
+
+          event: message_stop
+
+          data: {"type":"message_stop"       }
+
+
+          '
+      headers:
+        CF-RAY:
+          - 930d89fbae1b1590-SJC
+        Cache-Control:
+          - no-cache
+        Connection:
+          - keep-alive
+        Content-Type:
+          - text/event-stream; charset=utf-8
+        Date:
+          - Tue, 15 Apr 2025 18:34:47 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-04-15T18:34:47Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-04-15T18:34:47Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-04-15T18:34:47Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-04-15T18:34:47Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_01JjB4QU3HJ3iHpjsxrsA2s5
+        via:
+          - 1.1 google
+      status:
+        code: 200
+        message: OK
+version: 1

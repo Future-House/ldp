@@ -281,7 +281,10 @@ class LLMCallOp(Op[Message]):
             messages=msgs,
             tools=tools,
             tool_choice=tool_choice,
-            **config,
+            # Since config is shared between our LLMModel and our `call` options
+            # we need to ensure we remove keys which work with LLMModel
+            # but not `call`.
+            **{k: v for k, v in config.items() if k != "router_kwargs"},
         )
         if result.messages is None:
             raise ValueError("No messages returned")

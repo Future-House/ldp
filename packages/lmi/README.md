@@ -1,8 +1,10 @@
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg?style=plastic)]()
-[![tests](https://github.com/Future-House/ldp/actions/workflows/tests.yml/badge.svg?style=plastic)](https://github.com/Future-House/ldp/tree/main/packages/lmi)
-[![PyPI version](https://badge.fury.io/py/fhlmi.svg?style=plastic)](https://pypi.org/project/fhlmi/)
-
 # Language Model Interface (LMI)
+
+[![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Future-House/ldp/tree/main/packages/lmi)
+[![PyPI version](https://badge.fury.io/py/fhlmi.svg)](https://badge.fury.io/py/fhlmi)
+[![tests](https://github.com/Future-House/ldp/actions/workflows/tests.yml/badge.svg)](https://github.com/Future-House/ldp/tree/main/packages/lmi)
+![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
+![PyPI Python Versions](https://img.shields.io/pypi/pyversions/fhlmi)
 
 A Python library for interacting with Large Language Models (LLMs) through an unified interface.
 
@@ -14,26 +16,25 @@ pip install fhlmi
 
 <!--TOC-->
 
-- [Language Model Interface (LMI)](#language-model-interface-lmi)
-  - [Installation](#installation)
-  - [Quick start](#quick-start)
-  - [Documentation](#documentation)
-    - [LLMs](#llms)
-      - [LLMModel](#llmmodel)
-      - [LiteLLMModel](#litellmmodel)
-    - [Cost tracking](#cost-tracking)
-    - [Rate limiting](#rate-limiting)
-      - [Basic Usage](#basic-usage)
-      - [Rate Limit Format](#rate-limit-format)
-      - [Storage Options](#storage-options)
-      - [Monitoring Rate Limits](#monitoring-rate-limits)
-      - [Timeout Configuration](#timeout-configuration)
-      - [Weight-based Rate Limiting](#weight-based-rate-limiting)
-    - [Tool calling](#tool-calling)
-    - [Embedding models](#embedding-models)
-      - [LiteLLMEmbeddingModel](#litellmembeddingmodel)
-      - [HybridEmbeddingModel](#hybridembeddingmodel)
-      - [SentenceTransformerEmbeddingModel](#sentencetransformerembeddingmodel)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Documentation](#documentation)
+  - [LLMs](#llms)
+    - [LLMModel](#llmmodel)
+    - [LiteLLMModel](#litellmmodel)
+  - [Cost tracking](#cost-tracking)
+  - [Rate limiting](#rate-limiting)
+    - [Basic Usage](#basic-usage)
+    - [Rate Limit Format](#rate-limit-format)
+    - [Storage Options](#storage-options)
+    - [Monitoring Rate Limits](#monitoring-rate-limits)
+    - [Timeout Configuration](#timeout-configuration)
+    - [Weight-based Rate Limiting](#weight-based-rate-limiting)
+  - [Tool calling](#tool-calling)
+  - [Embedding models](#embedding-models)
+    - [LiteLLMEmbeddingModel](#litellmembeddingmodel)
+    - [HybridEmbeddingModel](#hybridembeddingmodel)
+    - [SentenceTransformerEmbeddingModel](#sentencetransformerembeddingmodel)
 
 <!--TOC-->
 
@@ -69,7 +70,10 @@ Because these are the only methods that communicate with the chosen LLM provider
 
 #### LLMModel
 
-An `LLMModel` implements `call`, which receives a list of `aviary.Message`s and returns a list of `LLMResult`s. `LLMModel.call` can receive callbacks, tools, and output schemas to control its behavior, as better explained below.
+An `LLMModel` implements `call`, which receives a list of `aviary` `Message`s and returns a list of `LLMResult`s.
+`LLMModel.call` can receive callbacks, tools, and output schemas to control its behavior, as better explained below.
+Because we support interacting with the LLMs using `Message` objects, we can use the modalities available in `aviary`, which currently include text and images.
+`lmi` supports these modalities but does not support other modalities yet.
 Adittionally, `LLMModel.call_single` can be used to return a single `LLMResult` completion.
 
 #### LiteLLMModel

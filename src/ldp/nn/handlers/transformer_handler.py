@@ -12,7 +12,7 @@ from collections.abc import Awaitable, Callable
 from enum import StrEnum, auto
 from functools import cache, partial, wraps
 from pathlib import Path
-from typing import Any, Concatenate, ParamSpec, Self, TypeVar, assert_never, cast
+from typing import Any, Concatenate, ParamSpec, Self, TypeVar, assert_never
 
 import accelerate
 import torch
@@ -548,15 +548,10 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         # lazy import since dask-cuda only works on Linux machines
         from dask_cuda import LocalCUDACluster
 
-        kwargs = {}
-        if os.environ.get("USE_UCX"):
-            kwargs = {
-                "protocol": "ucx",
-                "enable_tcp_over_ucx": True,
-                "enable_infiniband": True,
-                "enable_nvlink": True,
-            }
-
+        # This uses NVIDIA's NVML layer instead of native CUDA, which is more robust in GPU detection
+        # post initialization. This prevents issues with forked processes wrongly detecting the
+        # default GPU as cuda:0
+        os.environ["PYTORCH_NVML_BASED_CUDA_CHECK"] = "1"
         self.cluster = LocalCUDACluster(
             n_workers=parallel_mode_config.num_workers,
             threads_per_worker=parallel_mode_config.num_cpus_per_worker,

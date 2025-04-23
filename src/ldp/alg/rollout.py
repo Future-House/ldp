@@ -1,6 +1,7 @@
 import asyncio
 import itertools
 import logging
+import traceback
 import uuid
 from collections import Counter
 from collections.abc import Callable, Iterator, Sequence
@@ -28,8 +29,20 @@ class CaughtError(Exception):
     def __init__(self, original_exc: Exception):
         super().__init__(str(original_exc))
         self.original_exc = original_exc
+        self.original_traceback = (
+            original_exc.__traceback__
+        )  # Store the original traceback
 
     exc_type = "undefined"
+
+    def __str__(self):
+        # Format the original exception with its traceback
+        original_trace = "".join(
+            traceback.format_exception(
+                type(self.original_exc), self.original_exc, self.original_traceback
+            )
+        )
+        return f"{self.exc_type} error: {super().__str__()}\nOriginal traceback:\n{original_trace}"
 
 
 class AgentError(CaughtError):
@@ -47,7 +60,7 @@ def reraise_exc_as(reraise: type[CaughtError], enabled: bool) -> Iterator[None]:
         yield
     except Exception as e:
         if enabled:
-            logger.debug(f"Reraising {reraise.exc_type} exception.")
+            logger.info(f"Reraising {reraise.exc_type} exception.")
             raise reraise(e) from None
         raise
 
