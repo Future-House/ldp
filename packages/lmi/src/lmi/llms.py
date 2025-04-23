@@ -11,6 +11,7 @@ __all__ = [
 
 import asyncio
 import contextlib
+import copy
 import functools
 import json
 import logging
@@ -231,7 +232,7 @@ class LLMModel(ABC, BaseModel):
         output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = None,
         tools: list[Tool] | None = None,
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
-        **chat_kwargs,
+        **kwargs,
     ) -> list[LLMResult]:
         """Call the LLM model with the given messages and configuration.
 
@@ -247,9 +248,16 @@ class LLMModel(ABC, BaseModel):
         Raises:
             ValueError: If the LLM type is unknown.
         """
+        chat_kwargs = copy.deepcopy(kwargs)
+        # if using the config for an LLMModel,
+        # there may be a nested 'config' key
+        # that can't be used by chat
+        chat_kwargs.pop("config", None)
         n = chat_kwargs.get("n") or self.config.get("n", 1)
         if n < 1:
             raise ValueError("Number of completions (n) must be >= 1.")
+        if "fallbacks" not in chat_kwargs and "fallbacks" in self.config:
+            chat_kwargs["fallbacks"] = self.config.get("fallbacks", [])
 
         # NOTE: Checking if the model is a deepseek-r1-like model so that we can pass include_reasoning=True
         # This hard-coded check will be removed once we have a better way to check if the model supports reasoning
@@ -525,13 +533,20 @@ class LiteLLMModel(LLMModel):
 
     @model_validator(mode="before")
     @classmethod
-    def maybe_set_config_attribute(cls, data: dict[str, Any]) -> dict[str, Any]:
+    def maybe_set_config_attribute(cls, input_data: dict[str, Any]) -> dict[str, Any]:
         """
         Set the config attribute if it is not provided.
 
         If name is not provided, uses the default name.
         If a user only gives a name, make a sensible config dict for them.
         """
+        data = copy.deepcopy(input_data)
+
+        # unnest the config key if it's nested
+        if "config" in data and "config" in data["config"]:
+            data["config"].update(data["config"]["config"])
+            data["config"].pop("config")
+
         if "config" not in data:
             data["config"] = {}
         if "name" not in data:
@@ -577,8 +592,6 @@ class LiteLLMModel(LLMModel):
         else:
             # pylint: disable-next=possibly-used-before-assignment
             _DeploymentTypedDictValidator.validate_python(model_list)
-        if len({m["model_name"] for m in model_list}) > 1:
-            raise ValueError("Only one model name per model list is supported for now.")
         return data
 
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
@@ -647,6 +660,7 @@ class LiteLLMModel(LLMModel):
         completions = await track_costs(self.router.acompletion)(
             self.name, prompts, **kwargs
         )
+        used_model = completions.model or self.name
         results: list[LLMResult] = []
 
         # We are not streaming here, so we can cast to list[litellm.utils.Choices]
@@ -687,7 +701,7 @@ class LiteLLMModel(LLMModel):
 
             results.append(
                 LLMResult(
-                    model=self.name,
+                    model=used_model,
                     text=completion.message.content,
                     prompt=messages,
                     messages=output_messages,
@@ -730,7 +744,10 @@ class LiteLLMModel(LLMModel):
         logprobs = []
         role = None
         reasoning_content = []
+        used_model = None
         async for completion in stream_completions:
+            if not used_model:
+                used_model = completion.model or self.name
             choice = completion.choices[0]
             delta = choice.delta
             if hasattr(choice.logprobs, "content"):
@@ -743,7 +760,7 @@ class LiteLLMModel(LLMModel):
                 reasoning_content.append(delta.reasoning_content or "")
         text = "".join(outputs)
         result = LLMResult(
-            model=self.name,
+            model=used_model,
             text=text,
             prompt=messages,
             messages=[Message(role=role, content=text)],
