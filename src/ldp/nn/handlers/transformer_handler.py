@@ -12,7 +12,7 @@ from collections.abc import Awaitable, Callable
 from enum import StrEnum, auto
 from functools import cache, partial, wraps
 from pathlib import Path
-from typing import Any, Concatenate, ParamSpec, Self, TypeVar, assert_never
+from typing import Any, Concatenate, ParamSpec, Self, TypeVar, assert_never, cast
 
 import accelerate
 import torch
@@ -192,16 +192,19 @@ class TransformerHandlerConfig(BaseModel):
             "multiple devices/nodes. If not provided, will default to single-device."
         ),
     )
-    
+
     @property
     def module_call_fn(self) -> Callable:
         """Get the module call function based on implementation."""
         if self._module_call_fn is None:
             if self.implementation == TransformerImplementation.FSDP2:
-                from .transformer_handler_fsdp2 import AsyncTransformerInterface as FSDP2AsyncTransformerInterface 
+                from .transformer_handler_fsdp2 import (
+                    AsyncTransformerInterface as FSDP2AsyncTransformerInterface,
+                )
+
                 return FSDP2AsyncTransformerInterface.model_generate
-            else:  # Default or ACCELERATOR
-                return AsyncTransformerInterface.model_generate
+            # Default or ACCELERATOR
+            return AsyncTransformerInterface.model_generate
         return self._module_call_fn
 
     @module_call_fn.setter
@@ -407,7 +410,9 @@ class ParallelTransformerHandler(TransformerHandler):
         parallel_worker_config: ParallelWorkerConfig,
     ):
         parallel_worker_config.set_env_vars()
-        dist.init_process_group(backend="nccl", device_id=torch.device(f"cuda:{self.local_rank}"))
+        dist.init_process_group(
+            backend="nccl", device_id=torch.device(f"cuda:{self.local_rank}")
+        )
         torch.cuda.set_device(self.local_rank)
         dist.barrier()
         self.worker_config = parallel_worker_config
@@ -559,7 +564,6 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
             port=parallel_mode_config.scheduler_port,
             memory_limit=None,  # do not let Dask manage memory - if we OOM, we OOM
             device_memory_limit=0,  # Disable gpu memory spilling. Should be handled by FSDP
-            **kwargs,
         )
         self.cluster.scale(parallel_mode_config.num_workers)
         self._initialize_workers(config, parallel_mode_config)

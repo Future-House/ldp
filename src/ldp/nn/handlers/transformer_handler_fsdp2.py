@@ -216,7 +216,9 @@ class ParallelTransformerHandler(TransformerHandler):
         parallel_worker_config: ParallelWorkerConfig,
     ):
         parallel_worker_config.set_env_vars()
-        dist.init_process_group(backend="nccl", device_id=torch.device(f"cuda:{self.local_rank}"))
+        dist.init_process_group(
+            backend="nccl", device_id=torch.device(f"cuda:{self.local_rank}")
+        )
         dist.barrier()
         torch.cuda.set_device(self.local_rank)
         dist.barrier()
