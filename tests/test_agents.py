@@ -568,7 +568,7 @@ class TestReActAgent:
                     " defaulted_float)\n\nDESCRIPTION:\n    Check using docstrings as"
                     " partial f-string templates like so:"
                     " {summary_format}.\n\nPARAMETERS:\n    x (integer): Yes, I end"
-                    " with a colon :\n    y (null): I am null. And despite that there"
+                    " with a colon :\n    y (null): I am null.\nAnd despite that there"
                     " is a multiline argument description.\n    union (integer | null):"
                     " I am a union and the current year is {current_year}.\n   "
                     " pydantic_model (unknown): I am a Pydantic model.\n    basic_dict"
@@ -599,8 +599,8 @@ class TestReActAgent:
                     " docstrings as partial f-string templates like so:"
                     ' {summary_format}.","parameters":{"type":"object","properties":{"x":{"description":"Yes,'
                     " I end with a colon"
-                    ' :","title":"X","type":"integer"},"y":{"description":"I am null.'
-                    " And despite that there is a multiline argument"
+                    ' :","title":"X","type":"integer"},"y":{"description":"I am'
+                    " null.\\nAnd despite that there is a multiline argument"
                     ' description.","title":"Y","type":"null"},"union":{"anyOf":[{"type":"integer"},{"type":"null"}],"description":"I'
                     " am a union and the current year is"
                     ' {current_year}.","title":"Union"},"pydantic_model":{"$ref":"#/$defs/StubState","description":"I'
@@ -646,7 +646,7 @@ class TestReActAgent:
                     " {summary_format}.</description><parameters><type>object</type><properties><x><description>Yes,"
                     " I end with a colon"
                     " :</description><title>X</title><type>integer</type></x><y><description>I"
-                    " am null. And despite that there is a multiline argument"
+                    " am null.\nAnd despite that there is a multiline argument"
                     " description.</description><title>Y</title><type>null</type></y><union><anyOf><item><type>integer</type></item><item><type>null</type></item></anyOf><description>I"
                     " am a union and the current year is"
                     " {current_year}.</description><title>Union</title></union><pydantic_model><key"
