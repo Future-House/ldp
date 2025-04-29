@@ -164,9 +164,9 @@ class LMType(StrEnum):
     REGRESSION = auto()
 
 
-class TransformerImplementation(StrEnum):
+class ParallelizationStrategy(StrEnum):
     ACCELERATOR = auto()  # Current implementation using Accelerator
-    FSDP2 = auto()  # New implementation using FSDP2
+    FSDP2 = auto()  # New implementation using vanilla FSDP2
 
 
 class TransformerHandlerConfig(BaseModel):
@@ -175,8 +175,8 @@ class TransformerHandlerConfig(BaseModel):
     lm_config: LMConfig
     lm_type: LMType
     checkpoint: str | None = None
-    implementation: TransformerImplementation = Field(
-        default=TransformerImplementation.ACCELERATOR,
+    parallel_strategy: ParallelizationStrategy = Field(
+        default=ParallelizationStrategy.ACCELERATOR,
         description="Which transformer implementation to use (Accelerator or FSDP2)",
     )
 
@@ -196,13 +196,13 @@ class TransformerHandlerConfig(BaseModel):
 
     def make_async_module(self, **kwargs) -> AsyncTransformerInterface:
         if self.parallel_mode_config:
-            if self.implementation == TransformerImplementation.ACCELERATOR:
+            if self.parallel_strategy == ParallelizationStrategy.ACCELERATOR:
                 return ParallelAsyncTransformer(config=self, **kwargs)
-            if self.implementation == TransformerImplementation.FSDP2:
+            if self.parallel_strategy == ParallelizationStrategy.FSDP2:
                 from .transformer_handler_fsdp2 import FSDP2ParallelAsyncTransformer
 
                 return FSDP2ParallelAsyncTransformer(config=self, **kwargs)
-            raise ValueError(f"Unsupported implementation: {self.implementation}")
+            raise ValueError(f"Unsupported implementation: {self.parallel_strategy}")
         return AsyncTransformer(config=self, **kwargs)
 
 

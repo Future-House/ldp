@@ -12,10 +12,11 @@ from ldp.graph.gradient_estimators import assign_constant_grads
 from ldp.graph.op_utils import CallID, get_call_id, get_training_mode
 from ldp.graph.ops import GradInType, Op, OpCtx, ResultOrValue
 from ldp.nn.handlers.transformer_handler import (
+    AsyncTransformerInterface,
     LMType,
     ParallelModeConfig,
     TransformerHandlerConfig,
-    TransformerImplementation,
+    ParallelizationStrategy,
     collate_fn_transformer_left_pad,
     decollate_fn_transformer_decoder,
 )
@@ -40,7 +41,7 @@ class LocalLLMCallOp(Op[Message]):
         batch_size: int = 1,
         max_wait_interval: float = 0.1,
         parallel_mode_config: ParallelModeConfig | None = None,
-        implementation: TransformerImplementation = TransformerImplementation.ACCELERATOR,
+        implementation: ParallelizationStrategy = ParallelizationStrategy.ACCELERATOR,
     ) -> None:
         super().__init__()
 
@@ -52,9 +53,10 @@ class LocalLLMCallOp(Op[Message]):
             batch_size=batch_size,
             max_wait_interval=max_wait_interval,
             parallel_mode_config=parallel_mode_config,
-            implementation=implementation,
+            parallel_strategy=implementation,
             # constant configuration
             lm_type=LMType.GENERATION,
+            module_call_fn=AsyncTransformerInterface.model_generate,
             collate_fn=partial(
                 collate_fn_transformer_left_pad, pad_token_id=pad_token_id
             ),

@@ -15,7 +15,7 @@ from ldp.nn.graph.llm_call_op import LocalLLMCallOp
 from ldp.nn.handlers.chunking import TensorChunker
 from ldp.nn.handlers.transformer_handler import (
     ParallelModeConfig,
-    TransformerImplementation,
+    ParallelizationStrategy,
     logits_to_logprobs,
 )
 from ldp.nn.lm_config import LMConfig as _LMConfig
@@ -32,7 +32,7 @@ class AgentLMConfig(_LMConfig):
 
     # distribution
     parallel_mode: ParallelModeConfig | None = None
-    implementation: TransformerImplementation = TransformerImplementation.ACCELERATOR
+    implementation: ParallelizationStrategy = ParallelizationStrategy.ACCELERATOR
     # sampling parameters
     temperature: float = 1.0
     max_new_tokens: int = 50
