@@ -15,6 +15,7 @@ from ldp.nn.handlers.transformer_handler import (
     LMType,
     ParallelModeConfig,
     TransformerHandlerConfig,
+    TransformerImplementation,
     collate_fn_transformer_left_pad,
     decollate_fn_transformer_decoder,
 )
@@ -39,6 +40,7 @@ class LocalLLMCallOp(Op[Message]):
         batch_size: int = 1,
         max_wait_interval: float = 0.1,
         parallel_mode_config: ParallelModeConfig | None = None,
+        implementation: TransformerImplementation = TransformerImplementation.ACCELERATOR,
     ) -> None:
         super().__init__()
 
@@ -50,6 +52,7 @@ class LocalLLMCallOp(Op[Message]):
             batch_size=batch_size,
             max_wait_interval=max_wait_interval,
             parallel_mode_config=parallel_mode_config,
+            implementation=implementation,
             # constant configuration
             lm_type=LMType.GENERATION,
             collate_fn=partial(

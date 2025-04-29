@@ -76,7 +76,7 @@ nn = [
     "dask-jobqueue",
     "dask[distributed]",
     "tokenizers>0.20",
-    "torch>=2.5,<2.7",  # Temporarily pin <2.6 until someone fixes our CI with torch 2.6
+    "torch>=2.6,<2.7",  # Use torch 2.6
     "transformers>=4.46",
     "wandb",
 ]
@@ -153,7 +153,7 @@ explicit_package_bases = true
 mypy_path = "$MYPY_CONFIG_FILE_DIR/src,$MYPY_CONFIG_FILE_DIR/packages/lmi/src"
 # Specifies the OS platform for the target program, for example darwin or win32
 # (meaning OS X or Windows, respectively). The default is the current platform
-# as revealed by Python’s sys.platform variable.
+# as revealed by Python's sys.platform variable.
 platform = "linux"
 # Comma-separated list of mypy plugins.
 plugins = ["pydantic.mypy"]

@@ -12,7 +12,7 @@ from collections.abc import Awaitable, Callable
 from enum import StrEnum, auto
 from functools import cache, partial, wraps
 from pathlib import Path
-from typing import Any, Concatenate, ParamSpec, Self, TypeVar, assert_never, cast
+from typing import Concatenate, ParamSpec, Self, TypeVar, assert_never, Any
 
 import accelerate
 import torch
@@ -29,6 +29,7 @@ from torch.distributed.fsdp import (
     FullStateDictConfig,
     FullyShardedDataParallel,
     MixedPrecision,
+    MixedPrecisionPolicy,
     ShardingStrategy,
     StateDictType,
 )
@@ -181,7 +182,7 @@ class TransformerHandlerConfig(BaseModel):
 
     batch_size: int
     max_wait_interval: float = 0.1
-    _module_call_fn: Callable | None = None
+    module_call_fn: Callable
     collate_fn: Callable
     decollate_fn: Callable
 
@@ -193,37 +194,14 @@ class TransformerHandlerConfig(BaseModel):
         ),
     )
 
-    @property
-    def module_call_fn(self) -> Callable:
-        """Get the module call function based on implementation."""
-        if self._module_call_fn is None:
-            if self.implementation == TransformerImplementation.FSDP2:
-                from .transformer_handler_fsdp2 import (
-                    AsyncTransformerInterface as FSDP2AsyncTransformerInterface,
-                )
-
-                return FSDP2AsyncTransformerInterface.model_generate
-            # Default or ACCELERATOR
-            return AsyncTransformerInterface.model_generate
-        return self._module_call_fn
-
-    @module_call_fn.setter
-    def module_call_fn(self, value: Callable | None) -> None:
-        self._module_call_fn = value
-
     def make_async_module(self, **kwargs) -> AsyncTransformerInterface:
         if self.parallel_mode_config:
             if self.implementation == TransformerImplementation.ACCELERATOR:
                 return ParallelAsyncTransformer(config=self, **kwargs)
             if self.implementation == TransformerImplementation.FSDP2:
-                from .transformer_handler_fsdp2 import (
-                    ParallelTransformerHandler as FSDP2ParallelTransformerHandler,
-                )
+                from .transformer_handler_fsdp2 import FSDP2ParallelAsyncTransformer
 
-                return cast(
-                    "ParallelAsyncTransformer",
-                    FSDP2ParallelTransformerHandler(config=self, **kwargs),
-                )
+                return FSDP2ParallelAsyncTransformer(config=self, **kwargs)
             raise ValueError(f"Unsupported implementation: {self.implementation}")
         return AsyncTransformer(config=self, **kwargs)
 
@@ -243,19 +221,22 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
     @staticmethod
     def model_generate(model: PreTrainedModel, *args, **kwargs):
         """A method that can be used as module_call_fn to sample from an LLM."""
-        # Summoning params per https://github.com/pytorch/pytorch/issues/100069
-        # If model is not FSDP, this context manager is a no-op.
-        with FullyShardedDataParallel.summon_full_params(model, recurse=False):
-            logger.debug(
-                f"model.generate() input_ids shape: {kwargs['input_ids'].shape}, rank"
-                f" {os.environ.get('RANK')}"
+        logger.info(
+            f"model.generate() input_ids shape: {kwargs['input_ids'].shape}, rank"
+            f" {os.environ.get('RANK')}"
+        )
+        if model.training:
+            logger.warning(
+                f"Model is in training mode at rank {os.environ.get('RANK')}, setting to eval mode"
             )
-            return model.generate(
-                *args,
-                **kwargs,
-                pad_token_id=model.config.pad_token_id,  # not always set properly by .generate()
-                eos_token_id=model.config.eos_token_id,
-            )
+            model.eval()
+
+        return model.generate(
+            *args,
+            **kwargs,
+            pad_token_id=model.config.pad_token_id,  # not always set properly by .generate()
+            eos_token_id=model.config.eos_token_id,
+        )
 
 
 class TransformerHandler(ModuleHandler):
@@ -284,12 +265,12 @@ class TransformerHandler(ModuleHandler):
             self.tokenizer, self.config.lm_config.chat_template
         )
 
-        self._setup_accelerator()
+        self._setup_fsdp()
 
         if config.checkpoint is not None:
             self.load_checkpoint(config.checkpoint)
 
-    def _setup_accelerator(self):
+    def _setup_fsdp(self):
         self.accelerator = accelerate.Accelerator(
             # This has to be disabled because accelerator wraps forward() to upcast outputs to fp32. That
             # causes problems with generation, where the cache is expected to be in the same dtype as the model.
@@ -344,6 +325,7 @@ class AsyncTransformer(TransformerHandler, AsyncTransformerInterface):
             max_wait_interval=config.max_wait_interval,
             collate_fn=config.collate_fn,
             decollate_fn=config.decollate_fn,
+            module_call_fn=config.module_call_fn,
         )
 
     async def __call__(
@@ -410,22 +392,21 @@ class ParallelTransformerHandler(TransformerHandler):
         parallel_worker_config: ParallelWorkerConfig,
     ):
         parallel_worker_config.set_env_vars()
-        dist.init_process_group(
-            backend="nccl", device_id=torch.device(f"cuda:{self.local_rank}")
-        )
+
         torch.cuda.set_device(self.local_rank)
-        dist.barrier()
+        dist.init_process_group(backend="nccl")
+
         self.worker_config = parallel_worker_config
         super().__init__(config)
 
-    def _setup_accelerator(self):
+    def _setup_fsdp(self):
         bf16 = self.config.lm_config.dtype == TorchDType.bf16
 
         mixed_precision = None
         if bf16:
             bf16_ready = (
                 torch.version.cuda
-                # and torch.cuda.is_bf16_supported() # TODO add it back
+                and torch.cuda.is_bf16_supported()
                 and torch.version.cuda >= "11.0"
                 and dist.is_nccl_available()
                 and nccl.version() >= (2, 10)
@@ -439,10 +420,17 @@ class ParallelTransformerHandler(TransformerHandler):
                 buffer_dtype=torch.bfloat16,
             )
 
+            mixed_precision = MixedPrecisionPolicy(
+                param_dtype=torch.bfloat16,
+                reduce_dtype=torch.bfloat16,
+                output_dtype=torch.bfloat16,
+            )
+
         self.accelerator = accelerate.Accelerator(
-            # See note in TransformerHandler._setup_accelerator() about this
+            # See note in TransformerHandler._setup_fsdp() about this
             # mixed_precision=("bf16" if bf16 else "no"),
             fsdp_plugin=accelerate.FullyShardedDataParallelPlugin(
+                fsdp_version=2,
                 sharding_strategy=ShardingStrategy.FULL_SHARD,
                 mixed_precision_policy=mixed_precision,
                 auto_wrap_policy="transformer_based_wrap",
@@ -452,13 +440,16 @@ class ParallelTransformerHandler(TransformerHandler):
                 sync_module_states=self.worker_config.cpu_ram_efficient_loading,
                 state_dict_type=self.worker_config.state_dict_type,
                 backward_prefetch=self.worker_config.backward_prefetch,
+                reshard_after_forward=self.worker_config.reshard_after_forward,
             ),
         )
 
         if self.config.lm_config.device == "meta":
             self.module = prepare_model_for_fsdp_with_meta_device(self.module)
 
-        self.module = self.accelerator.prepare(self.module)
+        # TODO: evaluation_mode=True gives perf boost. However we can't train,
+        # allow control over this param
+        self.module = self.accelerator.prepare_model(self.module)
 
     def set_seed(self, seed: int) -> None:
         """Set the seed for the current worker."""
@@ -518,6 +509,11 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
             self.tokenizer, self.config.lm_config.chat_template
         )
 
+        # This uses NVIDIA's NVML layer instead of native CUDA, which is more robust in GPU detection
+        # post initialization. This prevents issues with forked processes wrongly detecting the
+        # default GPU as cuda:0
+        os.environ["PYTORCH_NVML_BASED_CUDA_CHECK"] = "1"
+
         match parallel_mode_config.execution_mode:
             # TODO: see if we can just access `parallel_mode_config` as a
             # `config` attribute instead of passing both.
@@ -553,10 +549,6 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         # lazy import since dask-cuda only works on Linux machines
         from dask_cuda import LocalCUDACluster
 
-        # This uses NVIDIA's NVML layer instead of native CUDA, which is more robust in GPU detection
-        # post initialization. This prevents issues with forked processes wrongly detecting the
-        # default GPU as cuda:0
-        os.environ["PYTORCH_NVML_BASED_CUDA_CHECK"] = "1"
         self.cluster = LocalCUDACluster(
             n_workers=parallel_mode_config.num_workers,
             threads_per_worker=parallel_mode_config.num_cpus_per_worker,
@@ -638,17 +630,18 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         self.client = Client(self.cluster)
         self.client.wait_for_workers(parallel_mode_config.num_workers)
 
-        def get_cuda_visible_devices() -> int | None:
-            device = os.environ.get("CUDA_VISIBLE_DEVICES", None)
-            if device is not None:
-                # If has several devices, assume the first one is the one to use for that worker
-                if "," in device:
-                    device = device.split(",", maxsplit=1)[0]
-                    os.environ["CUDA_VISIBLE_DEVICES"] = device
-                return int(device)
-            return None
+        # TODO: enable when gres is enabled in our cluster
+        # def get_cuda_visible_devices() -> int | None:
+        #     device = os.environ.get("CUDA_VISIBLE_DEVICES", None)
+        #     if device is not None:
+        #         # If has several devices, assume the first one is the one to use for that worker
+        #         if "," in device:
+        #             device = device.split(",", maxsplit=1)[0]
+        #             os.environ["CUDA_VISIBLE_DEVICES"] = device
+        #         return int(device)
+        #     return None
 
-        worker_to_cuda_device = self.client.run(get_cuda_visible_devices)
+        # worker_to_cuda_device = self.client.run(get_cuda_visible_devices)
         workers_info = self.client.scheduler_info()["workers"]
         sorted_workers = dict(
             sorted(workers_info.items(), key=lambda item: item[1]["id"])
@@ -658,12 +651,12 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
         futures = []
         worker_ids = []
-        for rank, (worker_address, worker_data) in enumerate(sorted_workers.items()):
+        for rank, (_, worker_data) in enumerate(sorted_workers.items()):
             worker_id = worker_data["id"]
             # On some occasions, dask SLURM integration auto assigns CUDA_VISIBLE_DEVICES, otherwise we set it here
-            worker_cuda_device = worker_to_cuda_device[worker_address]
-            if worker_cuda_device is None:
-                worker_cuda_device = rank % parallel_mode_config.num_gpus_per_node
+            # worker_cuda_device = worker_to_cuda_device[worker_address]
+            # if worker_cuda_device is None:
+            worker_cuda_device = rank % parallel_mode_config.num_gpus_per_node
 
             parallel_worker_config = ParallelWorkerConfig(
                 rank=rank,
@@ -674,7 +667,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
                 **parallel_mode_config.model_dump(),
             )
             future_op = self.client.submit(
-                ParallelTransformerHandler,
+                self._get_parallel_transformer_handler_cls(),
                 config=config,
                 parallel_worker_config=parallel_worker_config,
                 workers=[worker_id],
@@ -685,6 +678,9 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
         self.actors: list[Actor] = self._client_gather(futures)
         self.worker_ids = worker_ids
+
+    def _get_parallel_transformer_handler_cls(self):
+        return ParallelTransformerHandler
 
     async def __call__(
         self,
