@@ -32,7 +32,7 @@ class AgentLMConfig(_LMConfig):
 
     # distribution
     parallel_mode: ParallelModeConfig | None = None
-    implementation: ParallelizationStrategy = ParallelizationStrategy.ACCELERATOR
+    parallel_strategy: ParallelizationStrategy = ParallelizationStrategy.ACCELERATOR
     # sampling parameters
     temperature: float = 1.0
     max_new_tokens: int = 50
@@ -81,7 +81,7 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
             batch_size=self.llm_model.batch_size,
             max_wait_interval=self.llm_model.max_wait_interval,
             parallel_mode_config=self.llm_model.parallel_mode,
-            implementation=self.llm_model.implementation,
+            parallel_strategy=self.llm_model.parallel_strategy,
         )
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:
