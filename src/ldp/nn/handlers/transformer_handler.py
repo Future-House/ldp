@@ -6,12 +6,13 @@ import logging
 import os
 import socket
 import sys
+import time
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable
 from enum import StrEnum, auto
 from functools import cache, partial, wraps
 from pathlib import Path
-from typing import Any, Concatenate, ParamSpec, Self, TypeVar, assert_never
+from typing import Concatenate, ParamSpec, Self, TypeVar, assert_never, Any
 
 import accelerate
 import torch
@@ -28,6 +29,7 @@ from torch.distributed.fsdp import (
     FullStateDictConfig,
     FullyShardedDataParallel,
     MixedPrecision,
+    MixedPrecisionPolicy,
     ShardingStrategy,
     StateDictType,
 )
@@ -107,6 +109,11 @@ class FSDPConfig(BaseModel):
             " is PRE to be consistent with FSDP's default."
         ),
     )
+    # FSDP2 specific settings
+    reshard_after_forward: bool = Field(
+        default=True,
+        description="Whether to free the full parameters after forward computation.",
+    )
 
     @field_validator("backward_prefetch", mode="before")
     @classmethod
@@ -131,7 +138,10 @@ class ParallelModeConfig(FSDPConfig):
         ),
         default=ExecutionMode.LOCAL_MACHINE,
     )
-
+    num_gpus_per_node: int = Field(
+        default=8,
+        description="Number of GPUs per node. Defaults to 8 for standard GPU nodes.",
+    )
     scheduler_addr: str = "localhost"
     scheduler_port: int = Field(default=0, description="0 means Dask picks randomly.")
     torch_port: int = Field(default_factory=get_unused_port)
@@ -140,7 +150,9 @@ class ParallelModeConfig(FSDPConfig):
     walltime: str = Field(
         default="00:30:00", description="Max time the worker can run."
     )
-    memory: str = Field(default="32GB", description="Memory allocated per worker.")
+    memory_per_worker: str = Field(
+        default="32GB", description="Memory allocated per worker."
+    )
     log_directory: str = Field(
         default=f"{REPO_ROOT}/logs/slurm_outputs/",
         description="Directory to store logs.",
@@ -152,12 +164,21 @@ class LMType(StrEnum):
     REGRESSION = auto()
 
 
+class ParallelizationStrategy(StrEnum):
+    ACCELERATOR = auto()  # Current implementation using Accelerator
+    FSDP2 = auto()  # New implementation using vanilla FSDP2
+
+
 class TransformerHandlerConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
 
     lm_config: LMConfig
     lm_type: LMType
     checkpoint: str | None = None
+    parallel_strategy: ParallelizationStrategy = Field(
+        default=ParallelizationStrategy.ACCELERATOR,
+        description="Which transformer implementation to use (Accelerator or FSDP2)",
+    )
 
     batch_size: int
     max_wait_interval: float = 0.1
@@ -175,7 +196,13 @@ class TransformerHandlerConfig(BaseModel):
 
     def make_async_module(self, **kwargs) -> AsyncTransformerInterface:
         if self.parallel_mode_config:
-            return ParallelAsyncTransformer(config=self, **kwargs)
+            if self.parallel_strategy == ParallelizationStrategy.ACCELERATOR:
+                return ParallelAsyncTransformer(config=self, **kwargs)
+            if self.parallel_strategy == ParallelizationStrategy.FSDP2:
+                from .transformer_handler_fsdp2 import FSDP2ParallelAsyncTransformer
+
+                return FSDP2ParallelAsyncTransformer(config=self, **kwargs)
+            raise ValueError(f"Unsupported implementation: {self.parallel_strategy}")
         return AsyncTransformer(config=self, **kwargs)
 
 
@@ -194,19 +221,22 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
     @staticmethod
     def model_generate(model: PreTrainedModel, *args, **kwargs):
         """A method that can be used as module_call_fn to sample from an LLM."""
-        # Summoning params per https://github.com/pytorch/pytorch/issues/100069
-        # If model is not FSDP, this context manager is a no-op.
-        with FullyShardedDataParallel.summon_full_params(model, recurse=False):
-            logger.debug(
-                f"model.generate() input_ids shape: {kwargs['input_ids'].shape}, rank"
-                f" {os.environ.get('RANK')}"
+        logger.info(
+            f"model.generate() input_ids shape: {kwargs['input_ids'].shape}, rank"
+            f" {os.environ.get('RANK')}"
+        )
+        if model.training:
+            logger.warning(
+                f"Model is in training mode at rank {os.environ.get('RANK')}, setting to eval mode"
             )
-            return model.generate(
-                *args,
-                **kwargs,
-                pad_token_id=model.config.pad_token_id,  # not always set properly by .generate()
-                eos_token_id=model.config.eos_token_id,
-            )
+            model.eval()
+
+        return model.generate(
+            *args,
+            **kwargs,
+            pad_token_id=model.config.pad_token_id,  # not always set properly by .generate()
+            eos_token_id=model.config.eos_token_id,
+        )
 
 
 class TransformerHandler(ModuleHandler):
@@ -235,12 +265,12 @@ class TransformerHandler(ModuleHandler):
             self.tokenizer, self.config.lm_config.chat_template
         )
 
-        self._setup_accelerator()
+        self._setup_fsdp()
 
         if config.checkpoint is not None:
             self.load_checkpoint(config.checkpoint)
 
-    def _setup_accelerator(self):
+    def _setup_fsdp(self):
         self.accelerator = accelerate.Accelerator(
             # This has to be disabled because accelerator wraps forward() to upcast outputs to fp32. That
             # causes problems with generation, where the cache is expected to be in the same dtype as the model.
@@ -255,11 +285,16 @@ class TransformerHandler(ModuleHandler):
 
     def load_checkpoint(self, ckpt: os.PathLike | str, **kwargs) -> None:
         logger.info(f'Loading checkpoint from "{ckpt}"')
+        start_time = time.perf_counter()
         self.accelerator.load_state(str(ckpt), **kwargs)
+        self.barrier()
+        logger.info(f"Loading checkpoint took {time.perf_counter() - start_time:.2f}s")
 
     def save_checkpoint(self, ckpt: os.PathLike | str, **kwargs) -> None:
+        start_time = time.perf_counter()
         self.accelerator.save_state(str(ckpt), **kwargs)
         self.barrier()
+        logger.info(f"Saving checkpoint took {time.perf_counter() - start_time:.2f}s")
         # We do not want to save random states - they would be loaded by load_state
         # automatically. Clean up after all processes have saved.
         if int(os.getenv("RANK", "0")) == 0:
@@ -336,7 +371,6 @@ class ParallelWorkerConfig(FSDPConfig):
 
     def set_env_vars(self):
         # These inform torch.distributed how to set up the process group
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(self.local_rank)
         os.environ["RANK"] = str(self.rank)
         os.environ["WORLD_SIZE"] = str(self.world_size)
         os.environ["LOCAL_RANK"] = str(self.local_rank)
@@ -348,6 +382,7 @@ class ParallelWorkerConfig(FSDPConfig):
         os.environ["FSDP_CPU_RAM_EFFICIENT_LOADING"] = str(
             int(self.cpu_ram_efficient_loading)
         )
+        os.environ["ACCELERATE_TORCH_DEVICE"] = f"cuda:{self.local_rank}"
 
 
 class ParallelTransformerHandler(TransformerHandler):
@@ -357,11 +392,14 @@ class ParallelTransformerHandler(TransformerHandler):
         parallel_worker_config: ParallelWorkerConfig,
     ):
         parallel_worker_config.set_env_vars()
+
+        torch.cuda.set_device(self.local_rank)
         dist.init_process_group(backend="nccl")
+
         self.worker_config = parallel_worker_config
         super().__init__(config)
 
-    def _setup_accelerator(self):
+    def _setup_fsdp(self):
         bf16 = self.config.lm_config.dtype == TorchDType.bf16
 
         mixed_precision = None
@@ -382,10 +420,17 @@ class ParallelTransformerHandler(TransformerHandler):
                 buffer_dtype=torch.bfloat16,
             )
 
+            mixed_precision = MixedPrecisionPolicy(
+                param_dtype=torch.bfloat16,
+                reduce_dtype=torch.bfloat16,
+                output_dtype=torch.bfloat16,
+            )
+
         self.accelerator = accelerate.Accelerator(
-            # See note in TransformerHandler._setup_accelerator() about this
+            # See note in TransformerHandler._setup_fsdp() about this
             # mixed_precision=("bf16" if bf16 else "no"),
             fsdp_plugin=accelerate.FullyShardedDataParallelPlugin(
+                fsdp_version=2,
                 sharding_strategy=ShardingStrategy.FULL_SHARD,
                 mixed_precision_policy=mixed_precision,
                 auto_wrap_policy="transformer_based_wrap",
@@ -395,13 +440,16 @@ class ParallelTransformerHandler(TransformerHandler):
                 sync_module_states=self.worker_config.cpu_ram_efficient_loading,
                 state_dict_type=self.worker_config.state_dict_type,
                 backward_prefetch=self.worker_config.backward_prefetch,
+                reshard_after_forward=self.worker_config.reshard_after_forward,
             ),
         )
 
         if self.config.lm_config.device == "meta":
             self.module = prepare_model_for_fsdp_with_meta_device(self.module)
 
-        self.module = self.accelerator.prepare(self.module)
+        # TODO: evaluation_mode=True gives perf boost. However we can't train,
+        # allow control over this param
+        self.module = self.accelerator.prepare_model(self.module)
 
     def set_seed(self, seed: int) -> None:
         """Set the seed for the current worker."""
@@ -413,6 +461,7 @@ class ParallelTransformerHandler(TransformerHandler):
         *args,
         **kwargs,
     ) -> TReturn:
+        torch.cuda.set_device(self.local_rank)
         # data will be on CPU when sent from controller
         data_device = _get_data_device()
         to_device = partial(_move_tensor, device=data_device)
@@ -460,6 +509,11 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
             self.tokenizer, self.config.lm_config.chat_template
         )
 
+        # This uses NVIDIA's NVML layer instead of native CUDA, which is more robust in GPU detection
+        # post initialization. This prevents issues with forked processes wrongly detecting the
+        # default GPU as cuda:0
+        os.environ["PYTORCH_NVML_BASED_CUDA_CHECK"] = "1"
+
         match parallel_mode_config.execution_mode:
             # TODO: see if we can just access `parallel_mode_config` as a
             # `config` attribute instead of passing both.
@@ -495,58 +549,99 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         # lazy import since dask-cuda only works on Linux machines
         from dask_cuda import LocalCUDACluster
 
-        # This uses NVIDIA's NVML layer instead of native CUDA, which is more robust in GPU detection
-        # post initialization. This prevents issues with forked processes wrongly detecting the
-        # default GPU as cuda:0
-        os.environ["PYTORCH_NVML_BASED_CUDA_CHECK"] = "1"
         self.cluster = LocalCUDACluster(
             n_workers=parallel_mode_config.num_workers,
             threads_per_worker=parallel_mode_config.num_cpus_per_worker,
             host=parallel_mode_config.scheduler_addr,
             port=parallel_mode_config.scheduler_port,
             memory_limit=None,  # do not let Dask manage memory - if we OOM, we OOM
+            device_memory_limit=0,  # Disable gpu memory spilling. Should be handled by FSDP
         )
+        self.cluster.scale(parallel_mode_config.num_workers)
         self._initialize_workers(config, parallel_mode_config)
 
     def _init_slurm_cluster(
         self, config: TransformerHandlerConfig, parallel_mode_config: ParallelModeConfig
     ):
-        """Initialize a SLURM-based Dask cluster with GPU allocation."""
+        """Initialize a SLURM-based Dask cluster with GPU allocation.
+
+        Note: Dask's integration with SLURM currently only supports allocating single entire node
+        at a time, with each node running as a single SLURM task. This implementation adapts
+        to that limitation by requesting complete nodes and running multiple workers (one per GPU)
+        within each node. If our cluster eventually supports GRES (Generic Resource) scheduling,
+        this implementation could be modified to allow for more granular GPU allocation across
+        nodes rather than requiring full node allocation (I think, needs to be tested).
+        """
         # Lazy import because dask_jobqueue cannot be started in a subprocess, which
         # happens e.g. with streamlit
-        from dask_jobqueue import SLURMCluster
+        from dask_jobqueue.slurm import SLURMCluster
+
+        # Validate that num_workers is divisible by num_gpus_per_node
+        num_gpus_per_node = parallel_mode_config.num_gpus_per_node
+        if parallel_mode_config.num_workers % num_gpus_per_node != 0:
+            raise ValueError(
+                f"Number of workers ({parallel_mode_config.num_workers}) must be divisible by "
+                f"num_gpus_per_node ({num_gpus_per_node}). We assume each node has {num_gpus_per_node} GPUs, "
+                f"and current dask-jobqueue infrastructure only supports allocating whole nodes. "
+            )
+            # TODO: add support for gres when available in our cluster for partial node allocation
+
+        # Calculate number of jobs needed (each job = 1 slurm node with num_gpus_per_node GPUs)
+        num_jobs = parallel_mode_config.num_workers // num_gpus_per_node
+
+        log_dir = parallel_mode_config.log_directory
+        os.makedirs(log_dir, exist_ok=True)
+
+        # Calculate total memory needed per node (memory_per_worker * num_gpus_per_node)
+        memory_per_worker = parallel_mode_config.memory_per_worker
+        MEMORY_UNIT_LENGTH = 2  # Memory units are typically 2 chars (e.g. "GB", "MB")
+        value = int(
+            memory_per_worker[:-MEMORY_UNIT_LENGTH]
+        )  # Get numeric value by removing last 2 chars (e.g. "GB")
+        unit = memory_per_worker[-MEMORY_UNIT_LENGTH:]  # Get unit (e.g. "GB")
+        assert len(unit) == MEMORY_UNIT_LENGTH, (
+            f"Memory unit must be {MEMORY_UNIT_LENGTH} characters long, got {unit}"
+        )
+        total_memory = f"{value * parallel_mode_config.num_gpus_per_node}{unit}"
 
         self.cluster = SLURMCluster(
-            cores=parallel_mode_config.num_cpus_per_worker,
-            memory=parallel_mode_config.memory,
-            processes=1,  # Single dask worker per slurm worker
+            cores=parallel_mode_config.num_cpus_per_worker * num_gpus_per_node,
+            memory=total_memory,
+            processes=num_gpus_per_node,  # Each job runs num_gpus_per_node dask workers (one per GPU)
             walltime=parallel_mode_config.walltime,
-            job_extra=[
-                "--gres=gpu:1"
-            ],  # 1 GPU per worker seems to be the common case for now
-            log_directory=parallel_mode_config.log_directory,
+            job_extra_directives=[
+                "--nodes=1",  # Always request 1 node per job
+                "--exclusive",  # Exclusive node access
+                "--mem=0",  # Use all available memory
+                f"--cpus-per-task={parallel_mode_config.num_cpus_per_worker}",
+                f"-o {log_dir}/job_%j_task_%t.out",
+                f"-e {log_dir}/job_%j_task_%t.err",
+            ],
+            log_directory=log_dir,
         )
+
+        # Scale jobs to the required number of jobs
+        self.cluster.scale(jobs=num_jobs)
         self._initialize_workers(config, parallel_mode_config)
 
     def _initialize_workers(
         self, config: TransformerHandlerConfig, parallel_mode_config: ParallelModeConfig
     ):
-        self.cluster.scale(parallel_mode_config.num_workers)
         self.client = Client(self.cluster)
         self.client.wait_for_workers(parallel_mode_config.num_workers)
 
-        def get_cuda_visible_devices() -> int | None:
-            device = os.environ.get("CUDA_VISIBLE_DEVICES", None)
-            if device is not None:
-                # If has several devices, assume the first one is the one to use for that worker
-                if "," in device:
-                    device = device.split(",", maxsplit=1)[0]
-                    os.environ["CUDA_VISIBLE_DEVICES"] = device
-                    os.environ["CUDA_VISIBLE_DEVICES"] = device
-                return int(device)
-            return None
+        # TODO: enable when gres is enabled in our cluster
+        # def get_cuda_visible_devices() -> int | None:
+        #     device = os.environ.get("CUDA_VISIBLE_DEVICES", None)
+        #     if device is not None:
+        #         # If has several devices, assume the first one is the one to use for that worker
+        #         if "," in device:
+        #             device = device.split(",", maxsplit=1)[0]
+        #             os.environ["CUDA_VISIBLE_DEVICES"] = device
+        #         return int(device)
+        #     return None
 
-        worker_to_cuda_device = self.client.run(get_cuda_visible_devices)
+        # worker_to_cuda_device = self.client.run(get_cuda_visible_devices)
         workers_info = self.client.scheduler_info()["workers"]
         sorted_workers = dict(
             sorted(workers_info.items(), key=lambda item: item[1]["id"])
@@ -556,14 +651,12 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
         futures = []
         worker_ids = []
-        for rank, (worker_address, worker_data) in enumerate(sorted_workers.items()):
+        for rank, (_, worker_data) in enumerate(sorted_workers.items()):
             worker_id = worker_data["id"]
-            worker_cuda_device = worker_to_cuda_device[worker_address]
-            if worker_cuda_device is None:
-                assert (
-                    parallel_mode_config.execution_mode != ExecutionMode.SLURM_CLUSTER
-                ), "CUDA_VISIBLE_DEVICES should be pre set for SLURM workers."
-                worker_cuda_device = rank
+            # On some occasions, dask SLURM integration auto assigns CUDA_VISIBLE_DEVICES, otherwise we set it here
+            # worker_cuda_device = worker_to_cuda_device[worker_address]
+            # if worker_cuda_device is None:
+            worker_cuda_device = rank % parallel_mode_config.num_gpus_per_node
 
             parallel_worker_config = ParallelWorkerConfig(
                 rank=rank,
@@ -574,7 +667,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
                 **parallel_mode_config.model_dump(),
             )
             future_op = self.client.submit(
-                ParallelTransformerHandler,
+                self._get_parallel_transformer_handler_cls(),
                 config=config,
                 parallel_worker_config=parallel_worker_config,
                 workers=[worker_id],
@@ -585,6 +678,9 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
         self.actors: list[Actor] = self._client_gather(futures)
         self.worker_ids = worker_ids
+
+    def _get_parallel_transformer_handler_cls(self):
+        return ParallelTransformerHandler
 
     async def __call__(
         self,
