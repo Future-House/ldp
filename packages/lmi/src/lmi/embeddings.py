@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from lmi.constants import CHARACTERS_PER_TOKEN_ASSUMPTION, MODEL_COST_MAP
 from lmi.cost_tracker import track_costs
 from lmi.rate_limiter import GLOBAL_LIMITER
+from lmi.llms import PassThroughRouter
 from lmi.utils import get_litellm_retrying_config
 
 
@@ -94,7 +95,8 @@ class LiteLLMEmbeddingModel(EmbeddingModel):
     def router(self) -> litellm.Router:
         if self._router is None:
             router_kwargs: dict = self.config.get("router_kwargs", {})
-            if self.config.get("pass_through_router"):
+            if self.config.get("pass_through_router")
+                or "model_list" not in self.config:
                 self._router = PassThroughRouter(**router_kwargs)
             else:
                 self._router = litellm.Router(
