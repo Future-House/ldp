@@ -504,6 +504,9 @@ class PassThroughRouter(litellm.Router):  # TODO: add rate_limited
     async def acompletion(self, *args, **kwargs):
         return await litellm.acompletion(*args, **(self._default_kwargs | kwargs))
 
+    async def aembedding(self, *args, **kwargs):
+        return await litellm.aembedding(*args, **(self._default_kwargs | kwargs))
+
 
 class LiteLLMModel(LLMModel):
     """A wrapper around the litellm library."""
