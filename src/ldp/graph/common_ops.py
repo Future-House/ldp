@@ -322,7 +322,7 @@ class LLMCallOp(Op[Message]):
         # `num_retries**2` retries. TODO: consider if we should have separate parameters
         # for LiteLLM and validation retries.
         @tenacity.retry(
-            retry=tenacity.retry_if_exception_type(ResponseValidationError),
+            retry=tenacity.retry_if_exception_type((ResponseValidationError, litellm.Timeout)),
             # num_retries+1 because the first call is not a retry
             stop=tenacity.stop_after_attempt(num_retries + 1),
             wait=tenacity.wait_fixed(1),
