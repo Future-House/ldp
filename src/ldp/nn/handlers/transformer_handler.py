@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import atexit
 import logging
 import os
 import socket
@@ -9,14 +11,15 @@ from collections.abc import Awaitable, Callable
 from enum import StrEnum, auto
 from functools import cache, partial, wraps
 from pathlib import Path
-from typing import Any, Concatenate, ParamSpec, Self, TypeVar, assert_never, cast
+from typing import Any, Concatenate, ParamSpec, Self, TypeVar, assert_never
 
 import accelerate
 import torch
 import torch.distributed as dist
 import tree
 from dask import config
-from dask.distributed import Client
+from dask.distributed import Actor, ActorFuture, Client
+from distributed.utils import sync
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from torch import nn
 from torch.cuda import nccl
@@ -45,6 +48,7 @@ if sys.version_info >= (3, 12):
 else:
     from typing_extensions import overload  # noqa: UP035
 
+logger = logging.getLogger(__name__)
 
 config.set({
     # We have no use for rebooting workers in aviary for now, and rebooting workers
@@ -55,10 +59,8 @@ config.set({
     # Gives us more time to debug a downed worker. TODO: see if there are negative consequences
     # of having this always enabled
     "distributed.comm.timeouts.connect": "300s",
-    "distributed.comm.timeouts.tcp": "300s",
+    "distributed.comm.timeouts.tcp": "1200s",
 })
-
-logger = logging.getLogger(__name__)
 
 TReturn = TypeVar("TReturn")
 TParams = ParamSpec("TParams")
@@ -417,22 +419,29 @@ class ParallelTransformerHandler(TransformerHandler):
         args = tree.map_structure(to_device, args)
         kwargs = tree.map_structure(to_device, kwargs)
 
-        with torch.autocast(
-            device_type=self.module.device.type, dtype=self.module.dtype
-        ):
-            res = (
-                getattr(self, func)(*args, **kwargs)
-                if isinstance(func, str)
-                else func(self, *args, **kwargs)
-            )
+        try:
+            with torch.autocast(
+                device_type=self.module.device.type, dtype=self.module.dtype
+            ):
+                res = (
+                    getattr(self, func)(*args, **kwargs)
+                    if isinstance(func, str)
+                    else func(self, *args, **kwargs)
+                )
 
-        # Needed to prevent GPU memory leak to the main process scheduling the workers
-        if isinstance(res, GenerateDecoderOnlyOutput):
-            res.past_key_values = None
-            res["past_key_values"] = None
+            # Needed to prevent GPU memory leak to the main process scheduling the workers
+            if isinstance(res, GenerateDecoderOnlyOutput):
+                res.past_key_values = None
+                res["past_key_values"] = None
 
-        to_cpu = partial(_move_tensor, device=torch.device("cpu"))
-        return tree.map_structure(to_cpu, res)
+            to_cpu = partial(_move_tensor, device=torch.device("cpu"))
+            return tree.map_structure(to_cpu, res)
+        except Exception as e:
+            # Re-raise the exception with traceback preserved. For some exceptions, Dask
+            # modifies or loses the original traceback when crossing process boundaries.
+            # RuntimeError preserves the traceback when using with_traceback() of original
+            # exception.
+            raise RuntimeError(str(e)).with_traceback(e.__traceback__)  # noqa: B904
 
     def __del__(self) -> None:
         dist.destroy_process_group()
@@ -463,6 +472,8 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
         self._initialized = True
 
+        atexit.register(self.teardown)
+
         # don't call AsyncTorchModule.__init__ because we don't need to set up module[_call_fn]
         AsyncBufferedWorker.__init__(
             self,
@@ -484,6 +495,10 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         # lazy import since dask-cuda only works on Linux machines
         from dask_cuda import LocalCUDACluster
 
+        # This uses NVIDIA's NVML layer instead of native CUDA, which is more robust in GPU detection
+        # post initialization. This prevents issues with forked processes wrongly detecting the
+        # default GPU as cuda:0
+        os.environ["PYTORCH_NVML_BASED_CUDA_CHECK"] = "1"
         self.cluster = LocalCUDACluster(
             n_workers=parallel_mode_config.num_workers,
             threads_per_worker=parallel_mode_config.num_cpus_per_worker,
@@ -568,7 +583,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
             futures.append(future_op)
             worker_ids.append(worker_id)
 
-        self.handlers = self.client.gather(futures)
+        self.actors: list[Actor] = self._client_gather(futures)
         self.worker_ids = worker_ids
 
     async def __call__(
@@ -619,28 +634,24 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         """
         if split_data:
             chunker = TensorChunker(
-                num_chunks=len(self.handlers),
+                num_chunks=len(self.actors),
             )
             split_args, split_kwargs, dummy_flags = chunker.chunkify(*args, **kwargs)
         else:
-            split_args = [args] * len(self.handlers)
-            split_kwargs = [kwargs] * len(self.handlers)
+            split_args = [args] * len(self.actors)
+            split_kwargs = [kwargs] * len(self.actors)
 
         futures = [
-            self.client.submit(
-                handler._exec_func,
+            handler._exec_func(
                 func,
                 *args_i,
-                workers=[worker_id],
-                actor=True,
                 **kwargs_i,
             )
             for handler, worker_id, args_i, kwargs_i in zip(
-                self.handlers, self.worker_ids, split_args, split_kwargs, strict=True
+                self.actors, self.worker_ids, split_args, split_kwargs, strict=True
             )
         ]
-        results = self.client.gather(futures)
-        results = cast("list[TReturn]", [res.result().result() for res in results])
+        results: list[TReturn] = self._client_gather(futures)
 
         if split_data:
             return chunker.dechunkify(results, dummy_flags)
@@ -751,12 +762,77 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
     def teardown(self) -> None:
         if self._initialized:
-            self.client.close()
+            self.client.shutdown()
             self.cluster.close()
+            del self.client
+            del self.cluster
             self._initialized = False
 
     def __del__(self) -> None:
         self.teardown()
+
+    @staticmethod
+    def _wrap_dask_future(dask_future: ActorFuture):
+        """Converts a Dask ActorFuture into an awaitable asyncio.Future."""
+        loop = asyncio.get_running_loop()
+        return asyncio.ensure_future(loop.run_in_executor(None, dask_future.result))
+
+    @staticmethod
+    def _raise_exceptions(done, pending, wrapped_futures):
+        exceptions = []
+        for future in done:
+            exc = future.exception()
+            if exc:
+                exceptions.append(exc)
+        if exceptions:
+            if len(exceptions) == 1:
+                raise exceptions[0]
+            raise ExceptionGroup("Multiple actor exceptions", exceptions)
+
+        if pending:
+            pending_indices = sorted([wrapped_futures.index(p) for p in pending])
+            raise TimeoutError(
+                f"Tasks didn't complete within timeout. {len(pending)} out of {len(wrapped_futures)} "
+                f"still pending. Pending task indices: {pending_indices}"
+            )
+
+    async def _client_gather_async(self, futures):
+        """Gather results from futures, propagating exceptions as they arrive.
+
+        Unlike client.gather() which waits for all futures to complete before raising
+        any exceptions, this method processes futures as they complete and raises
+        exceptions immediately. This is crucial when using FSDP where workers may
+        be stuck waiting for each other when one worker crashes, causing long hangs.
+
+        Note: Dask Actors currently have an issue where they're not working properly with
+        dask.gather() and can cause blocking issues or hide worker errors. This implementation
+        works around those limitations.
+        """
+        try:
+            wrapped_futures = [self._wrap_dask_future(f) for f in futures]
+
+            # Use asyncio.wait with FIRST_EXCEPTION instead of gather
+            done, pending = await asyncio.wait(
+                wrapped_futures, timeout=1200, return_when=asyncio.FIRST_EXCEPTION
+            )
+
+            self._raise_exceptions(done, pending, wrapped_futures)
+
+            return await asyncio.gather(*wrapped_futures)
+        except Exception:
+            logger.exception("Error in dask workers: %s")
+            for future in wrapped_futures:
+                future.cancel()
+            self.teardown()
+            # sys.exit(1) would wait for dask to finish, which can cause hanging
+            # when workers are in a deadlock. Use os._exit to force immediate termination
+            # TODO: this is more of a hack, we should propagate special exception that is
+            # not caught by the rollout manager.
+            os._exit(1)
+
+    def _client_gather(self, futures: list[ActorFuture]) -> list[Any]:
+        # Use distributed.utils.sync to run the async function in the current thread
+        return sync(self.client.loop, self._client_gather_async, futures)  # type: ignore[arg-type]
 
 
 # Helpers

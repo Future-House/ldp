@@ -1,4 +1,10 @@
-# ldp
+# Language Decision Processes (LDP)
+
+[![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Future-House/ldp)
+[![PyPI version](https://badge.fury.io/py/ldp.svg)](https://badge.fury.io/py/ldp)
+[![tests](https://github.com/Future-House/ldp/actions/workflows/tests.yml/badge.svg)](https://github.com/Future-House/ldp)
+![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
+![PyPI Python Versions](https://img.shields.io/pypi/pyversions/ldp)
 
 An framework for constructing language model agents and training on constructive tasks.
 
