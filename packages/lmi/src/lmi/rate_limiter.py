@@ -298,7 +298,7 @@ class GlobalRateLimiter:
             while cursor:
                 cursor, keys = await client.scan(
                     int(cursor),
-                    match=f"{storage.bridge.PREFIX}*",
+                    match=f"{storage.bridge.key_prefix}*",
                     count=cursor_scan_count,
                 )
                 matching_keys.extend(list(keys))
