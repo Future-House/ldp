@@ -231,4 +231,4 @@ class MyAgent(Agent[MyComplexState]):
 
 [^1]: Narayanan, S., Braza, J.D., Griffiths, R.R., Ponnapati, M., Bou, A., Laurent, J., Kabeli, O., Wellawatte, G., Cox, S., Rodriques, S.G. and White, A.D., 2024. [Aviary: training language agents on challenging scientific tasks.](https://arxiv.org/abs/2412.21154) arXiv preprint arXiv:2412.21154.
 
-[^2] Schulman, J., Heess, N., Weber, T. and Abbeel, P., 2015. [Gradient estimation using stochastic computation graphs.](https://proceedings.neurips.cc/paper_files/paper/2015/hash/de03beffeed9da5f3639a621bcab5dd4-Abstract.html) Advances in Neural Information Processing Systems, 28.
+[^2]: Schulman, J., Heess, N., Weber, T. and Abbeel, P., 2015. [Gradient estimation using stochastic computation graphs.](https://proceedings.neurips.cc/paper_files/paper/2015/hash/de03beffeed9da5f3639a621bcab5dd4-Abstract.html) Advances in Neural Information Processing Systems, 28.
