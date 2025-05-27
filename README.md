@@ -53,8 +53,15 @@ To install `ldp`:
 pip install -e .
 ```
 
-If you plan to export Graphviz visualizations,
-make sure you also install the `graphviz` library into your OS via:
+To install `aviary` and the `nn` module required for the tutorials:
+
+```
+pip install "ldp[nn]" "fhaviary[gsm8k]"
+```
+
+
+
+If you plan to export Graphviz visualizations, the `graphviz` library is required:
 
 - Linux: `apt install graphviz`
 - macOS: `brew install graphviz`
