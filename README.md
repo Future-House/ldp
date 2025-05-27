@@ -16,8 +16,7 @@
 </p>
 
 **LDP** [^1] is a software framework for enabling modular interchange of language agents, environments, and optimizers. A language decision process
-is a partially-observable Markov decision process (POMDP) where actions and observations consist of natural langauge. The full definition from the Aviary paper [^1] is:
-
+is a partially-observable Markov decision process (POMDP) where actions and observations consist of natural language. The full definition from the Aviary paper [^1] is:
 
 <p align="left">
   <a href="https://arxiv.org/abs/2212.04450">
@@ -28,7 +27,6 @@ is a partially-observable Markov decision process (POMDP) where actions and obse
 See the following [tutorial]() for an example of how to run an LDP agent.
 
 [Overview](#overview) | [Getting Started](#getting-started) | [Documentation](https://futurehouse.gitbook.io/futurehouse-cookbook/ldp-language-decision-processes) | [Paper](https://arxiv.org/abs/2412.21154)
-
 
 ## What's New?
 
@@ -58,8 +56,6 @@ To install `aviary` and the `nn` module required for the tutorials:
 ```
 pip install "ldp[nn]" "fhaviary[gsm8k]"
 ```
-
-
 
 If you plan to export Graphviz visualizations, the `graphviz` library is required:
 
@@ -96,9 +92,8 @@ Below we elaborate on the components of LDP.
 ## Agent
 
 An agent is a language agent that interacts with an environment to accomplish a task. Agents may use tools (calls to external APIs e.g. Wolfram Alpha)
-in response to observations returned by the environment. Below we define LDP's `SimpleAgent` which relies on a single LLM call. 
+in response to observations returned by the environment. Below we define LDP's `SimpleAgent` which relies on a single LLM call.
 The main bookkeeping involves appending messages received from the environment and passing tools.
-
 
 ```py
 from ldp.agent import Agent
@@ -138,17 +133,17 @@ agent_state = await agent.init_state(tools=tools)
 new_action, new_agent_state, value = await agent.get_asv(agent_state, obs)
 ```
 
-* The `get_asv(agent_state, obs)` method chooses an action (`a`) conditioned on the observation messages
-returning the next agent state (`s`) and a value estimate (`v`).
-* The first argument, `agent_state`, is an optional container of memories which could include a list of previous actions and observations.
-`agent_state` may be set to `None` if memories are not being used.
-* The second argument `obs` is not the complete list of all prior observations, but rather the returned value from `env.step`.
-* The `value` is the agent's state/action value estimate used for reinforcment learning training. It may default to 0.
+- The `get_asv(agent_state, obs)` method chooses an action (`a`) conditioned on the observation messages
+  returning the next agent state (`s`) and a value estimate (`v`).
+- The first argument, `agent_state`, is an optional container of memories which could include a list of previous actions and observations.
+  `agent_state` may be set to `None` if memories are not being used.
+- The second argument `obs` is not the complete list of all prior observations, but rather the returned value from `env.step`.
+- The `value` is the agent's state/action value estimate used for reinforcment learning training. It may default to 0.
 
 ## Stochastic Computation Graph (SCG)
 
 For more advanced use-cases LDP features a stochastic computation graph [^2]
-which enables differentiatiation with respect to agent parameters 
+which enables differentiatiation with respect to agent parameters
 (including the weights of the LLM). The example computation graph below illustrates the functionality
 
 ```py
@@ -161,7 +156,7 @@ async with compute_graph():
 ```
 
 The code cell above creates and executes a computation graph that doubles the input.
-The computation graph gradients and executions are saved in a context for later use, such as in training updates. 
+The computation graph gradients and executions are saved in a context for later use, such as in training updates.
 For example:
 
 ```py
@@ -197,12 +192,12 @@ async def get_asv(self, agent_state, obs):
     return result, next_state, 0.0
 ```
 
-We use differentiable ops to ensure there is an edge in the compute graph from the LLM result (action) 
+We use differentiable ops to ensure there is an edge in the compute graph from the LLM result (action)
 to components such as the memory retrieval as well as the query used to retrieve the memory.
 
-Why use an SCG? Aside from the ability to take gradients, 
-using the SCG enables tracking of all inputs/outputs to the ops 
-and serialization/deserialization of the SCG such that it can be easily saved and loaded. 
+Why use an SCG? Aside from the ability to take gradients,
+using the SCG enables tracking of all inputs/outputs to the ops
+and serialization/deserialization of the SCG such that it can be easily saved and loaded.
 Input/output tracking also makes it easier to perform fine-tuning or reinforcement learning on the underlying LLMs.
 
 ## Generic Support
