@@ -1,20 +1,49 @@
 # Language Decision Processes (LDP)
 
 [![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Future-House/ldp)
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
+[![Docs](https://assets.readthedocs.org/static/projects/badges/passing-flat.svg)](https://futurehouse.gitbook.io/futurehouse-cookbook/ldp-language-decision-processes)
 [![PyPI version](https://badge.fury.io/py/ldp.svg)](https://badge.fury.io/py/ldp)
 [![tests](https://github.com/Future-House/ldp/actions/workflows/tests.yml/badge.svg)](https://github.com/Future-House/ldp)
-![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
-![PyPI Python Versions](https://img.shields.io/pypi/pyversions/ldp)
+[![CodeFactor](https://www.codefactor.io/repository/github/future-house/ldp/badge)](https://www.codefactor.io/repository/github/future-house/ldp)<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+[![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue?style=flat&logo=python&logoColor=white)](https://www.python.org)
 
-An framework for constructing language model agents and training on constructive tasks.
+<p align="left">
+  <a href="https://arxiv.org/abs/2212.04450">
+    <img src="docs/assets/ldp_chessboard.png"/>
+  </a>
+</p>
 
-This repo models agent-environment interactions using a
-[Partially Observable Markov Decision Process][pomdp] (POMDP).
-Inspired by POMDP, this repo's name `ldp` stands for Language Decision Processes.
+**LDP** [^1] is a software framework for enabling modular interchange of language agents, environments, and optimizers. A language decision process
+is a partially-observable Markov decision process (POMDP) where actions and observations consist of natural language. The full definition from the Aviary paper [^1] is:
 
-[pomdp]: https://en.wikipedia.org/wiki/Partially_observable_Markov_decision_process
+<p align="left">
+  <a href="https://arxiv.org/abs/2212.04450">
+    <img src="docs/assets/ldp_definition.png"/>
+  </a>
+</p>
 
-## Installation
+See the following [tutorial](https://github.com/Future-House/ldp/blob/main/tutorials/creating_language_agent.ipynb) for an example of how to run an LDP agent.
+
+[Overview](#overview) | [Getting Started](#getting-started) | [Documentation](https://futurehouse.gitbook.io/futurehouse-cookbook/ldp-language-decision-processes) | [Paper](https://arxiv.org/abs/2412.21154)
+
+## What's New?
+
+- Check out our new [Tutorial](https://github.com/Future-House/ldp/blob/main/docs/agent_tutorial.ipynb) notebook on running an LDP agent in an Aviary environment!
+- The Aviary paper has been posted to [arXiv](https://arxiv.org/abs/2412.21154)! Further updates forthcoming!
+
+## Overview
+
+<p align="left">
+  <a href="https://arxiv.org/abs/2212.04450">
+    <img src="docs/assets/Aviary.png"/>
+  </a>
+</p>
+
+A pictorial overview of the language decision process (LDP) framework together with five implemented Aviary environments.
+
+## Getting Started
 
 To install `ldp`:
 
@@ -22,50 +51,49 @@ To install `ldp`:
 pip install -e .
 ```
 
-If you plan to export Graphviz visualizations,
-make sure you also install the `graphviz` library into your OS via:
+To install `aviary` and the `nn` (neural network) module required for the tutorials:
+
+```
+pip install "ldp[nn]" "fhaviary[gsm8k]"
+```
+
+If you plan to export Graphviz visualizations, the `graphviz` library is required:
 
 - Linux: `apt install graphviz`
 - macOS: `brew install graphviz`
 
+## Tutorial Notebooks
+
+1. [Creating a Simple Language Agent](https://github.com/Future-House/ldp/blob/main/tutorials/creating_language_agent.ipynb)
+2. [Evaluating a Llama Agent on GSM8K](https://github.com/Future-House/ldp/blob/main/tutorials/evaluating_a_llama_agent.ipynb)
+
+## Running an Agent on an Aviary Environment
+
+The minimal example below illustrates how to run a language agent on an Aviary environment (LDP's sister library for defining language agent environments - https://github.com/Future-House/aviary)
+
+```py
+from ldp.agent import SimpleAgent
+from aviary.core import DummyEnv
+
+env = DummyEnv()
+agent = SimpleAgent()
+
+obs, tools = await env.reset()
+agent_state = await agent.init_state(tools=tools)
+
+done = False
+while not done:
+    action, agent_state, _ = await agent.get_asv(agent_state, obs)
+    obs, reward, done, truncated = await env.step(action.value)
+```
+
+Below we elaborate on the components of LDP.
+
 ## Agent
 
-An agent is something that interacts with an environment (defined in our other GitHub repo [Future-House/aviary](https://github.com/Future-House/aviary)).
-
-An agent uses tools in response to observations, which are just natural language observations. An agent has two functions:
-
-```py
-agent_state = await agent.init_state(tools=tools)
-new_action, new_agent_state, value = await agent.get_asv(agent_state, obs)
-```
-
-`get_asv(agent_state, obs)` chooses an action (`a`) conditioned on the observation messages,
-and returns the next agent state (`s`) and a value estimate (`v`).
-The first argument, `agent_state`, is a state specific for the agent.
-The state is outside of the agent so agents are functional, enabling batching across environments.
-You can make the state `None` if you aren't using it. It could contain things like memory, as a list of previous observations and actions.
-
-The `obs` are not the complete list of all prior observations, but rather the return of `env.step`.
-Usually the state should keep track of these.
-
-Value is the agent's state-action value estimate; it can default to 0.
-This is used for training with reinforcement learning.
-
-## Computing Actions
-
-You can just emit actions directly if you want:
-
-```py
-from aviary.core import ToolCall
-
-
-def get_asv(agent_state, obs):
-    action = ToolCall.from_name("calculator_tool", x="3 * 2")
-    return action, agent_state, 0
-```
-
-but likely you want to do something more sophisticated.
-Here's how our `SimpleAgent` - which just relies on a single LLM call - works (typing omitted):
+An agent is a language agent that interacts with an environment to accomplish a task. Agents may use tools (calls to external APIs e.g. Wolfram Alpha)
+in response to observations returned by the environment. Below we define LDP's `SimpleAgent` which relies on a single LLM call.
+The main bookkeeping involves appending messages received from the environment and passing tools.
 
 ```py
 from ldp.agent import Agent
@@ -98,13 +126,26 @@ class SimpleAgent(Agent):
         return action, new_state, 0.0
 ```
 
-Notice how it's pretty simple. We have to do some bookkeeping - namely appending messages as they come and passing tools. There is no magic here.
+An agent has two methods:
 
-### Compute Graph
+```py
+agent_state = await agent.init_state(tools=tools)
+new_action, new_agent_state, value = await agent.get_asv(agent_state, obs)
+```
 
-We do have a compute graph - which helps if you want to differentiate with respect to parameters inside your agent (including possibly the LLM). If your compute graph looks like the above example - where all you do is call an LLM directly, then don't worry about this.
+- The `get_asv(agent_state, obs)` method chooses an action (`a`) conditioned on the observation messages
+  returning the next agent state (`s`) and a value estimate (`v`).
+- The first argument, `agent_state`, is an optional container for environment-specific objects such as e.g. documents for PaperQA or lookup results for HotpotQA,
+- as well as more general objects such as memories which could include a list of previous actions and observations.
+  `agent_state` may be set to `None` if memories are not being used.
+- The second argument `obs` is not the complete list of all prior observations, but rather the returned value from `env.step`.
+- The `value` is the agent's state/action value estimate used for reinforcment learning training. It may default to 0.
 
-If you want to do more complex agents and train them, then read on. Let's start with an example compute graph
+## Stochastic Computation Graph (SCG)
+
+For more advanced use-cases, LDP features a stochastic computation graph [^2]
+which enables differentiatiation with respect to agent parameters
+(including the weights of the LLM). The example computation graph below illustrates the functionality
 
 ```py
 from ldp.graph import FxnOp, LLMCallOp, PromptOp, compute_graph
@@ -115,13 +156,15 @@ async with compute_graph():
     op_result = op_a(3)
 ```
 
-This creates a compute graph and executes it. The compute graph is silly - just doubles the input. The compute graph executions and gradients are saved in a context for later use, like training updates. For example:
+The code cell above creates and executes a computation graph that doubles the input.
+The computation graph gradients and executions are saved in a context for later use, such as in training updates.
+For example:
 
 ```py
 print(op_result.compute_grads())
 ```
 
-Now, inside the `SimpleAgent` example above, you can see some of the compute graph. Let's see a more complex example for an agent that has a memory it can draw upon.
+A more complex example is given below for an agent that possesses memory.
 
 ```py
 @compute_graph()
@@ -150,9 +193,13 @@ async def get_asv(self, agent_state, obs):
     return result, next_state, 0.0
 ```
 
-You can see in this example that we use differentiable ops to ensure there is a connection in the compute graph from the LLM result (action) back to things like the memory retrieval and the query used to retrieve the memory.
+We use differentiable ops to ensure there is an edge in the compute graph from the LLM result (action)
+to components such as memory retrieval as well as the query used to retrieve the memory.
 
-Why use a compute graph? Aside from a gradient, using the compute graph enables the tracking of all inputs/outputs to the ops and serialization/deserialization of the compute graph so that you can easily save/load them. The tracking of input/outputs also makes it easier to do things like fine-tuning or reinforcement learning on the underlying LLMs.
+Why use an SCG? Aside from the ability to take gradients,
+using the SCG enables tracking of all inputs/outputs to the ops
+and serialization/deserialization of the SCG such that it can be easily saved and loaded.
+Input/output tracking also makes it easier to perform fine-tuning or reinforcement learning on the underlying LLMs.
 
 ## Generic Support
 
@@ -161,12 +208,10 @@ are [generics](https://en.wikipedia.org/wiki/Generic_programming),
 which means:
 
 - `Agent` is designed to support arbitrary types
-- Subclasses can exactly specify state types, making the code more readable
+- Subclasses can precisely specify state types, making the code more readable
 
 If you are new to Python generics (`typing.Generic`),
-please read about them in [Python typing](https://docs.python.org/3/library/typing.html#generics).
-
-Below is how to specify an agent with a custom state type.
+please read about them in [Python `typing`](https://docs.python.org/3/library/typing.html#generics). Below is how to specify an agent with a custom state type.
 
 ```py
 from dataclasses import dataclass, field
@@ -185,24 +230,8 @@ class MyAgent(Agent[MyComplexState]):
     """Some agent who is now type checked to match the custom state."""
 ```
 
-## Complete Example
+## References
 
-```py
-from ldp.agent import SimpleAgent
-from aviary.env import DummyEnv
+[^1]: Narayanan, S., Braza, J.D., Griffiths, R.R., Ponnapati, M., Bou, A., Laurent, J., Kabeli, O., Wellawatte, G., Cox, S., Rodriques, S.G. and White, A.D., 2024. [Aviary: training language agents on challenging scientific tasks.](https://arxiv.org/abs/2412.21154) arXiv preprint arXiv:2412.21154.
 
-env = DummyEnv()
-agent = SimpleAgent()
-
-obs, tools = await env.reset()
-agent_state = await agent.init_state(tools=tools)
-
-done = False
-while not done:
-    action, agent_state, _ = await agent.get_asv(agent_state, obs)
-    obs, reward, done, truncated = await env.step(action.value)
-```
-
-## Tutorial
-
-See a tutorial of building and [running an agent for GSM8K](docs/agent_tutorial.ipynb)
+[^2]: Schulman, J., Heess, N., Weber, T. and Abbeel, P., 2015. [Gradient estimation using stochastic computation graphs.](https://proceedings.neurips.cc/paper_files/paper/2015/hash/de03beffeed9da5f3639a621bcab5dd4-Abstract.html) Advances in Neural Information Processing Systems, 28.
