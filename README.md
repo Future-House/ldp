@@ -142,7 +142,7 @@ new_action, new_agent_state, value = await agent.get_asv(agent_state, obs)
 
 ## Stochastic Computation Graph (SCG)
 
-For more advanced use-cases LDP features a stochastic computation graph [^2]
+For more advanced use-cases, LDP features a stochastic computation graph [^2]
 which enables differentiatiation with respect to agent parameters
 (including the weights of the LLM). The example computation graph below illustrates the functionality
 
