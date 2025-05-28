@@ -51,7 +51,7 @@ To install `ldp`:
 pip install -e .
 ```
 
-To install `aviary` and the `nn` module required for the tutorials:
+To install `aviary` and the `nn` (neural network) module required for the tutorials:
 
 ```
 pip install "ldp[nn]" "fhaviary[gsm8k]"
