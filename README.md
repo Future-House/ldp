@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://arxiv.org/abs/2212.04450">
-    <img src="docs/assets/ldp_chessboard.png" width="250"/>
+    <img src="docs/assets/ldp_chessboard.png" width="300"/>
   </a>
 </p>
 
