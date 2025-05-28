@@ -9,9 +9,9 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/future-house/ldp/badge)](https://www.codefactor.io/repository/github/future-house/ldp)<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 [![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue?style=flat&logo=python&logoColor=white)](https://www.python.org)
 
-<p align="left">
+<p align="center">
   <a href="https://arxiv.org/abs/2212.04450">
-    <img src="docs/assets/ldp_chessboard.png"/>
+    <img src="docs/assets/ldp_chessboard.png" width="300"/>
   </a>
 </p>
 
