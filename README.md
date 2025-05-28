@@ -210,7 +210,7 @@ which means:
 - Subclasses can precisely specify state types, making the code more readable
 
 If you are new to Python generics (`typing.Generic`),
-please read about them in [Python typing](https://docs.python.org/3/library/typing.html#generics). Below is how to specify an agent with a custom state type.
+please read about them in [Python `typing`](https://docs.python.org/3/library/typing.html#generics). Below is how to specify an agent with a custom state type.
 
 ```py
 from dataclasses import dataclass, field
