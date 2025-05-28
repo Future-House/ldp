@@ -194,7 +194,7 @@ async def get_asv(self, agent_state, obs):
 ```
 
 We use differentiable ops to ensure there is an edge in the compute graph from the LLM result (action)
-to components such as the memory retrieval as well as the query used to retrieve the memory.
+to components such as memory retrieval as well as the query used to retrieve the memory.
 
 Why use an SCG? Aside from the ability to take gradients,
 using the SCG enables tracking of all inputs/outputs to the ops
