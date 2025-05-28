@@ -135,7 +135,7 @@ new_action, new_agent_state, value = await agent.get_asv(agent_state, obs)
 
 - The `get_asv(agent_state, obs)` method chooses an action (`a`) conditioned on the observation messages
   returning the next agent state (`s`) and a value estimate (`v`).
-- The first argument, `agent_state`, is an optional container for environment-specific objects such as e.g. documents for PaperQA or lookup results for HotpotQA, 
+- The first argument, `agent_state`, is an optional container for environment-specific objects such as e.g. documents for PaperQA or lookup results for HotpotQA,
 - as well as more general objects such as memories which could include a list of previous actions and observations.
   `agent_state` may be set to `None` if memories are not being used.
 - The second argument `obs` is not the complete list of all prior observations, but rather the returned value from `env.step`.
