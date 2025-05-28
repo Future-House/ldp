@@ -73,7 +73,7 @@ The minimal example below illustrates how to run a language agent on an Aviary e
 
 ```py
 from ldp.agent import SimpleAgent
-from aviary.env import DummyEnv
+from aviary.core import DummyEnv
 
 env = DummyEnv()
 agent = SimpleAgent()
