@@ -24,7 +24,7 @@ is a partially-observable Markov decision process (POMDP) where actions and obse
   </a>
 </p>
 
-See the following [tutorial](https://github.com/Future-House/ldp/blob/main/tutorials/creating_language_agent.ipynb) for an example of how to run an LDP agent.
+See the following [tutorial](https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb) for an example of how to run an LDP agent.
 
 [Overview](#overview) | [Getting Started](#getting-started) | [Documentation](https://futurehouse.gitbook.io/futurehouse-cookbook/ldp-language-decision-processes) | [Paper](https://arxiv.org/abs/2412.21154)
 
