@@ -64,7 +64,7 @@ If you plan to export Graphviz visualizations, the `graphviz` library is require
 
 ## Tutorial Notebooks
 
-1. [Creating a Simple Language Agent](https://github.com/Future-House/ldp/blob/main/tutorials/creating_language_agent.ipynb)
+1. [Creating a Simple Language Agent](https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb)
 2. [Evaluating a Llama Agent on GSM8K](https://github.com/Future-House/ldp/blob/main/tutorials/evaluating_a_llama_agent.ipynb)
 
 ## Running an Agent on an Aviary Environment
