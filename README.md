@@ -30,7 +30,7 @@ See the following [tutorial](https://github.com/Future-House/ldp/blob/main/tutor
 
 ## What's New?
 
-- Check out our new [Tutorial](https://github.com/Future-House/ldp/blob/main/docs/agent_tutorial.ipynb) notebook on running an LDP agent in an Aviary environment!
+- Check out our new [Tutorial](https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb) notebook on running an LDP agent in an Aviary environment!
 - The Aviary paper has been posted to [arXiv](https://arxiv.org/abs/2412.21154)! Further updates forthcoming!
 
 ## Overview
