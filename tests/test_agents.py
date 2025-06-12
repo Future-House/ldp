@@ -99,7 +99,7 @@ class TestAgentState:
         agent_state_0_json = agent_state_0.model_dump_json()
         for _ in range(3):  # Give a few steps to finish, the assertion needs >0 steps
             action, agent_state, _ = await agent.get_asv(agent_state, obs)
-            obs, reward, done, truncated = await dummy_env.step(action.value)
+            obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
             if done:
                 break
         assert done, "Environment should have finished"
@@ -129,7 +129,7 @@ class TestSimpleAgent:
         agent = SimpleAgent(llm_model={"name": model_name, "temperature": 0.1})
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
-        obs, reward, done, truncated = await dummy_env.step(action.value)
+        obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
         assert reward > 0, (
             "Reward should be positive, indicating agent called print_story tool"
         )
@@ -280,7 +280,7 @@ class TestNoToolsSimpleAgent:
         assert isinstance(tool_req_msg, ToolRequestMessage)
         assert len(tool_req_msg.tool_calls) == 1
         assert tool_req_msg.tool_calls[0].function.name == print_story_tool.info.name
-        obs, reward, done, truncated = await dummy_env.step(action.value)
+        obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
         assert reward > 0, (
             "Reward should be positive, indicating agent called print_story tool"
         )
@@ -318,7 +318,7 @@ class TestMemoryAgent:
 
         new_action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert "Once there was" in str(new_action)
-        obs, reward, done, truncated = await dummy_env.step(new_action.value)
+        obs, reward, done, truncated = await dummy_env.step(new_action.value)  # noqa: RUF059
         assert reward > 0, (
             "Reward should be positive, indicating agent called print_story tool"
         )
@@ -343,7 +343,7 @@ class TestMemoryAgent:
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
-        obs, reward, done, truncated = await dummy_env.step(action.value)
+        obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
         assert reward > 0, (
             "Reward should be positive, indicating agent called print_story tool"
         )
@@ -400,7 +400,7 @@ class TestReActAgent:
         )
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
-        obs, reward, done, truncated = await dummy_env.step(action.value)
+        obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
         assert reward > 0, (
             "Reward should be positive, indicating agent called print_story tool"
         )
@@ -498,7 +498,7 @@ class TestReActAgent:
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
-        obs, reward, done, truncated = await dummy_env.step(action.value)
+        obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
         assert reward > 0, (
             "Reward should be positive, indicating agent called print_story tool"
         )
@@ -772,7 +772,7 @@ class TestHTTPAgentClient:
             assert isinstance(vhat, float)
 
             # This makes an obs with ToolResponseMessage inside
-            obs, reward, done, _ = await dummy_env.step(action.value)
+            obs, reward, done, _ = await dummy_env.step(action.value)  # noqa: RUF059
             assert not done
 
             with patch("httpx.AsyncClient.post", async_client.post), eval_mode():
@@ -800,6 +800,6 @@ async def test_interactive(dummy_env: DummyEnv, mocker):
     )
 
     action, agent_state, _ = await agent.get_asv(agent_state, obs)
-    next_obs, _, done, _ = await dummy_env.step(action.value)
+    next_obs, _, done, _ = await dummy_env.step(action.value)  # noqa: RUF059
 
     assert mock_input.call_count >= 2
