@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from lmi.constants import CHARACTERS_PER_TOKEN_ASSUMPTION, MODEL_COST_MAP
 from lmi.cost_tracker import track_costs
+from lmi.llms import PassThroughRouter
 from lmi.rate_limiter import GLOBAL_LIMITER
 from lmi.utils import get_litellm_retrying_config
 
@@ -88,6 +89,19 @@ class LiteLLMEmbeddingModel(EmbeddingModel):
             " Router is not used here."
         ),
     )
+    _router: litellm.Router | None = None
+
+    @property
+    def router(self) -> litellm.Router:
+        if self._router is None:
+            router_kwargs: dict = self.config.get("router_kwargs", {})
+            if self.config.get("pass_through_router"):
+                self._router = PassThroughRouter(**router_kwargs)
+            else:
+                self._router = litellm.Router(
+                    model_list=self.config["model_list"], **router_kwargs
+                )
+        return self._router
 
     @model_validator(mode="before")
     @classmethod
@@ -146,7 +160,7 @@ class LiteLLMEmbeddingModel(EmbeddingModel):
                 )
             )
 
-            response = await track_costs(litellm.aembedding)(
+            response = await track_costs(self.router.aembedding)(
                 model=self.name,
                 input=texts[i : i + batch_size],
                 dimensions=self.ndim,
