@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any, ClassVar
 from unittest.mock import Mock, patch
 
 import litellm
@@ -128,6 +129,78 @@ class TestLiteLLMEmbeddingModel:
         config = embedding_model.config
         assert "kwargs" in config
         assert config["kwargs"]["timeout"] == 120
+
+    SENTINEL_TIMEOUT: ClassVar[float] = 15.0
+
+    @pytest.mark.parametrize(
+        ("config", "used_router"),
+        [
+            pytest.param(
+                {
+                    "model_list": [
+                        {
+                            "model_name": "text-embedding-3-small",
+                            "litellm_params": {
+                                "model": "text-embedding-3-small",
+                                "timeout": SENTINEL_TIMEOUT,
+                            },
+                        }
+                    ],
+                    "kwargs": {},  # Ensure we don't set up retrying config overrides
+                },
+                True,
+                id="with-router",
+            ),
+            pytest.param(
+                {
+                    "pass_through_router": True,
+                    "router_kwargs": {"timeout": SENTINEL_TIMEOUT},
+                    "kwargs": {},  # Ensure we don't set up retrying config overrides
+                },
+                False,
+                id="without-router",
+            ),
+        ],
+    )
+    @pytest.mark.vcr
+    @pytest.mark.asyncio
+    async def test_router_usage(
+        self, config: dict[str, Any], used_router: bool
+    ) -> None:
+        model = LiteLLMEmbeddingModel(
+            name="text-embedding-3-small", config=config, ndim=8
+        )
+
+        with (
+            patch.object(
+                litellm.Router,
+                "aembedding",
+                side_effect=litellm.Router.aembedding,
+                autospec=True,
+            ) as mock_Router_aembedding,
+            patch.object(
+                litellm, "aembedding", side_effect=litellm.aembedding, autospec=True
+            ) as mock_aembedding,
+        ):
+            embeddings = await model.embed_documents(["test"])
+
+        # Check embeddings are expected
+        (embedding,) = embeddings
+        assert len(embedding) == model.ndim
+
+        # Check we acquired the embeddings as expected
+        if used_router:
+            mock_Router_aembedding.assert_awaited_once_with(
+                model.router,
+                model="text-embedding-3-small",
+                input=["test"],
+                dimensions=8,
+            )
+        else:
+            mock_Router_aembedding.assert_not_awaited()
+        mock_aembedding.assert_awaited_once()
+        # Confirm use of the sentinel timeout in the Router's model_list or pass through
+        mock_aembedding.call_args.kwargs["timeout"] = self.SENTINEL_TIMEOUT
 
 
 @pytest.mark.asyncio
