@@ -11,8 +11,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from lmi.constants import CHARACTERS_PER_TOKEN_ASSUMPTION, MODEL_COST_MAP
 from lmi.cost_tracker import track_costs
-from lmi.rate_limiter import GLOBAL_LIMITER
 from lmi.llms import PassThroughRouter
+from lmi.rate_limiter import GLOBAL_LIMITER
 from lmi.utils import get_litellm_retrying_config
 
 
