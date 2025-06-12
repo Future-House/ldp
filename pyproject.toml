@@ -226,6 +226,8 @@ disable = [
     "expression-not-assigned",  # Rely on mypy func-returns-value for this
     "fixme",  # codetags are useful
     "function-redefined",  # Rely on mypy no-redef for this
+    "global-statement",  # Rely on ruff PLW0603 for this
+    "global-variable-not-assigned",  # Rely on ruff PLW0602 for this
     "import-outside-toplevel",  # Rely on ruff PLC0415 for this
     "invalid-name",  # Don't care to enforce this
     "keyword-arg-before-vararg",  # Rely on ruff B026 for this
@@ -247,17 +249,19 @@ disable = [
     "too-few-public-methods",  # Don't care to enforce this
     "too-many-ancestors",  # Don't care to enforce this
     "too-many-arguments",  # Don't care to enforce this
+    "too-many-boolean-expressions",  # Rely on ruff PLR0916 for this
     "too-many-branches",  # Rely on ruff PLR0912 for this
     "too-many-instance-attributes",  # Don't care to enforce this
     "too-many-lines",  # Don't care to enforce this
     "too-many-locals",  # Rely on ruff PLR0914 for this
-    "too-many-positional-arguments",  # Don't care to enforce this
+    "too-many-positional-arguments",  # Rely on ruff PLR0917 for this
     "too-many-public-methods",  # Rely on ruff PLR0904 for this
     "too-many-return-statements",  # Rely on ruff PLR0911 for this
     "too-many-statements",  # Rely on ruff PLR0915 for this
     "undefined-loop-variable",  # Don't care to enforce this
     "ungrouped-imports",  # Rely on ruff I001 for this
     "unidiomatic-typecheck",  # Rely on ruff E721 for this
+    "unnecessary-dict-index-lookup",  # Rely on ruff PLR1733 for this
     "unreachable",  # Rely on mypy unreachable for this
     "unspecified-encoding",  # Rely on ruff PLW1514 for this
     "unsubscriptable-object",  # Buggy, SEE: https://github.com/pylint-dev/pylint/issues/3637
@@ -265,6 +269,7 @@ disable = [
     "unused-argument",  # Rely on ruff ARG002 for this
     "unused-import",  # Rely on ruff F401 for this
     "unused-variable",  # Rely on ruff F841 for this
+    "use-sequence-for-iteration",  # Rely on ruff C0208 for this
     "wrong-import-order",  # Rely on ruff I001 for this
     "wrong-import-position",  # Rely on ruff E402 for this
 ]
@@ -329,17 +334,15 @@ preview = true
 [tool.ruff.lint]
 explicit-preview-rules = true
 extend-select = [
-    "A005",
-    "A006",
+    "AIR002",
     "AIR301",
     "AIR302",
-    "AIR303",
+    "AIR311",
+    "AIR312",
     "ASYNC116",
     "B901",
     "B903",
     "B909",
-    "B911",
-    "C420",
     "CPY001",
     "DOC201",
     "DOC202",
@@ -347,7 +350,6 @@ extend-select = [
     "DOC403",
     "DOC501",
     "DOC502",
-    "DTZ901",
     "E111",
     "E112",
     "E113",
@@ -389,7 +391,6 @@ extend-select = [
     "E305",
     "E306",
     "E502",
-    "FAST003",
     "FURB101",
     "FURB103",
     "FURB110",
@@ -416,9 +417,7 @@ extend-select = [
     "FURB192",
     "LOG004",
     "LOG014",
-    "LOG015",
     "PLC0415",
-    "PLC1802",
     "PLC1901",
     "PLC2701",
     "PLC2801",
@@ -439,7 +438,6 @@ extend-select = [
     "PLW0108",
     "PLW0177",
     "PLW0244",
-    "PLW1507",
     "PLW1514",
     "PLW1641",
     "PLW3201",
@@ -447,28 +445,20 @@ extend-select = [
     "PT029",
     "PT030",
     "PT031",
-    "PTH208",
-    "PTH210",
     "PYI059",
     "PYI061",
     "RUF027",
     "RUF028",
     "RUF029",
     "RUF031",
-    "RUF035",
     "RUF036",
     "RUF037",
     "RUF038",
     "RUF039",
-    "RUF040",
-    "RUF041",
     "RUF043",
     "RUF045",
-    "RUF046",
     "RUF047",
-    "RUF048",
     "RUF049",
-    "RUF051",
     "RUF052",
     "RUF053",
     "RUF054",
@@ -476,12 +466,10 @@ extend-select = [
     "RUF056",
     "RUF057",
     "RUF058",
-    "SIM905",
-    "TC006",
-    "TC007",
+    "RUF059",
+    "RUF102",
     "TC008",
     "UP042",
-    "UP044",
     "UP045",
     "UP046",
     "UP047",
@@ -552,6 +540,7 @@ ignore = [
     "TC001",  # TC001, TC002, TC003: don't care to enforce type checking blocks
     "TC002",
     "TC003",
+    "TC006",  # Strings in cast don't work with PyCharm CE 2024.3.4's jump-to-definition
     "TD002",  # Don't care for TODO author
     "TD003",  # Don't care for TODO links
     "TRY003",  # Overly pedantic
@@ -564,6 +553,7 @@ unfixable = [
     "ERA001",  # While debugging, temporarily commenting code can be useful
     "F401",  # While debugging, unused imports can be useful
     "F841",  # While debugging, unused locals can be useful
+    "RUF059",  # While debugging, unused locals can be useful
     "TC004",  # While debugging, it can be nice to keep TYPE_CHECKING in-tact
 ]
 
