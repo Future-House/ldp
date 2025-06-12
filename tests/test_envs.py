@@ -92,7 +92,7 @@ class TestParallelism:
         agent = SimpleAgent()
 
         # Check parallel tool calls
-        action, agent_state, _ = await agent.get_asv(
+        action, agent_state, _ = await agent.get_asv(  # noqa: RUF059
             await agent.init_state(tools=tools), obs
         )
         selected_tools: set[str] = {tc.function.name for tc in action.value.tool_calls}

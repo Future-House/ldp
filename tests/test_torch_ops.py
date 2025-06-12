@@ -97,7 +97,7 @@ async def test_torch_op(
 
     with raises_context:
         grad_output = torch.ones_like(result.value)
-        arg_grads, kwarg_grads = TorchOp.backward(
+        arg_grads, kwarg_grads = TorchOp.backward(  # noqa: RUF059
             op.ctx,
             [],
             {},  # NOTE: compute_grads() would fill this, but TorchOp.backwards() should ignore it
