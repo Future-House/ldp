@@ -95,7 +95,10 @@ class LiteLLMEmbeddingModel(EmbeddingModel):
     def router(self) -> litellm.Router:
         if self._router is None:
             router_kwargs: dict = self.config.get("router_kwargs", {})
-            if self.config.get("pass_through_router"):
+            if (
+                self.config.get("pass_through_router")  # Explicit opt-out of Router
+                or "model_list" not in self.config  # Router requires model_list
+            ):
                 self._router = PassThroughRouter(**router_kwargs)
             else:
                 self._router = litellm.Router(
