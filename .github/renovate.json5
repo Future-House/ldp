@@ -27,9 +27,9 @@
       automerge: true,
     },
     {
-      // TODO: remove after torch supports Python 3.13
-      matchPackageNames: ["python"],
-      allowedVersions: "<=3.12",
+      // TODO: remove after https://github.com/pytorch/pytorch/issues/152292
+      matchPackageNames: ["torch"],
+      allowedVersions: "<2.6",
     },
   ],
 }
