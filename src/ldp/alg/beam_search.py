@@ -2,6 +2,7 @@ import asyncio
 import uuid
 from collections.abc import Awaitable, Callable, Sequence
 from contextlib import suppress
+from copy import deepcopy
 from typing import NamedTuple, cast
 
 from aviary.core import Environment
@@ -81,7 +82,10 @@ class BeamSearchRollout:
 
             done_beams: list[Beam] = []
             beams = [
-                Beam(traj=Trajectory(traj_id=f"{traj_id}:{i}"), env=env)
+                Beam(
+                    traj=await Trajectory.from_env(env, traj_id=f"{traj_id}:{i}"),
+                    env=env,
+                )
                 for i in range(n_seeds)
             ]
             # will be replaced if rollout is successful
@@ -173,6 +177,7 @@ class BeamSearchRollout:
                             traj=Trajectory(
                                 traj_id=cast(str, beam.traj.traj_id) + f":{i_sample}",
                                 steps=[*beam.traj.steps, step],
+                                metadata=deepcopy(beam.traj.metadata),
                             ),
                             env=new_env,
                         )
