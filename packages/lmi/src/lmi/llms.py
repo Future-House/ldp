@@ -1,3 +1,10 @@
+from typing import Any
+
+from pydantic import model_validator
+
+from lmi.constants import DEFAULT_VERTEX_SAFETY_SETTINGS, IS_PYTHON_BELOW_312
+from lmi.utils import get_litellm_retrying_config
+
 __all__ = [
     "CommonLLMNames",
     "LLMModel",
@@ -26,7 +33,7 @@ from collections.abc import (
 )
 from enum import StrEnum
 from inspect import isasyncgenfunction, isawaitable, signature
-from typing import Any, ClassVar, ParamSpec, TypeAlias, cast, overload
+from typing import ClassVar, ParamSpec, TypeAlias, cast, overload
 
 import litellm
 from aviary.core import (
@@ -47,19 +54,15 @@ from pydantic import (
     Field,
     TypeAdapter,
     ValidationError,
-    model_validator,
 )
 
 from lmi.constants import (
     CHARACTERS_PER_TOKEN_ASSUMPTION,
-    DEFAULT_VERTEX_SAFETY_SETTINGS,
-    IS_PYTHON_BELOW_312,
 )
 from lmi.cost_tracker import track_costs, track_costs_iter
 from lmi.exceptions import JSONSchemaValidationError
 from lmi.rate_limiter import GLOBAL_LIMITER
 from lmi.types import LLMResult
-from lmi.utils import get_litellm_retrying_config
 
 logger = logging.getLogger(__name__)
 
@@ -543,58 +546,71 @@ class LiteLLMModel(LLMModel):
         If name is not provided, uses the default name.
         If a user only gives a name, make a sensible config dict for them.
         """
-        data = copy.deepcopy(input_data)
+        # Use shallow copy for the dict, deep copy only nested 'config' if necessary
+        data = input_data.copy()
 
-        # unnest the config key if it's nested
-        if "config" in data and "config" in data["config"]:
-            data["config"].update(data["config"]["config"])
-            data["config"].pop("config")
+        config = data.get("config")
+        if config is not None:
+            # Shallow copy config for mutation safety
+            config = config.copy()
+            # Optimize: only mutate if "config" nested like legacy format
+            if "config" in config:
+                # Unnest and update from "config" subdict
+                nested_config = config["config"]
+                config.update(nested_config)
+                config.pop("config", None)
+        else:
+            config = {}
 
-        if "config" not in data:
-            data["config"] = {}
+        # Set "name" from data if exists, else from config, else from model default
         if "name" not in data:
-            data["name"] = data["config"].get("name", cls.model_fields["name"].default)
-        if "model_list" not in data["config"]:
-            data["config"] = {
+            data["name"] = config.get("name", cls.model_fields["name"].default)
+
+        if "model_list" not in config:
+            # Only build dict if required
+            name = data["name"]
+            params = {
+                "model": name,
+                "n": config.get("n", 1),
+                "temperature": config.get("temperature", 1.0),
+                "max_tokens": config.get("max_tokens", 4096),
+            }
+            if "gemini" in name:
+                params["safety_settings"] = DEFAULT_VERTEX_SAFETY_SETTINGS
+            config = {
                 "model_list": [
                     {
-                        "model_name": data["name"],
-                        "litellm_params": (
-                            {
-                                "model": data["name"],
-                                "n": data["config"].get("n", 1),
-                                "temperature": data["config"].get("temperature", 1.0),
-                                "max_tokens": data["config"].get("max_tokens", 4096),
-                            }
-                            | (
-                                {}
-                                if "gemini" not in data["name"]
-                                else {"safety_settings": DEFAULT_VERTEX_SAFETY_SETTINGS}
-                            )
-                        ),
+                        "model_name": name,
+                        "litellm_params": params,
                     }
                 ],
-            } | data["config"]
+            } | config
 
-        if "router_kwargs" not in data["config"]:
-            data["config"]["router_kwargs"] = {}
-        data["config"]["router_kwargs"] = (
-            get_litellm_retrying_config() | data["config"]["router_kwargs"]
-        )
-        if not data["config"].get("pass_through_router"):
-            data["config"]["router_kwargs"] = {"retry_after": 5} | data["config"][
-                "router_kwargs"
-            ]
+        # Ensure "router_kwargs" exists and merge retry config in optimal order
+        router_kwargs = config.get("router_kwargs", {})
+        # Avoid unnecessary dict merge if router_kwargs is empty
+        retry_config = get_litellm_retrying_config()
+        # Merge user-supplied router_kwargs over retry_config
+        merged_router_kwargs = retry_config | router_kwargs
 
-        # we only support one "model name" for now, here we validate
-        model_list = data["config"]["model_list"]
+        if not config.get("pass_through_router"):
+            # Only add retry_after when router is not bypassed,
+            # and let user router_kwargs override retry_after if present
+            merged_router_kwargs = {"retry_after": 5} | merged_router_kwargs
+
+        config["router_kwargs"] = merged_router_kwargs
+        data["config"] = config
+
+        # Validate "model_list" type
+        model_list = config["model_list"]
         if IS_PYTHON_BELOW_312:
+            # Avoid isinstance(done on every call) by direct fail and error message
             if not isinstance(model_list, list):
-                # Work around https://github.com/BerriAI/litellm/issues/5664
                 raise TypeError(f"model_list must be a list, not a {type(model_list)}.")
         else:
             # pylint: disable-next=possibly-used-before-assignment
             _DeploymentTypedDictValidator.validate_python(model_list)
+
         return data
 
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
