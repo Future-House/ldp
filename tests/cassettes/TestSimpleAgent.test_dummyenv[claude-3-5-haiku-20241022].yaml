@@ -1,17 +1,13 @@
 interactions:
   - request:
       body:
-        '{"model": "claude-3-5-haiku-20241022", "messages": [{"role": "user", "content":
-        [{"type": "text", "text": "Write a 5 word story via print_story"}]}], "temperature":
-        0.1, "max_tokens": 4096, "tools": [{"name": "print_story", "input_schema": {"type":
-        "object", "properties": {"story": {"description": "Story to print.", "title":
-        "Story", "type": "string"}}, "required": ["story"]}, "description": "Print a
-        story."}, {"name": "cast_float", "input_schema": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "string"}}, "required": ["x"]}, "description":
-        "Cast the input argument x to a float."}, {"name": "cast_int", "input_schema":
-        {"type": "object", "properties": {"x": {"title": "X", "type": "number"}}, "required":
-        ["x"]}, "description": "Cast the input argument x to an integer."}], "tool_choice":
-        {"type": "any"}}'
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"}}'
       headers:
         accept:
           - application/json
@@ -22,29 +18,27 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "827"
+          - "901"
         content-type:
           - application/json
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.59.5
+          - litellm/1.72.4
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA2RPTWvCQBD9K2HOmxJjUmVvaqEXBW+FlrKsu4NGN7PJftjakP9eVhEqPc77mvcG
-          aDRwaP1eFJPVbPn2szi/XnZ6tXwJbrOpFvsNMAiXDpMKvZd7BAbOmgRI7xsfJAVg0FqNBjgoI6PG
-          fJrX+UE2p5iXRVlNirIEBspSQArAP4Z7ZrDWiOhT6LVJuqMoJvO6n/bv2yPSYa5mW9lX66/aAgOS
-          bfJ1rqEgfLDukqzUxQB8gBvAYW3PmO2MtS3qrKEsEn53qALqzDcGSeETjOMnS4ZOOJTe0mObK+Gx
-          j0kMnKIxDOJ1Px9uD0WwJyQPvH4uGSipDiiUQxkaS+JRUdx5h1L/52wMf5FqOo6/AAAA//8DAEbz
-          44eaAQAA
+          H4sIAAAAAAAAAwAAAP//ZFBLb8IwDP4rlc/p1Ba2Q25jl2ka3BhC0xSFxJSMNOnihIeq/vcpIKSh
+          Hf29/NkDGA0cOmpFVb+a42k27bcvb/PV80nPaTaX2xYYxHOPWYVEskVgELzNgCQyFKWLwKDzGi1w
+          UFYmjeWkfCx30uxT2VTNtK6aBhgo7yK6CPxzuGVG761IlEMvTfKcRFWvP451Q65fbL6783qx2a+W
+          y2iAgZNd9vXBuCgo+nDOVtenCHyAK8Dh3R+w2FjvO9SFcUVyeOpRRdQFGYtO4QOM4xfLhl4ElOTd
+          fZsLQfiTshi4S9YySJf7+XBdKKLfoyPgT/WEgZJqh0IFlNF4J+4V1Y0PKPV/zqf4F5lOGBCGg1Eo
+          osEAHPKbtQwaxvEXAAD//wMAPDP9rLQBAAA=
       headers:
-        CF-Cache-Status:
-          - DYNAMIC
         CF-RAY:
-          - 9093f64eed7ffa3e-SJC
+          - 94f3c0f11bda2542-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -52,41 +46,660 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 28 Jan 2025 21:09:13 GMT
+          - Fri, 13 Jun 2025 18:46:58 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
           - chunked
+        Via:
+          - 1.1 google
         X-Robots-Tag:
           - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
         anthropic-ratelimit-input-tokens-limit:
           - "5000000"
         anthropic-ratelimit-input-tokens-remaining:
           - "5000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2025-01-28T21:09:13Z"
+          - "2025-06-13T18:46:58Z"
         anthropic-ratelimit-output-tokens-limit:
           - "1000000"
         anthropic-ratelimit-output-tokens-remaining:
           - "1000000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2025-01-28T21:09:13Z"
+          - "2025-06-13T18:46:58Z"
         anthropic-ratelimit-requests-limit:
           - "5000"
         anthropic-ratelimit-requests-remaining:
-          - "4998"
+          - "4999"
         anthropic-ratelimit-requests-reset:
-          - "2025-01-28T21:09:12Z"
+          - "2025-06-13T18:46:57Z"
         anthropic-ratelimit-tokens-limit:
           - "6000000"
         anthropic-ratelimit-tokens-remaining:
           - "6000000"
         anthropic-ratelimit-tokens-reset:
-          - "2025-01-28T21:09:13Z"
+          - "2025-06-13T18:46:58Z"
+        cf-cache-status:
+          - DYNAMIC
         request-id:
-          - req_01RDaN9hSeKAcGKfk39icQK8
-        via:
+          - req_011CQ6ibZK1ByQS3SAT8Rbdv
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"}}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "901"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: ""
+      headers:
+        CF-RAY:
+          - 94f3c0f11bda2542-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:46:58 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
           - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:46:58Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:46:58Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:46:57Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:46:58Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6ibZK1ByQS3SAT8Rbdv
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"}}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "901"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAA2RQ20oDMRD9lWWes7KXVjRvtqCLtIIPolQkpMm4Dc0m21xqy7L/LmkpWHycc5sz
+          M4CSQKHzLSvKxaFBO2+fm7uHuO7vp0/N6+PbDAiEY49Jhd7zFoGAszoB3HvlAzcBCHRWogYKQvMo
+          Ma/zab7hahvzqqgmZVFVQEBYE9AEoJ/DJTNYq1n0KfTUJM2RFeV0+dIs+ffPclv37+VuMZt/rFY7
+          IGB4l3y9UyYwH6w7JqvpYwA6wBmgsLB7zNba2g5lpkwWDR56FAFl5pVGI/AGxvGLJEPPHHJvzXWb
+          E+FxF5MYqIlaE4in++lwXsiC3aLxQG/LmoDgYoNMOORBWcOuFcWFd8jlf87G8BeZ1AQ8ur0SyIJC
+          BxTSmyV3EsbxFwAA//8DAOUDj7K0AQAA
+      headers:
+        CF-RAY:
+          - 94f3c118ca122542-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:05 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
+          - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:47:05Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:05Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:47:03Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:47:05Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6ic2SexrPGGsX5SBcwn
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"}}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "901"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: ""
+      headers:
+        CF-RAY:
+          - 94f3c118ca122542-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:05 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
+          - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:47:05Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:05Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:47:03Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:47:05Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6ic2SexrPGGsX5SBcwn
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"}}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "901"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//ZFBLSwMxEP4ry5yzso/qITdRqkg9tD2oiIQ0GdrQbLLNJKtl2f8uaSlY
+          PM73mm9mBKOBQ0dbUdXvPc2HJa33r8fD89PbajPssF0Ag3jsMauQSG4RGARvMyCJDEXpIjDovEYL
+          HJSVSWPZlrflTpp9KpuqmdVV0wAD5V1EF4F/jpfM6L0ViXLoqUmek6jqRoXlw/1j99LN/XezWqzW
+          s036AAZOdtnXB+OioOjDMVtdnyLwEc4Ah4UfsNhY7zvUhXFFcvjTo4qoCzIWncIbmKYvlg29CCjJ
+          u+s2J4LwkLIYuEvWMkin+/l4Xiii36Mj4Hd1y0BJtUOhAspovBPXiurCB5T6P+dT/IvMWgaEYTAK
+          RTQYgEN+s5ZBwzT9AgAA//8DAKKr3iq0AQAA
+      headers:
+        CF-RAY:
+          - 94f3c143baa52542-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:13 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
+          - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:47:12Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:12Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4998"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:47:11Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:47:12Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6icY8qiR3DSGLooHcdD
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"}}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "901"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: ""
+      headers:
+        CF-RAY:
+          - 94f3c143baa52542-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:13 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
+          - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:47:12Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:12Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4998"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:47:11Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:47:12Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6icY8qiR3DSGLooHcdD
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"}}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "901"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAA2RQyU7DMBD9lWjODkrTReAbi7gAPcChAoQsY48SU8dO7XEXRfl35FaVqDjO2+bN
+          DGA0cOhiI6rJi2nujH7YfTT7x8VmF1K6vdYeGNChx6zCGGWDwCB4mwEZo4kkHQGDzmu0wEFZmTSW
+          03JettKsU1lX9WxS1TUwUN4ROgL+OZwzyXsrUsyhxyZ5TrnLav6zvH+72UqD7XK1en1PT7MWGDjZ
+          ZV8fjCMRyYdDtro+EfABTgCHZ7/F4tt636EujCuSw32PilAX0Vh0Cq9gHL9YNvQioIzeXbY5EhE3
+          KYuBu2Qtg3S8nw+nhYL8Gl0EvphMGSipWhQqoCTjnbhUVGc+oNT/OZ/oLzKbMogYtkahIIMBOOQ3
+          axk0jOMvAAAA//8DAITqGUm0AQAA
+      headers:
+        CF-RAY:
+          - 94f3c171ce732542-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:19 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
+          - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:47:18Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:19Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:47:18Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:47:18Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6id5JpyypHVEsGiGsQY
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"}}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "901"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: ""
+      headers:
+        CF-RAY:
+          - 94f3c171ce732542-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:19 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
+          - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:47:18Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:19Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:47:18Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:47:18Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6id5JpyypHVEsGiGsQY
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
       status:
         code: 200
         message: OK

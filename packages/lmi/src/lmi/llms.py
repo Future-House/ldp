@@ -563,7 +563,7 @@ class LiteLLMModel(LLMModel):
                             {
                                 "model": data["name"],
                                 "n": data["config"].get("n", 1),
-                                "temperature": data["config"].get("temperature", 0.1),
+                                "temperature": data["config"].get("temperature", 1.0),
                                 "max_tokens": data["config"].get("max_tokens", 4096),
                             }
                             | (

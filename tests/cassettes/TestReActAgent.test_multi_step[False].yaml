@@ -9,7 +9,7 @@ interactions:
         I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
         The 7 day forecast for New York is [...]"},{"role":"user","content":"Cast ''5.5''
         to a float, then to an integer, and finally use it to write a story of that
-        many words."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        many words."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":1.0,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -29,17 +29,17 @@ interactions:
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.75.0
+          - AsyncOpenAI/Python 1.83.0
         x-stainless-arch:
-          - arm64
+          - x64
         x-stainless-async:
           - async:asyncio
         x-stainless-lang:
           - python
         x-stainless-os:
-          - MacOS
+          - Linux
         x-stainless-package-version:
-          - 1.75.0
+          - 1.83.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -49,23 +49,25 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.13.1
+          - 3.12.6
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFLRatswFH33V1z00pc4OE7SJH7bxiiDPKwsMEZXjCpd21plSZOut46S
-          fx+y09hdW9iLQDr3HJ1z731MAJiSrAAmGk6idTp9f+BX2y/Xv5dfH+6/VVcf3n0Wl3u/2n+8Pvzc
-          s1lk2LsfKOiJNRe2dRpJWTPAwiMnjKqLzepyucvWu7wHWitRR1rtKF3ZtFVGpXmWr9Jsky62J3Zj
-          lcDACrhJAAAe+zP6NBIfWAHZ7OmlxRB4jaw4FwEwb3V8YTwEFYgbYrMRFNYQmt76obFd3VABn8Ag
-          SiALggeCi/V8fRFvHCptOUGlfKA5wHczVfJYdYHHNKbTegJwYyzx2I0+w+0JOZ5da1s7b+/CP1RW
-          KaNCU3rkwZroMJB1rEePCcBt353uWWDmvG0dlWTvsf8uX68HPTYOZUQXmxNIlriesDb57BW9UiJx
-          pcOkv0xw0aAcqeMweCeVnQDJJPVLN69pD8mVqf9HfgSEQEcoS+dRKvE88VjmMe7sW2XnLveGWUD/
-          SwksSaGPk5BY8U4Pm8TCn0DYlpUyNXrn1bBOlSuz5S7f5nm2y1hyTP4CAAD//wMAIEjktlwDAAA=
+          H4sIAAAAAAAAAwAAAP//jFLLbtswELzrKxa85GIZfkhwrGN7ChCgQF+HtIHAkCuJKcUlyFXhNvC/
+          F5QdS0lToBcC5OwMZ3b3KQMQRosKhOokq97b/J3ZPoYPzSf/vry7+3rYfexu7U2nD5vfX26tWCQG
+          PTyi4mfWUlHvLbIhd4JVQMmYVNe7Yn9drMrVdgR60mgTrfWcF5T3xpl8s9oU+WqXr6/P7I6Mwigq
+          +JYBADyNZ/LpNB5EBavF80uPMcoWRXUpAhCBbHoRMkYTWToWiwlU5BjdaP1zR0PbcQU34BA1MIGS
+          keGqXJZX6SahsSQZGhMiLwG+u7lSwGaIMqVxg7UzQDpHLFM3xgz3Z+R4cW2p9YEe4iuqaIwzsasD
+          ykguOYxMXozoMQO4H7szvAgsfKDec830A8fvNmV50hPTUCZ0vT+DTCztjLUrFm/o1RpZGhtn/RVK
+          qg71RJ2GIQdtaAZks9R/u3lL+5TcuPZ/5CdAKfSMuvYBtVEvE09lAdPO/qvs0uXRsIgYfhqFNRsM
+          aRIaGznY0yaJ+Csy9nVjXIvBB3Nap8bX20KWhcT9VonsmP0BAAD//wMAVfSsjFwDAAA=
       headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
         CF-RAY:
-          - 93aac0b34a1a2f76-LAX
+          - 94f3c30b0a9eebe5-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -73,21 +75,19 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Sun, 04 May 2025 20:29:53 GMT
+          - Fri, 13 Jun 2025 18:48:24 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=teFo0oHYuA9bFsOJJNLzNGRXlnQP5AVxWxzHfio4.kY-1746390593-1.0.1.1-LPFIMNE3nkrZ9gsTPd9cnNwF50eggBtuJ1HCY9zROsGZGyyo6A8Tgq0UYBh9ZzoQM3BD6ODPqcNJLOit4TEDOWQMw9S_DcFWLzSMi1tv2pc;
-            path=/; expires=Sun, 04-May-25 20:59:53 GMT; domain=.api.openai.com; HttpOnly;
+          - __cf_bm=iMOlUYhUcS_ELcWz3z3CwJGFCBCduTceAy8AG3TSE6Y-1749840504-1.0.1.1-GQWXzu0uvkX3jpro9a_3nK3zCI9YePZO8dVncpmbNfFtMNDwP.YXxOvMDT5uZzxM2KGCA7HnXfEzJ.J7i1WmnMk9bh.viyKoRCWryjkq8P8;
+            path=/; expires=Fri, 13-Jun-25 19:18:24 GMT; domain=.api.openai.com; HttpOnly;
             Secure; SameSite=None
-          - _cfuvid=Lu7pB6PQJAnillQNTDFEpU2t7E8A9eHvtseorFLnLsA-1746390593479-0.0.1.1-604800000;
+          - _cfuvid=Xr_AgLi2RJVZUXGvLwlVUI40n41CnnA5i60S3_SYBsw-1749840504113-0.0.1.1-604800000;
             path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
         cf-cache-status:
@@ -95,11 +95,239 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "828"
+          - "512"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "518"
+        x-ratelimit-limit-requests:
+          - "30000"
+        x-ratelimit-limit-tokens:
+          - "150000000"
+        x-ratelimit-remaining-requests:
+          - "29999"
+        x-ratelimit-remaining-tokens:
+          - "149999851"
+        x-ratelimit-reset-requests:
+          - 2ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_1fc6d94ba69f65cd62c1f899dfc70aef
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"messages":[{"role":"system","content":"Answer the following questions
+        as best you can, using the provided tools.\n\nUse the following format:\n\nThought:
+        you should always think about what to do\nAction: the action to take, should
+        be one of the provided tools with necessary arguments\nObservation: the result
+        of the action\n... (this Thought/Action/Observation can repeat N times)\n\nExample:\n\nThought:
+        I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
+        The 7 day forecast for New York is [...]"},{"role":"user","content":"Cast ''5.5''
+        to a float, then to an integer, and finally use it to write a story of that
+        many words."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":1.0,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
+        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
+        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "1636"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.83.0
+        x-stainless-arch:
+          - x64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - Linux
+        x-stainless-package-version:
+          - 1.83.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "60.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.6
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: ""
+      headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-RAY:
+          - 94f3c30b0a9eebe5-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:48:24 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=iMOlUYhUcS_ELcWz3z3CwJGFCBCduTceAy8AG3TSE6Y-1749840504-1.0.1.1-GQWXzu0uvkX3jpro9a_3nK3zCI9YePZO8dVncpmbNfFtMNDwP.YXxOvMDT5uZzxM2KGCA7HnXfEzJ.J7i1WmnMk9bh.viyKoRCWryjkq8P8;
+            path=/; expires=Fri, 13-Jun-25 19:18:24 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=Xr_AgLi2RJVZUXGvLwlVUI40n41CnnA5i60S3_SYBsw-1749840504113-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "512"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "518"
+        x-ratelimit-limit-requests:
+          - "30000"
+        x-ratelimit-limit-tokens:
+          - "150000000"
+        x-ratelimit-remaining-requests:
+          - "29999"
+        x-ratelimit-remaining-tokens:
+          - "149999851"
+        x-ratelimit-reset-requests:
+          - 2ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_1fc6d94ba69f65cd62c1f899dfc70aef
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"messages":[{"role":"system","content":"Answer the following questions
+        as best you can, using the provided tools.\n\nUse the following format:\n\nThought:
+        you should always think about what to do\nAction: the action to take, should
+        be one of the provided tools with necessary arguments\nObservation: the result
+        of the action\n... (this Thought/Action/Observation can repeat N times)\n\nExample:\n\nThought:
+        I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
+        The 7 day forecast for New York is [...]"},{"role":"user","content":"Cast ''5.5''
+        to a float, then to an integer, and finally use it to write a story of that
+        many words."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":1.0,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
+        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
+        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "1636"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.83.0
+        x-stainless-arch:
+          - x64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - Linux
+        x-stainless-package-version:
+          - 1.83.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "60.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.6
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//jFLBbtQwEL3nK0a+9LJZZTeJdjdHJJAqyg0hUagirz1JXBzb2BMorfbf
+          kZPtJoUicbFkv3nP783MUwLAlGQVMNFxEr3T6RuV3z/kNx/ePd583z3u8RZ/XqtPm7fHz7fvM7aK
+          DHu8R0HPrLWwvdNIypoJFh45YVTd7IrDvsjK7DACvZWoI611lBY27ZVR6TbbFmm2Szf7M7uzSmBg
+          FXxJAACexjP6NBIfWAXZ6vmlxxB4i6y6FAEwb3V8YTwEFYgbYqsZFNYQmtH6x84ObUcVXINBlEAW
+          BA8EV+W6vIo3Do22nKBRPtD6q1nqeGyGwGMWM2i9ALgxlnjsxZjg7oycLp61bZ23x/AHlTXKqNDV
+          HnmwJvoLZB0b0VMCcDf2ZngRlzlve0c12W84frcty0mPzSOZ0c3+DJIlrhesXb56Ra+WSFzpsOgu
+          E1x0KGfqPAo+SGUXQLJI/beb17Sn5Mq0/yM/A0KgI5S18yiVeJl4LvMYN/ZfZZcuj4ZZQP9DCaxJ
+          oY+TkNjwQU97xMKvQNjXjTIteufVtEyNq/OClwXHQy5Yckp+AwAA//8DAMTnr4VaAwAA
+      headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-RAY:
+          - 94f3c32e2cc9ebe5-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:48:30 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "1118"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "1122"
         x-ratelimit-limit-requests:
           - "30000"
         x-ratelimit-limit-tokens:
@@ -113,7 +341,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_f639b009183a76ad443387e64e6a7ffa
+          - req_4cf8b6ec77d22fb5a1845c9e285ad559
       status:
         code: 200
         message: OK
@@ -127,9 +355,7 @@ interactions:
         I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
         The 7 day forecast for New York is [...]"},{"role":"user","content":"Cast ''5.5''
         to a float, then to an integer, and finally use it to write a story of that
-        many words."},{"role":"assistant","content":"Thought: I need to cast ''5.5''
-        to a float first.  \n. Based on this reasoning, let''s select the appropriate
-        tool!\nAction: "},{"role":"user","content":"Continue..."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        many words."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":1.0,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -143,23 +369,23 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1836"
+          - "1636"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.75.0
+          - AsyncOpenAI/Python 1.83.0
         x-stainless-arch:
-          - arm64
+          - x64
         x-stainless-async:
           - async:asyncio
         x-stainless-lang:
           - python
         x-stainless-os:
-          - MacOS
+          - Linux
         x-stainless-package-version:
-          - 1.75.0
+          - 1.83.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -169,25 +395,17 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.13.1
+          - 3.12.6
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
-        string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFPBbqMwEL3zFdacQ0VI0gRuiap2D1UPq0or7aZCjhmIW2NTe9g2G+Xf
-          V0ACJM1KywFZ8+bNvHke7z3GQKYQMxBbTqIolb965g+rD5o+Lba0utuE+s/70/I5+vHw8a14hFHN
-          MJtXFHRi3QhTlApJGt3CwiInrKuO59PbSRTMolkDFCZFVdPykvyp8QuppR8G4dQP5v54cWRvjRTo
-          IGa/PMYY2zf/WqdO8RNiFoxOkQKd4zlC3CUxBtaoOgLcOemIa4JRDwqjCXUtXVdKDQAyRiWCK9U3
-          br/94NybxZVKaPm2wvvZXNw/anwfY/oz+252Yjno15belY2grNKiM2mAd/H4ohljoHmBbUNHSaYM
-          pws2Y8BtXhWoqVYO+zV8riFew+xmtoYDnCUfvGvnl4ENFrPKcfXVH661IV7LbAx6OSKH7i6UyUtr
-          Nu6CCpnU0m0Ti9w1Iw6d9k5CGglQnV0mlNYUJSVk3rBpGka3bVXoF65Hx/MjSIa46uOT8WR0pV6S
-          InHZ3Ha3YIKLLaY9tV80XqXSDABvMPtXNddqt/NLnf9P+R4QAkvCNCktplKcT9ynWazf47/SOpcb
-          weDQ/pYCE5Jo6/tIMeOVavcK3M4RFkkmdY62tLJ5KpCVSTCJwkUYBlEA3sH7CwAA//8DAB7crCg4
-          BAAA
+        string: ""
       headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
         CF-RAY:
-          - 93aac0b988e92f76-LAX
+          - 94f3c32e2cc9ebe5-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -195,15 +413,13 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Sun, 04 May 2025 20:29:56 GMT
+          - Fri, 13 Jun 2025 18:48:30 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
         cf-cache-status:
@@ -211,11 +427,13 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "708"
+          - "1118"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "1122"
         x-ratelimit-limit-requests:
           - "30000"
         x-ratelimit-limit-tokens:
@@ -223,13 +441,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149999818"
+          - "149999852"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_f573c55f154c6286be63f8cc26a7e820
+          - req_4cf8b6ec77d22fb5a1845c9e285ad559
       status:
         code: 200
         message: OK
@@ -243,10 +461,7 @@ interactions:
         I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
         The 7 day forecast for New York is [...]"},{"role":"user","content":"Cast ''5.5''
         to a float, then to an integer, and finally use it to write a story of that
-        many words."},{"role":"assistant","content":"Thought: I need to cast ''5.5''
-        to a float first.  \n. Based on this reasoning, let''s select the appropriate
-        tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","tool_calls":[{"id":"call_tAkBeF57cFLneq1edZfRoycA","type":"function","function":{"arguments":"{\"x\":
-        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"Observation: 5.5","name":"cast_float","tool_call_id":"call_tAkBeF57cFLneq1edZfRoycA"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        many words."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":1.0,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -260,23 +475,23 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "2101"
+          - "1636"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.75.0
+          - AsyncOpenAI/Python 1.83.0
         x-stainless-arch:
-          - arm64
+          - x64
         x-stainless-async:
           - async:asyncio
         x-stainless-lang:
           - python
         x-stainless-os:
-          - MacOS
+          - Linux
         x-stainless-package-version:
-          - 1.75.0
+          - 1.83.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -286,24 +501,25 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.13.1
+          - 3.12.6
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFJdi9swEHz3r1j0HAfHSS6XvF0/KHloS+GglPYwe/LaVk/WCmmdthz5
-          78VOLva1V+iLEJqd0c7sPiYAypRqB0o3KLr1Nn11i+9ef/n0ttW8b/dv3mefP26W6DC/uXlYq1nP
-          4PvvpOWJNdfcekti2J1gHQiFetXFZnW13Gbr7dUAtFyS7Wm1l3TFaWucSfMsX6XZJl1cn9kNG01R
-          7eBrAgDwOJx9n66kn2oH2ezppaUYsSa1uxQBqMC2f1EYo4mCTtRsBDU7ITe0fttwVzeygw/8A6RB
-          gT00eCCQhqCyjAIHtB3Ber6ewR4cUQnCoDEKGOmv6MA4oZrCHOCbm34UqOoi9mZdZ+0EQOdYsA9r
-          sHh3Ro4XU5ZrH/g+/kFVlXEmNkUgjOx6A1HYqwE9JgB3Q3jdszyUD9x6KYQfaPhumW9Oemqc2Yjm
-          qzMoLGgnrPVi9oJeUZKgsXESv9KoGypH6jgr7ErDEyCZuP67m5e0T86Nq/9HfgS0Ji9UFj5QafRz
-          x2NZoH6l/1V2SXloWEUKB6OpEEOhn0RJFXb2tGgq/opCbVEZV1PwwZy2rfJFttzm13mebTOVHJPf
-          AAAA//8DAFiGZJ97AwAA
+          H4sIAAAAAAAAAwAAAP//jJLBbtswDIbvfgpCl17iIHbiJPOx2w7rDrsMA4atMBSZttnKkirRxYYi
+          7z7ISWN364BedOBH/uJP8ikBEFSLEoTqJKve6fSa1vfr9zefPxw+En+nbw/6EW+2+u7hi9/uxSJW
+          2MMdKn6uWirbO41M1pyw8igZo2q227zbb1ZFVoygtzXqWNY6Tjc27clQmq/yTbrapdlZXHWWFAZR
+          wo8EAOBpfGOfpsZfooTV4jnSYwiyRVFekgCEtzpGhAyBAkvDYjFBZQ2jGVv/2tmh7biET2AQa2AL
+          SgYG7hACezItXBXL4ioCCY22kqEhH3gJ8NPMRT02Q5DRmBm0ngFpjGUZBzPauT2T48WAtq3z9hD+
+          KhUNGQpd5VEGa2Kzga0TIz0mALfjoIYX3oXztndcsb3H8bu8KE56YtrPjGZnyJalnsV328UrelWN
+          LEmH2aiFkqrDeiqd9iKHmuwMJDPX/3bzmvbJOZn2LfITUAodY105jzWpl46nNI/xfP+Xdpny2LAI
+          6B9JYcWEPm6ixkYO+nRUIvwOjH3VkGnRO0+ny2pctc1lvpb7DBuRHJM/AAAA//8DAFS/0M9nAwAA
       headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
         CF-RAY:
-          - 93aac0ccae7d2f76-LAX
+          - 94f3c354eab5ebe5-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -311,15 +527,13 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Sun, 04 May 2025 20:29:57 GMT
+          - Fri, 13 Jun 2025 18:48:36 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
         cf-cache-status:
@@ -327,11 +541,13 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "533"
+          - "872"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "907"
         x-ratelimit-limit-requests:
           - "30000"
         x-ratelimit-limit-tokens:
@@ -339,13 +555,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149999812"
+          - "149999852"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_1f03f09583cde89fa2f7f41d292296b7
+          - req_1550c021f8a35c79c131a9d33d38c469
       status:
         code: 200
         message: OK
@@ -359,12 +575,7 @@ interactions:
         I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
         The 7 day forecast for New York is [...]"},{"role":"user","content":"Cast ''5.5''
         to a float, then to an integer, and finally use it to write a story of that
-        many words."},{"role":"assistant","content":"Thought: I need to cast ''5.5''
-        to a float first.  \n. Based on this reasoning, let''s select the appropriate
-        tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","tool_calls":[{"id":"call_tAkBeF57cFLneq1edZfRoycA","type":"function","function":{"arguments":"{\"x\":
-        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"Observation: 5.5","name":"cast_float","tool_call_id":"call_tAkBeF57cFLneq1edZfRoycA"},{"role":"assistant","content":"Thought:
-        Now that I have the float value 5.5, I need to cast it to an integer.  \n. Based
-        on this reasoning, let''s select the appropriate tool!\nAction: "},{"role":"user","content":"Continue..."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        many words."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":1.0,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -378,23 +589,23 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "2332"
+          - "1636"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.75.0
+          - AsyncOpenAI/Python 1.83.0
         x-stainless-arch:
-          - arm64
+          - x64
         x-stainless-async:
           - async:asyncio
         x-stainless-lang:
           - python
         x-stainless-os:
-          - MacOS
+          - Linux
         x-stainless-package-version:
-          - 1.75.0
+          - 1.83.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -404,25 +615,17 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.13.1
+          - 3.12.6
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
-        string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFNRb5swEH7nV1j3HCpCQgm8berUSd2mbms1qWuFXHOAG2N7tqnSRvnv
-          E5AAaTNpPCDL331333133nqEAM8hJcAq6lithf/xhl5erK6rH+un19zdNV9EFK//fP50VX4tApi1
-          DPX4hMwdWGdM1Vqg40r2MDNIHbZZ5/HyfJEEURJ3QK1yFC2t1M5fKr/mkvthEC79IPbnqz27Upyh
-          hZT89gghZNv9W50yxw2kJJgdbmq0lpYI6RBECBgl2hug1nLrqHQwG0GmpEPZSpeNEBPAKSUyRoUY
-          C/ffdnIezaJCZHx+pV+L64vq+69N8Xx5frf88O325201qdenftGdoKKRbDBpgg/36ZtihICkNfYF
-          rcv4US/7CGrKpkbpWt2wvYfNPaTRWbSDo8Cdd+r8MDHAYNFYKt47Q6VUjrYCO2se9shumIJQpTbq
-          0b6hQsElt1VmkNquuanH3kFIJwGaozGCNqrWLnNqjV3RRRz1WWFctRGdx3vQKUfFhJWEsxP5shwd
-          5d2ch9VilFWYj9RxxWiTczUBvEnv79Wcyt33z2X5P+lHgDHUDvNMG8w5O+54DDPYvsR/hQ0ud4LB
-          onnmDDPH0bTzyLGgjeh3CuyLdVhnBZclGm1490ig0FmwSMJVGAZJAN7O+wsAAP//AwBhpAlcMgQA
-          AA==
+        string: ""
       headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
         CF-RAY:
-          - 93aac0d10c0d2f76-LAX
+          - 94f3c354eab5ebe5-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -430,15 +633,13 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Sun, 04 May 2025 20:29:57 GMT
+          - Fri, 13 Jun 2025 18:48:36 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
         cf-cache-status:
@@ -446,11 +647,13 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "427"
+          - "872"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "907"
         x-ratelimit-limit-requests:
           - "30000"
         x-ratelimit-limit-tokens:
@@ -458,13 +661,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149999768"
+          - "149999852"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_00121fac2911717e0876d719a9d10810
+          - req_1550c021f8a35c79c131a9d33d38c469
       status:
         code: 200
         message: OK
@@ -478,13 +681,7 @@ interactions:
         I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
         The 7 day forecast for New York is [...]"},{"role":"user","content":"Cast ''5.5''
         to a float, then to an integer, and finally use it to write a story of that
-        many words."},{"role":"assistant","content":"Thought: I need to cast ''5.5''
-        to a float first.  \n. Based on this reasoning, let''s select the appropriate
-        tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","tool_calls":[{"id":"call_tAkBeF57cFLneq1edZfRoycA","type":"function","function":{"arguments":"{\"x\":
-        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"Observation: 5.5","name":"cast_float","tool_call_id":"call_tAkBeF57cFLneq1edZfRoycA"},{"role":"assistant","content":"Thought:
-        Now that I have the float value 5.5, I need to cast it to an integer.  \n. Based
-        on this reasoning, let''s select the appropriate tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","tool_calls":[{"id":"call_i1KpzfPDhQWxfvG6Z4ANUSUh","type":"function","function":{"arguments":"{\"x\":
-        5.5}","name":"cast_int"}}]},{"role":"tool","content":"Observation: 5","name":"cast_int","tool_call_id":"call_i1KpzfPDhQWxfvG6Z4ANUSUh"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        many words."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":1.0,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -498,23 +695,23 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "2587"
+          - "1636"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.75.0
+          - AsyncOpenAI/Python 1.83.0
         x-stainless-arch:
-          - arm64
+          - x64
         x-stainless-async:
           - async:asyncio
         x-stainless-lang:
           - python
         x-stainless-os:
-          - MacOS
+          - Linux
         x-stainless-package-version:
-          - 1.75.0
+          - 1.83.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -524,24 +721,25 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.13.1
+          - 3.12.6
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA4xSwY7TMBC95ytGvuylqdK0ZdseV6ClEgIJLSABq8hrTxKD47HsSUu16r+jpNsm
-          C4vEJQe/eS/vvZnHBEAYLTYgVC1ZNd6mN3fy9g19nn15i+0Hf1O3rz/63de8sbfvPm3FpGPQww9U
-          fGZNFTXeIhtyJ1gFlIyd6ux68Wq+zpbrVQ80pNF2tMpzuqC0Mc6keZYv0uw6na2e2DUZhVFs4FsC
-          APDYfzufTuMvsYFscn5pMEZZodhchgBEINu9CBmjiSwdi8kAKnKMrrd+V1Nb1byBLdRyhxBbpTDG
-          srX2AEpGRg1Xy+nyCphAOjCOscIwgX1tVA0mwnIK72kPW3CIupvaB8MIEiJTOACVsIQ9BR2nAN/d
-          2EbAso2yq8K11o4A6Ryx7KrsC7h/Qo6XyJYqH+gh/kEVpXEm1kVAGcl18SKTFz16TADu+2rbZ20J
-          H6jxXDD9xP53i2xx0hPDRgd0fgaZWNoRa76avKBXaGRpbBwtRyipatQDddikbLWhEZCMUv/t5iXt
-          U3Ljqv+RHwCl0DPqwgfURj1PPIwF7A7+X2OXlnvDImLYGYUFGwzdJjSWsrWnMxTxEBmbojSuwuCD
-          Od1i6Ytsvs5XeZ6tM5Eck98AAAD//wMA6GXBUZkDAAA=
+          H4sIAAAAAAAAAwAAAP//jFJdj9MwEHzPr1j55V6aqh8JvfYRhACdBAiQTgJOkWtvEl8dr2VvEOjU
+          /46c9pocHBIvluzZGc/s7kMGIIwWOxCqlaw6b/OXZn3Ybr/eHj68eHV788a0bz+Wn7R//f7m8/1e
+          zBKD9veo+JE1V9R5i2zInWAVUDIm1eWm2F4Xi3K1HICONNpEazznBeWdcSZfLVZFvtjky+szuyWj
+          MIodfMsAAB6GM/l0Gn+KHSxmjy8dxigbFLtLEYAIZNOLkDGayNKxmI2gIsfoButfWuqblnfwDhyi
+          BiZQMjJclfPyKt0k1JYkQ21C5DnAdzdVClj3UaY0rrd2AkjniGXqxpDh7owcL64tNT7QPv5BFbVx
+          JrZVQBnJJYeRyYsBPWYAd0N3+ieBhQ/Uea6YDjh8tyrLk54YhzKiy+0ZZGJpJ6xNMXtGr9LI0tg4
+          6a9QUrWoR+o4DNlrQxMgm6T+281z2qfkxjX/Iz8CSqFn1JUPqI16mngsC5h29l9lly4PhkXE8MMo
+          rNhgSJPQWMvenjZJxF+Rsatq4xoMPpjTOtW+WheyLCRu10pkx+w3AAAA//8DAMQAhqRcAwAA
       headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
         CF-RAY:
-          - 93aac0d4f8722f76-LAX
+          - 94f3c37a6dceebe5-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -549,15 +747,13 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Sun, 04 May 2025 20:29:58 GMT
+          - Fri, 13 Jun 2025 18:48:41 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
         cf-cache-status:
@@ -565,11 +761,13 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "638"
+          - "544"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "561"
         x-ratelimit-limit-requests:
           - "30000"
         x-ratelimit-limit-tokens:
@@ -577,13 +775,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149999763"
+          - "149999852"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_dd5a70522a04a0cde4e49363e228713f
+          - req_26564d04e4149376b68bbc8df6d3f8f6
       status:
         code: 200
         message: OK
@@ -597,16 +795,7 @@ interactions:
         I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
         The 7 day forecast for New York is [...]"},{"role":"user","content":"Cast ''5.5''
         to a float, then to an integer, and finally use it to write a story of that
-        many words."},{"role":"assistant","content":"Thought: I need to cast ''5.5''
-        to a float first.  \n. Based on this reasoning, let''s select the appropriate
-        tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","tool_calls":[{"id":"call_tAkBeF57cFLneq1edZfRoycA","type":"function","function":{"arguments":"{\"x\":
-        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"Observation: 5.5","name":"cast_float","tool_call_id":"call_tAkBeF57cFLneq1edZfRoycA"},{"role":"assistant","content":"Thought:
-        Now that I have the float value 5.5, I need to cast it to an integer.  \n. Based
-        on this reasoning, let''s select the appropriate tool!\nAction: "},{"role":"user","content":"Continue..."},{"role":"assistant","tool_calls":[{"id":"call_i1KpzfPDhQWxfvG6Z4ANUSUh","type":"function","function":{"arguments":"{\"x\":
-        5.5}","name":"cast_int"}}]},{"role":"tool","content":"Observation: 5","name":"cast_int","tool_call_id":"call_i1KpzfPDhQWxfvG6Z4ANUSUh"},{"role":"assistant","content":"Thought:
-        I have successfully casted ''5.5'' to an integer, which is 5. Now I need to
-        write a story of 5 words.  \n. Based on this reasoning, let''s select the appropriate
-        tool!\nAction: "},{"role":"user","content":"Continue..."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        many words."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"parallel_tool_calls":false,"stop":["Observation:","Action:"],"temperature":1.0,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -620,23 +809,23 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "2848"
+          - "1636"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.75.0
+          - AsyncOpenAI/Python 1.83.0
         x-stainless-arch:
-          - arm64
+          - x64
         x-stainless-async:
           - async:asyncio
         x-stainless-lang:
           - python
         x-stainless-os:
-          - MacOS
+          - Linux
         x-stainless-package-version:
-          - 1.75.0
+          - 1.83.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -646,25 +835,17 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.13.1
+          - 3.12.6
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
-        string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFPJbtswEL3rK4g5W4EsO150a7qkBVqgh3Qx6kBgqLHElCIFctTEMfzv
-          hShbkh0XqA4CwTfvzZuFu4AxkBkkDETBSZSVCm/u+O17/fL0+ePqe7ld3hbz8dPXbxTza/HpGUYN
-          wzw8oqAj60qYslJI0ugWFhY5YaM6nk9nk2V0vVx4oDQZqoaWVxROTVhKLcM4iqdhNA/HiwO7MFKg
-          g4T9ChhjbOf/jU+d4TMkLBodb0p0jucISRfEGFijmhvgzklHXBOMelAYTagb67pWagCQMSoVXKk+
-          cfvtBue+WVyptJ58EF9WN+/yWY6PP1Z5WU/ePP18i4N8rfS28oY2tRZdkwZ4d5+cJWMMNC89t7JS
-          U+rI2O0ZnTHgNq9L1NRYh90afNgakjXcFchcrZlDciPmiFvHXCE1Xq1hDyc6++DS+X7QIoub2nH1
-          undca0O8KcE37/6A7Ls5KZNX1jy4MypspJauSC1y58sfTiE4GvEWoD4ZNFTWlBWlZH6jTzqdxa0q
-          9MvYo/H4AJIhrgasxWR0QS/NkLj0m9Atn+CiwKyn9kvI60yaARAMan/t5pJ2W7/U+f/I94AQWBFm
-          aWUxk+K04j7MYvNW/xXWddkbBof2jxSYkkTbzCPDDa9V+4LAbR1hmW6kztH6hfRbXaXRZBkv4jha
-          RhDsg78AAAD//wMAC2/z/FQEAAA=
+        string: ""
       headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
         CF-RAY:
-          - 93aac0d9dea72f76-LAX
+          - 94f3c37a6dceebe5-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -672,15 +853,13 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Sun, 04 May 2025 20:29:59 GMT
+          - Fri, 13 Jun 2025 18:48:41 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
         cf-cache-status:
@@ -688,11 +867,13 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "577"
+          - "544"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "561"
         x-ratelimit-limit-requests:
           - "30000"
         x-ratelimit-limit-tokens:
@@ -700,13 +881,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149999713"
+          - "149999852"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_ec9c6644076c0f197556587740498234
+          - req_26564d04e4149376b68bbc8df6d3f8f6
       status:
         code: 200
         message: OK
