@@ -51,7 +51,7 @@ class Memory(BaseModel):
         description="Measure of the output's quality (e.g. loss)."
     )
     metadata: JsonValue = Field(
-        default_factory=dict,  # type: ignore[arg-type] # SEE: https://github.com/pydantic/pydantic/issues/10950
+        default_factory=dict,
         description=(
             "Optional JSON metadata to store with the memory. An example is storing"
             " information an optimizer can use at training time."
