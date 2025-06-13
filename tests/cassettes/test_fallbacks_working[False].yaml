@@ -18,17 +18,17 @@ interactions:
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.65.2
+          - AsyncOpenAI/Python 1.83.0
         x-stainless-arch:
-          - arm64
+          - x64
         x-stainless-async:
           - async:asyncio
         x-stainless-lang:
           - python
         x-stainless-os:
-          - MacOS
+          - Linux
         x-stainless-package-version:
-          - 1.65.2
+          - 1.83.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -38,7 +38,7 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.4
+          - 3.12.6
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
@@ -50,7 +50,7 @@ interactions:
           \"invalid_api_key\"\n    }\n}\n"
       headers:
         CF-RAY:
-          - 93106ee58a25e9e1-LAX
+          - 94f3c1594f4bd02d-SJC
         Connection:
           - keep-alive
         Content-Length:
@@ -58,15 +58,17 @@ interactions:
         Content-Type:
           - application/json; charset=utf-8
         Date:
-          - Wed, 16 Apr 2025 03:00:34 GMT
+          - Fri, 13 Jun 2025 18:47:14 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=fno7x_jxANnm27vgnNYNxHE09oaBaF..5rUNTsRQ1WI-1744772434-1.0.1.1-rsmcL1TWF3LBc0flL7Kmdpy1VXvWhNk7QMMykdrKSZJ.bnFPZCzILfUcIZc6xZDGKuaUQwHRadfN6xtPvj4gkVo_4mM6lTZZPyrOWWDdmCg;
-            path=/; expires=Wed, 16-Apr-25 03:30:34 GMT; domain=.api.openai.com; HttpOnly;
+          - __cf_bm=GiSpIP7XNxsK3MClSQHDDkoPLHKb9l3_SPPXosIXfHQ-1749840434-1.0.1.1-zS.T2viIJ7QINpeDyTiJrABY282ctu.r_rgxOKl52q1O5vn0fB6mzDLLgSVeRWhl1YFbGEiVQkZIxWOIJknNBxfUeQC.YhH1xn8EJkD1PU8;
+            path=/; expires=Fri, 13-Jun-25 19:17:14 GMT; domain=.api.openai.com; HttpOnly;
             Secure; SameSite=None
-          - _cfuvid=S6PXUFvHj99UvUnTDkwFAy45z3FyWDJESdzHk5S0Hy8-1744772434881-0.0.1.1-604800000;
+          - _cfuvid=1JWDR.eIFpVJDapDsqxtbt3dA8ciNQmop4cTKhgqxQI-1749840434200-0.0.1.1-604800000;
             path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Vary:
+          - Origin
         X-Content-Type-Options:
           - nosniff
         alt-svc:
@@ -75,10 +77,87 @@ interactions:
           - DYNAMIC
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
-        vary:
-          - Origin
         x-request-id:
-          - req_aedfefa7d8f530b37b53effeaa97d3a0
+          - req_84e6ed4f72d91211e1ec8bdd7ba49958
+      status:
+        code: 401
+        message: Unauthorized
+  - request:
+      body:
+        '{"messages":[{"role":"user","content":"Hello!"}],"model":"gpt-4o-mini","n":1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"talk","description":"Say
+        something to me.","parameters":{"type":"object","properties":{"message":{"description":"what
+        you want to say","title":"Message","type":"string"}},"required":["message"]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "348"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.83.0
+        x-stainless-arch:
+          - x64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - Linux
+        x-stainless-package-version:
+          - 1.83.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "60.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.6
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: ""
+      headers:
+        CF-RAY:
+          - 94f3c1594f4bd02d-SJC
+        Connection:
+          - keep-alive
+        Content-Length:
+          - "256"
+        Content-Type:
+          - application/json; charset=utf-8
+        Date:
+          - Fri, 13 Jun 2025 18:47:14 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=GiSpIP7XNxsK3MClSQHDDkoPLHKb9l3_SPPXosIXfHQ-1749840434-1.0.1.1-zS.T2viIJ7QINpeDyTiJrABY282ctu.r_rgxOKl52q1O5vn0fB6mzDLLgSVeRWhl1YFbGEiVQkZIxWOIJknNBxfUeQC.YhH1xn8EJkD1PU8;
+            path=/; expires=Fri, 13-Jun-25 19:17:14 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=1JWDR.eIFpVJDapDsqxtbt3dA8ciNQmop4cTKhgqxQI-1749840434200-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Vary:
+          - Origin
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-request-id:
+          - req_84e6ed4f72d91211e1ec8bdd7ba49958
       status:
         code: 401
         message: Unauthorized

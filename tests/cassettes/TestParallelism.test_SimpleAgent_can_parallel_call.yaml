@@ -1,20 +1,14 @@
 interactions:
   - request:
       body:
-        '{"messages": [{"role": "user", "content": "You are the president of the
-        United States of America. Please move both hands at the same time, and then
-        smile and wave."}], "model": "gpt-4o-2024-08-06", "temperature": 0.1, "tool_choice":
-        "required", "tools": [{"type": "function", "function": {"name": "move_left_hand",
-        "description": "Move your left hand forward or backward.", "parameters": {"type":
-        "object", "properties": {"distance": {"description": "Integer distance to move
-        (mm), where forward is positive.", "title": "Distance", "type": "integer"}},
-        "required": ["distance"]}}}, {"type": "function", "function": {"name": "move_right_hand",
-        "description": "Move your right hand forward or backward.", "parameters": {"type":
-        "object", "properties": {"distance": {"description": "Integer distance to move
-        (mm), where forward is positive.", "title": "Distance", "type": "integer"}},
-        "required": ["distance"]}}}, {"type": "function", "function": {"name": "smile_and_wave",
-        "description": "Smile and wave.", "parameters": {"type": "object", "properties":
-        {}, "required": []}}}]}'
+        '{"messages":[{"role":"user","content":"You are the president of the United
+        States of America. Please move both hands at the same time, and then smile and
+        wave."}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"move_left_hand","description":"Move
+        your left hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"move_right_hand","description":"Move
+        your right hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"smile_and_wave","description":"Smile
+        and wave.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
       headers:
         accept:
           - application/json
@@ -23,51 +17,53 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1075"
+          - "1034"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.54.3
+          - AsyncOpenAI/Python 1.83.0
         x-stainless-arch:
-          - arm64
+          - x64
         x-stainless-async:
           - async:asyncio
         x-stainless-lang:
           - python
         x-stainless-os:
-          - MacOS
+          - Linux
         x-stainless-package-version:
-          - 1.54.3
+          - 1.83.0
         x-stainless-raw-response:
           - "true"
+        x-stainless-read-timeout:
+          - "120.0"
         x-stainless-retry-count:
           - "0"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.7
+          - 3.12.6
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA7RUUW/aMBB+z6+w7hmmwAJjvDG1o2OqpnWoqtpOkbEvicGxje2wMsR/nxIgCWyT
-          +tI8RI4/f9/dd7nzLiAEBIcxAZZRz3Iju5O7H+y3v7pdXS3X7Ho6NJPV/GMvweXXyf0WOiVDL5bI
-          /In1juncSPRCqwPMLFKPpWrvw/teLxz1h4MKyDVHWdJS47uR7vbDftQNR91weCRmWjB0MCZPASGE
-          7Kp3maLi+AJjEnZOOzk6R1OEcX2IELBaljtAnRPOU+Wh04BMK4+qzFoVUrYAr7WMGZWyCXx4dq11
-          UycqZWysXt/4x9VmKu776nv+cDO7+yzm31rxDtJbUyWUFIrV9Wnh9f74IhghoGhecXO9wVhi4uOM
-          Kn6hQAhQmxY5Kl9mD7tn4JV1hs9l/cNwD2eEfetr33mV2V+Tuf20mZnFy2qQThIzu71+cNMv6zcz
-          a0WavYHbev2z9fMtJoWj8tgVwUVhQOrUWL1wF10DiVDCZbFF6ipD7SYKTtGqOFCc9SkYq3PjY69X
-          qErZXnRsamjGqEGj4RH02lPZYo1OwJlezNFTUTVyPTuMsgx5Q21miBZc6BYQtLz/nc2/tA/+hUpf
-          I98AjKHxyGNjkQt27rg5ZrG8Zf53rK5ylTC4rfOYx4lQKVpjRTXokJg4GrBkEHGkCME++AMAAP//
-          AwAiM/hs8QQAAA==
+          H4sIAAAAAAAAAwAAAP//tFTRbtowFH3PV1j3GaYEMsp426ahUrZOU6t23VpFxrlJ3Dl2ZjsMivj3
+          yQaSQDepL81DZPv43HvO9bU3ASHAU5gQYAW1rKxE/wMf8mu2vps/DcP5zaf56jz8I2ZXF+vV4zKE
+          nmOoxSMye2C9YaqsBFqu5A5mGqlFFzU6i9+N4zCOzjxQqhSFo+WV7ceqPwgHcT+K+oN9XFYoztDA
+          hPwMCCFk4/9OokxxBRMS9g4rJRpDc4RJs4kQ0Eq4FaDGcGOptNBrQaakRelUy1qIDmCVEgmjQrSJ
+          d9+mM27rRIVIfvyem8+zmRivvo3uLt4X5SgbxtP4vJNvF3pdeUFZLVlTnw7erE9OkhECkpaeW6ol
+          JgIzmxRUpicRCAGq87pEaZ162NxD6q0zvHf1D8MtHBG2ndm29yKz9e3s8nu9fJpeT3W5XIy+3Fzd
+          frycfX01s5rnxSu4bcYPncPXmNWGiuddQaVUljq9vi0egpOagVB5pdXCnFAh45KbItFIjffa7a/g
+          IMRLgPqohaHSqqxsYtUv9EmjeN/v0N6wFo1He9AqS0WHNT4AR/GSFC3lvseba8UoKzBtqe31onXK
+          VQcIOt6fq/lX7J1/LvOXhG8BxrCymCaVxpSzY8ftNo3uAfrftqbKXjAY1EvOMLEctTuPFDNai93b
+          AGZtLJZJxmWOutLcPxCQVcnbRTYcsghZDME2+AsAAP//AwACgRYZKQUAAA==
       headers:
-        CF-Cache-Status:
-          - DYNAMIC
+        Access-Control-Expose-Headers:
+          - X-Request-ID
         CF-RAY:
-          - 8df951024d2d1592-SJC
+          - 94f3c0f1ad72689a-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -75,31 +71,33 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Fri, 08 Nov 2024 23:24:26 GMT
+          - Fri, 13 Jun 2025 18:46:58 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=d0aUHvEAXiTVjN._S_I6z3jrOw8yYgIC3HUhrQIP1LM-1731108266-1.0.1.1-q9gF3VYOaM4fjqPm1NIW2Q8T1aFskMDafCn19yDKUqX7pLxLxstq26uHRp5ZxUfVxb8w65dqkiss3RbAlMFDUQ;
-            path=/; expires=Fri, 08-Nov-24 23:54:26 GMT; domain=.api.openai.com; HttpOnly;
+          - __cf_bm=8GCF7i0InYYgX4ixlNcpVsFKImlECVtwQzMPqIJOh28-1749840418-1.0.1.1-zcAtet4DH8kY_iqwdjJslxSlDTKtcavcrXl5HEUy_Mypb6dzftgZuyW8TUzV5T.MRTsEaYXatIRBZHwRwEiLGrPq0i7YFPqUb7Blsp5c.8Q;
+            path=/; expires=Fri, 13-Jun-25 19:16:58 GMT; domain=.api.openai.com; HttpOnly;
             Secure; SameSite=None
-          - _cfuvid=AOA9lLtZg85FLSww0c3jDK7QOlKj8asj3DhwwcSaTgw-1731108266185-0.0.1.1-604800000;
+          - _cfuvid=609l5EJ.USGXmLanh_gnkJsHgEWdqFKQ5UkiIeR3myQ-1749840418270-0.0.1.1-604800000;
             path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "748"
+          - "634"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "651"
         x-ratelimit-limit-requests:
           - "10000"
         x-ratelimit-limit-tokens:
@@ -107,13 +105,749 @@ interactions:
         x-ratelimit-remaining-requests:
           - "9999"
         x-ratelimit-remaining-tokens:
-          - "29999953"
+          - "29999968"
         x-ratelimit-reset-requests:
           - 6ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_b98a678a9fb55bf0dee4582625be326c
+          - req_13200f3e8e038accf05aea556cc162c4
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"messages":[{"role":"user","content":"You are the president of the United
+        States of America. Please move both hands at the same time, and then smile and
+        wave."}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"move_left_hand","description":"Move
+        your left hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"move_right_hand","description":"Move
+        your right hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"smile_and_wave","description":"Smile
+        and wave.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "1034"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.83.0
+        x-stainless-arch:
+          - x64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - Linux
+        x-stainless-package-version:
+          - 1.83.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "120.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.6
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: ""
+      headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-RAY:
+          - 94f3c0f1ad72689a-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:46:58 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=8GCF7i0InYYgX4ixlNcpVsFKImlECVtwQzMPqIJOh28-1749840418-1.0.1.1-zcAtet4DH8kY_iqwdjJslxSlDTKtcavcrXl5HEUy_Mypb6dzftgZuyW8TUzV5T.MRTsEaYXatIRBZHwRwEiLGrPq0i7YFPqUb7Blsp5c.8Q;
+            path=/; expires=Fri, 13-Jun-25 19:16:58 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=609l5EJ.USGXmLanh_gnkJsHgEWdqFKQ5UkiIeR3myQ-1749840418270-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "634"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "651"
+        x-ratelimit-limit-requests:
+          - "10000"
+        x-ratelimit-limit-tokens:
+          - "30000000"
+        x-ratelimit-remaining-requests:
+          - "9999"
+        x-ratelimit-remaining-tokens:
+          - "29999968"
+        x-ratelimit-reset-requests:
+          - 6ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_13200f3e8e038accf05aea556cc162c4
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"messages":[{"role":"user","content":"You are the president of the United
+        States of America. Please move both hands at the same time, and then smile and
+        wave."}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"move_left_hand","description":"Move
+        your left hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"move_right_hand","description":"Move
+        your right hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"smile_and_wave","description":"Smile
+        and wave.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "1034"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.83.0
+        x-stainless-arch:
+          - x64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - Linux
+        x-stainless-package-version:
+          - 1.83.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "120.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.6
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//tFRdb9sgFH33r0D3OZnsxP3KW1et66oo2iZVnbJWFoZrmwWDC7hpGuW/
+          TyaJ7aSb1Jf6wQIO595zLhfWASEgOEwIsII6VlZy+FmMxXw1un79NV8sztIwKmb5bHoRzr+9rq5h
+          0DB0+geZ27M+MV1WEp3Qagszg9RhEzU6iy/O4zAejT1Qao6yoeWVG8Z6OApH8TCKhqNwRyy0YGhh
+          Qn4HhBCy9v9GouL4AhMSDvYrJVpLc4RJu4kQMFo2K0CtFdZR5WDQgUwrh6pRrWope4DTWiaMStkl
+          3n7r3rirE5UySe+WJz+Xon56uj29urrHxZfbabhUL71829CrygvKasXa+vTwdn1ylIwQULT03FI/
+          YyIxc0lBFT+KQAhQk9clKteoh/UDcG+d4UNT/zDcwAFh05ttBu8y+/XO3MQoFjP+44ZfXq6i7ybV
+          Zko/zKwRefEBbtvxY+/wDWa1pfJtV1CltKONXt8Wj8FRzUDqvDI6tUdUyIQStkgMUuu99vsr2Avx
+          EqA+aGGojC4rlzi9QJ80inf9Dt0N69D4dAc67ajssc73wEG8hKOjwvd4e60YZQXyjtpdL1pzoXtA
+          0PP+Vs2/Ym/9C5W/J3wHMIaVQ55UBrlgh467bQabB+h/29oqe8Fg0TwLhokTaJrz4JjRWm7fBrAr
+          67BMMqFyNJUR/oGArEpO0mw8ZhGyGIJN8BcAAP//AwBVX+4nKQUAAA==
+      headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-RAY:
+          - 94f3c1159f8b689a-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:03 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "528"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "534"
+        x-ratelimit-limit-requests:
+          - "10000"
+        x-ratelimit-limit-tokens:
+          - "30000000"
+        x-ratelimit-remaining-requests:
+          - "9999"
+        x-ratelimit-remaining-tokens:
+          - "29999968"
+        x-ratelimit-reset-requests:
+          - 6ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_98cc387a1714bccbdb5c5dd257e26073
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"messages":[{"role":"user","content":"You are the president of the United
+        States of America. Please move both hands at the same time, and then smile and
+        wave."}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"move_left_hand","description":"Move
+        your left hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"move_right_hand","description":"Move
+        your right hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"smile_and_wave","description":"Smile
+        and wave.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "1034"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.83.0
+        x-stainless-arch:
+          - x64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - Linux
+        x-stainless-package-version:
+          - 1.83.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "120.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.6
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: ""
+      headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-RAY:
+          - 94f3c1159f8b689a-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:03 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "528"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "534"
+        x-ratelimit-limit-requests:
+          - "10000"
+        x-ratelimit-limit-tokens:
+          - "30000000"
+        x-ratelimit-remaining-requests:
+          - "9999"
+        x-ratelimit-remaining-tokens:
+          - "29999968"
+        x-ratelimit-reset-requests:
+          - 6ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_98cc387a1714bccbdb5c5dd257e26073
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"messages":[{"role":"user","content":"You are the president of the United
+        States of America. Please move both hands at the same time, and then smile and
+        wave."}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"move_left_hand","description":"Move
+        your left hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"move_right_hand","description":"Move
+        your right hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"smile_and_wave","description":"Smile
+        and wave.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "1034"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.83.0
+        x-stainless-arch:
+          - x64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - Linux
+        x-stainless-package-version:
+          - 1.83.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "120.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.6
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//tFRNT+MwEL3nV1hzbldJG/XryKL2AovYBbFoQZGxJ4mLY2dtp2q36n9H
+          cdskLYvEhRwi289v5r3x2NuAEBAcZgRYTh0rStm/EEORjrM7d1lNo+UDj1I7vF/cXLvbv5c/oFcz
+          9MsSmTuyvjFdlBKd0GoPM4PUYR01GsfTSRzGg6kHCs1R1rSsdP1Y9wfhIO5HUX8QHoi5FgwtzMif
+          gBBCtv5fS1Qc1zAjYe+4UqC1NEOYNZsIAaNlvQLUWmEdVQ56Lci0cqhq1aqSsgM4rWXCqJRt4v23
+          7YzbOlEpk4XcXN/+/P1vvp7i5mH+OmRze8/iq06+fehN6QWllWJNfTp4sz47S0YIKFp4bqFXmEhM
+          XZJTxc8iEALUZFWBytXqYfsE3Ftn+FTXPwx3cELYdWa73qfMPt4sNuvVaMmKHNfRahH+ups+fr+I
+          v8ysEVn+BW6b8XPn8A2mlaXyfVdQpbSjtV7fFs/BWc1A6qw0+sWeUSEVStg8MUit99rtr+AoxEuA
+          6qSFoTS6KF3i9Cv6pFF86Hdob1iLxqMD6LSjssOaHIGTeAlHR4Xv8eZaMcpy5C21vV604kJ3gKDj
+          /b2a/8Xe+xcq+0z4FmAMS4c8KQ1ywU4dt9sM1g/QR9uaKnvBYNGsBMPECTT1eXBMaSX3bwPYjXVY
+          JKlQGZrSCP9AQFombDQejybpaBJCsAveAAAA//8DAJNZ8IEpBQAA
+      headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-RAY:
+          - 94f3c138e992689a-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:09 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "661"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "666"
+        x-ratelimit-limit-requests:
+          - "10000"
+        x-ratelimit-limit-tokens:
+          - "30000000"
+        x-ratelimit-remaining-requests:
+          - "9999"
+        x-ratelimit-remaining-tokens:
+          - "29999968"
+        x-ratelimit-reset-requests:
+          - 6ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_f11f921ae6a2d600e93ad6a57e7110a5
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"messages":[{"role":"user","content":"You are the president of the United
+        States of America. Please move both hands at the same time, and then smile and
+        wave."}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"move_left_hand","description":"Move
+        your left hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"move_right_hand","description":"Move
+        your right hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"smile_and_wave","description":"Smile
+        and wave.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "1034"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.83.0
+        x-stainless-arch:
+          - x64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - Linux
+        x-stainless-package-version:
+          - 1.83.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "120.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.6
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: ""
+      headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-RAY:
+          - 94f3c138e992689a-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:09 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "661"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "666"
+        x-ratelimit-limit-requests:
+          - "10000"
+        x-ratelimit-limit-tokens:
+          - "30000000"
+        x-ratelimit-remaining-requests:
+          - "9999"
+        x-ratelimit-remaining-tokens:
+          - "29999968"
+        x-ratelimit-reset-requests:
+          - 6ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_f11f921ae6a2d600e93ad6a57e7110a5
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"messages":[{"role":"user","content":"You are the president of the United
+        States of America. Please move both hands at the same time, and then smile and
+        wave."}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"move_left_hand","description":"Move
+        your left hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"move_right_hand","description":"Move
+        your right hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"smile_and_wave","description":"Smile
+        and wave.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "1034"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.83.0
+        x-stainless-arch:
+          - x64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - Linux
+        x-stainless-package-version:
+          - 1.83.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "120.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.6
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAA7RUTY/aMBC951dYc4YqCSkFjquWrdii0g9V2+2uIuNMEhfHtmyHghD/vYr5SGBb
+          aS+bQ2T7+c28Nx57FxACPIMJAVZSxyot+jd8wFef7Wyb/Yi+j8N8+GFxfzt9WN1sitUYeg1DLX8j
+          cyfWG6YqLdBxJQ8wM0gdNlGjd8l4lITJIPFApTIUDa3Qrp+ofhzGST+K+nF4JJaKM7QwIb8CQgjZ
+          +X8jUWa4gQkJe6eVCq2lBcLkvIkQMEo0K0Ct5dZR6aDXgkxJh7JRLWshOoBTSqSMCtEmPny7zrit
+          ExUivS/Zl3y5mN5NN7cz/vFnnPD5p3jAOvkOobfaC8pryc716eDn9clVMkJA0spzK7XGVGDu0pLK
+          7CoCIUBNUVcoXaMedo+QeesMH5v6h+EeLgj7zmzfe5HZ9xsbL+SDns+Hd6Ovs2/rjZxHf6b81cwa
+          XpSv4PY8fuocvsG8tlQ87woqpXK00evb4im4qhkIVWijlvaKCjmX3JapQWq9125/BSchXgLUFy0M
+          2qhKu9SpFfqkUXLsd2hvWIsmwyPolKOiwxqdgIt4aYaOct/j52vFKCsxa6nt9aJ1xlUHCDren6v5
+          V+yDfy6Ll4RvAcZQO8xSbTDj7NJxu81g8wD9b9u5yl4wWDRrzjB1HE1zHhnmtBaHtwHs1jqs0pzL
+          Ao023D8QkOv07TIfDFiELIFgH/wFAAD//wMAC3uqkykFAAA=
+      headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-RAY:
+          - 94f3c15d0d80689a-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:15 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "535"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "539"
+        x-ratelimit-limit-requests:
+          - "10000"
+        x-ratelimit-limit-tokens:
+          - "30000000"
+        x-ratelimit-remaining-requests:
+          - "9999"
+        x-ratelimit-remaining-tokens:
+          - "29999968"
+        x-ratelimit-reset-requests:
+          - 6ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_7e515c5c45dd4aa3626bb3c8c8747f8a
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"messages":[{"role":"user","content":"You are the president of the United
+        States of America. Please move both hands at the same time, and then smile and
+        wave."}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"move_left_hand","description":"Move
+        your left hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"move_right_hand","description":"Move
+        your right hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
+        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"smile_and_wave","description":"Smile
+        and wave.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "1034"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.83.0
+        x-stainless-arch:
+          - x64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - Linux
+        x-stainless-package-version:
+          - 1.83.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "120.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.6
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: ""
+      headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-RAY:
+          - 94f3c15d0d80689a-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:15 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "535"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "539"
+        x-ratelimit-limit-requests:
+          - "10000"
+        x-ratelimit-limit-tokens:
+          - "30000000"
+        x-ratelimit-remaining-requests:
+          - "9999"
+        x-ratelimit-remaining-tokens:
+          - "29999968"
+        x-ratelimit-reset-requests:
+          - 6ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_7e515c5c45dd4aa3626bb3c8c8747f8a
       status:
         code: 200
         message: OK

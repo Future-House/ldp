@@ -1,12 +1,11 @@
 interactions:
   - request:
       body:
-        '{"messages": [{"role": "user", "content": [{"type": "text", "text": "<context>\n  I
-        am happy. How do I feel?\n</context>\n<response>\n  You are sad.\n</response>"}]}],
-        "temperature": 0, "system": [{"type": "text", "text": "Consider a proposed response
-        based on context. Reflect on the response within <thought> tags then conclude
-        with a possibly revised response within <final-response> tags."}], "max_tokens":
-        4096, "model": "claude-3-haiku-20240307"}'
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"<context>\n  I
+        am happy. How do I feel?\n</context>\n<response>\n  You are sad.\n</response>"}]}],"temperature":0,"max_tokens":4096,"system":[{"type":"text","text":"Consider
+        a proposed response based on context. Reflect on the response within <thought>
+        tags then conclude with a possibly revised response within <final-response>
+        tags."}]}'
       headers:
         accept:
           - application/json
@@ -17,30 +16,30 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "452"
+          - "436"
         content-type:
           - application/json
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.52.3
+          - litellm/1.72.4
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA3RRS2vcQAz+K0Ln2cTZFAJmyaU9lRxaWkJKXJaJR94ZYkuTkSabzbL/vdgk9AE9
-          Cb6nhI6YArY46W7bXNzdfN2/2sXNF3+In/np9tun10E+okM7ZJpVpOp3hA6LjDPgVZOaZ0OHkwQa
-          scV+9DXQ6nIVfXqsq3Wz/tBcNlfosBc2YsP2/vieaPQye5fR4sai1F20646/R4JCmoWVoMMfUsEX
-          AvWhQwhCCiwGk7c+gkWCJfvFIBd5ToGCg31MfQQ1b6Rg0duiy1RUGJJC9DkfzmAu8jkXySV5+6N0
-          L3UM8EBgMqcPqUz/jXHw4JUCCC9s4kHK5C0Jwy49E591vDn/fVzHmyGxH1fvZdcdzxcOROPbXrPh
-          Hw2efjpUk7wt5FUYWyQOW6uF8Y1QeqrEPWHLdRwd1uVd7RET52pbk0dixfZq7VCq/QU1p9MvAAAA
-          //8DAOX3hPEMAgAA
+          H4sIAAAAAAAAAwAAAP//ZJJBb9RADIX/iuVztt3uUgHRqogTVEU97aFAUGRmnM1oJ54wdtqGqv8d
+          JdulpZxG8vP7bD/NAwaPJXa6q5dnV1cfr9uu/3aetnfX25uf727G9+tPWKCNPU9drEo7xgJzilOB
+          VIMaiWGBXfIcsUQXafC8WC/OFy2F/bBYLVdvzparFRbokhiLYfn94cg0vp/c81PiFzboGBxlboYY
+          RyChOP5msDZoWUklG2vTsGvtopJtyzAT7w1cZMpxBDUyVqjwEqiDlvp+rBBIPFjLAqT7Sfyc7sAn
+          uISGOX6o8MDqc+qTsofM2idRhtRAhV/TAJQZlHyF4ENmZ3GcJ2fywZlO7MNkD9wlC0kgyFx92u8E
+          tm3QZ3BQCOJSnljzdj6xgiSDjsy1szVIk3JHM63P6TZ49idTBIe7D96/RG3TED1o6PoptqYJuZsx
+          x4UoZiY/At/3mVXZly9um4M6mYLYnD4HXMmmCUJxcZxyUckrh2xOX7Xg448C1VJfZyZNgiWy+NqG
+          LPgkKP8aWBxjKUOMBQ7zryofMEg/WG1pz6JYvl0V6Mi1XLvMcw71vw3Loz5d9r+WBntZOVuuC1TO
+          t8FxbYEzljh9Xk/Z4+PjHwAAAP//AwA2//Y5CgMAAA==
       headers:
-        CF-Cache-Status:
-          - DYNAMIC
         CF-RAY:
-          - 8df9510c597cceb1-SJC
+          - 94f3c0f69e5cfb28-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -48,29 +47,655 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Fri, 08 Nov 2024 23:24:27 GMT
+          - Fri, 13 Jun 2025 18:47:01 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
           - chunked
+        Via:
+          - 1.1 google
         X-Robots-Tag:
           - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:46:59Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:00Z"
         anthropic-ratelimit-requests-limit:
           - "5000"
         anthropic-ratelimit-requests-remaining:
           - "4999"
         anthropic-ratelimit-requests-reset:
-          - "2024-11-08T23:25:12Z"
+          - "2025-06-13T18:46:58Z"
         anthropic-ratelimit-tokens-limit:
-          - "5000000"
+          - "6000000"
         anthropic-ratelimit-tokens-remaining:
-          - "5000000"
+          - "6000000"
         anthropic-ratelimit-tokens-reset:
-          - "2024-11-08T23:24:27Z"
+          - "2025-06-13T18:46:59Z"
+        cf-cache-status:
+          - DYNAMIC
         request-id:
-          - req_012qo7D67oQLZLHC1k3jXiiN
-        via:
+          - req_011CQ6ibd7TDAF9Hrzhiqr3k
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"<context>\n  I
+        am happy. How do I feel?\n</context>\n<response>\n  You are sad.\n</response>"}]}],"temperature":0,"max_tokens":4096,"system":[{"type":"text","text":"Consider
+        a proposed response based on context. Reflect on the response within <thought>
+        tags then conclude with a possibly revised response within <final-response>
+        tags."}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "436"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: ""
+      headers:
+        CF-RAY:
+          - 94f3c0f69e5cfb28-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:01 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
           - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:46:59Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:00Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:46:58Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:46:59Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6ibd7TDAF9Hrzhiqr3k
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"<context>\n  I
+        am happy. How do I feel?\n</context>\n<response>\n  You are sad.\n</response>"}]}],"temperature":0,"max_tokens":4096,"system":[{"type":"text","text":"Consider
+        a proposed response based on context. Reflect on the response within <thought>
+        tags then conclude with a possibly revised response within <final-response>
+        tags."}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "436"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//ZJLdbtRADIVfxfJ1dru75UdEqyLRXrQSICEqECIoMjPOZujEE8ZOaaj6
+          7ijZLi3laiQfn8/20dxi8Fhip7t6tT598/H9+YtP7358fuXDmj6cnp2ms+9YoI09T12sSjvGAnOK
+          U4FUgxqJYYFd8hyxRBdp8Lw4XjxftBSuhsVmtXm2Xm02WKBLYiyG5dfbA9P4ZnLPT4lv2aBjcJS5
+          GWIcgYTi+JvB2qBlJZVsrU3DrrWTSi5bhpl4Y+AiU44jqJGxQoUXQB201PdjhUDiwVoWIL2axPP0
+          C3yCC2iY4+sK96w+pz4pe8isfRJlSA1U+CUNQJlByVcIPmR2Fsd5ciYfnOnE3k/2wF2ykASCzNX7
+          /ZZw2QZ9AAeFIC7liTVv5xMrSDLoyFw7W4M0KXc00/qcroNnv5wi2N+99/4lapuG6EFD10+xNU3I
+          3Yw5LEQxM/kR+KbPrMq+fHTbHNRyCmJ79BBwJdsmCMXFYcpJJU8csj160oJ33wpUS32dmTQJlsji
+          axuy4L2g/HNgcYylDDEWOMy/qrzFIP1gtaUrFsXy5aZAR67l2mWec6j/bVgd9Omy/7U02OPKenVc
+          oHK+Do5rC5yxxOnzesoe7+7+AAAA//8DAL3+618KAwAA
+      headers:
+        CF-RAY:
+          - 94f3c126df71fb28-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:09 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
+          - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:47:07Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:09Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:47:06Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:47:07Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6icC75cxxD1CJ8rzAaU
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"<context>\n  I
+        am happy. How do I feel?\n</context>\n<response>\n  You are sad.\n</response>"}]}],"temperature":0,"max_tokens":4096,"system":[{"type":"text","text":"Consider
+        a proposed response based on context. Reflect on the response within <thought>
+        tags then conclude with a possibly revised response within <final-response>
+        tags."}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "436"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: ""
+      headers:
+        CF-RAY:
+          - 94f3c126df71fb28-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:09 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
+          - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:47:07Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:09Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:47:06Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:47:07Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6icC75cxxD1CJ8rzAaU
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"<context>\n  I
+        am happy. How do I feel?\n</context>\n<response>\n  You are sad.\n</response>"}]}],"temperature":0,"max_tokens":4096,"system":[{"type":"text","text":"Consider
+        a proposed response based on context. Reflect on the response within <thought>
+        tags then conclude with a possibly revised response within <final-response>
+        tags."}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "436"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAA2yS22rcQAyGX0Xo2ptstlsCZkmhB0hKc5FSKKUuRszI6yFjjTvSJHFD3r3YyZK2
+          6dUwOny/9KN7DB5rHHTfrk+2t595//bq4/bSydU5X359954+bLFCm0aeq1iV9owV5hTnAKkGNRLD
+          CofkOWKNLlLxvHq1er3qKVyX1Wa92Z6sNxus0CUxFsP6+/2BaXw3dy9PjZ/YYGBwlLkrMU5AQnH6
+          xWB90LqRRnbWp7Lv7ayRLz3DQrwzcJEpxwnUyFihwQugAXoax6lBIPFAej3Hz9Mt+AQX0DHHNw0+
+          YsacxqTsIbOOSZRBaZrLv6UClOevb7CC2z64HnzI7CxOi3omH5wpWM+P6h54SBaSQJAl+jTj0SwV
+          9FkiKARxKc+wZUSfWEGSwUDm+qV3H254BnUpDzRDjw57P7Y9z9unEj1oGMbZtq4LefjfTKlbXAnC
+          qkeN7I6f/Wxk1wWhuDpAzxo57L84WQEpTKkcmC/22x3/A8CHHxWqpbHNTJoEa2TxrZUs+JRQ/llY
+          HGMtJcYKy3Ji9T0GGYu1lq5ZFOvTTYWOXM+ty7w40f5dsD7kM5N/mUvF/oycrE8rVM43wXFrgTPW
+          OF+yp+zx4eE3AAAA//8DANhCwCAXAwAA
+      headers:
+        CF-RAY:
+          - 94f3c15c6bdffb28-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:17 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
+          - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:47:15Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:17Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:47:14Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:47:15Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6icpvtUMRb6yCh71bDK
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"<context>\n  I
+        am happy. How do I feel?\n</context>\n<response>\n  You are sad.\n</response>"}]}],"temperature":0,"max_tokens":4096,"system":[{"type":"text","text":"Consider
+        a proposed response based on context. Reflect on the response within <thought>
+        tags then conclude with a possibly revised response within <final-response>
+        tags."}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "436"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: ""
+      headers:
+        CF-RAY:
+          - 94f3c15c6bdffb28-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:17 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
+          - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:47:15Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:17Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:47:14Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:47:15Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6icpvtUMRb6yCh71bDK
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"<context>\n  I
+        am happy. How do I feel?\n</context>\n<response>\n  You are sad.\n</response>"}]}],"temperature":0,"max_tokens":4096,"system":[{"type":"text","text":"Consider
+        a proposed response based on context. Reflect on the response within <thought>
+        tags then conclude with a possibly revised response within <final-response>
+        tags."}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "436"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//ZJJBb9RADIX/iuVzdru7BVFFq3IBQaEn6KVtUGTNOM2oE08YO8uGqv8d
+          JdulpZxG8vP7bD/NAwaPJXZ6V6/W65tx/NSenV1/Pfu4vvzw/duXvLvZYYE29jx1sSrdMRaYU5wK
+          pBrUSAwL7JLniCW6SIPnxeni7aKlcD8sNqvNm/Vqs8ECXRJjMSxvH45M4/3knp8SL9mgY3CUuRli
+          HIGE4vibwdqgZSWVbK1Nw11r55VctQwzcW/gIlOOI6iRsUKFF0AdtNT3Y4VA4sFaFiC9n8TP6Rf4
+          BBfQMMf3FR5YfU59UvaQWfskypAaqPA6DUCZQclXCD5kdhbHeXImH5zpxD5M9sBdspAEgszVp/2W
+          cNUGfQYHhSAu5Yk1b+cTK0gy6MhcO1uDNCl3NNP6nHbBs19OERzuPnj/ErVNQ/Sgoeun2Jom5G7G
+          HBeimJn8CLzvM6uyL1/cNge1nILYnjwHXMm2CUJxcZxyXskrh2xPXrXg448C1VJfZyZNgiWy+NqG
+          LPgkKP8cWBxjKUOMBQ7zryofMEg/WG3pnkWxfLcp0JFruXaZ5xzqfxtWR3267H8tDfaysl6dFqic
+          d8FxbYEzljh9Xk/Z4+PjHwAAAP//AwAxHV+ZCgMAAA==
+      headers:
+        CF-RAY:
+          - 94f3c18dba8efb28-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:26 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
+          - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:47:23Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:26Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:47:22Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:47:23Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6idQVVK9pqjwW1sPfP6
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"<context>\n  I
+        am happy. How do I feel?\n</context>\n<response>\n  You are sad.\n</response>"}]}],"temperature":0,"max_tokens":4096,"system":[{"type":"text","text":"Consider
+        a proposed response based on context. Reflect on the response within <thought>
+        tags then conclude with a possibly revised response within <final-response>
+        tags."}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "436"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.72.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: ""
+      headers:
+        CF-RAY:
+          - 94f3c18dba8efb28-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 13 Jun 2025 18:47:26 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        Via:
+          - 1.1 google
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-13T18:47:23Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-13T18:47:26Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-13T18:47:22Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-13T18:47:23Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQ6idQVVK9pqjwW1sPfP6
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
       status:
         code: 200
         message: OK
