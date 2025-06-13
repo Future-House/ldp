@@ -5,7 +5,7 @@ import logging
 import os
 from collections.abc import Callable, Hashable, Iterable
 from contextlib import suppress
-from typing import Any, ClassVar, Self, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
 from uuid import UUID
 
 import aiofiles
@@ -15,6 +15,9 @@ from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
 
 from ldp.graph import OpResult
 from ldp.utils import discounted_returns
+
+if TYPE_CHECKING:
+    from aviary.core import Environment
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +105,13 @@ class Trajectory(BaseModel):
 
     traj_id: str | None = None
     steps: list[Transition] = Field(default_factory=list)
+    metadata: dict[str, JsonValue] = Field(
+        default_factory=dict,
+        description=(
+            "Optional JSON metadata on the trajectory, for example the ID of a task"
+            " this trajectory was run on."
+        ),
+    )
 
     @property
     def failed(self) -> bool:
@@ -118,6 +128,14 @@ class Trajectory(BaseModel):
             await f.write(json.dumps(self.traj_id) + "\n")
             for s in self.steps:
                 await f.write(s.model_dump_json() + "\n")
+
+    @classmethod
+    async def from_env(cls, env: Environment, **kwargs) -> Self:
+        """Create a Trajectory while propagating environment ID."""
+        traj_metadata = kwargs.pop("metadata", {})
+        with suppress(NotImplementedError, ValueError):
+            traj_metadata["env_id"] = await env.get_id()
+        return cls(metadata=traj_metadata, **kwargs)
 
     @classmethod
     def from_jsonl(cls, filename: str | os.PathLike) -> Self:

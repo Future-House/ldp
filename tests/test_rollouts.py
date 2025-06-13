@@ -16,8 +16,14 @@ from ldp.graph import FxnOp, OpResult, compute_graph, set_training_mode
 
 
 class DummyEnv(Environment[None]):
-    def __init__(self):
+    def __init__(self, instance_id: int | None = None):
         self.tools = [Tool.from_function(self.talk)]
+        self._instance_id = instance_id
+
+    async def get_id(self) -> str:
+        if self._instance_id is None:
+            raise ValueError("No instance ID was configured.")
+        return str(self._instance_id)
 
     async def reset(self) -> tuple[list[Message], list[Tool]]:
         return [Message(content="Hello!")], self.tools
@@ -69,9 +75,11 @@ async def test_rollout(training: bool) -> None:
         callbacks=[callback],
     )
     trajs = await rollout_manager.sample_trajectories(
-        environments=[DummyEnv(), DummyEnv()], max_steps=1
+        environments=[DummyEnv(instance_id=1), DummyEnv()], max_steps=1
     )
     assert len(trajs) == 2
+    assert trajs[0].metadata.get("env_id") == "1"
+    assert trajs[1].metadata.get("env_id") is None
 
     # Let's check we can serialize and deserialize the trajectories
     for traj in trajs:

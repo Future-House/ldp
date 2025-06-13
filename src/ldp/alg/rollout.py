@@ -312,7 +312,7 @@ class RolloutManager:
         *,
         summarize_exceptions: bool = False,
     ) -> Trajectory:
-        trajectory = Trajectory(traj_id=traj_id)
+        trajectory = await Trajectory.from_env(env, traj_id=traj_id)
 
         async def store_step(step: Transition):
             await asyncio.gather(*[
