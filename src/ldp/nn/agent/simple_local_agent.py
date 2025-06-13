@@ -105,15 +105,12 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
         self._validate_token_count(messages, next_state.tools)
 
         # Execute the LLM operation call
-        result = cast(
-            "OpResult[Message | ToolRequestMessage]",
-            await self._llm_call_op(
-                xi=messages,
-                temperature=self.llm_model.temperature,
-                max_new_tokens=self.llm_model.max_new_tokens,
-                tools=next_state.tools,
-                **self.llm_model.llm_call_kwargs,
-            ),
+        result = await self._llm_call_op(
+            xi=messages,
+            temperature=self.llm_model.temperature,
+            max_new_tokens=self.llm_model.max_new_tokens,
+            tools=next_state.tools,
+            **self.llm_model.llm_call_kwargs,
         )
 
         # Type-checking for expected output
