@@ -30,7 +30,7 @@ See the following [tutorial](https://github.com/Future-House/ldp/blob/main/tutor
 
 ## What's New?
 
-- Check out our new [Tutorial](https://github.com/Future-House/ldp/blob/main/docs/agent_tutorial.ipynb) notebook on running an LDP agent in an Aviary environment!
+- Check out our new [Tutorial](https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb) notebook on running an LDP agent in an Aviary environment!
 - The Aviary paper has been posted to [arXiv](https://arxiv.org/abs/2412.21154)! Further updates forthcoming!
 
 ## Overview
@@ -64,7 +64,7 @@ If you plan to export Graphviz visualizations, the `graphviz` library is require
 
 ## Tutorial Notebooks
 
-1. [Creating a Simple Language Agent](https://github.com/Future-House/ldp/blob/main/tutorials/creating_language_agent.ipynb)
+1. [Creating a Simple Language Agent](https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb)
 2. [Evaluating a Llama Agent on GSM8K](https://github.com/Future-House/ldp/blob/main/tutorials/evaluating_a_llama_agent.ipynb)
 
 ## Running an Agent on an Aviary Environment
