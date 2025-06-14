@@ -1,17 +1,13 @@
 interactions:
   - request:
       body:
-        '{"model": "claude-3-5-haiku-20241022", "messages": [{"role": "user", "content":
-        [{"type": "text", "text": "Write a 5 word story via print_story"}]}], "temperature":
-        0.1, "max_tokens": 4096, "tools": [{"name": "print_story", "input_schema": {"type":
-        "object", "properties": {"story": {"description": "Story to print.", "title":
-        "Story", "type": "string"}}, "required": ["story"]}, "description": "Print a
-        story."}, {"name": "cast_float", "input_schema": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "string"}}, "required": ["x"]}, "description":
-        "Cast the input argument x to a float."}, {"name": "cast_int", "input_schema":
-        {"type": "object", "properties": {"x": {"title": "X", "type": "number"}}, "required":
-        ["x"]}, "description": "Cast the input argument x to an integer."}], "tool_choice":
-        {"type": "any"}}'
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"}}'
       headers:
         accept:
           - application/json
@@ -22,27 +18,27 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "827"
+          - "901"
         content-type:
           - application/json
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.59.5
+          - litellm/1.70.4
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA2RPy2rDMBD8FbNnu9jK46BjS2kJOTSFUHApQpG3joisda1Vm2D870UJgYYed147
-          M4JtQEIXWlVWC2Fi9bp5PD5Xb5t6tez1Z7UmyIFPPSYVhqBbhBwGcgnQIdjA2jPk0FGDDiQYp2OD
-          xaxYFHttD7EQpZhXpRCQgyHP6Bnk+3jNZCKnYkih5ybpjqqsnnY/dc223m5f7vWhFctu9TBLGV53
-          ydcP1rMKTMMpWX0fGeQIF0DCmr4x2zmiDpvM+ix6PPZoGJssWIfe4B1M00eeDL0aUAfyt23ORMCv
-          mMQgfXQuh3jeL8fLQ8V0QB9ALpYiB6PNHpUZULMlr24V5ZUfUDf/OYr8F5nPpukXAAD//wMANKfE
-          mZoBAAA=
+          H4sIAAAAAAAAA2RQS2sCMRD+KzLnbNmHD8hNlB5KC7WUXkoJaTJq2JisyUTcLvvfSxSh0uN8r/lm
+          BjAaOBziTpTV+kXNGn3u5vS0aVfye90vz4sPYEB9h1mFMcodAoPgbQZkjCaSdAQMDl6jBQ7KyqSx
+          aIpZsZemTUVd1tOqrGtgoLwjdAT8c7hlkvdWpJhDL03ynERZLZvNkWK1kO+P+Fb/rLZxkV4bYODk
+          Ifu6YByJSD702eq6RMAHuAIcnv0JJ8q7Y8KAeiKtZZOtcdLa/gHG8YtlZScCyujdfY0LEfGY0CkE
+          7pK1DNLlcD5cNwnyLboIfF41DJRUexQqoCTjnbhXlDc+oNT/OZ/oLzKtGUQMJ6NQkMEAHPJ/tQwa
+          xvEXAAD//wMAAQMEDK0BAAA=
       headers:
         CF-RAY:
-          - 9093f64eef9f7e2d-SJC
+          - 94f6b994e838239e-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -50,41 +46,45 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 28 Jan 2025 21:09:14 GMT
+          - Sat, 14 Jun 2025 03:26:14 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
           - chunked
         X-Robots-Tag:
           - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
         anthropic-ratelimit-input-tokens-limit:
           - "5000000"
         anthropic-ratelimit-input-tokens-remaining:
           - "5000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2025-01-28T21:09:13Z"
+          - "2025-06-14T03:26:13Z"
         anthropic-ratelimit-output-tokens-limit:
           - "1000000"
         anthropic-ratelimit-output-tokens-remaining:
           - "1000000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2025-01-28T21:09:14Z"
+          - "2025-06-14T03:26:14Z"
         anthropic-ratelimit-requests-limit:
           - "5000"
         anthropic-ratelimit-requests-remaining:
-          - "4997"
+          - "4999"
         anthropic-ratelimit-requests-reset:
-          - "2025-01-28T21:09:12Z"
+          - "2025-06-14T03:26:13Z"
         anthropic-ratelimit-tokens-limit:
           - "6000000"
         anthropic-ratelimit-tokens-remaining:
           - "6000000"
         anthropic-ratelimit-tokens-reset:
-          - "2025-01-28T21:09:13Z"
+          - "2025-06-14T03:26:13Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_01ACKBwLEvWvcDqXyBCXrFBj
+          - req_011CQ7QCBmUTGozVc985Q1S8
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
         via:
           - 1.1 google
       status:

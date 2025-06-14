@@ -1,17 +1,12 @@
 interactions:
   - request:
       body:
-        '{"messages": [{"role": "user", "content": "Write a 5 word story via print_story"}],
-        "model": "gpt-4o-2024-08-06", "temperature": 0.1, "tool_choice": "required",
-        "tools": [{"type": "function", "function": {"name": "print_story", "description":
-        "Print a story.", "parameters": {"type": "object", "properties": {"story": {"description":
-        "Story to print.", "title": "Story", "type": "string"}}, "required": ["story"]}}},
-        {"type": "function", "function": {"name": "cast_float", "description": "Cast
-        the input argument x to a float.", "parameters": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "string"}}, "required": ["x"]}}}, {"type": "function",
-        "function": {"name": "cast_int", "description": "Cast the input argument x to
-        an integer.", "parameters": {"type": "object", "properties": {"x": {"title":
-        "X", "type": "number"}}, "required": ["x"]}}}]}'
+        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
+        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
+        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
       headers:
         accept:
           - application/json
@@ -20,13 +15,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "862"
+          - "986"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.54.3
+          - AsyncOpenAI/Python 1.86.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -36,34 +31,35 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.54.3
+          - 1.86.0
         x-stainless-raw-response:
           - "true"
+        x-stainless-read-timeout:
+          - "120.0"
         x-stainless-retry-count:
           - "0"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.7
+          - 3.12.8
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA4xTwW7bMAy9+ysEnuMiid2u9a1Ii13XdsCwLYWhyLStTZY0ie7qBfn3wUpiO1kH
-          1AdB4ON7JJ/obcQYyAIyBqLmJBqr4tvHJ9HdvPAVJ6yW3V2J3UPy5dF9Wn1OvsGsZ5jNDxR0ZF0I
-          01iFJI3ew8IhJ+xVFx+SxWJ+vbxKA9CYAlVPqyzFqYmX82Uaz6/j+dWBWBsp0EPGvkeMMbYNZ9+i
-          LvAVMjafHSMNes8rhGxIYgycUX0EuPfSE9cEsxEURhPqvmvdKjUByBiVC67UWHj/bSf30SeuVN4m
-          +PIq018PcnNTtu72a3u/Uh//3E3q7aU7GxoqWy0Gfyb4EM/OijEGmjeBa53UlHsyrjujMwbcVW2D
-          mvrWYbuGkLaGbA1PrfZI7HctvUXnmUfhkDwjw7SsarpYww5O5HbRW/fniVMOy9ZzdbDwEN8Nb6JM
-          ZZ3Z+DOLoZRa+jp3yH0Ydep4dKwW6kB78qhgnWks5WR+ou5lF4vDBsC4cyO6PIJkiKsJKzkCJ3p5
-          gcRlePVh0QQXNRYjdVw43hbSTIBoMvu/3bylvZ9f6uo98iMgBFrCIrcOCylOJx7THPa/5P/SBpdD
-          w+A7T9jkpdQVurBfYUltnl6K8jItkCNEu+gvAAAA//8DAJxtfsgeBAAA
+          H4sIAAAAAAAAAwAAAP//jFPBbtswDL37KwSekyJ2kmX1scA2YNihxYD1sBSGItG2GlkSJDpbFuTf
+          ByuJ7aQdMB8MQY+PfHykDgljoCTkDETNSTROTx/Ug92Xn1o1r93zM18+bhvX3L9mKv0sNUw6ht28
+          oqAL607YxmkkZc0JFh45YZc1XS3uP67S5SqLQGMl6o5WOZou7DSbZYtpmk6z2ZlYWyUwQM5+Jowx
+          doj/TqKR+BtyNptcbhoMgVcIeR/EGHiruxvgIahA3BBMBlBYQ2g61abVegSQtboQXOuh8Ok7jM6D
+          T1zrYoP70j/tnr40f358+G6sf8xmWnytR/VOqfcuCipbI3p/Rnh/n98UYwwMbyLXeWWoCGT9/obO
+          GHBftQ0a6qTDYQ0xbA35Gr7ZQGyL+zBhpW2NZAZ/MS53aKj1GO7WcISrbMfkvfPLyCiPZRu4fusg
+          N8YS7xqJFr6ckWM/LW0r5+0m3FChVEaFuvDIQzRhPIvkIiRKgPZq3OC8bRwVZLcYi6bz827AsI0D
+          ml1AssT1iLW8AFf5ConEVdyHfgUFFzXKgTqsIm+lsiMgGfX+Vs17uU/9K1P9T/oBEAIdoSycR6nE
+          dcdDmMfusf4rrHc5CoaAfqcEFqTQd/OQWPJWn94RhH0gbIpSmQp9XMu4265Ybsr5XKQoFpAck78A
+          AAD//wMAzQSjQFUEAAA=
       headers:
-        CF-Cache-Status:
-          - DYNAMIC
         CF-RAY:
-          - 8df950fdefc9172a-SJC
+          - 94f6b98d8d2af973-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -71,14 +67,14 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Fri, 08 Nov 2024 23:24:25 GMT
+          - Sat, 14 Jun 2025 03:26:12 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=6D88WLXw_do6BwApkrNtsZN9U_UCT3tGeBiLtP3klb4-1731108265-1.0.1.1-9M2lr.cARkIBQZRdCxZiLp_XeVbD.Ug6twEPAPAPK9uydI06KxPb8Ea2ZyqdqcYfgsUK9Kj8mfcLj.dZQmZ64w;
-            path=/; expires=Fri, 08-Nov-24 23:54:25 GMT; domain=.api.openai.com; HttpOnly;
+          - __cf_bm=6jBr4iOiyWl8_SJSQn9S5N9KyqjNpLwsX.GeqA7zZe4-1749871572-1.0.1.1-h_6vVWUqM_Kvjb.WzDN9vDxoBS8Lx_ikI6P..jYfM04EveCet_BrS3y4pi3oejVi1oJJmbouryQPFO9Vt75DEwPGXDggzBdSebNg5.5i74k;
+            path=/; expires=Sat, 14-Jun-25 03:56:12 GMT; domain=.api.openai.com; HttpOnly;
             Secure; SameSite=None
-          - _cfuvid=XlEROAtiETk2uEDO4PC3oVsc23TfbFTgGrc9ZmRv33g-1731108265102-0.0.1.1-604800000;
+          - _cfuvid=F6j06_wB_E0.ByHUfm804kZPoPCiRg16SxLP6zew0cY-1749871572506-0.0.1.1-604800000;
             path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
@@ -88,14 +84,18 @@ interactions:
           - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "375"
+          - "305"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "308"
         x-ratelimit-limit-requests:
           - "10000"
         x-ratelimit-limit-tokens:
@@ -103,13 +103,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "9999"
         x-ratelimit-remaining-tokens:
-          - "29999973"
+          - "29999989"
         x-ratelimit-reset-requests:
           - 6ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_61f55aaaa0166d4655bf136167d58a5c
+          - req_6c177585508247a54bec6507dbf1d3eb
       status:
         code: 200
         message: OK
