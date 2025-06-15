@@ -15,6 +15,7 @@ from lmi.utils import (
     OPENAI_API_KEY_HEADER,
     SEMANTIC_SCHOLAR_KEY_HEADER,
     filter_api_keys,
+    update_litellm_max_callbacks,
 )
 
 TESTS_DIR = Path(__file__).parent
@@ -41,6 +42,11 @@ def fixture_vcr_config() -> dict[str, Any]:
         "allow_playback_repeats": True,
         "cassette_library_dir": str(CASSETTES_DIR),
     }
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _defeat_litellm_callbacks() -> None:
+    update_litellm_max_callbacks()
 
 
 @pytest.fixture

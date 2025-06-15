@@ -124,3 +124,11 @@ def filter_api_keys(request: "vcr.request.Request") -> "vcr.request.Request":
         request.uri = parsed_uri._replace(query=filtered_query).geturl()
 
     return request
+
+
+def update_litellm_max_callbacks(value: int = 1000) -> None:
+    """Update litellm's MAX_CALLBACKS limit, can call with default to defeat this limit.
+
+    SEE: https://github.com/BerriAI/litellm/issues/9792
+    """
+    litellm.litellm_core_utils.logging_callback_manager.LoggingCallbackManager.MAX_CALLBACKS = value
