@@ -7,6 +7,7 @@ import pytest
 import torch
 from aviary.core import DummyEnv
 from lmi import configure_llm_logs
+from lmi.utils import update_litellm_max_callbacks
 
 from ldp.nn.handlers.transformer_handler import ExecutionMode, ParallelModeConfig
 
@@ -23,6 +24,11 @@ def fixture_dummy_env() -> DummyEnv:
 @pytest.fixture(scope="session", autouse=True)
 def _fixture_set_up_environment() -> None:
     configure_llm_logs()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _defeat_litellm_callbacks() -> None:
+    update_litellm_max_callbacks()
 
 
 def set_seed(seed: int | None) -> None:
