@@ -403,7 +403,7 @@ class TestLiteLLMModel:
             delta_content: str = "",
             delta_reasoning_content: str = "hmmm",
             delta_role: str = "assistant",
-            usage: Any = None
+            usage: Any = None,
         ) -> Mock:
             mock_completion = Mock()
             mock_completion.model = model
@@ -425,12 +425,16 @@ class TestLiteLLMModel:
             # Mock completion with logprobs but no content
             mock_logprobs_no_content = Mock()
             mock_logprobs_no_content.content = None
-            mock_completion_no_content = _build_mock_completion(logprobs=mock_logprobs_no_content, delta_content=" world")
+            mock_completion_no_content = _build_mock_completion(
+                logprobs=mock_logprobs_no_content, delta_content=" world"
+            )
 
             # Mock completion with empty content list
             mock_logprobs_empty = Mock()
             mock_logprobs_empty.content = []
-            mock_completion_empty = _build_mock_completion(logprobs=mock_logprobs_empty, delta_content="!")
+            mock_completion_empty = _build_mock_completion(
+                logprobs=mock_logprobs_empty, delta_content="!"
+            )
 
             # Mock completion with valid logprobs
             mock_logprobs_valid = Mock()
