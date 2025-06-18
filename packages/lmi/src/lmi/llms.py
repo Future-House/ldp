@@ -753,8 +753,10 @@ class LiteLLMModel(LLMModel):
                 used_model = completion.model or self.name
             choice = completion.choices[0]
             delta = choice.delta
-            if getattr(choice.logprobs, "content", None):
-                logprobs.append(choice.logprobs.content[0].logprob or 0)
+            # logprobs can be None, or missing a content attribute,
+            # or a ChoiceLogprobs object with a NoneType/empty content attribute
+            if logprob_content := getattr(choice.logprobs, "content", None):
+                logprobs.append(logprob_content[0].logprob or 0)
             outputs.append(delta.content or "")
             role = delta.role or role
             if hasattr(delta, "reasoning_content"):
