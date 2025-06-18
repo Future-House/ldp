@@ -753,7 +753,11 @@ class LiteLLMModel(LLMModel):
                 used_model = completion.model or self.name
             choice = completion.choices[0]
             delta = choice.delta
-            if hasattr(choice.logprobs, "content"):
+            if (
+                hasattr(choice.logprobs, "content")
+                and choice.logprobs
+                and choice.logprobs.content
+            ):
                 logprobs.append(choice.logprobs.content[0].logprob or 0)
             outputs.append(delta.content or "")
             role = delta.role or role
