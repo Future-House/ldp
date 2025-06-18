@@ -395,7 +395,7 @@ class TestLiteLLMModel:
     async def test_acompletion_iter_logprobs_edge_cases(self) -> None:
         """Test that acompletion_iter handles various logprobs edge cases gracefully."""
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
-        messages = [Message(content="Say hello", role="user")]
+        messages = [Message(content="Say hello")]
 
         def _build_mock_completion(
             model: str = "test-model",
