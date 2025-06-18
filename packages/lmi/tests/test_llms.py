@@ -407,12 +407,12 @@ class TestLiteLLMModel:
         ) -> Mock:
             mock_completion = Mock()
             mock_completion.model = model
-            mock_completion.choices = [Mock()]
-            mock_completion.choices[0].logprobs = logprobs
-            mock_completion.choices[0].delta = Mock()
-            mock_completion.choices[0].delta.content = delta_content
-            mock_completion.choices[0].delta.reasoning_content = delta_reasoning_content
-            mock_completion.choices[0].delta.role = delta_role
+            mock_completion.choices = [Mock(logprobs=logprobs)]
+            mock_completion.choices[0].delta = Mock(
+                content=delta_content,
+                reasoning_content=delta_reasoning_content,
+                role=delta_role,
+            )
             if usage:
                 mock_completion.usage = usage
             return mock_completion
