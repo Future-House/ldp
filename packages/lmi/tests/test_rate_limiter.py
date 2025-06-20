@@ -308,9 +308,10 @@ async def test_embedding_rate_limits(
     embedding_config_w_rate_limits: dict[str, Any],
 ) -> None:
     embedding_model = LiteLLMEmbeddingModel(**embedding_config_w_rate_limits)
+    embedding_model.config["batch_size"] = 5
     texts_to_embed = ["the duck says"] * 10
     start = time.time()
-    await embedding_model.embed_documents(texts=texts_to_embed, batch_size=5)
+    await embedding_model.embed_documents(texts=texts_to_embed)
     estimated_tokens_per_second = sum(
         len(t) / CHARACTERS_PER_TOKEN_ASSUMPTION for t in texts_to_embed
     ) / (time.time() - start)
