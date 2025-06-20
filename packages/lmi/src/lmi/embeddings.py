@@ -75,7 +75,6 @@ class LiteLLMEmbeddingModel(EmbeddingModel):
             " inference fails, the embedding will be un-truncated."
         ),
     )
-    batch_size: int = 16
     embed_kwargs: dict[str, Any] = Field(
         default_factory=dict,
         description="Extra kwargs to pass to litellm.aembedding.",
@@ -149,10 +148,9 @@ class LiteLLMEmbeddingModel(EmbeddingModel):
 
         return texts
 
-    async def embed_documents(
-        self, texts: list[str], batch_size: int = 16
-    ) -> list[list[float]]:
+    async def embed_documents(self, texts: list[str]) -> list[list[float]]:
         texts = self._truncate_if_large(texts)
+        batch_size = self.config.get("batch_size", 16)
         N = len(texts)
         embeddings = []
         for i in range(0, N, batch_size):
