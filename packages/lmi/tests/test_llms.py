@@ -405,17 +405,20 @@ class TestLiteLLMModel:
             delta_role: str = "assistant",
             usage: Any = None,
         ) -> Mock:
-            mock_completion = Mock()
-            mock_completion.model = model
-            mock_completion.choices = [Mock(logprobs=logprobs)]
-            mock_completion.choices[0].delta = Mock(
-                content=delta_content,
-                reasoning_content=delta_reasoning_content,
-                role=delta_role,
+            return Mock(
+                model=model,
+                choices=[
+                    Mock(
+                        logprobs=logprobs,
+                        delta=Mock(
+                            content=delta_content,
+                            reasoning_content=delta_reasoning_content,
+                            role=delta_role,
+                        ),
+                    )
+                ],
+                usage=usage,
             )
-            if usage:
-                mock_completion.usage = usage
-            return mock_completion
 
         # Mock the router to return different logprobs scenarios
         with patch.object(model, "_router") as mock_router:
@@ -423,32 +426,27 @@ class TestLiteLLMModel:
             mock_completion_none = _build_mock_completion(delta_content="Hello")
 
             # Mock completion with logprobs but no content
-            mock_logprobs_no_content = Mock()
-            mock_logprobs_no_content.content = None
             mock_completion_no_content = _build_mock_completion(
-                logprobs=mock_logprobs_no_content, delta_content=" world"
+                logprobs=Mock(content=None),
+                delta_content=" world",
             )
 
             # Mock completion with empty content list
-            mock_logprobs_empty = Mock()
-            mock_logprobs_empty.content = []
             mock_completion_empty = _build_mock_completion(
-                logprobs=mock_logprobs_empty, delta_content="!"
+                logprobs=Mock(content=[]), delta_content="!"
             )
 
             # Mock completion with valid logprobs
-            mock_logprobs_valid = Mock()
-            mock_logprobs_valid.content = [Mock()]
-            mock_logprobs_valid.content[0].logprob = -0.5
-            mock_completion_valid = _build_mock_completion(logprobs=mock_logprobs_valid)
+            mock_completion_valid = _build_mock_completion(
+                logprobs=Mock(content=[Mock(logprob=-0.5)])
+            )
 
             # Mock completion with usage info
-            mock_usage = Mock()
-            mock_usage.prompt_tokens = 10
-            mock_usage.completion_tokens = 5
-            mock_completion_usage = _build_mock_completion(usage=mock_usage)
+            mock_completion_usage = _build_mock_completion(
+                usage=Mock(prompt_tokens=10, completion_tokens=5)
+            )
 
-            # Create async generator that yields our mock completions
+            # Create async generator that yields mock completions
             async def mock_stream():  # noqa: RUF029
                 async def mock_stream_iter():  # noqa: RUF029
                     yield mock_completion_none
