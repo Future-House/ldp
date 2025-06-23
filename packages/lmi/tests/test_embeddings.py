@@ -1,6 +1,6 @@
 import asyncio
 from typing import Any, ClassVar
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 import litellm
 import pytest
@@ -16,11 +16,12 @@ from lmi.embeddings import (
     SparseEmbeddingModel,
     embedding_model_factory,
 )
+from lmi.utils import VCR_DEFAULT_MATCH_ON
 
 
 class TestLiteLLMEmbeddingModel:
     @pytest.fixture
-    def embedding_model(self):
+    def embedding_model(self) -> LiteLLMEmbeddingModel:
         return LiteLLMEmbeddingModel()
 
     @pytest.mark.asyncio
@@ -43,6 +44,34 @@ class TestLiteLLMEmbeddingModel:
         ):
             embeddings = await embedding_model.embed_documents(texts)
         assert embeddings == [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
+
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.asyncio
+    async def test_embedding_batches(
+        self, embedding_model: LiteLLMEmbeddingModel
+    ) -> None:
+        stub_input = ["my", "name", "is", "neo"]
+        with patch.object(
+            litellm, "aembedding", autospec=True, side_effect=litellm.aembedding
+        ) as mock_aembedding:
+            embeddings = await embedding_model.embed_documents(stub_input)
+        assert isinstance(embeddings, list)
+        assert len(embeddings) == len(stub_input)
+        mock_aembedding.assert_awaited_once_with(
+            model="text-embedding-3-small", input=stub_input, dimensions=None
+        )
+
+        embedding_model.config["batch_size"] = 2
+        with patch.object(
+            litellm, "aembedding", autospec=True, side_effect=litellm.aembedding
+        ) as mock_aembedding:
+            embeddings = await embedding_model.embed_documents(stub_input)
+        assert isinstance(embeddings, list)
+        assert len(embeddings) == len(stub_input)
+        mock_aembedding.assert_has_awaits([
+            call(model="text-embedding-3-small", input=["my", "name"], dimensions=None),
+            call(model="text-embedding-3-small", input=["is", "neo"], dimensions=None),
+        ])
 
     @pytest.mark.parametrize(
         ("model_name", "expected_dimensions"),
