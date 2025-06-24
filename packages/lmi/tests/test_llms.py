@@ -391,6 +391,88 @@ class TestLiteLLMModel:
         assert llm.config == rehydrated_llm.config
         assert llm.router.deployment_names == rehydrated_llm.router.deployment_names
 
+    @pytest.mark.asyncio
+    async def test_acompletion_iter_logprobs_edge_cases(self) -> None:
+        """Test that acompletion_iter handles various logprobs edge cases gracefully."""
+        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+        messages = [Message(content="Say hello")]
+
+        def _build_mock_completion(
+            model: str = "test-model",
+            logprobs: Any = None,
+            delta_content: str = "",
+            delta_reasoning_content: str = "hmmm",
+            delta_role: str = "assistant",
+            usage: Any = None,
+        ) -> Mock:
+            return Mock(
+                model=model,
+                choices=[
+                    Mock(
+                        logprobs=logprobs,
+                        delta=Mock(
+                            content=delta_content,
+                            reasoning_content=delta_reasoning_content,
+                            role=delta_role,
+                        ),
+                    )
+                ],
+                usage=usage,
+            )
+
+        # Mock the router to return different logprobs scenarios
+        with patch.object(model, "_router") as mock_router:
+            # Mock completion with None logprobs
+            mock_completion_none = _build_mock_completion(delta_content="Hello")
+
+            # Mock completion with logprobs but no content
+            mock_completion_no_content = _build_mock_completion(
+                logprobs=Mock(content=None),
+                delta_content=" world",
+            )
+
+            # Mock completion with empty content list
+            mock_completion_empty = _build_mock_completion(
+                logprobs=Mock(content=[]), delta_content="!"
+            )
+
+            # Mock completion with valid logprobs
+            mock_completion_valid = _build_mock_completion(
+                logprobs=Mock(content=[Mock(logprob=-0.5)])
+            )
+
+            # Mock completion with usage info
+            mock_completion_usage = _build_mock_completion(
+                usage=Mock(prompt_tokens=10, completion_tokens=5)
+            )
+
+            # Create async generator that yields mock completions
+            async def mock_stream():  # noqa: RUF029
+                async def mock_stream_iter():  # noqa: RUF029
+                    yield mock_completion_none
+                    yield mock_completion_no_content
+                    yield mock_completion_empty
+                    yield mock_completion_valid
+                    yield mock_completion_usage
+
+                return mock_stream_iter()
+
+            mock_router.acompletion.return_value = mock_stream()
+
+            # Test that the method doesn't raise exceptions
+            async_iterable = await model.acompletion_iter(messages)
+            results = [result async for result in async_iterable]
+
+            # Verify we got one final result
+            assert len(results) == 1
+            result = results[0]
+            assert isinstance(result, LLMResult)
+            assert result.text == "Hello world!"
+            assert result.model == "test-model"
+            assert result.logprob == -0.5
+            assert result.prompt_count == 10
+            assert result.completion_count == 5
+
 
 class DummyOutputSchema(BaseModel):
     name: str
