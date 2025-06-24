@@ -6,7 +6,8 @@
 [![Docs](https://assets.readthedocs.org/static/projects/badges/passing-flat.svg)](https://futurehouse.gitbook.io/futurehouse-cookbook/ldp-language-decision-processes)
 [![PyPI version](https://badge.fury.io/py/ldp.svg)](https://badge.fury.io/py/ldp)
 [![tests](https://github.com/Future-House/ldp/actions/workflows/tests.yml/badge.svg)](https://github.com/Future-House/ldp)
-[![CodeFactor](https://www.codefactor.io/repository/github/future-house/ldp/badge)](https://www.codefactor.io/repository/github/future-house/ldp)<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+[![CodeFactor](https://www.codefactor.io/repository/github/future-house/ldp/badge)](https://www.codefactor.io/repository/github/future-house/ldp)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue?style=flat&logo=python&logoColor=white)](https://www.python.org)
 
 <p align="center">
