@@ -1,0 +1,103 @@
+interactions:
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"stop_sequences":["Observation:"],"max_tokens":4096,"system":[{"type":"text","text":"Answer
+        the following questions as best you can. You have access to the following tools:\n\nNAME:
+        print_story\n\nSYNOPSIS:\n    print_story(string story)\n\nDESCRIPTION:\n    Print
+        a story.\n\nPARAMETERS:\n    story (string): Story to print.\n\nNAME: cast_float\n\nSYNOPSIS:\n    cast_float(string
+        x)\n\nDESCRIPTION:\n    Cast the input argument x to a float.\n\nPARAMETERS:\n    x
+        (string): No description provided.\n\nNAME: cast_int\n\nSYNOPSIS:\n    cast_int(number
+        x)\n\nDESCRIPTION:\n    Cast the input argument x to an integer.\n\nPARAMETERS:\n    x
+        (number): No description provided.\n\nNAME: get_random_int\n\nSYNOPSIS:\n    get_random_int()\n\nDESCRIPTION:\n    Get
+        a random integer in 1 to 10.\n\nPARAMETERS:\n\nUse the following format:\n\nThought:
+        you should always think about what to do\nAction: the action to take, should
+        be one of [print_story, cast_float, cast_int, get_random_int]\nAction Input:
+        comma separated list of inputs to action as python tuple\nObservation: the result
+        of the action\n... (this Thought/Action/Action Input/Observation can repeat
+        N times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction:
+        get_weather\nAction Input: \"New York\", 7\nObservation: The 7 day forecast
+        for New York is [...]"}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "1492"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.70.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//ZFDBbsIwDP2VyJdtUjtBWQ/kxmUS0tB2QLusUxUSQzOKXRKHgRD/PrWI
+          A9rJen728/M7g3egYRc39Wi8PC4Os+3PJ35MF6+r6X61NuumgAzk1GE/hTGaDUIGgdu+YWL0UQwJ
+          ZLBjhy1osK1JDvNJXuaN8duUF6PiZTwqeh3LJEgC+ut80xQ89ttD0bBsOG0a0Wr+0LbKBjSCyijL
+          ZH1EVea/HJyKwuGkhFUXPElFMyueSV9hPbC3pppTl0SrxwremLA9qcArFrXmRE4lwmOHVtAp5zde
+          TKtaPuBzBU8VweU7gyjc1QFNZAJ9RRH3Ccn2MdxjDe+riOFgBjeQQRrS0mfwvYlaeIsUQU/KMgNr
+          bIP18KFnqu8nRjc+oHH/OU5ypzfNoL/rLdbiMQxGDTkTHFwufwAAAP//AwCFxauf4gEAAA==
+      headers:
+        CF-RAY:
+          - 950d39fefbf650a1-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Mon, 16 Jun 2025 20:58:41 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-06-16T20:58:40Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-06-16T20:58:41Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-06-16T20:58:39Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-06-16T20:58:40Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CQCa4pfxWoMBUyMpH62JG
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        via:
+          - 1.1 google
+      status:
+        code: 200
+        message: OK
+version: 1

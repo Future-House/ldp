@@ -2,27 +2,37 @@
 build-backend = "setuptools.build_meta"
 requires = ["setuptools>=64", "setuptools_scm>=8"]
 
+[dependency-groups]
+codeflash = [
+    "codeflash>=0.8",  # Pin for --verify-setup checking formatter-cmds
+    "ldp[dev]",
+]
+dev = ["fhlmi[dev]", "ldp[dev]"]
+
 [project]
 authors = [
     {email = "hello@futurehouse.org", name = "FutureHouse technical staff"},
 ]
 # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
 classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
     "aiofiles",
     "dm-tree",
-    "fhaviary>=0.8",  # For from_task
+    "fhaviary>=0.20.0",  # For Environment.get_id
+    "fhlmi",  # For new LLM client interface
     "httpx",
-    "litellm>=1.40.15",  # For LITELLM_LOG addition
     "networkx[default]~=3.4",  # Pin for pydot fix
     "numpy>=1.20",  # For numpy.typing
-    "openai>=1",
     "pydantic~=2.0",
     "tenacity",
     "tiktoken",
@@ -38,11 +48,40 @@ readme = "README.md"
 requires-python = ">=3.11"
 
 [project.optional-dependencies]
+dev = [
+    "fhaviary[xml]>=0.19",  # For not line-wrapping tool descriptions
+    "ipython>=8",  # Pin to keep recent
+    "ldp[monitor,nn,rich,server,typing,visualization]",
+    "litellm>=1.52.15",
+    "mypy>=1.8",  # Pin for mutable-override
+    "pre-commit>=3.4",  # Pin to keep recent
+    "pydantic~=2.9",  # Pydantic 2.9 changed JSON schema exports 'allOf', so ensure tests match
+    "pylint-pydantic",
+    "pylint>=3.2",  # Pin to keep recent
+    "pytest-asyncio",
+    "pytest-mock",
+    "pytest-recording",
+    "pytest-rerunfailures",
+    "pytest-subtests",
+    "pytest-sugar",
+    "pytest-timer[colorama]",
+    "pytest-xdist",
+    "pytest>=8",  # Pin to keep recent
+    "refurb>=2",  # Pin to keep recent
+    "vcrpy>=6",  # Pin for https://github.com/kevin1024/vcrpy/issues/884
+]
 monitor = [
     "wandb",
 ]
 nn = [
-    "torch>=2.2",
+    "accelerate",
+    "dask-cuda>=24.8.2",
+    "dask-jobqueue",
+    "dask[distributed]",
+    "tokenizers>0.20",
+    "torch>=2.5,<2.6",  # Temporarily pin <2.6 until someone fixes our CI with newer versions
+    "transformers>=4.46,<4.51",  # Temporarily pin <4.51 until someone fixes our CI with newer versions, and also https://github.com/huggingface/transformers/issues/37339
+    "wandb",
 ]
 rich = [
     "rich",
@@ -69,7 +108,7 @@ preview = true
 [tool.codeflash]
 disable-imports-sorting = true
 disable-telemetry = true
-formatter-cmds = ["ruff check --exit-zero --fix $file", "ruff format $file"]
+formatter-cmds = ["uv tool run ruff check --exit-zero --fix $file", "uv tool run ruff format $file"]
 module-root = "ldp"
 test-framework = "pytest"
 tests-root = "tests"
@@ -78,7 +117,7 @@ tests-root = "tests"
 check-filenames = true
 check-hidden = true
 ignore-words-list = "astroid,ser"
-skip = "tests/cassettes/*"
+skip = "**tests/cassettes/*,**/tests/cassettes/*"
 
 [tool.mypy]
 # Type-checks the interior of functions without type annotations.
@@ -94,6 +133,7 @@ enable_error_code = [
     "truthy-iterable",
     "unimported-reveal",
     "unreachable",
+    "unused-awaitable",
     "unused-ignore",
 ]
 # Shows a short summary line after error messages.
@@ -109,6 +149,11 @@ exclude = [
 # option. This option is only useful in the absence of __init__.py. See Mapping file
 # paths to modules for details.
 explicit_package_bases = true
+# Specifies the paths to use, after trying the paths from MYPYPATH environment variable.
+# Useful if you'd like to keep stubs in your repo, along with the config file.
+# Multiple paths are always separated with a : or , regardless of the platform.
+# User home directory and environment variables will be expanded.
+mypy_path = "$MYPY_CONFIG_FILE_DIR/src,$MYPY_CONFIG_FILE_DIR/packages/lmi/src"
 # Specifies the OS platform for the target program, for example darwin or win32
 # (meaning OS X or Windows, respectively). The default is the current platform
 # as revealed by Python’s sys.platform variable.
@@ -141,8 +186,11 @@ warn_unused_ignores = true
 ignore_missing_imports = true
 # Per-module configuration options
 module = [
+    "accelerate.*",  # SEE: https://github.com/huggingface/accelerate/issues/2396
+    "dask_cuda",
     "networkx",  # SEE: https://github.com/networkx/networkx/issues/3988
     "pydot",
+    "transformers.*",  # SEE: https://github.com/huggingface/transformers/pull/18485
     "tree",  # SEE: https://github.com/google-deepmind/tree/issues/84
 ]
 
@@ -176,11 +224,16 @@ disable = [
     "broad-exception-caught",  # Don't care to enforce this
     "broad-exception-raised",  # Rely on ruff TRY002 for this
     "cyclic-import",  # Let Python blow up
+    "dangerous-default-value",  # Rely on ruff W0102 for this
+    "empty-docstring",  # Let pep257 take care of docstrings
     "expression-not-assigned",  # Rely on mypy func-returns-value for this
     "fixme",  # codetags are useful
     "function-redefined",  # Rely on mypy no-redef for this
+    "global-statement",  # Rely on ruff PLW0603 for this
+    "global-variable-not-assigned",  # Rely on ruff PLW0602 for this
     "import-outside-toplevel",  # Rely on ruff PLC0415 for this
     "invalid-name",  # Don't care to enforce this
+    "keyword-arg-before-vararg",  # Rely on ruff B026 for this
     "line-too-long",  # Rely on ruff E501 for this
     "logging-fstring-interpolation",  # f-strings are convenient
     "logging-too-many-args",  # Rely on ruff PLE1205 for this
@@ -188,30 +241,38 @@ disable = [
     "missing-final-newline",  # Rely on ruff W292 for this
     "no-else-return",  # Rely on ruff RET506 for this
     "no-member",  # Buggy, SEE: https://github.com/pylint-dev/pylint/issues/8138
+    "no-value-for-parameter",  # Rely on mypy call-arg for this
+    "non-parent-init-called",  # Don't care to enforce this
     "not-callable",  # Don't care to enforce this
     "protected-access",  # Don't care to enforce this
     "raise-missing-from",  # Rely on ruff B904 for this
     "redefined-builtin",  # Rely on ruff A002 for this
+    "redefined-outer-name",  # Don't care to enforce this
     "super-init-not-called",  # Don't care to enforce this
     "too-few-public-methods",  # Don't care to enforce this
     "too-many-ancestors",  # Don't care to enforce this
     "too-many-arguments",  # Don't care to enforce this
+    "too-many-boolean-expressions",  # Rely on ruff PLR0916 for this
     "too-many-branches",  # Rely on ruff PLR0912 for this
     "too-many-instance-attributes",  # Don't care to enforce this
     "too-many-lines",  # Don't care to enforce this
     "too-many-locals",  # Rely on ruff PLR0914 for this
-    "too-many-positional-arguments",  # Don't care to enforce this
+    "too-many-positional-arguments",  # Rely on ruff PLR0917 for this
+    "too-many-public-methods",  # Rely on ruff PLR0904 for this
     "too-many-return-statements",  # Rely on ruff PLR0911 for this
     "too-many-statements",  # Rely on ruff PLR0915 for this
+    "undefined-loop-variable",  # Don't care to enforce this
     "ungrouped-imports",  # Rely on ruff I001 for this
     "unidiomatic-typecheck",  # Rely on ruff E721 for this
+    "unnecessary-dict-index-lookup",  # Rely on ruff PLR1733 for this
     "unreachable",  # Rely on mypy unreachable for this
-    "unspecified-encoding",  # Don't care to enforce this
-    "unsubscriptable-object",  # Buggy, SEE: https://github.com/PyCQA/pylint/issues/3637
+    "unspecified-encoding",  # Rely on ruff PLW1514 for this
+    "unsubscriptable-object",  # Buggy, SEE: https://github.com/pylint-dev/pylint/issues/3637
     "unsupported-membership-test",  # Buggy, SEE: https://github.com/pylint-dev/pylint/issues/3045
     "unused-argument",  # Rely on ruff ARG002 for this
     "unused-import",  # Rely on ruff F401 for this
     "unused-variable",  # Rely on ruff F841 for this
+    "use-sequence-for-iteration",  # Rely on ruff C0208 for this
     "wrong-import-order",  # Rely on ruff I001 for this
     "wrong-import-position",  # Rely on ruff E402 for this
 ]
@@ -232,42 +293,38 @@ min-similarity-lines = 12
 # Add the specified OPTS to the set of command line arguments as if they had been
 # specified by the user.
 addopts = "--doctest-modules"
+# Set to avoid https://github.com/BerriAI/litellm/issues/5854
+asyncio_default_fixture_loop_scope = "session"
 # Sets a list of filters and actions that should be taken for matched warnings.
 # By default all warnings emitted during the test session will be displayed in
 # a summary at the end of the test session.
 filterwarnings = [
-    "ignore:Support for class-based `config` is deprecated, use ConfigDict instead",  # SEE: https://github.com/BerriAI/litellm/issues/5648
     "ignore:The `dict` method is deprecated; use `model_dump` instead",  # SEE: https://github.com/BerriAI/litellm/issues/5987
     "ignore:Use 'content=<...>' to upload raw bytes/text content:DeprecationWarning",  # SEE: https://github.com/BerriAI/litellm/issues/5986
-    'ignore:open_text is deprecated. Use files\(\) instead:DeprecationWarning',  # SEE: https://github.com/BerriAI/litellm/issues/5647
 ]
 # List of directories that should be searched for tests when no specific directories,
 # files or test ids are given in the command line when executing pytest from the rootdir
 # directory. File system paths may use shell-style wildcards, including the recursive **
 # pattern.
-testpaths = ["src", "tests"]
+testpaths = ["packages/lmi", "src", "tests"]
 
 [tool.refurb]
 enable_all = true
 ignore = [
-    "FURB101",  # FURB101, FURB103, FURB141, FURB144, FURB146, FURB147, FURB150, FURB155: no need for pathlib
-    "FURB103",
+    "FURB101",  # Rely on ruff FURB101 for this
+    "FURB103",  # Rely on ruff FURB103 for this
     "FURB118",  # We often use inspect.signature in FxnOp. In 3.11, this doesn't work on operator.itemgetter.
-    "FURB141",
-    "FURB144",
-    "FURB146",
-    "FURB147",
-    "FURB150",
-    "FURB155",
+    "FURB141",  # Rely on ruff PTH110 for this
+    "FURB144",  # Rely on ruff PTH107 for this
+    "FURB146",  # Rely on ruff PTH113 for this
+    "FURB147",  # Rely on ruff PTH118 for this
+    "FURB150",  # Rely on ruff PTH102 for this
+    "FURB155",  # Rely on ruff PTH202 for this
 ]
 
 [tool.ruff]
 # Line length to use when enforcing long-lines violations (like `E501`).
 line-length = 88
-# The minimum Python version to target, e.g., when considering automatic code
-# upgrades, like rewriting type annotations. Ruff will not propose changes
-# using features that are not available in the given version.
-target-version = "py311"
 # Enable application of unsafe fixes.
 unsafe-fixes = true
 
@@ -280,12 +337,70 @@ preview = true
 [tool.ruff.lint]
 explicit-preview-rules = true
 extend-select = [
-    "C420",
+    "AIR002",
+    "AIR301",
+    "AIR302",
+    "AIR311",
+    "AIR312",
+    "ASYNC116",
+    "B901",
+    "B903",
+    "B909",
+    "CPY001",
+    "DOC201",
     "DOC202",
+    "DOC402",
     "DOC403",
+    "DOC501",
+    "DOC502",
+    "E111",
+    "E112",
+    "E113",
+    "E114",
+    "E115",
+    "E116",
+    "E117",
+    "E201",
+    "E202",
+    "E203",
+    "E204",
+    "E211",
+    "E221",
+    "E222",
+    "E223",
+    "E224",
+    "E225",
+    "E226",
+    "E227",
+    "E228",
+    "E231",
+    "E241",
+    "E242",
+    "E251",
+    "E252",
+    "E261",
+    "E262",
+    "E265",
+    "E266",
+    "E271",
+    "E272",
+    "E273",
+    "E274",
+    "E275",
+    "E301",
+    "E302",
+    "E303",
+    "E304",
+    "E305",
+    "E306",
+    "E502",
+    "FURB101",
+    "FURB103",
     "FURB110",
     "FURB113",
     "FURB116",
+    "FURB118",
+    "FURB122",
     "FURB131",
     "FURB132",
     "FURB140",
@@ -296,15 +411,73 @@ extend-select = [
     "FURB154",
     "FURB156",
     "FURB157",
+    "FURB162",
     "FURB164",
     "FURB166",
     "FURB171",
     "FURB180",
-    "FURB188",
+    "FURB189",
     "FURB192",
+    "LOG004",
+    "LOG014",
+    "PLC0415",
+    "PLC1901",
+    "PLC2701",
+    "PLC2801",
+    "PLE0304",
+    "PLE1141",
+    "PLE4703",
+    "PLR0202",
+    "PLR0203",
+    "PLR0904",
+    "PLR0914",
+    "PLR0916",
+    "PLR0917",
+    "PLR1702",
+    "PLR1733",
+    "PLR6104",
     "PLR6201",
+    "PLR6301",
     "PLW0108",
-    "RUF022",
+    "PLW0177",
+    "PLW0244",
+    "PLW1514",
+    "PLW1641",
+    "PLW3201",
+    "PT028",
+    "PT029",
+    "PT030",
+    "PT031",
+    "PYI059",
+    "PYI061",
+    "RUF027",
+    "RUF028",
+    "RUF029",
+    "RUF031",
+    "RUF036",
+    "RUF037",
+    "RUF038",
+    "RUF039",
+    "RUF043",
+    "RUF045",
+    "RUF047",
+    "RUF049",
+    "RUF052",
+    "RUF053",
+    "RUF054",
+    "RUF055",
+    "RUF056",
+    "RUF057",
+    "RUF058",
+    "RUF059",
+    "RUF102",
+    "TC008",
+    "UP042",
+    "UP045",
+    "UP046",
+    "UP047",
+    "UP049",
+    "W391",
 ]
 external = [
     "FURB",  # refurb
@@ -313,13 +486,16 @@ external = [
 # (e.g.) validating # noqa directives. Useful for retaining # noqa directives
 # that cover plugins not yet implemented by Ruff.
 ignore = [
+    "A005",  # Overly pedantic
     "ANN",  # Don't care to enforce typing
     "ARG002",  # Thrown all the time when we are subclassing
     "ARG003",  # Thrown all the time when we are subclassing
     "ASYNC109",  # Buggy, SEE: https://github.com/astral-sh/ruff/issues/12353
     "ASYNC2",  # It's ok to mix async and sync ops (like opening a file)
+    "B027",  # Very common to have an empty method in a base class
     "BLE001",  # Don't care to enforce blind exception catching
     "COM812",  # Trailing comma with black leads to wasting lines
+    "CPY001",  # Don't care to require copyright notices in every file
     "D100",  # D100, D101, D102, D103, D104, D105, D106, D107: don't always need docstrings
     "D101",
     "D102",
@@ -334,6 +510,9 @@ ignore = [
     "D406",  # Google style requires ":" at end
     "D407",  # We aren't using numpy style
     "D413",  # Blank line after last section. -> No blank line
+    "DOC201",  # Don't care to require Returns in docstrings
+    "DOC402",  # Don't care to require Yields in docstrings
+    "DOC501",  # Don't care to require Raises in docstrings
     "DTZ",  # Don't care to have timezone safety
     "EM",  # Overly pedantic
     "ERA001",  # Don't care to prevent commented code
@@ -349,17 +528,22 @@ ignore = [
     "PLC0415",  # Don't care to prevent imports outside of top-level
     "PLR0912",  # Allow us to have lots of branches
     "PLR0913",
+    "PLR0914",  # Don't care to enforce this
+    "PLR0917",  # Don't care to enforce this
     "PLR6104",  # Moving to __iadd__ risks ldp graph manipulation
+    "PLR6301",  # Don't care to enforce this
     "PLW2901",  # Allow modifying loop variables
     "PTH",  # Overly pedantic
+    "RUF027",  # Prompt templates may not be f-strings
     "S101",  # Don't care to prevent asserts
     "S105",  # Duplicates Yelp/detect-secrets in pre-commit
     "S311",  # Ok to use python random
     "SLF001",  # Overly pedantic
     "T201",  # Overly pedantic
-    "TCH001",  # TCH001, TCH002, TCH003: don't care to enforce type checking blocks
-    "TCH002",
-    "TCH003",
+    "TC001",  # TC001, TC002, TC003: don't care to enforce type checking blocks
+    "TC002",
+    "TC003",
+    "TC006",  # Strings in cast don't work with PyCharm CE 2024.3.4's jump-to-definition
     "TD002",  # Don't care for TODO author
     "TD003",  # Don't care for TODO links
     "TRY003",  # Overly pedantic
@@ -372,6 +556,8 @@ unfixable = [
     "ERA001",  # While debugging, temporarily commenting code can be useful
     "F401",  # While debugging, unused imports can be useful
     "F841",  # While debugging, unused locals can be useful
+    "RUF059",  # While debugging, unused locals can be useful
+    "TC004",  # While debugging, it can be nice to keep TYPE_CHECKING in-tact
 ]
 
 [tool.ruff.lint.flake8-annotations]
@@ -383,6 +569,13 @@ mypy-init-return = true
     "F841",  # Tests can have unused locals
     "N802",  # Tests function names can match class names
     "PLR2004",  # Tests can have magic values
+    "PLR6301",  # Test classes can ignore self
+    "S101",  # Tests can have assertions
+    "S301",  # Tests can have pickle
+]
+"docs/**.ipynb" = [
+    "PLE1142",  # allow async
+    "PLR2004",  # allow magic values
 ]
 
 [tool.ruff.lint.pycodestyle]
@@ -399,10 +592,10 @@ max-line-length = 120
 convention = "google"
 
 [tool.setuptools.packages.find]
-include = ["ldp*"]
+where = ["src"]
 
 [tool.setuptools_scm]
-version_file = "ldp/version.py"
+version_file = "src/ldp/version.py"
 
 [tool.tomlsort]
 all = true
@@ -411,27 +604,9 @@ spaces_before_inline_comment = 2  # Match Python PEP 8
 spaces_indent_inline_array = 4  # Match Python PEP 8
 trailing_comma_inline_array = true
 
-[tool.uv]
-dev-dependencies = [
-    "codeflash",
-    "fhaviary[xml]",
-    "ipython>=8",  # Pin to keep recent
-    "ldp[monitor,nn,rich,server,typing,visualization]",
-    "litellm!=1.49.4,!=1.49.5,!=1.49.6",  # For https://github.com/BerriAI/litellm/issues/6216
-    "mypy>=1.8",  # Pin for mutable-override
-    "openai<1.47",  # Pin for https://github.com/BerriAI/litellm/issues/5854
-    "pre-commit>=3.4",  # Pin to keep recent
-    "pydantic~=2.9",  # Pydantic 2.9 changed JSON schema exports 'allOf', so ensure tests match
-    "pylint-pydantic",
-    "pylint>=3.2",  # Pin to keep recent
-    "pytest-asyncio",
-    "pytest-mock",
-    "pytest-recording",
-    "pytest-rerunfailures",
-    "pytest-subtests",
-    "pytest-sugar",
-    "pytest-timer[colorama]",
-    "pytest-xdist",
-    "pytest>=8",  # Pin to keep recent
-    "refurb>=2",  # Pin to keep recent
-]
+[tool.uv.sources]
+fhlmi = {workspace = true}
+ldp = {workspace = true}
+
+[tool.uv.workspace]
+members = ["packages/*"]

@@ -3,13 +3,18 @@ from typing import ClassVar
 
 import litellm
 import pytest
-from aviary.env import DummyEnv, DummyEnvState
-from aviary.message import Message
-from aviary.tools import Tool, ToolCall, ToolRequestMessage, ToolResponseMessage
+from aviary.core import (
+    DummyEnv,
+    DummyEnvState,
+    Message,
+    Tool,
+    ToolCall,
+    ToolRequestMessage,
+    ToolResponseMessage,
+)
+from lmi import CommonLLMNames
 
 from ldp.agent import SimpleAgent
-
-from . import CILLMModelNames
 
 
 class ParallelizedDummyEnv(DummyEnv):
@@ -87,7 +92,7 @@ class TestParallelism:
         agent = SimpleAgent()
 
         # Check parallel tool calls
-        action, agent_state, _ = await agent.get_asv(
+        action, agent_state, _ = await agent.get_asv(  # noqa: RUF059
             await agent.init_state(tools=tools), obs
         )
         selected_tools: set[str] = {tc.function.name for tc in action.value.tool_calls}
@@ -99,7 +104,7 @@ class TestParallelism:
         )
 
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, "gpt-4-turbo"]
+        "model_name", [CommonLLMNames.ANTHROPIC_TEST.value, "gpt-4-turbo"]
     )
     @pytest.mark.asyncio
     async def test_exec_tool_calls_handling(self, model_name: str) -> None:
@@ -108,7 +113,7 @@ class TestParallelism:
         right_hand_tool = tools[1]
         agent = SimpleAgent(
             llm_model=SimpleAgent.model_fields["llm_model"].default
-            | {"model": model_name}
+            | {"name": model_name}
         )
         agent_state = await agent.init_state(tools=tools)
 

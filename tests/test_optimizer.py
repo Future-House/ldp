@@ -6,7 +6,9 @@ import litellm
 import pytest
 import tenacity
 import tree
-from aviary.message import Message
+from aviary.core import Message
+from lmi import CommonLLMNames
+from lmi import LiteLLMModel as LLMModel
 from pydantic import BaseModel, Field, JsonValue
 
 from ldp.agent import Agent, MemoryAgent, ReActAgent
@@ -38,8 +40,7 @@ from ldp.graph.gradient_estimators import (
     straight_through_estimator as ste,
 )
 from ldp.graph.ops import GradInType
-from ldp.llms import LLMModel, append_to_sys
-from tests import CILLMModelNames
+from ldp.llms.prompts import append_to_sys
 from tests.conftest import VCR_DEFAULT_MATCH_ON
 
 
@@ -94,8 +95,8 @@ class SquaredErrorLoss(Op[int]):
 async def test_ape_optimizer() -> None:
     sys_prompt_op = PromptOp("Guess a number based on the input word.")
     package_msg_op = FxnOp(append_to_sys)
-    llm = LLMModel()
-    llm.config["max_retries"] = 3  # we seem to be hitting rate limits frequently
+    config = {"max_retries": 3}  # we seem to be hitting rate limits frequently
+    llm = LLMModel(config=config)
     llm_call_op = LLMCallOp()
     strip_op = FxnOp(lambda x: x.content)
     loss_op = SquaredErrorLoss()
@@ -105,7 +106,7 @@ async def test_ape_optimizer() -> None:
         """Perform a forward pass through the model to the resultant SE loss."""
         s = await sys_prompt_op()
         m = await package_msg_op(xi_, s)
-        c = await llm_call_op(llm.config, m)
+        c = await llm_call_op(config, m)
         yh = await strip_op(c)
         return await loss_op(yi_, yh)
 
@@ -189,7 +190,7 @@ class NumberGuesserModule:
         msgs = await self.package_msg_op(mems, query)
         c = await self.llm_call_op(
             config={
-                "model": "gpt-4-turbo",  # this is flaky, so use a smarter model
+                "name": "gpt-4-turbo",  # this is flaky, so use a smarter model
                 "temperature": 0,
                 "max_retries": 3,
             },
@@ -265,7 +266,7 @@ class TestMemoryOpt:
             "Incorrect number of stored memories after optimization step."
         )
         assert all(
-            not cast(dict, m.metadata)["done"]
+            not cast("dict", m.metadata)["done"]
             for m in model.mem_op.memory_model.memories.values()
         )
         assert not opt.example_buffer, (
@@ -296,7 +297,7 @@ class TestMemoryOpt:
 
         This test is loosely based on Reflexion (https://arxiv.org/abs/2303.11366).
         """
-        memory_distiller = LLMModel(config={"model": CILLMModelNames.OPENAI.value})
+        memory_distiller = LLMModel(config={"name": CommonLLMNames.OPENAI_TEST.value})
 
         class LessonEntry(BaseModel):
             """Entry for a lesson created from some example data."""
@@ -349,13 +350,13 @@ class TestMemoryOpt:
                     )
                     for mem_call_id, output_call_id, d_return, metadata in example_buffer
                 ]
-                response = await memory_distiller.call(
+                response = await memory_distiller.call_single(
                     messages=[
                         Message(
                             content=LessonEntry.make_prompt(query_airesponse_dreturns)
                         )
                     ],
-                    tool_choice="none",
+                    tool_choice=memory_distiller.NO_TOOL_CHOICE,
                     output_type=LessonEntry,
                 )
                 if (

@@ -5,9 +5,8 @@ from copy import deepcopy
 from typing import Any, cast
 
 import pytest
-from aviary.env import Environment, Frame
-from aviary.message import Message
-from aviary.tools import Tool, ToolRequestMessage
+from aviary.core import Environment, Frame, Message, Tool, ToolRequestMessage
+from litellm import AuthenticationError
 from pydantic import BaseModel
 
 from ldp.agent import Agent, SimpleAgent, SimpleAgentState
@@ -17,8 +16,14 @@ from ldp.graph import FxnOp, OpResult, compute_graph, set_training_mode
 
 
 class DummyEnv(Environment[None]):
-    def __init__(self):
+    def __init__(self, instance_id: int | None = None):
         self.tools = [Tool.from_function(self.talk)]
+        self._instance_id = instance_id
+
+    async def get_id(self) -> str:
+        if self._instance_id is None:
+            raise ValueError("No instance ID was configured.")
+        return str(self._instance_id)
 
     async def reset(self) -> tuple[list[Message], list[Tool]]:
         return [Message(content="Hello!")], self.tools
@@ -27,7 +32,7 @@ class DummyEnv(Environment[None]):
         self, action: ToolRequestMessage
     ) -> tuple[list[Message], float, bool, bool]:
         if action.tool_calls:
-            responses = cast(list[Message], await self.exec_tool_calls(action))
+            responses = cast("list[Message]", await self.exec_tool_calls(action))
         else:
             responses = [Message(content="Use the 'talk' tool to speak.")]
 
@@ -48,9 +53,9 @@ class DummyEnv(Environment[None]):
         return Frame()
 
 
-async def count_exclamations(traj: Trajectory) -> float:
+async def count_exclamations(traj: Trajectory) -> float:  # noqa: RUF029
     last_step = traj.steps[-1]
-    agent_state = cast(SimpleAgentState, last_step.next_agent_state)
+    agent_state = cast("SimpleAgentState", last_step.next_agent_state)
     return float(
         sum(m.content.count("!") for m in agent_state.messages if m.content is not None)
     )
@@ -70,21 +75,87 @@ async def test_rollout(training: bool) -> None:
         callbacks=[callback],
     )
     trajs = await rollout_manager.sample_trajectories(
-        environments=[DummyEnv(), DummyEnv()], max_steps=1
+        environments=[DummyEnv(instance_id=1), DummyEnv()], max_steps=1
     )
     assert len(trajs) == 2
+    assert trajs[0].metadata.get("env_id") == "1"
+    assert trajs[1].metadata.get("env_id") is None
 
     # Let's check we can serialize and deserialize the trajectories
     for traj in trajs:
         with tempfile.NamedTemporaryFile(suffix=".jsonl") as f:
-            traj.to_jsonl(filename=f.name)
+            await traj.to_jsonl(filename=f.name)
             rehydrated_traj = Trajectory.from_jsonl(f.name)
             assert traj.traj_id == rehydrated_traj.traj_id
 
     assert all(v == 2 for v in callback.fn_invocations.values())
 
 
-async def adeepcopy(x):
+@pytest.mark.vcr
+@pytest.mark.parametrize("fallback", [True, False])
+@pytest.mark.asyncio
+async def test_fallbacks_working(fallback: bool) -> None:
+    AGENT_MODEL_LIST = [
+        {
+            "model_name": "openai/gpt-4o-mini",
+            "litellm_params": {"model": "openai/gpt-4o-mini", "api_key": "abc123"},
+        },
+        {
+            "model_name": "openai/gpt-4o",
+            "litellm_params": {
+                "model": "openai/gpt-4o",
+            },
+        },
+    ]
+    AGENT_ROUTER_KWARGS: dict[str, bool | list[dict[str, list[str]]]] = {
+        "set_verbose": True,
+    }
+    if fallback:
+        AGENT_ROUTER_KWARGS["fallbacks"] = [
+            {
+                "openai/gpt-4o-mini": [
+                    "openai/gpt-4o",
+                ]
+            }
+        ]
+
+    AGENT_CONFIG = {
+        "llm_model": {
+            "name": "openai/gpt-4o-mini",
+            "config": {
+                "model_list": AGENT_MODEL_LIST,
+                "router_kwargs": AGENT_ROUTER_KWARGS,
+            },
+        }
+    }
+    if fallback:
+        AGENT_CONFIG["llm_model"]["config"]["fallbacks"] = [  # type: ignore[index]
+            {
+                "openai/gpt-4o-mini": [
+                    "openai/gpt-4o",
+                ]
+            }
+        ]
+    agent = SimpleAgent(**AGENT_CONFIG)
+    callback = DummyCallback()
+
+    rollout_manager = RolloutManager(
+        agent,
+        catch_agent_failures=fallback,
+        callbacks=[callback],
+    )
+    if fallback:
+        assert await rollout_manager.sample_trajectories(
+            environments=[DummyEnv()], max_steps=2
+        )
+    else:
+        with pytest.raises(AuthenticationError):
+            await rollout_manager.sample_trajectories(
+                environments=[DummyEnv()], max_steps=2
+            )
+
+
+async def adeepcopy(x):  # noqa: RUF029
     return deepcopy(x)
 
 
@@ -192,7 +263,7 @@ class CountingAgent(Agent[CountingAgentState]):
     async def get_asv(
         self, agent_state: CountingAgentState, obs: list[Message]
     ) -> tuple[OpResult[ToolRequestMessage], CountingAgentState, float]:
-        new_state = CountingAgentState(count=float(cast(str, obs[0].content)) + 1)
+        new_state = CountingAgentState(count=float(cast("str", obs[0].content)) + 1)
         action = await self.op()
         return action, new_state, 0.0
 
@@ -260,7 +331,7 @@ class TestTreeSearch:
         assert len(trajs) == 8
 
         traj_ids_wo_root: set[str] = {
-            cast(str, traj.traj_id).replace(tree.root_id, "").lstrip(":")
+            cast("str", traj.traj_id).replace(tree.root_id, "").lstrip(":")
             for traj in trajs
         }
         # IDs should be 0:0:0, 0:0:1, ... 1:1:1 (order doesn't matter)
@@ -270,7 +341,7 @@ class TestTreeSearch:
 
         observations: dict[tuple[str, ...], str] = {}
         for traj in trajs:
-            branch_path = tuple(cast(str, traj.traj_id).split(":")[1:])
+            branch_path = tuple(cast("str", traj.traj_id).split(":")[1:])
 
             prev_step: Transition | None = None
             for i_step, step in enumerate(traj.steps):

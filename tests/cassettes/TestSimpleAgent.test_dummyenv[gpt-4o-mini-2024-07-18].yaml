@@ -1,17 +1,12 @@
 interactions:
   - request:
       body:
-        '{"messages": [{"role": "user", "content": "Write a 5 word story via print_story"}],
-        "model": "gpt-4o-mini-2024-07-18", "temperature": 0.1, "tool_choice": "required",
-        "tools": [{"type": "function", "function": {"name": "print_story", "description":
-        "Print a story.", "parameters": {"type": "object", "properties": {"story": {"description":
-        "Story to print.", "title": "Story", "type": "string"}}, "required": ["story"]}}},
-        {"type": "function", "function": {"name": "cast_float", "description": "Cast
-        the input argument x to a float.", "parameters": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "string"}}, "required": ["x"]}}}, {"type": "function",
-        "function": {"name": "cast_int", "description": "Cast the input argument x to
-        an integer.", "parameters": {"type": "object", "properties": {"x": {"title":
-        "X", "type": "number"}}, "required": ["x"]}}}]}'
+        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
+        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
+        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
       headers:
         accept:
           - application/json
@@ -20,13 +15,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "867"
+          - "991"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.44.1
+          - AsyncOpenAI/Python 1.86.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -36,31 +31,35 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.44.1
+          - 1.86.0
         x-stainless-raw-response:
           - "true"
+        x-stainless-read-timeout:
+          - "60.0"
+        x-stainless-retry-count:
+          - "0"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.5
+          - 3.12.8
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA2xSTW+bQBC98ytWczaRjWnA3Fo1lVr54FRRqqiu0AYGvM2ys90d0riW/3vER2xi
-          lQNazdv3wRsOgRCgSsgEFDvJRWN1+PF6k/yIv9zd3iDLm4cNf//6eW3+3mtW+h/MOgY9/saC31hX
-          BTVWIysyA1w4lIyd6iKJrufpKl3FPdBQibqj1ZbDmMJGGRVG8ygO50m4SEf2jlSBHjLxMxBCiEP/
-          7nKaEl8gE/PZ26RB72WNkJ0uCQGOdDcB6b3yLA3D7AwWZBhNF920Wk8AJtJ5IbU+Gw/PYXI+lyW1
-          zj85Hd29LJ9v/WYt7xP98Oeb9r7dTfwG6b3tA1WtKU4lTfDTPLswEwKMbHqudcpw7pnc/oIuBEhX
-          tw0a7qLDYQv9tS1kW1iTZ/GE+5koiZyoyOEzOlFo8lhebeEI77SOwf/OvyY1OaxaL/XY3zg/nhai
-          qbaOHv1Fv1Apo/wudyh9/51dRDt4dz69A7TvdgnWUWM5Z3pC0wkuFtGgB+f/bYKmI8jEUk/my3kw
-          JgS/94xNXilTo+sb7ddi8zhdlstVmX5IIDgGrwAAAP//AwB3Fgx6FQMAAA==
+          H4sIAAAAAAAAAwAAAP//jFPbauMwEH33V4h5jkucC+n6sVnKQrvdC2HLsilmIk0cJbJkJLndNOTf
+          i5XEdtIurB+M0Jlz5sxFu4gxkAJSBnyFnhelim/WN9PF7WryRX29nz0IVGI2fn35kfC7tfsMvZph
+          Fmvi/sS64qYoFXlp9AHmltBTrZpMxv2kPxkPkgAURpCqaXnp45GJC6llPOgPRnF/EifXR/bKSE4O
+          UvYnYoyxXfjXPrWgv5Cyfu90U5BzmBOkTRBjYI2qbwCdk86j9tBrQW60J11b15VSHcAbozKOSrWJ
+          D9+uc26bhUplVsweXn8/vv68/ob548u0/PX97vZ5uu3kO0hvy2BoWWneNKmDN/fpRTLGQGMRuKWV
+          2mfOG3spzxigzauCtK+tw24OIWwO6RzujfNsQ9seE8ZYZqlAqR1Thm9IXM1hD2da++ij81OnTZaW
+          lUP1vn+otfFYlxEa+HRE9s2slMlLaxbuggpLqaVbZZbQhRZ0JxGdjAQLUJ0NG0pritJn3mwoJE2G
+          x82AdiFbdHACvfGoOqzxCTjTywR5lGEbmgXkyFckWmq7iFgJaTpA1Kn9vZuPtA/1S53/j3wLcE6l
+          J5GVloTk5xW3YZbq9/qvsKbLwTA4ss+SU+Yl2XoegpZYqcMrArd1nopsKXVONixl2OwyG45wPEL6
+          NOQQ7aM3AAAA//8DAPMW6qBYBAAA
       headers:
-        CF-Cache-Status:
-          - DYNAMIC
         CF-RAY:
-          - 8c1aba2c8fdbcf29-SJC
+          - 950d3a072f57cf1b-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -68,14 +67,14 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Wed, 11 Sep 2024 21:24:54 GMT
+          - Mon, 16 Jun 2025 20:58:41 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=BwmSS43mmarya7_ibOS0g5eAoldYYWja.1i8yk_em38-1726089894-1.0.1.1-EIKFNI5MxGS3DXhWn8H7o.sCuigPgNp4hjyUYUmhs3_JoJj6UCuCrcwRZR9p.a4KsairNDaiDZ7Zp5k7pcuUTQ;
-            path=/; expires=Wed, 11-Sep-24 21:54:54 GMT; domain=.api.openai.com; HttpOnly;
+          - __cf_bm=FI4W64koodg02ril_XK8fMsxh8u.1UTxCONpKns1AnU-1750107521-1.0.1.1-at6wPFx2I.L.rKtZKtB4Dcd7TBBmReGausg8t97DKSSQ72Psqh9aOQ3C2rEa0PG_l7cGIAWo1tg4Zu3t_IdRAkHfei6kSiag35aMnVrsYMo;
+            path=/; expires=Mon, 16-Jun-25 21:28:41 GMT; domain=.api.openai.com; HttpOnly;
             Secure; SameSite=None
-          - _cfuvid=WTfbxZPAnf1ED3HCRks6o.bsMfHgxin_NmBR09BuOf4-1726089894817-0.0.1.1-604800000;
+          - _cfuvid=G9k9NLe3.hevxerxV.kXUvezhAzqIvoxfBO5vOu2fXk-1750107521843-0.0.1.1-604800000;
             path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
@@ -85,14 +84,18 @@ interactions:
           - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "784"
+          - "598"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
-          - max-age=15552000; includeSubDomains; preload
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "602"
         x-ratelimit-limit-requests:
           - "30000"
         x-ratelimit-limit-tokens:
@@ -100,13 +103,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149999973"
+          - "149999989"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_62f34426de9f766cee3cf0f4b99743e4
+          - req_6782315e00b0d0864cbdf8b05db59abd
       status:
         code: 200
         message: OK

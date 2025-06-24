@@ -12,7 +12,7 @@ from torch import nn
 from ldp.graph import ConfigOp, FxnOp, PromptOp, compute_graph, set_training_mode
 from ldp.graph.async_torch import (
     AsyncTorchModule,
-    _get_autocast_context,
+    _get_autocast_context,  # noqa: PLC2701
     async_protect_torch_call,
 )
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
@@ -97,7 +97,7 @@ async def test_torch_op(
 
     with raises_context:
         grad_output = torch.ones_like(result.value)
-        arg_grads, kwarg_grads = TorchOp.backward(
+        arg_grads, kwarg_grads = TorchOp.backward(  # noqa: RUF059
             op.ctx,
             [],
             {},  # NOTE: compute_grads() would fill this, but TorchOp.backwards() should ignore it
@@ -153,7 +153,8 @@ async def test_with_kwargs():
 async def test_torch_op_composition() -> None:
     # Define our ops
     config_op = ConfigOp(config={"scale": 2.0})
-    fxn_op = FxnOp(lambda x: x["scale"])
+    # Don't use FURB118 here because we assert on kwargs below
+    fxn_op = FxnOp(lambda x: x["scale"])  # noqa: FURB118
 
     class ScaleSum(nn.Module):
         def forward(self, x, y):

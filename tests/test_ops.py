@@ -1,4 +1,5 @@
 import asyncio
+import operator
 import random
 from typing import TypeVar, cast
 from uuid import UUID
@@ -6,10 +7,11 @@ from uuid import UUID
 import litellm
 import numpy as np
 import pytest
+import tenacity
 import tree
-from aviary.env import DummyEnv
-from aviary.message import Message
-from aviary.tools import Tool, ToolRequestMessage
+from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
+from lmi import CommonLLMNames, LLMResult
+from lmi import LiteLLMModel as LLMModel
 
 from ldp.graph import (
     CallID,
@@ -28,12 +30,12 @@ from ldp.graph import (
     set_training_mode,
 )
 from ldp.graph.gradient_estimators import straight_through_estimator as ste
-from ldp.graph.ops import GradInType, ResultOrValue, TOutput
-from ldp.llms import LLMModel, append_to_sys
+from ldp.graph.ops import GradInType, ResultOrValue, TOutput_co
+from ldp.llms.prompts import append_to_sys
 
 
-class StatefulFxnOp(FxnOp[TOutput]):
-    async def forward(self, *args, **kwargs) -> TOutput:
+class StatefulFxnOp(FxnOp[TOutput_co]):
+    async def forward(self, *args, **kwargs) -> TOutput_co:
         result = await super().forward(*args, **kwargs)
         self.ctx.update(get_call_id(), "observed", value=True)
         return result
@@ -125,7 +127,7 @@ class TestLLMCallOp:
             async def reset(self) -> tuple[list[Message], list[Tool]]:
                 async def generate_story() -> str:
                     """Generate a story."""
-                    response = litellm.completion(
+                    response = await litellm.acompletion(
                         model=model_name,
                         messages=[
                             {"content": "Please write a 5 word story", "role": "user"}
@@ -142,19 +144,17 @@ class TestLLMCallOp:
 
         env = LLMCallingEnv()
         obs, tools = await env.reset()
-        config = {"model": model_name, "temperature": 0.1}
+        config = {"name": model_name, "temperature": 0.1}
         llm_op = LLMCallOp()
 
         # Perform one step
         async with compute_graph():
             op_result = await llm_op(config, msgs=obs, tools=tools)
-        await env.exec_tool_calls(cast(ToolRequestMessage, op_result.value))
+        await env.exec_tool_calls(cast("ToolRequestMessage", op_result.value))
 
         # LLMCallOp track cost using run context
         result = llm_op.ctx.get(op_result.call_id, "result")
-        prompt_cost, completion_cost = result.prompt_and_completion_costs
-        assert prompt_cost > 0
-        assert completion_cost > 0
+        assert result.cost > 0
 
         # Environment tracks its internal costs
         assert env.total_cost > 0
@@ -164,7 +164,7 @@ class TestLLMCallOp:
     async def test_empty_tools(self) -> None:
         llm_call_op = LLMCallOp()
         message_result = await llm_call_op(
-            LLMModel.model_fields["config"].default,
+            LLMModel.model_fields["config"].default_factory(),  # type: ignore[call-arg, misc]
             msgs=[Message(content="Hello")],
             tools=[],
         )
@@ -175,8 +175,11 @@ class TestLLMCallOp:
     @pytest.mark.asyncio
     @pytest.mark.parametrize("temperature", [0.0, 0.5, 1.0])
     async def test_compute_logprob(self, temperature) -> None:
-        model_name = "gpt-4o-mini"
-        config = {"model": model_name, "temperature": temperature}
+        config = {
+            "name": CommonLLMNames.OPENAI_TEST.value,
+            "temperature": temperature,
+            "logprobs": True,
+        }
         llm_op = LLMCallOp()
         output = await llm_op(config, msgs=[Message(content="Hello")])
         logp = llm_op.ctx.get(output.call_id, "logprob")
@@ -187,6 +190,30 @@ class TestLLMCallOp:
             assert logp == raw_logp
         else:
             assert logp is None
+
+    @pytest.mark.vcr
+    @pytest.mark.asyncio
+    async def test_validation(self) -> None:
+        config = {"name": CommonLLMNames.OPENAI_TEST.value, "num_retries": 1}
+        validator = StatefulValidator()
+        llm_op = LLMCallOp(response_validator=validator)
+        await llm_op(config, msgs=[Message(content="Hello")])
+        assert validator.counter == 2  # first attempt should have failed
+
+        config = {"name": CommonLLMNames.OPENAI_TEST.value, "num_retries": 0}
+        llm_op = LLMCallOp(response_validator=StatefulValidator())
+        with pytest.raises(tenacity.RetryError, match="ResponseValidationError"):
+            await llm_op(config, msgs=[Message(content="Hello")])
+
+
+class StatefulValidator:
+    def __init__(self):
+        self.counter = 0
+
+    def __call__(self, response: LLMResult) -> None:
+        self.counter += 1
+        if self.counter == 1:
+            raise ValueError("Invalid response")
 
 
 @pytest.mark.asyncio
@@ -216,7 +243,7 @@ async def test_llm_call_graph() -> None:
 
     package_msg_op = FxnOp(append_to_sys)
     config = {
-        "model": "gpt-3.5-turbo-0125",
+        "name": "gpt-3.5-turbo-0125",
         "temperature": 0.1,
         "logprobs": True,
         "top_logprobs": 1,
@@ -394,12 +421,12 @@ async def test_clear_contexts():
 @pytest.mark.vcr
 @pytest.mark.parametrize("dense_embedding_size", [0, 256, 512])
 @pytest.mark.parametrize("sparse_embedding_size", [0, 32, 64])
-@pytest.mark.parametrize("model", ["text-embedding-3-small", "text-embedding-3-large"])
-async def test_embedding_op(model, dense_embedding_size, sparse_embedding_size) -> None:
+@pytest.mark.parametrize("name", ["text-embedding-3-small", "text-embedding-3-large"])
+async def test_embedding_op(name, dense_embedding_size, sparse_embedding_size) -> None:
     if dense_embedding_size == sparse_embedding_size == 0:
         return
     op = EmbeddingOp(
-        dense_embedding=model,
+        dense_embedding=name,
         dense_embedding_dim=dense_embedding_size,
         sparse_embedding_dim=sparse_embedding_size,
     )
@@ -419,7 +446,7 @@ async def test_op_lookup():
     # don't set name on these two to make sure default names
     # still map uniquely
     op_b = FxnOp[int](lambda x: 2 * x)
-    op_c = FxnOp[int](lambda x: -x)
+    op_c = FxnOp[int](operator.neg)
 
     async with compute_graph():
         a = await op_a()

@@ -10,13 +10,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - id: build
+      - id: build-ldp
         uses: hynek/build-and-inspect-python-package@v2
+        with:
+          upload-name-suffix: -ldp
       - name: Download built artifact to dist/
         uses: actions/download-artifact@v4
         with:
-          name: ${{ steps.build.outputs.artifact-name }}
-          path: dist
+          name: ${{ steps.build-ldp.outputs.artifact-name }}
+          path: dist_ldp
+      - id: build-fhlmi
+        uses: hynek/build-and-inspect-python-package@v2
+        with:
+          path: packages/lmi
+          upload-name-suffix: -fhlmi
+      - name: Download built artifact to dist/
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.build-fhlmi.outputs.artifact-name }}
+          path: dist_fhlmi
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          password: ${{ secrets.PYPI_API_LDP_TOKEN }}
+          packages-dir: dist_ldp
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_LMI_TOKEN }}
+          packages-dir: dist_fhlmi

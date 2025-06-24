@@ -1,25 +1,19 @@
 interactions:
   - request:
       body:
-        '{"messages": [{"role": "user", "content": "Write a 5 word story via print_story"},
-        {"role": "user", "content": "<episode-memories>\n<description>\nThese are relevant
-        memories from previous attempts at similar tasks, along with the action taken
-        and the discounted cumulative reward from that action. A negative reward is
-        failure, a positive reward is success.\n</description><memory>\n  <obs>\n    Write
+        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"},{"role":"user","content":"<episode-memories>\n<description>\nThese
+        are relevant memories from previous attempts at similar tasks, along with the
+        action taken and the discounted cumulative reward from that action. A negative
+        reward is failure, a positive reward is success.\n</description><memory>\n  <obs>\n    Write
         a 5 word story and call print\n  </obs>\n  <action>\n    Tool request message
         \"Stories that start with ''Once there was'' are always interesting.\" for tool
-        calls: print_story(story=''Once there were was nothing.'') [id=c92b617a-7dcb-466e-a3ed-f61ec0590cb3]\n  </action>\n  <reward>\n    1000.0\n  </reward>\n</memory></episode-memories>\n\nConsidering
-        the memories, choose the next action."}], "model": "gpt-4o-mini-2024-07-18",
-        "temperature": 0.1, "tool_choice": "required", "tools": [{"type": "function",
-        "function": {"name": "print_story", "description": "Print a story.", "parameters":
-        {"type": "object", "properties": {"story": {"description": "Story to print.",
-        "title": "Story", "type": "string"}}, "required": ["story"]}}}, {"type": "function",
-        "function": {"name": "cast_float", "description": "Cast the input argument x
-        to a float.", "parameters": {"type": "object", "properties": {"x": {"title":
-        "X", "type": "string"}}, "required": ["x"]}}}, {"type": "function", "function":
-        {"name": "cast_int", "description": "Cast the input argument x to an integer.",
-        "parameters": {"type": "object", "properties": {"x": {"title": "X", "type":
-        "number"}}, "required": ["x"]}}}]}'
+        calls: print_story(story=''Once there were was nothing.'') [id=ec6a4a961]\n  </action>\n  <reward>\n    1000.0\n  </reward>\n</memory></episode-memories>\n\nConsidering
+        the memories, choose the next action."}],"model":"gpt-4o-mini-2024-07-18","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
+        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
+        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
       headers:
         accept:
           - application/json
@@ -28,13 +22,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1578"
+          - "1671"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.44.1
+          - AsyncOpenAI/Python 1.86.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -44,31 +38,35 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.44.1
+          - 1.86.0
         x-stainless-raw-response:
           - "true"
+        x-stainless-read-timeout:
+          - "60.0"
+        x-stainless-retry-count:
+          - "0"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.5
+          - 3.12.8
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA2xSW2+bMBR+51dY5zlUhFwgvE3t01qtm6ZJrZYJueYAbnybbZpGUf77ZEgDjcYD
-          ss7n78J3OEaEAK+gIMBa6pk0Iv6y/p79un9z7frp4W2Xfnv4encrs2Sxa5+Nhllg6JdXZP6DdcO0
-          NAI912qAmUXqMajOs3Sd5Jt8k/aA1BWKQGuMj5c6llzxOE3SZZxk8Tw/s1vNGTooyO+IEEKO/Tvk
-          VBW+Q0GS2cdEonO0QSgulwgBq0WYAHWOO0+Vh9kIMq08qhBddUJMAK+1KBkVYjQenuPkPJZFhSif
-          HpsEX/O/99mev//Uq2a1P/yo2fPEb5A+mD5Q3Sl2KWmCX+bFlRkhoKjsucZy5UvntT1c0QkBaptO
-          ovIhOhy30F/bQrGFR8WQ+BYtkj11RGnfctXcbOEEn0RO0f/Ofyb9WKw7R8W5uPP8dNmE0I2x+sVd
-          FQs1V9y1pUXq+g8M2czgHXx6B+g+LRGM1dL40usdqiCY5stBD8YfbUTn6zPotadinC+SJDonBHdw
-          HmVZc9Wg7avs92HKZb6oFpsqX2UQnaJ/AAAA//8DAL8BsbwOAwAA
+          H4sIAAAAAAAAAwAAAP//jFNNj9owEL3nV1hzJqsAoexyZKVuq1btoa1WqKyiwZkEU8f22k5Zivjv
+          VRyWBJZKzSGy5vm9efPhfcQYiBxmDPgaPa+MjOeb+T0+6GpbTL4/Py8+f3zZflnQDz1Wj/MpDBqG
+          Xm2I+1fWDdeVkeSFVi3MLaGnRnU4nSTDZDoZJQGodE6yoZXGx6mOK6FEPEpGaZxM4+Htkb3WgpOD
+          GfsZMcbYPvwbnyqnF5ixoBUiFTmHJcHsdIkxsFo2EUDnhPOoPAw6kGvlSTXWVS1lD/Bay4yjlF3i
+          9tv3zl2zUMrM2XT65z75tts+qPerx08mXXwYmXLTy9dK70wwVNSKn5rUw0/x2UUyxkBhFbjGCuUz
+          57XdXdAZA7RlXZHyjXXYLyFcW8JsCV8VJ+bXZIlt0TFkuSWsbpZwgDORQ3Tt/NTrj6WidijfNg6V
+          0h4b/6FzT0fkcBqS1KWxeuUuqFAIJdw6s4Qu1N4fQfRqJFiA+mzKYKyujM+8/kUh6eh22qpCt4kd
+          Orw7gl57lF18nLwbXNHLcvIowhqcNo8jX1PeUbsNxDoXugdEvdrfurmm3dYvVPk/8h3AORlPeWYs
+          5YKfV9xds9Q81H9dO3U5GAZH9rfglHlBtplHTgXWsn0+4HbOU5UVQpVkwzaGlTbZOMVJinQ35hAd
+          or8AAAD//wMAfzcTBlEEAAA=
       headers:
-        CF-Cache-Status:
-          - DYNAMIC
         CF-RAY:
-          - 8c1aba248f8bcf2f-SJC
+          - 950d3a003c7a15df-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -76,14 +74,14 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Wed, 11 Sep 2024 21:24:52 GMT
+          - Mon, 16 Jun 2025 20:58:40 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=viZdDbMlPim18zXA2VSk3Ps42oEX6OxE7sBVhT13fDE-1726089892-1.0.1.1-zUP54gGNaVXKUnFpkubX4TG1ojkxbIbWQOfOy8T728MOP.DLhzYV8D1zfbxiBdPPlq4wuFK3QDaHmdSZAywPOg;
-            path=/; expires=Wed, 11-Sep-24 21:54:52 GMT; domain=.api.openai.com; HttpOnly;
+          - __cf_bm=A1c0gJNuunZkxEJGiFpBp.Nw3lp0e_WpYMjBLzPA4N4-1750107520-1.0.1.1-XbCmitqTj_1UvuMGqTflACyT0lZLFiUjwXtHm8asabOcCzA83KmuN73XYNuJ9dAoBwdeZE6Ek0PtSv03U6V0qqpNcUzuDmGY.SfWDe1Dqy4;
+            path=/; expires=Mon, 16-Jun-25 21:28:40 GMT; domain=.api.openai.com; HttpOnly;
             Secure; SameSite=None
-          - _cfuvid=o_nGJtTs1cXWPFPetWlXSw9gJf7WeFSTun8Ozgl__Gg-1726089892934-0.0.1.1-604800000;
+          - _cfuvid=0yE93NjxbixtYbsdILeERAlAvt6MwoI1ur2QPCcPRGA-1750107520610-0.0.1.1-604800000;
             path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
@@ -93,14 +91,18 @@ interactions:
           - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "255"
+          - "461"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
-          - max-age=15552000; includeSubDomains; preload
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "464"
         x-ratelimit-limit-requests:
           - "30000"
         x-ratelimit-limit-tokens:
@@ -108,13 +110,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149999807"
+          - "149999829"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_c0ed70d37c948634bae4f2d44f0d8ec1
+          - req_5f3a401f94ef7e6ff905d2d8c81dc9e3
       status:
         code: 200
         message: OK

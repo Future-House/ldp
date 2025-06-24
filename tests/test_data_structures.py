@@ -1,7 +1,6 @@
 import networkx as nx
 import pytest
-from aviary.message import Message, join
-from aviary.tools import ToolResponseMessage
+from aviary.core import Message, ToolResponseMessage, join
 
 from ldp.data_structures import Transition, TransitionTree
 
@@ -47,6 +46,10 @@ def test_tree_mc_value():
     assert tree.get_transition(f"{root_id}:0").value == pytest.approx(
         0.0 + 0.9 * ((1.9 - 1) / 2), rel=0.001
     )
+
+    # Check we can compute advantages w/o crashing for now. TODO: test the assigned
+    # advantages. Will do so after the TODO in compute_advantages() is resolved.
+    tree.compute_advantages()
 
 
 def test_tree_node_merging() -> None:

@@ -4,14 +4,16 @@ import tempfile
 from enum import IntEnum, auto
 from functools import partial
 from pathlib import Path
+from typing import cast
 from unittest.mock import patch
 
 import networkx as nx
 import pytest
-from aviary.env import DummyEnv
-from aviary.message import Message
-from aviary.tools import Tool, ToolCall, ToolRequestMessage
+from aviary.core import DummyEnv, Message, Tool, ToolCall, ToolRequestMessage
+from aviary.message import EnvStateMessage
 from httpx import ASGITransport, AsyncClient
+from lmi import CommonLLMNames
+from lmi import LiteLLMModel as LLMModel
 from pydantic import BaseModel, Field
 
 from ldp.agent import (
@@ -25,6 +27,7 @@ from ldp.agent import (
     make_simple_agent_server,
 )
 from ldp.agent.interactive_agent import InteractiveAgent
+from ldp.agent.simple_agent import HiddenEnvStateMessage, NoToolsSimpleAgent
 from ldp.alg import to_network
 from ldp.graph import LLMCallOp, Memory, OpResult, eval_mode
 from ldp.graph.gradient_estimators import llm_straight_through_estimator as llm_ste
@@ -33,9 +36,7 @@ from ldp.graph.modules import (
     ReActModuleSinglePrompt,
     ToolDescriptionMethods,
 )
-from ldp.llms import LLMModel
 
-from . import CILLMModelNames
 from .conftest import IN_GITHUB_ACTIONS, VCR_DEFAULT_MATCH_ON
 
 HERE = Path(__file__).parent
@@ -88,7 +89,7 @@ def many_edge_cases(
 
 
 class TestAgentState:
-    @pytest.mark.vcr
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.parametrize("agent", [SimpleAgent(), MemoryAgent(), ReActAgent()])
     @pytest.mark.asyncio
     async def test_no_state_mutation(self, dummy_env: DummyEnv, agent: Agent) -> None:
@@ -98,10 +99,10 @@ class TestAgentState:
         agent_state_0_json = agent_state_0.model_dump_json()
         for _ in range(3):  # Give a few steps to finish, the assertion needs >0 steps
             action, agent_state, _ = await agent.get_asv(agent_state, obs)
-            obs, reward, done, truncated = await dummy_env.step(action.value)
+            obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
             if done:
                 break
-
+        assert done, "Environment should have finished"
         assert agent_state_0_json == agent_state_0.model_dump_json(), (
             "Agent state should not be mutated between calls to get_asv"
         )
@@ -117,17 +118,18 @@ class TestAgentState:
 
 class TestSimpleAgent:
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, CILLMModelNames.OPENAI.value]
+        "model_name",
+        [CommonLLMNames.ANTHROPIC_TEST.value, CommonLLMNames.OPENAI_TEST.value],
     )
     @pytest.mark.asyncio
     @pytest.mark.vcr
     async def test_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
 
-        agent = SimpleAgent(llm_model={"model": model_name, "temperature": 0.1})
+        agent = SimpleAgent(llm_model={"name": model_name, "temperature": 0.1})
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
-        obs, reward, done, truncated = await dummy_env.step(action.value)
+        obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
         assert reward > 0, (
             "Reward should be positive, indicating agent called print_story tool"
         )
@@ -136,7 +138,9 @@ class TestSimpleAgent:
         # Check serialization after get_asv runs to ensure private
         # Ops aren't included
         assert agent.model_dump() == {
-            "llm_model": {"model": model_name, "temperature": 0.1},
+            "hide_old_env_states": False,
+            "hide_old_action_content": False,
+            "llm_model": {"name": model_name, "temperature": 0.1},
             "sys_prompt": None,
         }
 
@@ -151,14 +155,15 @@ class TestSimpleAgent:
             raise RuntimeError("Could not find LLMCallOp in compute graph")
 
     @pytest.mark.parametrize(
-        "model_name", [CILLMModelNames.ANTHROPIC.value, CILLMModelNames.OPENAI.value]
+        "model_name",
+        [CommonLLMNames.ANTHROPIC_TEST.value, CommonLLMNames.OPENAI_TEST.value],
     )
     @pytest.mark.asyncio
     @pytest.mark.vcr
     async def test_agent_grad(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
 
-        agent = SimpleAgent(llm_model={"model": model_name, "temperature": 0.1})
+        agent = SimpleAgent(llm_model={"name": model_name, "temperature": 0.1})
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
@@ -187,7 +192,7 @@ class TestSimpleAgent:
 
         graph = to_network(action)
         with (
-            tempfile.NamedTemporaryFile(mode="w", suffix=".png") as f,
+            tempfile.NamedTemporaryFile(mode="w", suffix=".png", encoding="utf-8") as f,
             contextlib.suppress(
                 FileNotFoundError  # Allow tests to run without graphviz on OS
             ),
@@ -202,16 +207,95 @@ class TestSimpleAgent:
                     output_dir / f"TestSimpleAgent.test_agent_grad.{model_name}.png",
                 )
 
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_hide_old_env_states(self) -> None:
+        agent = SimpleAgent(hide_old_env_states=True)
+        agent_state_0 = await agent.init_state(tools=[])
+
+        _, agent_state_1, _ = await agent.get_asv(
+            agent_state_0, [EnvStateMessage(content="")]
+        )
+        _, agent_state_2, _ = await agent.get_asv(
+            agent_state_1, [EnvStateMessage(content="")]
+        )
+
+        # EnvStateMessage, model response
+        assert len(agent_state_1.messages) == 2
+        # as above + EnvStateMessage, model response
+        assert len(agent_state_2.messages) == 4
+
+        assert isinstance(agent_state_2.messages[0], HiddenEnvStateMessage)
+        assert agent_state_1.messages[1].content == agent_state_2.messages[1].content
+
+        # Check that the second EnvStateMessage didn't get hidden
+        assert isinstance(agent_state_2.messages[2], EnvStateMessage)
+        assert not isinstance(agent_state_2.messages[2], HiddenEnvStateMessage)
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_hide_old_action_content(self, dummy_env: DummyEnv) -> None:
+        obs, tools = await dummy_env.reset()
+
+        agent = SimpleAgent(hide_old_action_content=True)
+        agent_state_0 = await agent.init_state(tools=tools)
+
+        action, agent_state_1, _ = await agent.get_asv(agent_state_0, obs)
+        action.value.content = "Injecting some reasoning"
+        obs, *_ = await dummy_env.step(action.value)
+        _, agent_state_2, _ = await agent.get_asv(agent_state_1, obs)
+
+        orig_action = cast("ToolRequestMessage", agent_state_1.messages[1])
+        modified_action = cast("ToolRequestMessage", agent_state_2.messages[1])
+
+        # tool calls shouldn't have been modified
+        assert orig_action.tool_calls == modified_action.tool_calls
+        # But the content should have been
+        assert modified_action.content is None
+
+
+class TestNoToolsSimpleAgent:
+    @pytest.mark.parametrize(
+        "model_name",
+        [CommonLLMNames.ANTHROPIC_TEST.value, CommonLLMNames.OPENAI_TEST.value],
+    )
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
+        obs, tools = await dummy_env.reset()
+        print_story_tool = next(iter(t for t in tools if t.info.name == "print_story"))
+
+        def print_story_factory(message: Message) -> ToolRequestMessage:
+            return ToolRequestMessage(
+                content=message.content,
+                tool_calls=[ToolCall.from_tool(print_story_tool, story="stub")],
+            )
+
+        agent = NoToolsSimpleAgent(
+            print_story_factory, llm_model={"name": model_name, "temperature": 0.1}
+        )
+        agent_state = await agent.init_state(tools=tools)
+        action, agent_state, _ = await agent.get_asv(agent_state, obs)
+        tool_req_msg = action.value
+        assert isinstance(tool_req_msg, ToolRequestMessage)
+        assert len(tool_req_msg.tool_calls) == 1
+        assert tool_req_msg.tool_calls[0].function.name == print_story_tool.info.name
+        obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
+        assert done
+
 
 class TestMemoryAgent:
     # # On 5/14/2024, claude 3 opus would not follow its past memories
-    @pytest.mark.parametrize("model_name", [CILLMModelNames.OPENAI.value])
+    @pytest.mark.parametrize("model_name", [CommonLLMNames.OPENAI_TEST.value])
     @pytest.mark.asyncio
     @pytest.mark.vcr
     async def test_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
 
-        agent = MemoryAgent(llm_model={"model": model_name, "temperature": 0.1})
+        agent = MemoryAgent(llm_model={"name": model_name, "temperature": 0.1})
         agent_state = await agent.init_state(tools=tools)
 
         # access memory and add one to it
@@ -234,7 +318,7 @@ class TestMemoryAgent:
 
         new_action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert "Once there was" in str(new_action)
-        obs, reward, done, truncated = await dummy_env.step(new_action.value)
+        obs, reward, done, truncated = await dummy_env.step(new_action.value)  # noqa: RUF059
         assert reward > 0, (
             "Reward should be positive, indicating agent called print_story tool"
         )
@@ -259,7 +343,7 @@ class TestMemoryAgent:
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
-        obs, reward, done, truncated = await dummy_env.step(action.value)
+        obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
         assert reward > 0, (
             "Reward should be positive, indicating agent called print_story tool"
         )
@@ -298,7 +382,8 @@ class TestReActAgent:
     @pytest.mark.parametrize(
         ("single_prompt", "model_name"),
         [
-            (True, CILLMModelNames.ANTHROPIC.value),
+            (True, CommonLLMNames.ANTHROPIC_TEST.value),
+            (False, CommonLLMNames.ANTHROPIC_TEST.value),
             (True, "gpt-4-turbo"),
             (False, "gpt-4o"),
         ],
@@ -310,12 +395,12 @@ class TestReActAgent:
     ) -> None:
         obs, tools = await dummy_env.reset()
         agent = ReActAgent(
-            llm_model={"model": model_name, "temperature": 0.1},
+            llm_model={"name": model_name, "temperature": 0.1},
             single_prompt=single_prompt,
         )
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
-        obs, reward, done, truncated = await dummy_env.step(action.value)
+        obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
         assert reward > 0, (
             "Reward should be positive, indicating agent called print_story tool"
         )
@@ -333,6 +418,8 @@ class TestReActAgent:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("single_prompt", [True, False])
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.flaky(reruns=3)
     async def test_multi_step(self, dummy_env: DummyEnv, single_prompt: bool) -> None:
         obs, tools = await dummy_env.reset()
         obs = dummy_env.state.messages = [
@@ -343,7 +430,17 @@ class TestReActAgent:
                 )
             )
         ]
-        agent = ReActAgent(single_prompt=single_prompt)
+        agent = ReActAgent(
+            single_prompt=single_prompt,
+            llm_model={
+                "name": CommonLLMNames.OPENAI_TEST.value,
+                # If tools are provided, don't allow it to make parallel tool calls, since
+                # we want to force longer trajectories. In single_prompt mode, parallel tool
+                # calling is not possible, and OpenAI requires parallel_tool_calls=None
+                # if no tools are provided.
+                "parallel_tool_calls": None if single_prompt else False,
+            },
+        )
         agent_state = await agent.init_state(tools=tools)
         for i in range(4):  # noqa: B007
             action, agent_state, _ = await agent.get_asv(agent_state, obs)
@@ -381,7 +478,8 @@ class TestReActAgent:
     @pytest.mark.parametrize(
         ("single_prompt", "model_name"),
         [
-            (True, CILLMModelNames.ANTHROPIC.value),
+            (True, CommonLLMNames.ANTHROPIC_TEST.value),
+            (False, CommonLLMNames.ANTHROPIC_TEST.value),
             (True, "gpt-4-turbo"),
             (False, "gpt-4o"),
         ],
@@ -394,13 +492,13 @@ class TestReActAgent:
         obs, tools = await dummy_env.reset()
 
         agent = ReActAgent(
-            llm_model={"model": model_name, "temperature": 0.1},
+            llm_model={"name": model_name, "temperature": 0.1},
             single_prompt=single_prompt,
         )
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
-        obs, reward, done, truncated = await dummy_env.step(action.value)
+        obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
         assert reward > 0, (
             "Reward should be positive, indicating agent called print_story tool"
         )
@@ -441,7 +539,7 @@ class TestReActAgent:
 
         graph = to_network(action, max_label_height=4, max_label_width=50)
         with (
-            tempfile.NamedTemporaryFile(mode="w", suffix=".png") as f,
+            tempfile.NamedTemporaryFile(mode="w", suffix=".png", encoding="utf-8") as f,
             contextlib.suppress(
                 FileNotFoundError  # Allow tests to run without graphviz on OS
             ),
@@ -459,7 +557,39 @@ class TestReActAgent:
     @pytest.mark.parametrize(
         ("description_method", "expected"),
         [
-            (ToolDescriptionMethods.STR, NotImplementedError),
+            (
+                ToolDescriptionMethods.STR,
+                (
+                    "Answer the following questions as best you can. You have access to"
+                    " the following tools:\n\nNAME: many_edge_cases\n\nSYNOPSIS:\n   "
+                    " many_edge_cases(integer x, null y, integer | null union, unknown"
+                    " pydantic_model, object basic_dict, object complex_dict, unknown"
+                    " enum, string defaulted_str, number"
+                    " defaulted_float)\n\nDESCRIPTION:\n    Check using docstrings as"
+                    " partial f-string templates like so:"
+                    " {summary_format}.\n\nPARAMETERS:\n    x (integer): Yes, I end"
+                    " with a colon :\n    y (null): I am null.\nAnd despite that there"
+                    " is a multiline argument description.\n    union (integer | null):"
+                    " I am a union and the current year is {current_year}.\n   "
+                    " pydantic_model (unknown): I am a Pydantic model.\n    basic_dict"
+                    " (object): I am a dictionary with primitive values.\n   "
+                    " complex_dict (object): I am a dictionary with complex values.\n  "
+                    "  enum (unknown): I am an enum.\n    defaulted_str (string): I"
+                    " have a string default value.\n    defaulted_float (number): I"
+                    " have a float default value.\n\nNAME: intuitive_arg\n\nSYNOPSIS:\n"
+                    "    intuitive_arg(string x)\n\nDESCRIPTION:\n    Cast the input"
+                    " argument x to a float.\n\nPARAMETERS:\n    x (string): No"
+                    " description provided.\n\nUse the following format:\n\nThought:"
+                    " you should always think about what to do\nAction: the action to"
+                    " take, should be one of [many_edge_cases, intuitive_arg]\nAction"
+                    " Input: comma separated list of inputs to action as python"
+                    " tuple\nObservation: the result of the action\n... (this"
+                    " Thought/Action/Action Input/Observation can repeat N"
+                    " times)\n\nExample:\n\nThought: I need to use the get_weather"
+                    ' tool\nAction: get_weather\nAction Input: "New York",'
+                    " 7\nObservation: The 7 day forecast for New York is [...]"
+                ),
+            ),
             (
                 ToolDescriptionMethods.JSON,
                 (
@@ -469,8 +599,8 @@ class TestReActAgent:
                     " docstrings as partial f-string templates like so:"
                     ' {summary_format}.","parameters":{"type":"object","properties":{"x":{"description":"Yes,'
                     " I end with a colon"
-                    ' :","title":"X","type":"integer"},"y":{"description":"I am null.'
-                    " And despite that there is a multiline argument"
+                    ' :","title":"X","type":"integer"},"y":{"description":"I am'
+                    " null.\\nAnd despite that there is a multiline argument"
                     ' description.","title":"Y","type":"null"},"union":{"anyOf":[{"type":"integer"},{"type":"null"}],"description":"I'
                     " am a union and the current year is"
                     ' {current_year}.","title":"Union"},"pydantic_model":{"$ref":"#/$defs/StubState","description":"I'
@@ -516,7 +646,7 @@ class TestReActAgent:
                     " {summary_format}.</description><parameters><type>object</type><properties><x><description>Yes,"
                     " I end with a colon"
                     " :</description><title>X</title><type>integer</type></x><y><description>I"
-                    " am null. And despite that there is a multiline argument"
+                    " am null.\nAnd despite that there is a multiline argument"
                     " description.</description><title>Y</title><type>null</type></y><union><anyOf><item><type>integer</type></item><item><type>null</type></item></anyOf><description>I"
                     " am a union and the current year is"
                     " {current_year}.</description><title>Union</title></union><pydantic_model><key"
@@ -566,7 +696,7 @@ class TestReActAgent:
         ]
         user_msg = Message(content="Cast the string '5.6' to a float.")
         with (
-            patch.object(LLMModel, "achat") as mock_achat,
+            patch.object(LLMModel, "acompletion") as mock_acompletion,
             patch.object(ReActModuleSinglePrompt, "parse_message"),
         ):
             agent = ReActAgent(
@@ -578,9 +708,9 @@ class TestReActAgent:
                     await agent.get_asv(agent_state, obs=[user_msg])
                 return
             await agent.get_asv(agent_state, obs=[user_msg])
-        mock_achat.assert_awaited_once()
-        assert mock_achat.await_args
-        assert mock_achat.await_args[0][0] == [
+        mock_acompletion.assert_awaited_once()
+        assert mock_acompletion.await_args
+        assert mock_acompletion.await_args[0][0] == [
             Message(role="system", content=expected),
             user_msg,
         ]
@@ -642,7 +772,7 @@ class TestHTTPAgentClient:
             assert isinstance(vhat, float)
 
             # This makes an obs with ToolResponseMessage inside
-            obs, reward, done, _ = await dummy_env.step(action.value)
+            obs, reward, done, _ = await dummy_env.step(action.value)  # noqa: RUF059
             assert not done
 
             with patch("httpx.AsyncClient.post", async_client.post), eval_mode():
@@ -664,13 +794,12 @@ async def test_interactive(dummy_env: DummyEnv, mocker):
 
     obs, tools = await dummy_env.reset()
     agent_state = await agent.init_state(tools=tools)
-    done = False
 
     mock_input = mocker.patch(
         "builtins.input", side_effect=["print_story", "A cat wore a hat."]
     )
 
     action, agent_state, _ = await agent.get_asv(agent_state, obs)
-    next_obs, _, done, _ = await dummy_env.step(action.value)
+    next_obs, _, done, _ = await dummy_env.step(action.value)  # noqa: RUF059
 
     assert mock_input.call_count >= 2

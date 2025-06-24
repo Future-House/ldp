@@ -1,0 +1,87 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+
+[dependency-groups]
+codeflash = [
+    "codeflash>=0.8",  # Pin for --verify-setup checking formatter-cmds
+    "fhlmi[dev]",
+]
+dev = ["fhlmi[dev]"]
+
+[project]
+authors = [
+    {email = "hello@futurehouse.org", name = "FutureHouse technical staff"},
+]
+# Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "coredis",
+    "fhaviary>=0.14.0",  # For multi-image support
+    "limits>=4.8",  # Pin for RedisBridge.key_prefix
+    "litellm>=1.63.5",  # Pin lower for reasoning + streaming fix
+    "pydantic~=2.0,>=2.10.1",
+    "tiktoken>=0.4.0",
+    "typing-extensions; python_version <= '3.11'",  # for typing.override
+]
+description = "A client to provide LLM responses for FutureHouse applications."
+dynamic = ["version"]
+license = {file = "LICENSE"}
+name = "fhlmi"
+readme = "README.md"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+dev = [
+    "fhaviary[xml]",
+    "fhlmi[local,progress,typing,vcr]",
+    "ipython>=8",  # Pin to keep recent
+    "litellm>=1.68,<1.71",  # Lower pin for PydanticDeprecatedSince20 fixes, upper pin for VCR cassette breaks (https://github.com/BerriAI/litellm/issues/11724)
+    "mypy>=1.8",  # Pin for mutable-override
+    "pre-commit>=3.4",  # Pin to keep recent
+    "pylint-pydantic",
+    "pytest-asyncio",
+    "pytest-recording",
+    "pytest-rerunfailures",
+    "pytest-subtests",
+    "pytest-sugar",
+    "pytest-timer[colorama]",
+    "pytest-xdist",
+    "pytest>=8",  # Pin to keep recent
+    "python-dotenv",
+    "refurb>=2",  # Pin to keep recent
+    "typeguard",
+]
+local = [
+    "numpy",
+    "sentence-transformers",
+]
+progress = ["tqdm"]
+typing = ["types-tqdm"]
+vcr = [
+    "vcrpy>=6",  # Pin for https://github.com/kevin1024/vcrpy/issues/884
+]
+
+[project.urls]
+issues = "https://github.com/Future-House/ldp/packages/lmi/issues"
+repository = "https://github.com/Future-House/ldp/packages/lmi"
+
+[tool.ruff]
+extend = "../../pyproject.toml"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
+root = "../.."
+version_file = "src/lmi/version.py"

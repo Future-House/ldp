@@ -1,0 +1,85 @@
+interactions:
+  - request:
+      body:
+        '{"messages":[{"role":"user","content":"Hello!"}],"model":"gpt-4o-mini","n":1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"talk","description":"Say
+        something to me.","parameters":{"type":"object","properties":{"message":{"description":"what
+        you want to say","title":"Message","type":"string"}},"required":["message"]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "348"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.86.0
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 1.86.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "60.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.8
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string:
+          "{\n    \"error\": {\n        \"message\": \"Incorrect API key provided:
+          abc123. You can find your API key at https://platform.openai.com/account/api-keys.\",\n
+          \       \"type\": \"invalid_request_error\",\n        \"param\": null,\n        \"code\":
+          \"invalid_api_key\"\n    }\n}\n"
+      headers:
+        CF-RAY:
+          - 94f6b9bf7ebb7af2-SJC
+        Connection:
+          - keep-alive
+        Content-Length:
+          - "256"
+        Content-Type:
+          - application/json; charset=utf-8
+        Date:
+          - Sat, 14 Jun 2025 03:26:20 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=x_B8qinjaZSa4poMpJU56p4l5A519.EX6K8vfHlTGX0-1749871580-1.0.1.1-4MpuprL9DCeJ89fr1N1UQ9_3XgArfKNpVn6hp_fpyjmSA9.gf.ythBV0ZS3Rp6UUPfjO7fZNiGOEmgHnDR1HD5ekMQMdtEdWgXRqnZ2kTIA;
+            path=/; expires=Sat, 14-Jun-25 03:56:20 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=DkWc7Yed44yGbxX3P.2NI2Os6Qg2LYGRVpuoeq0hPV4-1749871580143-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        vary:
+          - Origin
+        x-request-id:
+          - req_77959687ee452079c12340fbc9480fdf
+      status:
+        code: 401
+        message: Unauthorized
+version: 1

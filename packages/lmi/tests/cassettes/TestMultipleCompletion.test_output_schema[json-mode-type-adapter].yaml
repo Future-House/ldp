@@ -1,0 +1,113 @@
+interactions:
+  - request:
+      body:
+        '{"messages":[{"role":"system","content":"Respond following this JSON schema:\n\n{\"properties\":
+        {\"name\": {\"title\": \"Name\", \"type\": \"string\"}, \"age\": {\"description\":
+        \"Age in years.\", \"title\": \"Age\", \"type\": \"integer\"}}, \"required\":
+        [\"name\", \"age\"], \"title\": \"DummyOutputSchema\", \"type\": \"object\"}"},{"role":"user","content":"My
+        name is Claude and I am 1 year old. What is my name and age?"}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":2,"response_format":{"type":"json_object"},"temperature":1.0}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "541"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.86.0
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 1.86.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "60.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.8
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//3FM9b9swEN31K4ibpUKUbRjQmExJh6bpVFSBQJMnmS5FEuQpaGH4vxeU
+          HUv5KNC5C4d7947vHR+PGWOgFdQM5F6QHLwpbg43W/UoLD7ePhy+fr5/JrO11bfvG/3l4Q7yxHC7
+          A0p6YX2SbvAGSTt7hmVAQZim8u2m5OW24qsJGJxCk2i9p2Ltiqqs1gXnRVVeiHunJUao2Y+MMcaO
+          05kkWoW/oGZl/lIZMEbRI9TXJsYgOJMqIGLUkYQlyGdQOktoJ9XHBqwYsIGaNXBrxKiwgZw1IPqp
+          yE9LYsBujCLptqMxC0BY60gk35Pkpwtyuoo0rvfB7eIbKnTa6rhvA4robBIUyXnIFuR3zvn/7zxj
+          7GmKwfjKH/jgBk8tuZ84XcfLyzJgDt6MVusLSI6EWbCqTf7BvFYhCW3iYp0ghdyjmqlz6sSotFsA
+          yyd7r+aj2Wfn2vb/Mn4GpERPqFofUGn52vHcFjD9y7+1Xbc8CYaI4VlLbEljSC+hsBOjOQcH4u9I
+          OLSdtj0GH/Q5PZ1vN7tutZIc5RqyU/YHAAD//wMAL4XZbUAEAAA=
+      headers:
+        CF-RAY:
+          - 950d32844ab89e6e-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Mon, 16 Jun 2025 20:53:33 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=xR4xGV5AR.KEYi4GE5kLRRvNnOmCn0VbOTp5fUKgkHk-1750107213-1.0.1.1-Fh5QTzH9XPofLT77k.5w4aaL3BuobFFT34JXCNzovdtmeDzwHOgYTBw.WfWwMTyutNPTdHoIthGb2xZMj7ZTrnshzl.4Vee9rJ3vNSaDklk;
+            path=/; expires=Mon, 16-Jun-25 21:23:33 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=oauDl7ip8FY1136FfiEkTr62FZCHcrPcjLAlZ200qyc-1750107213816-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        access-control-expose-headers:
+          - X-Request-ID
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "225"
+        openai-version:
+          - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "230"
+        x-ratelimit-limit-requests:
+          - "10000"
+        x-ratelimit-limit-tokens:
+          - "30000000"
+        x-ratelimit-remaining-requests:
+          - "9999"
+        x-ratelimit-remaining-tokens:
+          - "29999916"
+        x-ratelimit-reset-requests:
+          - 6ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_de07a7b323406bdfb8fe9eb1db574b86
+      status:
+        code: 200
+        message: OK
+version: 1

@@ -1,17 +1,12 @@
 interactions:
   - request:
       body:
-        '{"messages": [{"role": "user", "content": "Write a 5 word story via print_story"}],
-        "model": "gpt-4o-2024-08-06", "temperature": 0.1, "tool_choice": "required",
-        "tools": [{"type": "function", "function": {"name": "print_story", "description":
-        "Print a story.", "parameters": {"type": "object", "properties": {"story": {"description":
-        "Story to print.", "title": "Story", "type": "string"}}, "required": ["story"]}}},
-        {"type": "function", "function": {"name": "cast_float", "description": "Cast
-        the input argument x to a float.", "parameters": {"type": "object", "properties":
-        {"x": {"title": "X", "type": "string"}}, "required": ["x"]}}}, {"type": "function",
-        "function": {"name": "cast_int", "description": "Cast the input argument x to
-        an integer.", "parameters": {"type": "object", "properties": {"x": {"title":
-        "X", "type": "number"}}, "required": ["x"]}}}]}'
+        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
+        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
+        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
+        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
       headers:
         accept:
           - application/json
@@ -20,13 +15,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "862"
+          - "986"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.47.1
+          - AsyncOpenAI/Python 1.86.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -36,32 +31,35 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.47.1
+          - 1.86.0
         x-stainless-raw-response:
           - "true"
+        x-stainless-read-timeout:
+          - "120.0"
+        x-stainless-retry-count:
+          - "0"
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.5
+          - 3.12.8
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//dFJNj5swEL3nV1hzDisgIRBukdpDpUptN5WqtqmQFybgrbG99tBuGuW/
-          V5gssFHrg2XN8/vwjM8LxkBUkDMoG05la2Sw2z2ud/Y++faeG/nr08cPxJ+e689uc4/vVrDsGfrh
-          EUt6Yd2VujUSSWg1wKVFTtirRmmcRtE2SzMPtLpC2dNqQ8FaB3EYr4MwC8LNldhoUaKDnH1fMMbY
-          2e99RFXhM+QsXL5UWnSO1wj5eIkxsFr2FeDOCUdcESwnsNSKUPWpVSflDCCtZVFyKSfjYZ1n56lP
-          XMqCh7s44e3WJtHbP0/79Mv+6yqxb+TMb5A+GR/o2Kly7M8MH+v5jRljoHjrucYKRYUjbU83dMaA
-          27prUVEfHc4H8NcOkB9g3ymHxH43whm0jjksLZJjpJkSdUN3B7jAK7nL4l/nH7NOWTx2jstrC6/1
-          yzgTqWtj9YO7aTEchRKuKSxy55/apzSDd+/jHaB7NU4wVreGCtI/UfWCURQPejD9thmaXUHSxOWs
-          vgr/xyoqJC78zMdvNiQUqp4UwjGmfye4kyNsi6NQNVo/Gj9fU6TJJqvWm3C7hcVl8RcAAP//AwAi
-          wn2AWQMAAA==
+          H4sIAAAAAAAAAwAAAP//jFNda9swFH33rxD3uSlxPgj129KHQlfWMTpWWIpRpGtHqayrSPLWLOS/
+          DyuJ7aQdzA9G3KNz7rkf2iWMgZKQMRArHkRl9WC+nt/y2dP8YVXLtx/3nzbPt8/kv9+pz5v1DVw1
+          DFquUYQT61pQZTUGReYAC4c8YKOazqbDdDibjoYRqEiibmilDYMJDUbD0WSQpoPR8EhckRLoIWM/
+          E8YY28V/Y9FIfIOMRZkYqdB7XiJk7SXGwJFuIsC9Vz5wE+CqAwWZgKZxbWqte0Ag0rngWneJD9+u
+          d+76xLXOJ/M/03vn5htb3vlvj19Twsfp0/OXXr6D9NZGQ0VtRNufHt7Gs4tkjIHhVeRap0zIfSC3
+          vaAzBtyVdYUmNNZht4B4bQHZAh7IB/aKW88Kqo1kyjBv6Pf1AvZwprJPPjq/9BrksKg91+87x42h
+          wJsCYutejsi+nZKm0jpa+gsqFMoov8odch+L788gORmJFqA+GzNYR5UNeaBXjEnT8XEnoNvCHnpz
+          BAMFrnvxyQk408slBq7iHrSrJ7hYoeyo3QryWirqAUmv9vduPtI+1K9M+T/yHSAE2oAytw6lEucV
+          d9ccNo/0X9faLkfD4NH9UgLzoNA185BY8Fof3g/4rQ9Y5YUyJbq4jnGnbT5dFuOxSFFMINknfwEA
+          AP//AwAJaJYUTQQAAA==
       headers:
-        CF-Cache-Status:
-          - DYNAMIC
         CF-RAY:
-          - 8c7cf445cdd9965b-SJC
+          - 950d3a0438a77afa-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -69,9 +67,15 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Mon, 23 Sep 2024 19:31:21 GMT
+          - Mon, 16 Jun 2025 20:58:41 GMT
         Server:
           - cloudflare
+        Set-Cookie:
+          - __cf_bm=Lf6sAziPUnqAiCWPMZJesNsKIhD0SbCK0WB8fltXNx8-1750107521-1.0.1.1-yXRk3lgapWx_2LR8DXYq_KTp4tBl6D17pfVcLJn9bI7OQhGoygPswbWTVGigEHp2D8_685Zv_RWk1.LpkkrzcsWp7ddMO2Vmmm_rxWkziI8;
+            path=/; expires=Mon, 16-Jun-25 21:28:41 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=Oi7yEjq22FT32e9lzUL.Zjmi5rrfRKWLHaV2FMOm0Aw-1750107521225-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -80,14 +84,18 @@ interactions:
           - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "2946"
+          - "433"
         openai-version:
           - "2020-10-01"
         strict-transport-security:
-          - max-age=15552000; includeSubDomains; preload
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "438"
         x-ratelimit-limit-requests:
           - "10000"
         x-ratelimit-limit-tokens:
@@ -95,13 +103,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "9999"
         x-ratelimit-remaining-tokens:
-          - "29999973"
+          - "29999989"
         x-ratelimit-reset-requests:
           - 6ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_67bd608973d3deae673abb652132608b
+          - req_c36a90cbb04849fb499d5822df240a79
       status:
         code: 200
         message: OK
