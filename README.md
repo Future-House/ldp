@@ -15,8 +15,11 @@
   </a>
 </p>
 
-**LDP** [^1] is a software framework for enabling modular interchange of language agents, environments, and optimizers. A language decision process
-is a partially-observable Markov decision process (POMDP) where actions and observations consist of natural language. The full definition from the Aviary paper [^1] is:
+**LDP** [^1] is a framework for enabling modular interchange of language agents, environments, and optimizers.
+A language decision process (LDP)
+is a partially-observable Markov decision process (POMDP)
+where actions and observations consist of natural language.
+The full definition from the Aviary paper [^1] is:
 
 <p align="left">
   <a href="https://arxiv.org/abs/2212.04450">

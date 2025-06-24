@@ -6,7 +6,9 @@
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 ![PyPI Python Versions](https://img.shields.io/pypi/pyversions/fhlmi)
 
-A Python library for interacting with Large Language Models (LLMs) through an unified interface.
+A Python library for interacting with Large Language Models (LLMs)
+through a unified interface,
+hence the name Language Model Interface (LMI).
 
 ## Installation
 
