@@ -20,7 +20,7 @@ is a partially-observable Markov decision process (POMDP) where actions and obse
 
 <p align="left">
   <a href="https://arxiv.org/abs/2212.04450">
-    <img src="docs/assets/ldp_definition.png"/>
+    <img src="docs/assets/ldp_definition.png" width="600"/>
   </a>
 </p>
 
@@ -37,7 +37,7 @@ See the following [tutorial](https://github.com/Future-House/ldp/blob/main/tutor
 
 <p align="left">
   <a href="https://arxiv.org/abs/2212.04450">
-    <img src="docs/assets/Aviary.png"/>
+    <img src="docs/assets/Aviary.png" width="800" />
   </a>
 </p>
 
