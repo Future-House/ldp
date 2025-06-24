@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://arxiv.org/abs/2212.04450">
-    <img src="docs/assets/ldp_chessboard.png" width="300"/>
+    <img src="docs/assets/ldp_chessboard.png" width="300" alt="row playing chess" />
   </a>
 </p>
 
@@ -23,28 +23,35 @@ The full definition from the Aviary paper [^1] is:
 
 <p align="left">
   <a href="https://arxiv.org/abs/2212.04450">
-    <img src="docs/assets/ldp_definition.png" width="600"/>
+    <img src="docs/assets/ldp_definition.png" width="600" alt="LDP definition from paper" />
   </a>
 </p>
 
-See the following [tutorial](https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb) for an example of how to run an LDP agent.
+See the following [tutorial](https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb)
+for an example of how to run an LDP agent.
 
-[Overview](#overview) | [Getting Started](#getting-started) | [Documentation](https://futurehouse.gitbook.io/futurehouse-cookbook/ldp-language-decision-processes) | [Paper](https://arxiv.org/abs/2412.21154)
+[Overview](#overview)
+| [Getting Started](#getting-started)
+| [Documentation](https://futurehouse.gitbook.io/futurehouse-cookbook/ldp-language-decision-processes)
+| [Paper](https://arxiv.org/abs/2412.21154)
 
 ## What's New?
 
-- Check out our new [Tutorial](https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb) notebook on running an LDP agent in an Aviary environment!
-- The Aviary paper has been posted to [arXiv](https://arxiv.org/abs/2412.21154)! Further updates forthcoming!
+- Check out our new [Tutorial](https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb)
+  notebook on running an LDP agent in an Aviary environment!
+- The Aviary paper has been posted to [arXiv](https://arxiv.org/abs/2412.21154)!
+  Further updates forthcoming!
 
 ## Overview
 
 <p align="left">
   <a href="https://arxiv.org/abs/2212.04450">
-    <img src="docs/assets/Aviary.png" width="800" />
+    <img src="docs/assets/Aviary.png" width="800" alt="Aviary and LDP overview from paper" />
   </a>
 </p>
 
-A pictorial overview of the language decision process (LDP) framework together with five implemented Aviary environments.
+A pictorial overview of the language decision process (LDP) framework
+together with five implemented Aviary environments.
 
 ## Getting Started
 
@@ -56,7 +63,7 @@ pip install -e .
 
 To install `aviary` and the `nn` (neural network) module required for the tutorials:
 
-```
+```bash
 pip install "ldp[nn]" "fhaviary[gsm8k]"
 ```
 
@@ -72,7 +79,8 @@ If you plan to export Graphviz visualizations, the `graphviz` library is require
 
 ## Running an Agent on an Aviary Environment
 
-The minimal example below illustrates how to run a language agent on an Aviary environment (LDP's sister library for defining language agent environments - https://github.com/Future-House/aviary)
+The minimal example below illustrates how to run a language agent on an Aviary environment
+(LDP's sister library for defining language agent environments - <https://github.com/Future-House/aviary>)
 
 ```py
 from ldp.agent import SimpleAgent
@@ -94,8 +102,10 @@ Below we elaborate on the components of LDP.
 
 ## Agent
 
-An agent is a language agent that interacts with an environment to accomplish a task. Agents may use tools (calls to external APIs e.g. Wolfram Alpha)
-in response to observations returned by the environment. Below we define LDP's `SimpleAgent` which relies on a single LLM call.
+An agent is a language agent that interacts with an environment to accomplish a task.
+Agents may use tools (calls to external APIs e.g. Wolfram Alpha)
+in response to observations returned by the environment.
+Below we define LDP's `SimpleAgent` which relies on a single LLM call.
 The main bookkeeping involves appending messages received from the environment and passing tools.
 
 ```py
@@ -138,10 +148,12 @@ new_action, new_agent_state, value = await agent.get_asv(agent_state, obs)
 
 - The `get_asv(agent_state, obs)` method chooses an action (`a`) conditioned on the observation messages
   returning the next agent state (`s`) and a value estimate (`v`).
-- The first argument, `agent_state`, is an optional container for environment-specific objects such as e.g. documents for PaperQA or lookup results for HotpotQA,
+- The first argument, `agent_state`, is an optional container for environment-specific objects such as
+  e.g. documents for PaperQA or lookup results for HotpotQA,
 - as well as more general objects such as memories which could include a list of previous actions and observations.
   `agent_state` may be set to `None` if memories are not being used.
-- The second argument `obs` is not the complete list of all prior observations, but rather the returned value from `env.step`.
+- The second argument `obs` is not the complete list of all prior observations,
+  but rather the returned value from `env.step`.
 - The `value` is the agent's state/action value estimate used for reinforcment learning training. It may default to 0.
 
 ## Stochastic Computation Graph (SCG)
@@ -214,7 +226,8 @@ which means:
 - Subclasses can precisely specify state types, making the code more readable
 
 If you are new to Python generics (`typing.Generic`),
-please read about them in [Python `typing`](https://docs.python.org/3/library/typing.html#generics). Below is how to specify an agent with a custom state type.
+please read about them in [Python `typing`](https://docs.python.org/3/library/typing.html#generics).
+Below is how to specify an agent with a custom state type.
 
 ```py
 from dataclasses import dataclass, field

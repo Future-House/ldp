@@ -66,21 +66,31 @@ An LLM is a class that inherits from `LLMModel` and implements the following met
 - `async acompletion_iter(messages: list[Message], **kwargs) -> AsyncIterator[LLMResult]`
 
 These methods are used by the base class `LLMModel` to implement the LLM interface.
-Because `LLMModel` is an abstract class, it doesn't depend on any specific LLM provider. All the connection with the provider is done in the subclasses using `acompletion` and `acompletion_iter` as interfaces.
+Because `LLMModel` is an abstract class, it doesn't depend on any specific LLM provider.
+All the connection with the provider is done in the subclasses using `acompletion` and `acompletion_iter` as interfaces.
 
-Because these are the only methods that communicate with the chosen LLM provider, we use an abstraction [LLMResult](https://github.com/Future-House/ldp/blob/main/packages/lmi/src/lmi/types.py#L35) to hold the results of the LLM call.
+Because these are the only methods that communicate with the chosen LLM provider,
+we use an abstraction [LLMResult](https://github.com/Future-House/ldp/blob/main/packages/lmi/src/lmi/types.py#L35)
+to hold the results of the LLM call.
 
 #### LLMModel
 
 An `LLMModel` implements `call`, which receives a list of `aviary` `Message`s and returns a list of `LLMResult`s.
 `LLMModel.call` can receive callbacks, tools, and output schemas to control its behavior, as better explained below.
-Because we support interacting with the LLMs using `Message` objects, we can use the modalities available in `aviary`, which currently include text and images.
+Because we support interacting with the LLMs using `Message` objects, we can use the modalities available in `aviary`,
+which currently include text and images.
 `lmi` supports these modalities but does not support other modalities yet.
 Adittionally, `LLMModel.call_single` can be used to return a single `LLMResult` completion.
 
 #### LiteLLMModel
 
-`LiteLLMModel` wraps `LiteLLM` API usage within our `LLMModel` interface. It receives a `name` parameter, which is the name of the model to use and a `config` parameter, which is a dictionary of configuration options for the model following the [LiteLLM configuration schema](https://docs.litellm.ai/docs/routing). Common parameters such as `temperature`, `max_token`, and `n` (the number of completions to return) can be passed as part of the `config` dictionary.
+`LiteLLMModel` wraps `LiteLLM` API usage within our `LLMModel` interface.
+It receives a `name` parameter,
+which is the name of the model to use and a `config` parameter,
+which is a dictionary of configuration options for the model following the
+[LiteLLM configuration schema](https://docs.litellm.ai/docs/routing).
+Common parameters such as `temperature`, `max_token`, and `n` (the number of completions to return)
+can be passed as part of the `config` dictionary.
 
 ```python
 import os
@@ -125,13 +135,17 @@ llm = LiteLLMModel(config=config)
 
 Cost tracking is supported in two different ways:
 
-1. Calls to the LLM returns the token usage for each call in `LLMResult.prompt_count` and `LLMResult.completion_count`. Additionally, `LLMResult.cost` can be used to get a cost estimate for the call in USD.
-2. A global cost tracker is maintained in `GLOBAL_COST_TRACKER` and can be enabled or disabled using `enable_cost_tracking()` and `cost_tracking_ctx()`.
+1. Calls to the LLM returns the token usage for each call in `LLMResult.prompt_count` and `LLMResult.completion_count`.
+   Additionally, `LLMResult.cost` can be used to get a cost estimate for the call in USD.
+2. A global cost tracker is maintained in `GLOBAL_COST_TRACKER`
+   and can be enabled or disabled using `enable_cost_tracking()` and `cost_tracking_ctx()`.
 
 ### Rate limiting
 
-Rate limiting helps regulate the usage of resources to various services and LLMs. The rate limiter supports both in-memory and Redis-based storage for cross-process rate limiting.
-Currently, `lmi` take into account the tokens used (Tokens per Minute (TPM)) and the requests handled (Requests per Minute (RPM)).
+Rate limiting helps regulate the usage of resources to various services and LLMs.
+The rate limiter supports both in-memory and Redis-based storage for cross-process rate limiting.
+Currently, `lmi` take into account the tokens used (Tokens per Minute (TPM))
+and the requests handled (Requests per Minute (RPM)).
 
 #### Basic Usage
 
@@ -139,39 +153,39 @@ Rate limits can be configured in two ways:
 
 1. Through the LLM configuration:
 
-```python
-from lmi import LiteLLMModel
+   ```python
+   from lmi import LiteLLMModel
 
-config = {
-    "rate_limit": {
-        "gpt-4": "100/minute",  # 100 tokens per minute
-    },
-    "request_limit": {
-        "gpt-4": "5/minute",  # 5 requests per minute
-    },
-}
+   config = {
+       "rate_limit": {
+           "gpt-4": "100/minute",  # 100 tokens per minute
+       },
+       "request_limit": {
+           "gpt-4": "5/minute",  # 5 requests per minute
+       },
+   }
 
-llm = LiteLLMModel(name="gpt-4", config=config)
-```
+   llm = LiteLLMModel(name="gpt-4", config=config)
+   ```
 
-With `rate_limit` we rate limit only token consumption,
-and with `request_limit` we rate limit only request volume.
-You can configure both of them or only one of them as you need.
+   With `rate_limit` we rate limit only token consumption,
+   and with `request_limit` we rate limit only request volume.
+   You can configure both of them or only one of them as you need.
 
 2. Through the global rate limiter configuration:
 
-```python
-from lmi.rate_limiter import GLOBAL_LIMITER
+   ```python
+   from lmi.rate_limiter import GLOBAL_LIMITER
 
-GLOBAL_LIMITER.rate_config[("client", "gpt-4")] = "100/minute"  # 100 tokens per minute
-GLOBAL_LIMITER.rate_config[("client|request", "gpt-4")] = (
-    "5/minute"  # 5 requests per minute
-)
-```
+   GLOBAL_LIMITER.rate_config[("client", "gpt-4")] = "100/minute"  # tokens per minute
+   GLOBAL_LIMITER.rate_config[("client|request", "gpt-4")] = (
+       "5/minute"  # requests per minute
+   )
+   ```
 
-With `client` we rate limit only token consumption,
-and with `client|request` we rate limit only request volume.
-You can configure both of them or only one of them as you need.
+   With `client` we rate limit only token consumption,
+   and with `client|request` we rate limit only request volume.
+   You can configure both of them or only one of them as you need.
 
 #### Rate Limit Format
 
@@ -201,26 +215,30 @@ The rate limiter supports two storage backends:
 
 1. In-memory storage (default when Redis is not configured):
 
-```python
-from lmi.rate_limiter import GlobalRateLimiter
+   ```python
+   from lmi.rate_limiter import GlobalRateLimiter
 
-limiter = GlobalRateLimiter(use_in_memory=True)
-```
+   limiter = GlobalRateLimiter(use_in_memory=True)
+   ```
 
 2. Redis storage (for cross-process rate limiting):
 
-```python
-# Set REDIS_URL environment variable
-import os
+   ```python
+   # Set REDIS_URL environment variable
+   import os
 
-os.environ["REDIS_URL"] = "localhost:6379"
+   os.environ["REDIS_URL"] = "localhost:6379"
 
-from lmi.rate_limiter import GlobalRateLimiter
+   from lmi.rate_limiter import GlobalRateLimiter
 
-limiter = GlobalRateLimiter()  # Will automatically use Redis if REDIS_URL is set
-```
+   limiter = GlobalRateLimiter()  # Will automatically use Redis if REDIS_URL is set
+   ```
 
-This `limiter` can be used in within the `LLMModel.check_rate_limit` method to check the rate limit before making a request, similarly to how it is done in the [`LiteLLMModel` class](https://github.com/Future-House/ldp/blob/18138af155bef7686d1eb2b486edbc02d62037eb/packages/lmi/src/lmi/llms.py#L555).
+   This `limiter` can be used in within the `LLMModel.check_rate_limit` method
+   to check the rate limit before making a request,
+   similarly to how it is done in the [`LiteLLMModel` class][1].
+
+[1]: https://github.com/Future-House/ldp/blob/18138af155bef7686d1eb2b486edbc02d62037eb/packages/lmi/src/lmi/llms.py
 
 #### Monitoring Rate Limits
 
@@ -288,7 +306,12 @@ await GLOBAL_LIMITER.try_acquire(
 
 ### Tool calling
 
-LMI supports function calling through tools, which are functions that the LLM can invoke. Tools are passed to `LLMModel.call` or `LLMModel.call_single` as a list of [`Tool` objects from `aviary`](https://github.com/Future-House/aviary/blob/1a50b116fb317c3ef27b45ea628781eb53c0b7ae/src/aviary/tools/base.py#L334), along with an optional `tool_choice` parameter that controls how the LLM uses these tools.
+LMI supports function calling through tools, which are functions that the LLM can invoke.
+Tools are passed to `LLMModel.call` or `LLMModel.call_single`
+as a list of [`Tool` objects from `aviary`][2],
+along with an optional `tool_choice` parameter that controls how the LLM uses these tools.
+
+[2]: https://github.com/Future-House/aviary/blob/1a50b116fb317c3ef27b45ea628781eb53c0b7ae/src/aviary/tools/base.py#L334
 
 The `tool_choice` parameter follows `OpenAI`'s definition. It can be:
 
@@ -300,12 +323,16 @@ The `tool_choice` parameter follows `OpenAI`'s definition. It can be:
 | A specific `aviary.Tool` object | N/A                                | The model must call this specific tool                                         |
 | `None`                          | `LLMModel.UNSPECIFIED_TOOL_CHOICE` | No tool choice preference is provided to the LLM API                           |
 
-When tools are provided, the LLM's response will be wrapped in a `ToolRequestMessage` instead of a regular `Message`. The key differences are:
+When tools are provided, the LLM's response will be wrapped in a `ToolRequestMessage` instead of a regular `Message`.
+The key differences are:
 
 - `Message` represents a basic chat message with a role (system/user/assistant) and content
-- `ToolRequestMessage` extends `Message` to include `tool_calls`, which contains a list of `ToolCall` objects, which contains the tools the LLM chose to invoke and their arguments
+- `ToolRequestMessage` extends `Message` to include `tool_calls`, which contains a list of `ToolCall` objects,
+  which contains the tools the LLM chose to invoke and their arguments
 
-Further details about how to define a tool, use the `ToolRequestMessage` and the `ToolCall` objects can be found in the [Aviary documentation](https://github.com/Future-House/aviary?tab=readme-ov-file#tool).
+Further details about how to define a tool,
+use the `ToolRequestMessage` and the `ToolCall` objects can be found in the
+[Aviary documentation](https://github.com/Future-House/aviary?tab=readme-ov-file#tool).
 
 Here is a minimal example usage:
 
@@ -358,7 +385,11 @@ result = await llm.call_single(
 
 ### Embedding models
 
-This client also includes embedding models. An embedding model is a class that inherits from `EmbeddingModel` and implements the `embed_documents` method, which receives a list of strings and returns a list with a list of floats (the embeddings) for each string.
+This client also includes embedding models.
+An embedding model is a class that inherits from `EmbeddingModel`
+and implements the `embed_documents` method,
+which receives a list of strings
+and returns a list with a list of floats (the embeddings) for each string.
 
 Currently, the following embedding models are supported:
 
@@ -369,12 +400,13 @@ Currently, the following embedding models are supported:
 
 #### LiteLLMEmbeddingModel
 
-`LiteLLMEmbeddingModel` provides a wrapper around LiteLLM's embedding functionality. It supports various embedding models through the LiteLLM interface, with automatic dimension inference and token limit handling.
+`LiteLLMEmbeddingModel` provides a wrapper around LiteLLM's embedding functionality.
+It supports various embedding models through the LiteLLM interface,
+with automatic dimension inference and token limit handling.
 It defaults to `text-embedding-3-small` and can be configured with `name` and `config` parameters.
 Notice that `LiteLLMEmbeddingModel` can also be rate limited.
 
 ```python
-import os
 from lmi import LiteLLMEmbeddingModel
 
 model = LiteLLMEmbeddingModel(
@@ -387,7 +419,10 @@ embeddings = await model.embed_documents(["text1", "text2", "text3"])
 
 #### HybridEmbeddingModel
 
-`HybridEmbeddingModel` combines multiple embedding models by concatenating their outputs. It is typically used to combine a dense embedding model (like `LiteLLMEmbeddingModel`) with a sparse embedding model for improved performance. The model can be created in two ways:
+`HybridEmbeddingModel` combines multiple embedding models by concatenating their outputs.
+It is typically used to combine a dense embedding model (like `LiteLLMEmbeddingModel`)
+with a sparse embedding model for improved performance.
+The model can be created in two ways:
 
 ```python
 from lmi import LiteLLMEmbeddingModel, SparseEmbeddingModel, HybridEmbeddingModel
@@ -397,8 +432,12 @@ sparse_model = SparseEmbeddingModel()
 hybrid_model = HybridEmbeddingModel(models=[dense_model, sparse_model])
 ```
 
-The resulting embedding dimension will be the sum of the dimensions of all component models. For example, if you combine a 1536-dimensional dense embedding with a 256-dimensional sparse embedding, the final embedding will be 1792-dimensional.
+The resulting embedding dimension will be the sum of the dimensions of all component models.
+For example, if you combine a 1536-dimensional dense embedding with a 256-dimensional sparse embedding,
+the final embedding will be 1792-dimensional.
 
 #### SentenceTransformerEmbeddingModel
 
-You can also use `sentence-transformer`, which is a local embedding library with support for HuggingFace models, by installing `lmi[local]`.
+You can also use `sentence-transformer`,
+which is a local embedding library with support for HuggingFace models,
+by installing `lmi[local]`.
