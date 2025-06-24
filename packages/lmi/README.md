@@ -368,7 +368,7 @@ Currently, the following embedding models are supported:
 #### LiteLLMEmbeddingModel
 
 `LiteLLMEmbeddingModel` provides a wrapper around LiteLLM's embedding functionality. It supports various embedding models through the LiteLLM interface, with automatic dimension inference and token limit handling.
-It defaults to `text-embedding-3-small` and can be configured with a `name` and `config` parameters.
+It defaults to `text-embedding-3-small` and can be configured with `name` and `config` parameters.
 Notice that `LiteLLMEmbeddingModel` can also be rate limited.
 
 ```python
