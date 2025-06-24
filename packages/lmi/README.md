@@ -367,7 +367,8 @@ Currently, the following embedding models are supported:
 
 #### LiteLLMEmbeddingModel
 
-`LiteLLMEmbeddingModel` provides a wrapper around LiteLLM's embedding functionality. It supports various embedding models through the LiteLLM interface, with automatic dimension inference and token limit handling. It defaults to `text-embedding-3-small` and can be configured with a `name`, `batch_size`, and `config` parameters.
+`LiteLLMEmbeddingModel` provides a wrapper around LiteLLM's embedding functionality. It supports various embedding models through the LiteLLM interface, with automatic dimension inference and token limit handling.
+It defaults to `text-embedding-3-small` and can be configured with a `name` and `config` parameters.
 Notice that `LiteLLMEmbeddingModel` can also be rate limited.
 
 ```python
@@ -376,10 +377,7 @@ from lmi import LiteLLMEmbeddingModel
 
 model = LiteLLMEmbeddingModel(
     name="text-embedding-3-small",
-    batch_size=16,
-    config={
-        "rate_limit": "100/minute",
-    },
+    config={"rate_limit": "100/minute", "batch_size": 16},
 )
 
 embeddings = await model.embed_documents(["text1", "text2", "text3"])
