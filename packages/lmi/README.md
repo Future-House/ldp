@@ -135,7 +135,7 @@ llm = LiteLLMModel(config=config)
 
 Cost tracking is supported in two different ways:
 
-1. Calls to the LLM returns the token usage for each call in `LLMResult.prompt_count` and `LLMResult.completion_count`.
+1. Calls to the LLM return the token usage for each call in `LLMResult.prompt_count` and `LLMResult.completion_count`.
    Additionally, `LLMResult.cost` can be used to get a cost estimate for the call in USD.
 2. A global cost tracker is maintained in `GLOBAL_COST_TRACKER`
    and can be enabled or disabled using `enable_cost_tracking()` and `cost_tracking_ctx()`.
