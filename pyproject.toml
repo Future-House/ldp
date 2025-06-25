@@ -120,6 +120,15 @@ check-hidden = true
 ignore-words-list = "astroid,ser"
 skip = "**tests/cassettes/*,**/tests/cassettes/*"
 
+[tool.markdownlint]
+no-inline-html = false
+
+[tool.markdownlint.line-length]
+code_block_line_length = 88  # Match ruff line-length
+line_length = 120  # Match ruff max-doc-length
+stern = true
+tables = false
+
 [tool.mypy]
 # Type-checks the interior of functions without type annotations.
 check_untyped_defs = true
@@ -587,7 +596,7 @@ mypy-init-return = true
 [tool.ruff.lint.pycodestyle]
 # The maximum line length to allow for line-length violations within
 # documentation (W505), including standalone comments.
-max-doc-length = 120  # Match line-length
+max-doc-length = 120
 # The maximum line length to allow for line-too-long violations. By default,
 # this is set to the value of the line-length option.
 max-line-length = 120
