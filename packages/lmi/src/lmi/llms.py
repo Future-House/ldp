@@ -735,8 +735,6 @@ class LiteLLMModel(LLMModel):
             outputs.append(delta.content or "")
             role = delta.role or role
             if hasattr(delta, "reasoning_content"):
-                # NOTE: DeepSeek's reasoning was added in:
-                # https://github.com/BerriAI/litellm/issues/7877
                 reasoning_content.append(delta.reasoning_content or "")
         text = "".join(outputs)
         result = LLMResult(
