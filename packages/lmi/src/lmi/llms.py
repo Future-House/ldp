@@ -77,6 +77,7 @@ class CommonLLMNames(StrEnum):
     GPT_4O = "gpt-4o-2024-11-20"
     GPT_35_TURBO = "gpt-3.5-turbo-0125"
     CLAUDE_35_SONNET = "claude-3-5-sonnet-20241022"
+    CLAUDE_37_SONNET = "claude-3-7-sonnet-20250219"
 
     # Use these when trying to think of a somewhat opinionated default
     OPENAI_BASELINE = "gpt-4o-2024-11-20"  # Fast and decent

@@ -852,13 +852,14 @@ class TestReasoning:
     @pytest.mark.asyncio
     async def test_anthropic_model(self) -> None:
         llm = LiteLLMModel(
-            name="anthropic/claude-3-7-sonnet-20250219",
+            # Using 3.7 sonnet for its reasoning capabilities
+            name=CommonLLMNames.CLAUDE_37_SONNET.value,
             config={
                 "model_list": [
                     {
-                        "model_name": "anthropic/claude-3-7-sonnet-20250219",
+                        "model_name": CommonLLMNames.CLAUDE_37_SONNET.value,
                         "litellm_params": {
-                            "model": "anthropic/claude-3-7-sonnet-20250219",
+                            "model": CommonLLMNames.CLAUDE_37_SONNET.value,
                             "reasoning_effort": "low",
                         },
                     }
@@ -872,7 +873,7 @@ class TestReasoning:
             ),
             Message(content="What is the meaning of life?"),
         ]
-        results = await llm.call(messages, reasoning_effort="high")
+        results = await llm.call(messages)
         for result in results:
             assert result.reasoning_content is not None, "Should have reasoning content"
             assert result.text is not None
