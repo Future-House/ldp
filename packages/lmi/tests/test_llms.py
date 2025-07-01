@@ -814,36 +814,22 @@ class TestTooling:
 
 class TestReasoning:
     @pytest.mark.parametrize(
-        ("llm_name", "llm_settings"),
+        "llm_name",
         [
             pytest.param(
                 "deepseek/deepseek-reasoner",
-                {
-                    "model_list": [
-                        {
-                            "model_name": "deepseek/deepseek-reasoner",
-                            "litellm_params": {
-                                "model": "deepseek/deepseek-reasoner",
-                                "api_base": "https://api.deepseek.com/v1",
-                            },
-                        }
-                    ]
-                },
                 id="deepseek-reasoner",
             ),
             pytest.param(
                 "openrouter/deepseek/deepseek-r1",
-                {},
                 id="openrouter-deepseek",
             ),
         ],
     )
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
-    async def test_deepseek_model(
-        self, llm_name: str, llm_settings: dict[str, Any]
-    ) -> None:
-        llm = LiteLLMModel(name=llm_name, config=llm_settings)
+    async def test_deepseek_model(self, llm_name: str) -> None:
+        llm = LiteLLMModel(name=llm_name)
         messages = [
             Message(
                 role="system",
@@ -861,6 +847,36 @@ class TestReasoning:
         for i, result in enumerate(results):
             assert result.reasoning_content
             assert outputs[i] == result.text
+
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.asyncio
+    async def test_anthropic_model(self) -> None:
+        llm = LiteLLMModel(
+            # Using 3.7 sonnet for its reasoning capabilities
+            name=CommonLLMNames.CLAUDE_37_SONNET.value,
+            config={
+                "model_list": [
+                    {
+                        "model_name": CommonLLMNames.CLAUDE_37_SONNET.value,
+                        "litellm_params": {
+                            "model": CommonLLMNames.CLAUDE_37_SONNET.value,
+                            "reasoning_effort": "low",
+                        },
+                    }
+                ]
+            },
+        )
+        messages = [
+            Message(
+                role="system",
+                content="Think deeply about the following question and answer it.",
+            ),
+            Message(content="What is the meaning of life?"),
+        ]
+        results = await llm.call(messages)
+        for result in results:
+            assert result.reasoning_content is not None, "Should have reasoning content"
+            assert result.text is not None
 
 
 def test_json_schema_validation() -> None:
