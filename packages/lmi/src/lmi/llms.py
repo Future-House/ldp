@@ -37,10 +37,6 @@ from aviary.core import (
     ToolSelector,
     is_coroutine_callable,
 )
-from litellm import (
-    LlmProviders,
-    get_llm_provider,
-)
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -258,13 +254,6 @@ class LLMModel(ABC, BaseModel):
             raise ValueError("Number of completions (n) must be >= 1.")
         if "fallbacks" not in chat_kwargs and "fallbacks" in self.config:
             chat_kwargs["fallbacks"] = self.config.get("fallbacks", [])
-
-        # NOTE: Checking if the model is a deepseek-r1-like model so that we can pass include_reasoning=True
-        # This hard-coded check will be removed once we have a better way to check if the model supports reasoning
-        # See: https://github.com/BerriAI/litellm/issues/8765
-        # Only reasoning with deepseek-r1 model is supported so far
-        if LlmProviders.DEEPSEEK.value in get_llm_provider(self.name):
-            chat_kwargs["include_reasoning"] = True
 
         # deal with tools
         if tools:
@@ -685,22 +674,8 @@ class LiteLLMModel(LLMModel):
                 output_messages = [Message(**completion.message.model_dump())]
 
             reasoning_content = None
-            if (
-                hasattr(completion.message, "provider_specific_fields")
-                and completion.message.provider_specific_fields is not None
-            ):
-                # NOTE: DeepSeek's reasoning was added in:
-                # https://github.com/BerriAI/litellm/issues/7877
-                provider_specific_fields = completion.message.provider_specific_fields
-                if isinstance(provider_specific_fields, dict):
-                    reasoning_content = provider_specific_fields.get(
-                        "reasoning_content"
-                    )
-            elif hasattr(completion.message, "reasoning"):
-                # OpenRouter's reasoning:
-                # https://github.com/BerriAI/litellm/issues/8130
-                # https://openrouter.ai/docs/api-reference/parameters#include-reasoning
-                reasoning_content = completion.message.reasoning
+            if hasattr(completion.message, "reasoning_content"):
+                reasoning_content = completion.message.reasoning_content
 
             results.append(
                 LLMResult(
