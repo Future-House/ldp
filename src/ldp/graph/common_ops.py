@@ -237,7 +237,7 @@ class LLMCallOp(Op[Message]):
         config: dict,
         msgs: list[Message],
         tools: list[Tool] = ...,
-        tool_choice: Tool | str | None = LLMModel.TOOL_CHOICE_REQUIRED,
+        tool_choice: Tool | str | None = LLMModel.MODEL_CHOOSES_TOOL,
     ) -> ToolRequestMessage: ...
 
     @overload
@@ -246,7 +246,7 @@ class LLMCallOp(Op[Message]):
         config: dict,
         msgs: list[Message],
         tools: None = None,
-        tool_choice: str | None = LLMModel.TOOL_CHOICE_REQUIRED,
+        tool_choice: str | None = LLMModel.MODEL_CHOOSES_TOOL,
     ) -> Message: ...
 
     async def forward(
@@ -254,7 +254,7 @@ class LLMCallOp(Op[Message]):
         config: dict,
         msgs: list[Message],
         tools: list[Tool] | None = None,
-        tool_choice: Tool | str | None = LLMModel.TOOL_CHOICE_REQUIRED,
+        tool_choice: Tool | str | None = LLMModel.MODEL_CHOOSES_TOOL,
     ) -> Message:
         """Calls the LLM.
 
