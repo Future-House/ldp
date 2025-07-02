@@ -229,6 +229,7 @@ class LLMModel(ABC, BaseModel):
         output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = None,
         tools: list[Tool] | None = None,
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
+        stream: bool = False,
         **kwargs,
     ) -> list[LLMResult]:
         """Call the LLM model with the given messages and configuration.
@@ -250,9 +251,12 @@ class LLMModel(ABC, BaseModel):
         # there may be a nested 'config' key
         # that can't be used by chat
         chat_kwargs.pop("config", None)
+        chat_kwargs.pop("stream", None)
         n = chat_kwargs.get("n") or self.config.get("n", 1)
         if n < 1:
             raise ValueError("Number of completions (n) must be >= 1.")
+        if stream and n > 1:
+            raise ValueError("Number of completions (n) must be 1 when streaming.")
         if "fallbacks" not in chat_kwargs and "fallbacks" in self.config:
             chat_kwargs["fallbacks"] = self.config.get("fallbacks", [])
 
@@ -320,34 +324,19 @@ class LLMModel(ABC, BaseModel):
             )
             for m in messages
         ]
-        results: list[LLMResult] = []
 
+        results: list[LLMResult] = []
         start_clock = asyncio.get_running_loop().time()
-        if callbacks is None:
+        if not stream:
+            sync_callbacks = [f for f in (callbacks or []) if not is_coroutine_callable(f)]
+            async_callbacks = [f for f in (callbacks or []) if is_coroutine_callable(f)]
             results = await self.acompletion(messages, **chat_kwargs)
+            await do_callbacks(async_callbacks, sync_callbacks, results, name)
         else:
             if tools:
                 raise NotImplementedError("Using tools with callbacks is not supported")
-            n = chat_kwargs.get("n") or self.config.get("n", 1)
-            if n > 1:
-                raise NotImplementedError(
-                    "Multiple completions with callbacks is not supported"
-                )
-            sync_callbacks = [f for f in callbacks if not is_coroutine_callable(f)]
-            async_callbacks = [f for f in callbacks if is_coroutine_callable(f)]
             stream_results = await self.acompletion_iter(messages, **chat_kwargs)
-            text_result = []
-            async for result in stream_results:
-                if result.text:
-                    if result.seconds_to_first_token == 0:
-                        result.seconds_to_first_token = (
-                            asyncio.get_running_loop().time() - start_clock
-                        )
-                    text_result.append(result.text)
-                    await do_callbacks(
-                        async_callbacks, sync_callbacks, result.text, name
-                    )
-                results.append(result)
+            return stream_results
 
         for result in results:
             usage = result.prompt_count, result.completion_count
