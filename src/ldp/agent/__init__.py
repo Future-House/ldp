@@ -8,6 +8,7 @@ from .agent_client import HTTPAgentClient, make_simple_agent_server
 from .memory_agent import MemoryAgent
 from .react_agent import ReActAgent
 from .simple_agent import NoToolsSimpleAgent, SimpleAgent, SimpleAgentState
+from .simpler_agents import SimplerNotebookAgent, XMLToolAgent
 from .tree_of_thoughts_agent import TreeofThoughtsAgent
 
 __all__ = [
@@ -20,6 +21,8 @@ __all__ = [
     "ReActAgent",
     "SimpleAgent",
     "SimpleAgentState",
+    "SimplerNotebookAgent",
     "TreeofThoughtsAgent",
+    "XMLToolAgent",
     "make_simple_agent_server",
 ]
