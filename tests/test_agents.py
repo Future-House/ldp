@@ -28,6 +28,11 @@ from ldp.agent import (
 )
 from ldp.agent.interactive_agent import InteractiveAgent
 from ldp.agent.simple_agent import HiddenEnvStateMessage, NoToolsSimpleAgent
+from ldp.agent.simpler_agents import (
+    XMLToolAgent,
+    parse_simpler_notebook_agent_action,
+    parse_xml_tool_calls,
+)
 from ldp.alg import to_network
 from ldp.graph import LLMCallOp, Memory, OpResult, eval_mode
 from ldp.graph.gradient_estimators import llm_straight_through_estimator as llm_ste
@@ -425,8 +430,7 @@ class TestReActAgent:
         obs = dummy_env.state.messages = [
             Message(
                 content=(
-                    "Cast '5.5' to a float, then to an integer,"
-                    " and finally use it to write a story of that many words."
+                    "Cast '5.5' to a float, then to an integer, and finally use it to write a story of that many words."
                 )
             )
         ]
@@ -726,8 +730,7 @@ class TestHTTPAgentClient:
         obs = dummy_env.state.messages = [
             Message(
                 content=(
-                    "Cast '5.5' to a float, then to an integer,"
-                    " and finally use it to write a story of that many words."
+                    "Cast '5.5' to a float, then to an integer, and finally use it to write a story of that many words."
                 )
             )
         ]
@@ -803,3 +806,150 @@ async def test_interactive(dummy_env: DummyEnv, mocker):
     next_obs, _, done, _ = await dummy_env.step(action.value)  # noqa: RUF059
 
     assert mock_input.call_count >= 2
+
+
+class TestXMLToolAgent:
+    @pytest.mark.parametrize(
+        "model_name",
+        [CommonLLMNames.ANTHROPIC_TEST.value, CommonLLMNames.OPENAI_TEST.value],
+    )
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
+        obs, tools = await dummy_env.reset()
+        agent = XMLToolAgent(llm_model={"name": model_name, "temperature": 0.1})
+        agent_state = await agent.init_state(tools=tools)
+        action, agent_state, _ = await agent.get_asv(agent_state, obs)
+        obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
+        assert reward > 0, (
+            "Reward should be positive, indicating agent called print_story tool"
+        )
+        assert done
+
+        # Check serialization after get_asv runs to ensure private
+        # Ops aren't included
+        assert agent.model_dump() == {
+            "hide_old_env_states": False,
+            "hide_old_action_content": False,
+            "llm_model": {"name": model_name, "temperature": 0.1},
+            "sys_prompt": None,
+        }
+
+        # Check we can get the LLM results to sum cost and count tokens
+        assert action.call_id is not None, "Compute graph not attached to action."
+        for op_r in action.traverse():
+            if issubclass(op_r.op_class, LLMCallOp):
+                # will raise if cannot retrieve result
+                op_r._get_from_ctx("result")
+                break
+        else:
+            raise RuntimeError("Could not find LLMCallOp in compute graph")
+
+    def test_xml_parsing_single_tool_call(self):
+        """Test XML tool call parsing."""
+        xml_text = """
+        Here's my response with a tool call:
+
+        <tool_call id="test123">
+        <name>search_files</name>
+        <arguments>
+            <query>python files</query>
+            <max_results>5</max_results>
+        </arguments>
+        </tool_call>
+
+        That should find the files you need.
+        """
+
+        tool_calls = parse_xml_tool_calls(xml_text)
+        assert len(tool_calls) == 1
+        assert tool_calls[0].function.name == "search_files"
+        assert tool_calls[0].function.arguments["query"] == "python files"
+        assert tool_calls[0].function.arguments["max_results"] == 5
+
+    def test_xml_parsing_multiple_tool_calls(self):
+        # Test multiple tool calls
+        multi_xml_text = """
+        I'll help you with both tasks:
+
+        <tool_call id="call1">
+        <name>search_files</name>
+        <arguments>
+            <query>config</query>
+            <max_results>3</max_results>
+        </arguments>
+        </tool_call>
+
+        <tool_call id="call2">
+        <name>calculator</name>
+        <arguments>
+            <operation>add</operation>
+            <a>
+            10.5
+            </a>
+            <b>20.3</b>
+        </arguments>
+        </tool_call>
+        """
+
+        multi_calls = parse_xml_tool_calls(multi_xml_text)
+        assert len(multi_calls) == 2
+        assert multi_calls[0].function.name == "search_files"
+        assert multi_calls[1].function.name == "calculator"
+        assert multi_calls[1].function.arguments["a"] == 10.5
+        assert multi_calls[1].function.arguments["b"] == 20.3
+
+
+class TestSimplerNotebookAgent:
+    def test_simpler_notebook_parsing_edit_cell(self):
+        """Test simpler notebook tool call parsing."""
+        simpler_notebook_text = """
+Here's my response with a tool call:
+
+Cell 0:
+```python
+print("Hello, world!")
+```
+
+Cell 1:
+```python
+import pandas as pd
+
+df = pd.read_csv("datasets/brain_size_data.csv")
+print(df.head())
+```
+"""
+
+        message = Message(content=simpler_notebook_text)
+        tool_calls = parse_simpler_notebook_agent_action(message)
+        assert tool_calls.tool_calls[0].function.name == "edit_cell"
+        assert (
+            tool_calls.tool_calls[0].function.arguments["contents"]
+            == 'print("Hello, world!")'
+        )
+        assert tool_calls.tool_calls[0].function.arguments["idx"] == 0
+        assert tool_calls.tool_calls[1].function.name == "edit_cell"
+        assert (
+            tool_calls.tool_calls[1].function.arguments["contents"]
+            == 'import pandas as pd\n\ndf = pd.read_csv("datasets/brain_size_data.csv")\nprint(df.head())'
+        )
+        assert tool_calls.tool_calls[1].function.arguments["idx"] == 1
+
+    def test_simpler_notebook_parsing_single_tool_call(self):
+        """Test simpler notebook tool call parsing."""
+        simpler_notebook_text = """
+        Here's my response with a tool call:
+
+<answer>
+Your final answer here
+</answer>
+        That should find the files you need.
+        """
+        message = Message(content=simpler_notebook_text)
+
+        tool_calls = parse_simpler_notebook_agent_action(message)
+        assert tool_calls.tool_calls[0].function.name == "submit_answer"
+        assert (
+            tool_calls.tool_calls[0].function.arguments["answer"]
+            == "\nYour final answer here\n"
+        )
