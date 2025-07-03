@@ -811,6 +811,20 @@ class TestTooling:
             assert isinstance(result.messages[0], ToolRequestMessage)
             assert not result.messages[0].tool_calls
 
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_multi_response_validation(self) -> None:
+        model = LiteLLMModel(name="text-completion-openai/babbage-002")
+        with pytest.raises(ValueError, match="2 results"):
+            # Confirming https://github.com/BerriAI/litellm/issues/12298
+            # does not silently pass through LMI
+            await model.call_single(
+                messages=[
+                    Message(role="system", content="Answer in a concise tone."),
+                    Message(content="What is your name?"),
+                ]
+            )
+
 
 class TestReasoning:
     @pytest.mark.parametrize(

@@ -377,7 +377,10 @@ class LLMModel(ABC, BaseModel):
             messages, callbacks, name, output_type, tools, tool_choice, n=1, **kwargs
         )
         if not results:
-            raise ValueError("No results returned from call")
+            raise ValueError("No results returned from call.")
+        if len(results) > 1:
+            # Can be caused by issues like https://github.com/BerriAI/litellm/issues/12298
+            raise ValueError(f"Got {len(results)} results when expecting just one.")
         return results[0]
 
 
