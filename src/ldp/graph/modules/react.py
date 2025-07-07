@@ -108,19 +108,18 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
 # Planning mode prompt template
 REACT_PLANNING_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
     fields=(
-        "Thought: follow this structured format:\n"
-        "1. FIRST: Reason about whether the latest step of the trajectory has successfully completed the latest step of the plan or not. [If this is the first step this is not applicable]\n"
-        "2. SECOND: Give an updated plan as a checklist with [ ] for incomplete and [x] for completed steps, where each step is 1-3 sentences long\n"
-        "3. THIRD: Reason about the immediate next step you're about to take"
+        "Critic: Assess whether the latest step of the trajectory has successfully completed the latest step of the plan or not [inapplicable on first step]."
+        "\nPlan: Give an updated plan as a checklist with [ ] for incomplete and [x] for completed steps, where each step is 1-3 sentences long"
+        "\nThought: Reason about the immediate next step you're about to take"
         "\nAction: the action to take,"
         " should be one of the provided tools with necessary arguments"
         "\nObservation: the result of the action"
     ),
-    fields_description="Thought/Action/Observation",
+    fields_description="Critic/Plan/Thought/Action/Observation",
     example=(
-        "Thought: 1. FIRST: This is the first step, so not applicable.\n"
-        "2. SECOND: Updated plan:\n[ ] Get weather information for New York\n[ ] Format the response appropriately\n"
-        "3. THIRD: I need to start by getting the weather information for New York using the get_weather tool"
+        "Critic: This is the first step, so not applicable."
+        "\nPlan: Updated plan:\n[ ] Get weather information for New York\n[ ] Format the response appropriately"
+        "\nThought: I need to start by getting the weather information for New York using the get_weather tool"
         '\nAction: get_weather("New York", 7)'
         "\nObservation: The 7 day forecast for New York is [...]"
     ),
@@ -404,5 +403,117 @@ class ReActModule(ReActModuleSinglePrompt):
             # the "continue..." (user) message from user,
             # and tool selection (assistant) message
             *packaged_msgs_with_reasoning.value[-2:],
+            tool_selection_msg.value,
+        ]
+
+
+class ReActPlanningModule(ReActModule):
+    """A planning variant of ReActModule that makes three separate LLM calls for structured reasoning."""
+
+    def __init__(
+        self,
+        llm_model: dict[str, Any],
+        sys_prompt: str = REACT_PLANNING_PROMPT_TEMPLATE,
+        tool_description_method: ToolDescriptionMethods = ToolDescriptionMethods.STR,
+    ):
+        self._tool_description_method = tool_description_method
+        llm_model["stop"] = ["Observation:", "Action:"]
+        self.llm_config = llm_model
+        self._llm_call_op = LLMCallOp()
+        self.prompt_op = PromptOp(sys_prompt)
+        self.package_msg_op = FxnOp(prepend_sys)
+        
+        # Create prompt ops for the three components
+        self.critic_prompt_op = PromptOp(
+            "Output ONLY a critic assessment. Assess whether the latest step of the trajectory has successfully completed the latest step of the plan or not. Do not output plan or thought."
+        )
+        self.plan_prompt_op = PromptOp(
+            "Output ONLY an updated plan. Give an updated plan as a checklist with [ ] for incomplete and [x] for completed steps, where each step is 1-3 sentences long. Do not output critic or thought."
+        )
+        self.thought_prompt_op = PromptOp(
+            "Output ONLY a thought. Reason about the immediate next step you're about to take. Do not output critic or plan."
+        )
+
+    @property
+    def llm_call_op(self) -> LLMCallOp:
+        return self._llm_call_op
+
+    @compute_graph()
+    async def __call__(
+        self, messages: Iterable[Message], tools: list[Tool]
+    ) -> tuple[OpResult[ToolRequestMessage], Messages]:
+        sys_prompt = await self.prompt_op()
+        
+        # Step 1: Critic - assess previous step
+        critic_instruction = await self.critic_prompt_op()
+        packaged_msgs = await self.package_msg_op(messages, sys_content=sys_prompt)
+        critic_msgs = [*packaged_msgs.value, Message(content=critic_instruction.value)]
+        critic_msg = await self.llm_call_op(
+            self.llm_config,
+            msgs=critic_msgs,
+            tools=tools,
+            tool_choice="none",
+        )
+        
+        # Step 2: Plan - generate updated plan
+        plan_instruction = await self.plan_prompt_op()
+        packaged_msgs_with_critic = await self.package_msg_op(
+            [*messages, critic_msg.value], sys_content=sys_prompt
+        )
+        plan_msgs = [*packaged_msgs_with_critic.value, Message(content=plan_instruction.value)]
+        plan_msg = await self.llm_call_op(
+            self.llm_config,
+            msgs=plan_msgs,
+            tools=tools,
+            tool_choice="none",
+        )
+        
+        # Step 3: Thought - reason about immediate next step
+        thought_instruction = await self.thought_prompt_op()
+        packaged_msgs_with_plan = await self.package_msg_op(
+            [*messages, critic_msg.value, plan_msg.value], sys_content=sys_prompt
+        )
+        thought_msgs = [*packaged_msgs_with_plan.value, Message(content=thought_instruction.value)]
+        thought_msg = await self.llm_call_op(
+            self.llm_config,
+            msgs=thought_msgs,
+            tools=tools,
+            tool_choice="none",
+        )
+        
+        # Combine all reasoning into a single message for tool selection
+        combined_reasoning = (
+            f"Critic: {critic_msg.value.content or ''}\n"
+            f"Plan: {plan_msg.value.content or ''}\n"
+            f"Thought: {thought_msg.value.content or ''}"
+        )
+        
+        # Step 4: Tool selection based on combined reasoning
+        tool_selection_prompt = (
+            f"{combined_reasoning}."
+            " Based on this reasoning, let's select the appropriate tool!"
+            "\nAction: "
+        )
+        
+        packaged_msgs_final = await self.package_msg_op(
+            [
+                *messages,
+                Message(content=tool_selection_prompt, role="assistant"),
+                Message(content="Continue..."),
+            ],
+            sys_content=sys_prompt,
+        )
+        
+        tool_selection_msg = await self.llm_call_op(
+            self.llm_config, msgs=packaged_msgs_final, tools=tools
+        )
+        
+        return cast("OpResult[ToolRequestMessage]", tool_selection_msg), [
+            # Return all the new messages: critic, plan, thought, combined reasoning, continue, and tool selection
+            critic_msg.value,
+            plan_msg.value,
+            thought_msg.value,
+            Message(content=tool_selection_prompt, role="assistant"),
+            Message(content="Continue..."),
             tool_selection_msg.value,
         ]

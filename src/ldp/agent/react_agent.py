@@ -28,6 +28,7 @@ from ldp.graph.modules.react import (
     REACT_PLANNING_PROMPT_TEMPLATE,
     ReActModule,
     ReActModuleSinglePrompt,
+    ReActPlanningModule,
     ToolDescriptionMethods,
 )
 
@@ -160,6 +161,10 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         super().__init__(**kwargs)
         if self.single_prompt:
             self._react_module = ReActModuleSinglePrompt(
+                self.llm_model, self.sys_prompt, self.tool_description_method
+            )
+        elif self.planning:
+            self._react_module = ReActPlanningModule(
                 self.llm_model, self.sys_prompt, self.tool_description_method
             )
         else:
