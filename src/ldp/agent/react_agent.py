@@ -25,6 +25,8 @@ from ldp.graph.modules.react import (
     ACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
     REACT_DEFAULT_PROMPT_TEMPLATE,
     REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
+    REACT_PLANNING_PROMPT_TEMPLATE,
+    REACT_PLANNING_SINGLE_PROMPT_TEMPLATE,
     ReActModule,
     ReActModuleSinglePrompt,
     ToolDescriptionMethods,
@@ -111,6 +113,14 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
             " results in fewer action selection failures."
         ),
     )
+    planning: bool = Field(
+        default=False,
+        description=(
+            "Specifies whether to use planning mode. When enabled, the agent will"
+            " first output a step-by-step plan as a checklist, then think about the"
+            " next immediate action to take. The plan is updated after each step."
+        ),
+    )
 
     hide_old_env_states: bool = Field(
         default=False,
@@ -133,11 +143,19 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         # set sys_prompt if not provided
         if "sys_prompt" not in kwargs:
             single_prompt = kwargs.get("single_prompt", False)
-            kwargs["sys_prompt"] = (
-                REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE
-                if single_prompt
-                else REACT_DEFAULT_PROMPT_TEMPLATE
-            )
+            planning = kwargs.get("planning", False)
+            if planning:
+                kwargs["sys_prompt"] = (
+                    REACT_PLANNING_SINGLE_PROMPT_TEMPLATE
+                    if single_prompt
+                    else REACT_PLANNING_PROMPT_TEMPLATE
+                )
+            else:
+                kwargs["sys_prompt"] = (
+                    REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE
+                    if single_prompt
+                    else REACT_DEFAULT_PROMPT_TEMPLATE
+                )
 
         super().__init__(**kwargs)
         if self.single_prompt:

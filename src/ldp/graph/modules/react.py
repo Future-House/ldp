@@ -105,6 +105,48 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
     ),
 )
 
+# Planning mode prompt templates
+REACT_PLANNING_SINGLE_PROMPT_TEMPLATE = _DEFAULT_SINGLE_PROMPT_TEMPLATE.format(
+    fields=(
+        "Thought: follow this structured format:\n"
+        "1. FIRST: Reason about whether the latest step of the trajectory has successfully completed the latest step of the plan or not. [If this is the first step this is not applicable]\n"
+        "2. SECOND: Give an updated plan as a checklist with [ ] for incomplete and [x] for completed steps\n"
+        "3. THIRD: Reason about the immediate next step you're about to take"
+        "\nAction: the action to take, should be one of [{tool_names}]"
+        "\nAction Input: comma separated list of inputs to action as python tuple"
+        "\nObservation: the result of the action"
+    ),
+    fields_description="Thought/Action/Action Input/Observation",
+    example=(
+        "Thought: 1. FIRST: This is the first step, so not applicable.\n"
+        "2. SECOND: Updated plan:\n[ ] Get weather information for New York\n[ ] Format the response appropriately\n"
+        "3. THIRD: I need to start by getting the weather information for New York using the get_weather tool"
+        "\nAction: get_weather"
+        '\nAction Input: "New York", 7'
+        "\nObservation: The 7 day forecast for New York is [...]"
+    ),
+)
+
+REACT_PLANNING_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
+    fields=(
+        "Thought: follow this structured format:\n"
+        "1. FIRST: Reason about whether the latest step of the trajectory has successfully completed the latest step of the plan or not. [If this is the first step this is not applicable]\n"
+        "2. SECOND: Give an updated plan as a checklist with [ ] for incomplete and [x] for completed steps\n"
+        "3. THIRD: Reason about the immediate next step you're about to take"
+        "\nAction: the action to take,"
+        " should be one of the provided tools with necessary arguments"
+        "\nObservation: the result of the action"
+    ),
+    fields_description="Thought/Action/Observation",
+    example=(
+        "Thought: 1. FIRST: This is the first step, so not applicable.\n"
+        "2. SECOND: Updated plan:\n[ ] Get weather information for New York\n[ ] Format the response appropriately\n"
+        "3. THIRD: I need to start by getting the weather information for New York using the get_weather tool"
+        '\nAction: get_weather("New York", 7)'
+        "\nObservation: The 7 day forecast for New York is [...]"
+    ),
+)
+
 
 def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:  # noqa: C901
     """
