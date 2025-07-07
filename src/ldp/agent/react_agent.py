@@ -26,7 +26,6 @@ from ldp.graph.modules.react import (
     REACT_DEFAULT_PROMPT_TEMPLATE,
     REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
     REACT_PLANNING_PROMPT_TEMPLATE,
-    REACT_PLANNING_SINGLE_PROMPT_TEMPLATE,
     ReActModule,
     ReActModuleSinglePrompt,
     ToolDescriptionMethods,
@@ -140,16 +139,17 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         )
 
     def __init__(self, **kwargs):
+        # Validate planning mode compatibility
+        single_prompt = kwargs.get("single_prompt", False)
+        planning = kwargs.get("planning", False)
+        
+        if planning and single_prompt:
+            raise ValueError("Planning mode can only be used when single_prompt is False")
+        
         # set sys_prompt if not provided
         if "sys_prompt" not in kwargs:
-            single_prompt = kwargs.get("single_prompt", False)
-            planning = kwargs.get("planning", False)
             if planning:
-                kwargs["sys_prompt"] = (
-                    REACT_PLANNING_SINGLE_PROMPT_TEMPLATE
-                    if single_prompt
-                    else REACT_PLANNING_PROMPT_TEMPLATE
-                )
+                kwargs["sys_prompt"] = REACT_PLANNING_PROMPT_TEMPLATE
             else:
                 kwargs["sys_prompt"] = (
                     REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE
