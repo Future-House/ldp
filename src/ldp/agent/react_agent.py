@@ -143,10 +143,12 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         # Validate planning mode compatibility
         single_prompt = kwargs.get("single_prompt", False)
         planning = kwargs.get("planning", False)
-        
+
         if planning and single_prompt:
-            raise ValueError("Planning mode can only be used when single_prompt is False")
-        
+            raise ValueError(
+                "Planning mode can only be used when single_prompt is False"
+            )
+
         # set sys_prompt if not provided
         if "sys_prompt" not in kwargs:
             if planning:

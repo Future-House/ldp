@@ -21,32 +21,35 @@ from ldp.llms import prepend_sys
 from .llm_call import ParsedLLMCallModule
 
 
-def clean_llm_output(content: str, prefix: str | None = None, truncate_at: str | None = None) -> str:
+def clean_llm_output(
+    content: str, prefix: str | None = None, truncate_at: str | None = None
+) -> str:
     """
     Clean LLM output by removing prefix and truncating at specified marker.
-    
+
     Args:
         content: The raw LLM output content
         prefix: Optional prefix to remove (e.g., "Plan:", "Thought:")
         truncate_at: Optional marker to truncate at (e.g., "Action:", "Thought:")
-    
+
     Returns:
         Cleaned content string
     """
     if not content:
         return content
-        
+
     cleaned_content = content
-    
+
     # Remove prefix if present
     if prefix and cleaned_content.startswith(prefix):
-        cleaned_content = cleaned_content[len(prefix):].strip()
-    
+        cleaned_content = cleaned_content[len(prefix) :].strip()
+
     # Truncate at marker if present
     if truncate_at and truncate_at in cleaned_content:
         cleaned_content = cleaned_content.split(truncate_at)[0].strip()
-    
+
     return cleaned_content
+
 
 # These prompts are meant to be used with ReActModuleSinglePrompt
 _DEFAULT_SINGLE_PROMPT_TEMPLATE = textwrap.dedent(
@@ -136,11 +139,12 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
 # Planning mode prompt template
 REACT_PLANNING_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
     fields=(
-        "Critic: Assess whether the latest step of the trajectory has successfully completed the latest step of the plan or not [inapplicable on first step]."
-        "\nPlan: Give an updated plan as a checklist with [ ] for incomplete and [x] for completed steps, where each step is 1-3 sentences long"
+        "Critic: Assess whether the previous step of the trajectory has successfully completed the last step of the "
+        "plan."
+        "\nPlan: Give an updated plan as a checklist with [ ] for incomplete and [x] for completed steps. "
+        "Each step should be 1-3 sentences long."
         "\nThought: Reason about the immediate next step you're about to take"
-        "\nAction: the action to take,"
-        " should be one of the provided tools with necessary arguments"
+        "\nAction: the action to take, should be one of the provided tools with necessary arguments"
         "\nObservation: the result of the action"
     ),
     fields_description="Critic/Plan/Thought/Action/Observation",
@@ -450,16 +454,19 @@ class ReActPlanningModule(ReActModule):
         self._llm_call_op = LLMCallOp()
         self.prompt_op = PromptOp(sys_prompt)
         self.package_msg_op = FxnOp(prepend_sys)
-        
+
         # Create prompt ops for the three components
         self.critic_prompt_op = PromptOp(
-            "Output ONLY a critic assessment. Assess whether the latest step of the trajectory has successfully completed the latest step of the plan or not. Do not output plan or thought."
+            "Output ONLY a critic assessment. Assess whether the latest step of the trajectory has successfully "
+            "completed the latest step of the plan or not. Do not output plan or thought."
         )
         self.plan_prompt_op = PromptOp(
-            "Output ONLY an updated plan. Give an updated plan as a checklist with [ ] for incomplete and [x] for completed steps, where each step is 1-3 sentences long. Do not output critic or thought."
+            "Output ONLY an updated plan. Give an updated plan as a checklist with [ ] for incomplete and [x] for "
+            "completed steps, where each step is 1-3 sentences long. Do not output critic or thought."
         )
         self.thought_prompt_op = PromptOp(
-            "Output ONLY a thought. Reason about the immediate next step you're about to take. Do not output critic or plan."
+            "Output ONLY a thought. Reason about the immediate next step you're about to take. Do not output critic or "
+            "plan."
         )
 
     @property
@@ -472,10 +479,12 @@ class ReActPlanningModule(ReActModule):
     ) -> tuple[OpResult[ToolRequestMessage], Messages]:
         sys_prompt = await self.prompt_op()
         messages = list(messages)
-        
+
         # Check if this is the first step (no previous tool responses)
-        is_first_step = not any(hasattr(msg, 'tool_calls') and msg.tool_calls for msg in messages)
-        
+        is_first_step = not any(
+            hasattr(msg, "tool_calls") and msg.tool_calls for msg in messages
+        )
+
         # Step 1: Critic - assess previous step (skip on first step)
         if is_first_step:
             critic_msg = None
@@ -483,7 +492,10 @@ class ReActPlanningModule(ReActModule):
         else:
             critic_instruction = await self.critic_prompt_op()
             packaged_msgs = await self.package_msg_op(messages, sys_content=sys_prompt)
-            critic_msgs = [*packaged_msgs.value, Message(content=critic_instruction.value)]
+            critic_msgs = [
+                *packaged_msgs.value,
+                Message(content=critic_instruction.value),
+            ]
             critic_result = await self.llm_call_op(
                 self.llm_config,
                 msgs=critic_msgs,
@@ -493,15 +505,20 @@ class ReActPlanningModule(ReActModule):
             critic_msg = critic_result.value
             # Clean up critic output
             if critic_msg.content:
-                critic_msg.content = clean_llm_output(critic_msg.content, prefix="Critic:", truncate_at="Plan:")
+                critic_msg.content = clean_llm_output(
+                    critic_msg.content, prefix="Critic:", truncate_at="Plan:"
+                )
             current_messages = [*messages, critic_msg]
-        
+
         # Step 2: Plan - generate updated plan
         plan_instruction = await self.plan_prompt_op()
         packaged_msgs_with_critic = await self.package_msg_op(
             current_messages, sys_content=sys_prompt
         )
-        plan_msgs = [*packaged_msgs_with_critic.value, Message(content=plan_instruction.value)]
+        plan_msgs = [
+            *packaged_msgs_with_critic.value,
+            Message(content=plan_instruction.value),
+        ]
         plan_msg = await self.llm_call_op(
             self.llm_config,
             msgs=plan_msgs,
@@ -510,14 +527,19 @@ class ReActPlanningModule(ReActModule):
         )
         # Clean up plan output
         if plan_msg.value.content:
-            plan_msg.value.content = clean_llm_output(plan_msg.value.content, prefix="Plan:", truncate_at="Thought:")
-        
+            plan_msg.value.content = clean_llm_output(
+                plan_msg.value.content, prefix="Plan:", truncate_at="Thought:"
+            )
+
         # Step 3: Thought - reason about immediate next step
         thought_instruction = await self.thought_prompt_op()
         packaged_msgs_with_plan = await self.package_msg_op(
             [*current_messages, plan_msg.value], sys_content=sys_prompt
         )
-        thought_msgs = [*packaged_msgs_with_plan.value, Message(content=thought_instruction.value)]
+        thought_msgs = [
+            *packaged_msgs_with_plan.value,
+            Message(content=thought_instruction.value),
+        ]
         thought_msg = await self.llm_call_op(
             self.llm_config,
             msgs=thought_msgs,
@@ -526,8 +548,10 @@ class ReActPlanningModule(ReActModule):
         )
         # Clean up thought output
         if thought_msg.value.content:
-            thought_msg.value.content = clean_llm_output(thought_msg.value.content, prefix="Thought:", truncate_at="Action:")
-        
+            thought_msg.value.content = clean_llm_output(
+                thought_msg.value.content, prefix="Thought:", truncate_at="Action:"
+            )
+
         # Combine all reasoning into a single message for tool selection
         if is_first_step:
             combined_reasoning = (
@@ -541,14 +565,14 @@ class ReActPlanningModule(ReActModule):
                 f"Plan: {plan_msg.value.content or ''}\n\n"
                 f"Thought: {thought_msg.value.content or ''}"
             )
-        
+
         # Step 4: Tool selection based on combined reasoning
         tool_selection_prompt = (
             f"{combined_reasoning}."
             " Based on this reasoning, let's select the appropriate tool!"
             "\n\nAction: "
         )
-        
+
         packaged_msgs_final = await self.package_msg_op(
             [
                 *messages,
@@ -557,11 +581,11 @@ class ReActPlanningModule(ReActModule):
             ],
             sys_content=sys_prompt,
         )
-        
+
         tool_selection_msg = await self.llm_call_op(
             self.llm_config, msgs=packaged_msgs_final, tools=tools
         )
-        
+
         return cast("OpResult[ToolRequestMessage]", tool_selection_msg), [
             Message(content=tool_selection_prompt, role="assistant"),
             Message(content="Continue..."),
