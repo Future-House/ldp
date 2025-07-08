@@ -443,22 +443,32 @@ class ReActPlanningModule(ReActModule):
         self, messages: Iterable[Message], tools: list[Tool]
     ) -> tuple[OpResult[ToolRequestMessage], Messages]:
         sys_prompt = await self.prompt_op()
+        messages = list(messages)
         
-        # Step 1: Critic - assess previous step
-        critic_instruction = await self.critic_prompt_op()
-        packaged_msgs = await self.package_msg_op(messages, sys_content=sys_prompt)
-        critic_msgs = [*packaged_msgs.value, Message(content=critic_instruction.value)]
-        critic_msg = await self.llm_call_op(
-            self.llm_config,
-            msgs=critic_msgs,
-            tools=tools,
-            tool_choice="none",
-        )
+        # Check if this is the first step (no previous tool responses)
+        is_first_step = not any(hasattr(msg, 'tool_calls') and msg.tool_calls for msg in messages)
+        
+        # Step 1: Critic - assess previous step (skip on first step)
+        if is_first_step:
+            critic_msg = None
+            current_messages = messages
+        else:
+            critic_instruction = await self.critic_prompt_op()
+            packaged_msgs = await self.package_msg_op(messages, sys_content=sys_prompt)
+            critic_msgs = [*packaged_msgs.value, Message(content=critic_instruction.value)]
+            critic_result = await self.llm_call_op(
+                self.llm_config,
+                msgs=critic_msgs,
+                tools=tools,
+                tool_choice="none",
+            )
+            critic_msg = critic_result.value
+            current_messages = [*messages, critic_msg]
         
         # Step 2: Plan - generate updated plan
         plan_instruction = await self.plan_prompt_op()
         packaged_msgs_with_critic = await self.package_msg_op(
-            [*messages, critic_msg.value], sys_content=sys_prompt
+            current_messages, sys_content=sys_prompt
         )
         plan_msgs = [*packaged_msgs_with_critic.value, Message(content=plan_instruction.value)]
         plan_msg = await self.llm_call_op(
@@ -471,7 +481,7 @@ class ReActPlanningModule(ReActModule):
         # Step 3: Thought - reason about immediate next step
         thought_instruction = await self.thought_prompt_op()
         packaged_msgs_with_plan = await self.package_msg_op(
-            [*messages, critic_msg.value, plan_msg.value], sys_content=sys_prompt
+            [*current_messages, plan_msg.value], sys_content=sys_prompt
         )
         thought_msgs = [*packaged_msgs_with_plan.value, Message(content=thought_instruction.value)]
         thought_msg = await self.llm_call_op(
@@ -482,11 +492,18 @@ class ReActPlanningModule(ReActModule):
         )
         
         # Combine all reasoning into a single message for tool selection
-        combined_reasoning = (
-            f"Critic: {critic_msg.value.content or ''}\n"
-            f"Plan: {plan_msg.value.content or ''}\n"
-            f"Thought: {thought_msg.value.content or ''}"
-        )
+        if is_first_step:
+            combined_reasoning = (
+                f"Plan: {plan_msg.value.content or ''}\n\n"
+                f"Thought: {thought_msg.value.content or ''}"
+            )
+        else:
+            assert critic_msg is not None
+            combined_reasoning = (
+                f"Critic: {critic_msg.content or ''}\n\n"
+                f"Plan: {plan_msg.value.content or ''}\n\n"
+                f"Thought: {thought_msg.value.content or ''}"
+            )
         
         # Step 4: Tool selection based on combined reasoning
         tool_selection_prompt = (
@@ -509,10 +526,6 @@ class ReActPlanningModule(ReActModule):
         )
         
         return cast("OpResult[ToolRequestMessage]", tool_selection_msg), [
-            # Return all the new messages: critic, plan, thought, combined reasoning, continue, and tool selection
-            critic_msg.value,
-            plan_msg.value,
-            thought_msg.value,
             Message(content=tool_selection_prompt, role="assistant"),
             Message(content="Continue..."),
             tool_selection_msg.value,
