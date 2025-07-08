@@ -142,7 +142,8 @@ REACT_PLANNING_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
         "Critic: Assess whether the previous step of the trajectory has successfully completed the last step of the "
         "plan."
         "\nPlan: Give an updated plan as a checklist with [ ] for incomplete and [x] for completed steps. "
-        "Each step should be 1-3 sentences long."
+        "Each step should be ~3 sentences long. Below each step, include a list of criteria for what counts as "
+        "satisfying that particular step."
         "\nThought: Reason about the immediate next step you're about to take"
         "\nAction: the action to take, should be one of the provided tools with necessary arguments"
         "\nObservation: the result of the action"
@@ -150,7 +151,19 @@ REACT_PLANNING_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
     fields_description="Critic/Plan/Thought/Action/Observation",
     example=(
         "Critic: This is the first step, so not applicable."
-        "\nPlan: Updated plan:\n[ ] Get weather information for New York\n[ ] Format the response appropriately"
+        "\nPlan: Updated plan:\n[ ] Get weather information for New York. This involves calling the weather API with "
+        "the correct parameters. "
+        "We need to retrieve a comprehensive 7-day forecast that includes temperature, conditions, and any relevant "
+        "weather alerts.\n"
+        "  - Successfully called get_weather function with correct parameters\n"
+        "  - Received valid weather data response\n"
+        "  - Data includes temperature and forecast information\n"
+        "[ ] Format the response appropriately. Take the raw weather data and present it in a clear, readable format "
+        "for the user. "
+        "The response should be well-structured and easy to understand.\n"
+        "  - Weather data is organized in a logical format\n"
+        "  - Information is presented clearly and concisely\n"
+        "  - Response addresses the user's original question"
         "\nThought: I need to start by getting the weather information for New York using the get_weather tool"
         '\nAction: get_weather("New York", 7)'
         "\nObservation: The 7 day forecast for New York is [...]"
@@ -462,7 +475,8 @@ class ReActPlanningModule(ReActModule):
         )
         self.plan_prompt_op = PromptOp(
             "Output ONLY an updated plan. Give an updated plan as a checklist with [ ] for incomplete and [x] for "
-            "completed steps, where each step is 1-3 sentences long. Do not output critic or thought."
+            "completed steps, where each step is ~3 sentences long. Below each step, include a list of criteria for "
+            "what counts as satisfying that particular step. Do not output critic or thought."
         )
         self.thought_prompt_op = PromptOp(
             "Output ONLY a thought. Reason about the immediate next step you're about to take. Do not output critic or "
@@ -479,20 +493,20 @@ class ReActPlanningModule(ReActModule):
         sys_prompt: OpResult[str],
         instruction_prompt_op: PromptOp,
         tools: list[Tool],
-        prefix: str,
-        truncate_at: str,
+        prefix: str | None = None,
+        truncate_at: str | None = None,
     ) -> Message:
         """
         Helper method to execute a single step (Critic, Plan, or Thought).
-        
+
         Args:
             messages: Current messages
             sys_prompt: System prompt
             instruction_prompt_op: Prompt op for the step instruction
             tools: Available tools
-            prefix: Prefix to clean from output
-            truncate_at: Marker to truncate output at
-            
+            prefix: Optional prefix to clean from output
+            truncate_at: Optional marker to truncate output at
+
         Returns:
             The processed message from the LLM
         """
@@ -509,13 +523,13 @@ class ReActPlanningModule(ReActModule):
             tool_choice="none",
         )
         step_msg = step_result.value
-        
-        # Clean up output
-        if step_msg.content:
+
+        # Clean up output if prefix or truncate_at are provided
+        if step_msg.content and (prefix is not None or truncate_at is not None):
             step_msg.content = clean_llm_output(
                 step_msg.content, prefix=prefix, truncate_at=truncate_at
             )
-        
+
         return step_msg
 
     @compute_graph()
