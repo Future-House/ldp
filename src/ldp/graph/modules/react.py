@@ -473,6 +473,51 @@ class ReActPlanningModule(ReActModule):
     def llm_call_op(self) -> LLMCallOp:
         return self._llm_call_op
 
+    async def _execute_step(
+        self,
+        messages: list[Message],
+        sys_prompt: OpResult[str],
+        instruction_prompt_op: PromptOp,
+        tools: list[Tool],
+        prefix: str,
+        truncate_at: str,
+    ) -> Message:
+        """
+        Helper method to execute a single step (Critic, Plan, or Thought).
+        
+        Args:
+            messages: Current messages
+            sys_prompt: System prompt
+            instruction_prompt_op: Prompt op for the step instruction
+            tools: Available tools
+            prefix: Prefix to clean from output
+            truncate_at: Marker to truncate output at
+            
+        Returns:
+            The processed message from the LLM
+        """
+        instruction = await instruction_prompt_op()
+        packaged_msgs = await self.package_msg_op(messages, sys_content=sys_prompt)
+        step_msgs = [
+            *packaged_msgs.value,
+            Message(content=instruction.value),
+        ]
+        step_result = await self.llm_call_op(
+            self.llm_config,
+            msgs=step_msgs,
+            tools=tools,
+            tool_choice="none",
+        )
+        step_msg = step_result.value
+        
+        # Clean up output
+        if step_msg.content:
+            step_msg.content = clean_llm_output(
+                step_msg.content, prefix=prefix, truncate_at=truncate_at
+            )
+        
+        return step_msg
+
     @compute_graph()
     async def __call__(
         self, messages: Iterable[Message], tools: list[Tool]
@@ -490,80 +535,33 @@ class ReActPlanningModule(ReActModule):
             critic_msg = None
             current_messages = messages
         else:
-            critic_instruction = await self.critic_prompt_op()
-            packaged_msgs = await self.package_msg_op(messages, sys_content=sys_prompt)
-            critic_msgs = [
-                *packaged_msgs.value,
-                Message(content=critic_instruction.value),
-            ]
-            critic_result = await self.llm_call_op(
-                self.llm_config,
-                msgs=critic_msgs,
-                tools=tools,
-                tool_choice="none",
+            critic_msg = await self._execute_step(
+                messages, sys_prompt, self.critic_prompt_op, tools, "Critic:", "Plan:"
             )
-            critic_msg = critic_result.value
-            # Clean up critic output
-            if critic_msg.content:
-                critic_msg.content = clean_llm_output(
-                    critic_msg.content, prefix="Critic:", truncate_at="Plan:"
-                )
             current_messages = [*messages, critic_msg]
 
         # Step 2: Plan - generate updated plan
-        plan_instruction = await self.plan_prompt_op()
-        packaged_msgs_with_critic = await self.package_msg_op(
-            current_messages, sys_content=sys_prompt
+        plan_msg = await self._execute_step(
+            current_messages, sys_prompt, self.plan_prompt_op, tools, "Plan:", "Thought:"
         )
-        plan_msgs = [
-            *packaged_msgs_with_critic.value,
-            Message(content=plan_instruction.value),
-        ]
-        plan_msg = await self.llm_call_op(
-            self.llm_config,
-            msgs=plan_msgs,
-            tools=tools,
-            tool_choice="none",
-        )
-        # Clean up plan output
-        if plan_msg.value.content:
-            plan_msg.value.content = clean_llm_output(
-                plan_msg.value.content, prefix="Plan:", truncate_at="Thought:"
-            )
 
         # Step 3: Thought - reason about immediate next step
-        thought_instruction = await self.thought_prompt_op()
-        packaged_msgs_with_plan = await self.package_msg_op(
-            [*current_messages, plan_msg.value], sys_content=sys_prompt
+        thought_msg = await self._execute_step(
+            [*current_messages, plan_msg], sys_prompt, self.thought_prompt_op, tools, "Thought:", "Action:"
         )
-        thought_msgs = [
-            *packaged_msgs_with_plan.value,
-            Message(content=thought_instruction.value),
-        ]
-        thought_msg = await self.llm_call_op(
-            self.llm_config,
-            msgs=thought_msgs,
-            tools=tools,
-            tool_choice="none",
-        )
-        # Clean up thought output
-        if thought_msg.value.content:
-            thought_msg.value.content = clean_llm_output(
-                thought_msg.value.content, prefix="Thought:", truncate_at="Action:"
-            )
 
         # Combine all reasoning into a single message for tool selection
         if is_first_step:
             combined_reasoning = (
-                f"Plan: {plan_msg.value.content or ''}\n\n"
-                f"Thought: {thought_msg.value.content or ''}"
+                f"Plan: {plan_msg.content or ''}\n\n"
+                f"Thought: {thought_msg.content or ''}"
             )
         else:
             assert critic_msg is not None
             combined_reasoning = (
                 f"Critic: {critic_msg.content or ''}\n\n"
-                f"Plan: {plan_msg.value.content or ''}\n\n"
-                f"Thought: {thought_msg.value.content or ''}"
+                f"Plan: {plan_msg.content or ''}\n\n"
+                f"Thought: {thought_msg.content or ''}"
             )
 
         # Step 4: Tool selection based on combined reasoning
