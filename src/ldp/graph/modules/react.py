@@ -20,6 +20,34 @@ from ldp.llms import prepend_sys
 
 from .llm_call import ParsedLLMCallModule
 
+
+def clean_llm_output(content: str, prefix: str | None = None, truncate_at: str | None = None) -> str:
+    """
+    Clean LLM output by removing prefix and truncating at specified marker.
+    
+    Args:
+        content: The raw LLM output content
+        prefix: Optional prefix to remove (e.g., "Plan:", "Thought:")
+        truncate_at: Optional marker to truncate at (e.g., "Action:", "Thought:")
+    
+    Returns:
+        Cleaned content string
+    """
+    if not content:
+        return content
+        
+    cleaned_content = content
+    
+    # Remove prefix if present
+    if prefix and cleaned_content.startswith(prefix):
+        cleaned_content = cleaned_content[len(prefix):].strip()
+    
+    # Truncate at marker if present
+    if truncate_at and truncate_at in cleaned_content:
+        cleaned_content = cleaned_content.split(truncate_at)[0].strip()
+    
+    return cleaned_content
+
 # These prompts are meant to be used with ReActModuleSinglePrompt
 _DEFAULT_SINGLE_PROMPT_TEMPLATE = textwrap.dedent(
     """    Answer the following questions as best you can. You have access to the following tools:
@@ -463,6 +491,9 @@ class ReActPlanningModule(ReActModule):
                 tool_choice="none",
             )
             critic_msg = critic_result.value
+            # Clean up critic output
+            if critic_msg.content:
+                critic_msg.content = clean_llm_output(critic_msg.content, prefix="Critic:", truncate_at="Plan:")
             current_messages = [*messages, critic_msg]
         
         # Step 2: Plan - generate updated plan
@@ -477,6 +508,9 @@ class ReActPlanningModule(ReActModule):
             tools=tools,
             tool_choice="none",
         )
+        # Clean up plan output
+        if plan_msg.value.content:
+            plan_msg.value.content = clean_llm_output(plan_msg.value.content, prefix="Plan:", truncate_at="Thought:")
         
         # Step 3: Thought - reason about immediate next step
         thought_instruction = await self.thought_prompt_op()
@@ -490,6 +524,9 @@ class ReActPlanningModule(ReActModule):
             tools=tools,
             tool_choice="none",
         )
+        # Clean up thought output
+        if thought_msg.value.content:
+            thought_msg.value.content = clean_llm_output(thought_msg.value.content, prefix="Thought:", truncate_at="Action:")
         
         # Combine all reasoning into a single message for tool selection
         if is_first_step:
@@ -509,7 +546,7 @@ class ReActPlanningModule(ReActModule):
         tool_selection_prompt = (
             f"{combined_reasoning}."
             " Based on this reasoning, let's select the appropriate tool!"
-            "\nAction: "
+            "\n\nAction: "
         )
         
         packaged_msgs_final = await self.package_msg_op(
