@@ -23,6 +23,16 @@ def hide_action_content(msg: ToolRequestMessage) -> ToolRequestMessage:
     return msg.model_copy(update={"content": None})
 
 
+def hide_thought_content(msg: Message | ToolRequestMessage) -> Message | ToolRequestMessage:
+    """Hide thought content from a message by replacing it with a placeholder."""
+    return msg.model_copy(update={"content": "[Previous thought - hidden]"})
+
+
+def has_thought_content(msg: Message | ToolRequestMessage) -> bool:
+    """Check if a message contains thought content."""
+    return bool(msg.info and msg.info.get("is_thought", False))
+
+
 class SimpleAgentState(BaseModel):
     """Simple bucket for an Agent to access tools and store messages."""
 
@@ -39,6 +49,10 @@ class SimpleAgentState(BaseModel):
     hide_old_action_content: bool = Field(
         default=False,
         description="If True, will hide the content of old ToolRequestMessages.",
+    )
+    hide_old_thoughts: bool = Field(
+        default=False,
+        description="If True, will hide thought content from all old thoughts (except the most recent thought).",
     )
 
     def get_next_state(
@@ -81,12 +95,26 @@ class SimpleAgentState(BaseModel):
                 hide_action_content(m) if isinstance(m, ToolRequestMessage) else m
                 for m in old_messages
             ]
+        
+        if self.hide_old_thoughts:
+            # Find the most recent thought message object
+            last_thought_msg = None
+            for msg in reversed(old_messages):
+                if has_thought_content(msg):
+                    last_thought_msg = msg
+                    break
+            
+            old_messages = [
+                hide_thought_content(msg) if has_thought_content(msg) and msg is not last_thought_msg else msg
+                for msg in old_messages
+            ]
 
         return type(self)(
             tools=tools if tools is not None else self.tools,
             messages=old_messages + (obs or []),
             hide_old_env_states=hide_old_env_states,
             hide_old_action_content=self.hide_old_action_content,
+            hide_old_thoughts=self.hide_old_thoughts,
             **kwargs,
         )
 

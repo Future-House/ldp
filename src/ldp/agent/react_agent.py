@@ -127,6 +127,11 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         description="See SimpleAgentState.hide_old_env_states.",
     )
 
+    hide_old_thoughts: bool = Field(
+        default=False,
+        description="If True, will hide thought content from all old thoughts (except the most recent thought).",
+    )
+
     @classmethod
     def make_act_agent(cls, **kwargs) -> Self:
         single_prompt = kwargs.pop("single_prompt", False)
@@ -176,7 +181,9 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:
         return SimpleAgentState(
-            tools=tools, hide_old_env_states=self.hide_old_env_states
+            tools=tools, 
+            hide_old_env_states=self.hide_old_env_states,
+            hide_old_thoughts=self.hide_old_thoughts,
         )
 
     @staticmethod

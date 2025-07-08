@@ -388,6 +388,7 @@ def postprocess_and_concat_resoning_msg(
             ),
             # Role is 'assistant' here (normally 'user') since we use the model's reasoning to ask for an action.
             role="assistant",
+            info={"is_thought": True},
         ),
         # We interleave a user message as required by Anthropic's API
         Message(content="Continue..."),
@@ -586,12 +587,14 @@ class ReActPlanningModule(ReActModule):
             "\n\nAction: "
         )
 
+        # Create the new messages that will be added
+        new_messages = [
+            Message(content=tool_selection_prompt, role="assistant", info={"is_thought": True}),
+            Message(content="Continue..."),
+        ]
+
         packaged_msgs_final = await self.package_msg_op(
-            [
-                *messages,
-                Message(content=tool_selection_prompt, role="assistant"),
-                Message(content="Continue..."),
-            ],
+            [*messages, *new_messages],
             sys_content=sys_prompt,
         )
 
@@ -600,7 +603,6 @@ class ReActPlanningModule(ReActModule):
         )
 
         return cast("OpResult[ToolRequestMessage]", tool_selection_msg), [
-            Message(content=tool_selection_prompt, role="assistant"),
-            Message(content="Continue..."),
+            *new_messages,
             tool_selection_msg.value,
         ]
