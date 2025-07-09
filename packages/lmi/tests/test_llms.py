@@ -317,6 +317,15 @@ class TestLiteLLMModel:
             assert completion.cost > 0
             assert completion.completion_count > 100, "Expected a long completion"
 
+        with subtests.test(msg="autowraps message"):
+
+            def mock_call(messages, **_):
+                assert isinstance(messages, list)
+                return [None]
+
+            with patch.object(llm, "call", side_effect=mock_call):
+                await llm.call_single("Test message")
+
     @pytest.mark.vcr
     @pytest.mark.parametrize(
         ("config", "bypassed_router"),
