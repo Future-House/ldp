@@ -235,14 +235,17 @@ class LLMModel(ABC, BaseModel):
     ) -> list[LLMResult]:
         """Call the LLM model with the given messages and configuration.
 
-        messages: A list of messages to send to the language model.
-        callbacks: A list of callback functions to execute
-        name: Optional name for the result.
-        output_type: The type of the output.
-        tools: A list of tools to use.
-        tool_choice: The tool choice to use.
+        Args:
+            messages: A list of messages to send to the language model.
+            callbacks: A list of callback functions to execute.
+            name: Optional name for the result.
+            output_type: The type of the output.
+            tools: A list of tools to use.
+            tool_choice: The tool choice to use.
+            kwargs: Additional keyword arguments for the chat completion.
 
-        Results: A list of LLMResult objects containing the result of the call.
+        Returns:
+            A list of LLMResult objects containing the result of the call.
 
         Raises:
             ValueError: If the LLM type is unknown.
