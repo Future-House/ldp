@@ -23,6 +23,7 @@ from collections.abc import (
     Coroutine,
     Iterable,
     Mapping,
+    Sequence,
 )
 from enum import StrEnum
 from inspect import isasyncgenfunction, isawaitable, signature
@@ -226,7 +227,7 @@ class LLMModel(ABC, BaseModel):
     async def call(  # noqa: C901, PLR0915
         self,
         messages: list[Message],
-        callbacks: Iterable[Callable] | None = None,
+        callbacks: Sequence[Callable] | None = None,
         name: str | None = None,
         output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = None,
         tools: list[Tool] | None = None,
@@ -371,7 +372,7 @@ class LLMModel(ABC, BaseModel):
     async def call_single(
         self,
         messages: list[Message],
-        callbacks: Iterable[Callable] | None = None,
+        callbacks: Sequence[Callable] | None = None,
         name: str | None = None,
         output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = None,
         tools: list[Tool] | None = None,
