@@ -481,8 +481,9 @@ class ReActPlanningModule(ReActModule):
             "what counts as satisfying that particular step. Do not output critic or thought."
         )
         self.thought_prompt_op = PromptOp(
-            "Output ONLY a thought. Reason about the immediate next step you're about to take. Do not output critic or "
-            "plan."
+            "Output ONLY a thought. Reason concretely about the immediate next step you're about to take, rather than "
+            "presenting several options about what to do. Make sure you are clearly addressing the next step of the "
+            "plan and resolving any criticism where applicable.  Do not output critic or plan."
         )
 
     @property
