@@ -151,8 +151,10 @@ def validate_json_completion(
 
 
 def prepare_args(
-    func: Callable, completion: str, name: str | None
-) -> tuple[tuple, dict]:
+    func: Callable[..., Any] | Callable[..., Awaitable],
+    completion: str,
+    name: str | None,
+) -> tuple[tuple[str, ...], dict[str, Any]]:
     with contextlib.suppress(TypeError):
         if "name" in signature(func).parameters:
             return (completion,), {"name": name}
