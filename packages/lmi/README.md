@@ -56,6 +56,16 @@ result = await llm.call_single(messages)
 # assert result.text == "42"
 ```
 
+or, if you only have one message, just:
+
+```python
+from lmi import LiteLLMModel
+
+llm = LiteLLMModel()
+result = await llm.call_single("What is the meaning of life?")
+# assert result.text == "42"
+```
+
 ## Documentation
 
 ### LLMs
