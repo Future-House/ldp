@@ -323,7 +323,7 @@ class TestLiteLLMModel:
                 assert isinstance(messages, list)
                 return [None]
 
-            with patch.object(llm, "call", side_effect=mock_call):
+            with patch.object(LiteLLMModel, "call", side_effect=mock_call):
                 await llm.call_single("Test message")
 
     @pytest.mark.vcr
