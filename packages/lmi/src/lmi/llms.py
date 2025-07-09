@@ -227,7 +227,9 @@ class LLMModel(ABC, BaseModel):
     async def call(  # noqa: C901, PLR0915
         self,
         messages: list[Message],
-        callbacks: Sequence[Callable] | None = None,
+        callbacks: (
+            Sequence[Callable[..., Any] | Callable[..., Awaitable]] | None
+        ) = None,
         name: str | None = None,
         output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = None,
         tools: list[Tool] | None = None,
@@ -372,7 +374,9 @@ class LLMModel(ABC, BaseModel):
     async def call_single(
         self,
         messages: list[Message],
-        callbacks: Sequence[Callable] | None = None,
+        callbacks: (
+            Sequence[Callable[..., Any] | Callable[..., Awaitable]] | None
+        ) = None,
         name: str | None = None,
         output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = None,
         tools: list[Tool] | None = None,
