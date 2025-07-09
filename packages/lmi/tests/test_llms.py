@@ -319,7 +319,7 @@ class TestLiteLLMModel:
 
         with subtests.test(msg="autowraps message"):
 
-            def mock_call(messages, **_):
+            def mock_call(messages, *_, **__):
                 assert isinstance(messages, list)
                 return [None]
 
