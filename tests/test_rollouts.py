@@ -193,6 +193,7 @@ class DummyCallback(Callback):
         # NOTE: don't use collections.defaultdict here because it can lead to
         # test aliasing for a callback being missed altogether
         self.fn_invocations = {
+            "before_rollout": 0,
             "before_transition": 0,
             "after_agent_init_state": 0,
             "after_agent_get_asv": 0,
@@ -200,6 +201,9 @@ class DummyCallback(Callback):
             "after_env_step": 0,
             "after_transition": 0,
         }
+
+    async def before_rollout(self, traj_id: str, env: Environment) -> None:
+        self.fn_invocations["before_rollout"] += 1
 
     async def before_transition(
         self,
@@ -361,7 +365,11 @@ class TestTreeSearch:
                 prev_step = step
 
         for callback_fn, num_calls in callback.fn_invocations.items():
-            if callback_fn in {"after_agent_init_state", "after_env_reset"}:
+            if callback_fn in {
+                "before_rollout",
+                "after_agent_init_state",
+                "after_env_reset",
+            }:
                 assert num_calls == 1, "These should be invoked once at the start"
             else:
                 # We expect sum_{i=1}^3 2^i = 2^4 - 2 = 14 transitions:
