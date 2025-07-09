@@ -393,7 +393,13 @@ pip install google-api-python-client
 ```
 
 and then you need to configure which region/project you're using for the model calls.
-Here's a complete example:
+Make sure you're authed for that region/project. Typically that means running:
+
+```sh
+gcloud auth application-default login
+```
+
+Then you can use vertex models:
 
 ```py
 from lmi import LiteLLMModel
@@ -402,7 +408,7 @@ from aviary.core import Message
 vertex_config = {"vertex_project": "PROJECT_ID", "vertex_location": "REGION"}
 
 llm = LiteLLMModel(name="vertex_ai/gemini-2.5-pro", config=vertex_config)
-await llm.call_single([Message(content="test")])
+await llm.call_single("hey")
 ```
 
 ### Embedding models
