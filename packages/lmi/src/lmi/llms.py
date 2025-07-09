@@ -387,7 +387,7 @@ class LLMModel(ABC, BaseModel):
             # convenience for single message
             messages = [Message(content=messages)]
         results = await self.call(
-            cast(list[Message], messages),
+            messages,
             callbacks,
             name,
             output_type,
