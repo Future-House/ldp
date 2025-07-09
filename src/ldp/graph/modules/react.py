@@ -473,7 +473,8 @@ class ReActPlanningModule(ReActModule):
         self.critic_prompt_op = PromptOp(
             "Output ONLY a critic assessment. Assess whether the latest step of the trajectory has successfully "
             "completed the latest step of the plan or not. Be critical and thorough to catch mistakes made in the "
-            "execution of the plan, even if minor. Do not output plan or thought."
+            "execution of the plan, even if minor. Use common sense: think of any mistakes the agent might have made "
+            "(not only in the code) but also in their reasoning or analysis process. Do not output plan or thought."
         )
         self.plan_prompt_op = PromptOp(
             "Output ONLY an updated plan. Give an updated plan as a checklist with [ ] for incomplete and [x] for "
