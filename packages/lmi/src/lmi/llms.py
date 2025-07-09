@@ -375,7 +375,7 @@ class LLMModel(ABC, BaseModel):
     ) -> LLMResult:
         if isinstance(messages, str):
             # convenience for single message
-            messages = [Message(role="user", content=messages)]
+            messages = [Message(content=messages)]
         results = await self.call(
             cast(list[Message], messages),
             callbacks,
