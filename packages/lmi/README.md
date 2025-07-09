@@ -398,10 +398,8 @@ Here's a complete example:
 from lmi import LiteLLMModel
 from aviary.core import Message
 
-vertex_config = {
-   "vertex_project": "PROJECT_ID",
-   "vertex_location": "REGION"
-}
+vertex_config = {"vertex_project": "PROJECT_ID", "vertex_location": "REGION"}
+
 llm = LiteLLMModel(name="vertex_ai/gemini-2.5-pro", config=vertex_config)
 await llm.call_single([Message(content="test")])
 ```
