@@ -10,7 +10,13 @@ from litellm import AuthenticationError
 from pydantic import BaseModel
 
 from ldp.agent import Agent, SimpleAgent, SimpleAgentState
-from ldp.alg import BeamSearchRollout, Callback, RolloutManager, TreeSearchRollout
+from ldp.alg import (
+    BeamSearchRollout,
+    Callback,
+    RolloutManager,
+    StoreEnvironmentsCallback,
+    TreeSearchRollout,
+)
 from ldp.data_structures import Trajectory, Transition
 from ldp.graph import FxnOp, OpResult, compute_graph, set_training_mode
 
@@ -66,29 +72,36 @@ async def count_exclamations(traj: Trajectory) -> float:  # noqa: RUF029
 @pytest.mark.asyncio
 async def test_rollout(training: bool) -> None:
     agent = SimpleAgent()
-    callback = DummyCallback()
+    counter_callback = DummyCallback()
+    env_storage_callback = StoreEnvironmentsCallback()
     set_training_mode(training)
     rollout_manager = RolloutManager(
         agent,
         catch_agent_failures=False,
         catch_env_failures=False,
-        callbacks=[callback],
+        callbacks=[counter_callback, env_storage_callback],
     )
-    trajs = await rollout_manager.sample_trajectories(
-        environments=[DummyEnv(instance_id=1), DummyEnv()], max_steps=1
+    envs = [DummyEnv(instance_id=1), DummyEnv()]
+    trajs = await rollout_manager.sample_trajectories(environments=envs, max_steps=1)
+    first_traj, second_traj = trajs
+    assert first_traj.traj_id
+    assert (
+        first_traj.metadata.get("env_id")
+        == "1"
+        == await env_storage_callback.traj_id_to_envs[first_traj.traj_id].get_id()
     )
-    assert len(trajs) == 2
-    assert trajs[0].metadata.get("env_id") == "1"
-    assert trajs[1].metadata.get("env_id") is None
+    assert second_traj.metadata.get("env_id") is None
 
     # Let's check we can serialize and deserialize the trajectories
     for traj in trajs:
+        assert traj.traj_id
+        assert traj.traj_id in env_storage_callback.traj_id_to_envs
         with tempfile.NamedTemporaryFile(suffix=".jsonl") as f:
             await traj.to_jsonl(filename=f.name)
             rehydrated_traj = Trajectory.from_jsonl(f.name)
             assert traj.traj_id == rehydrated_traj.traj_id
 
-    assert all(v == 2 for v in callback.fn_invocations.values())
+    assert all(v == 2 for v in counter_callback.fn_invocations.values())
 
 
 @pytest.mark.vcr
