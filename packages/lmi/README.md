@@ -383,6 +383,29 @@ result = await llm.call_single(
 # the calculator invocation with x=2, y=2, operation="+"
 ```
 
+### Vertex
+
+Vertex requires a bit of extra set-up. First, install the extra dependency for auth:
+
+```sh
+pip install google-api-python-client
+```
+
+and then you need to configure which region/project your using for the model calls.
+Here's a complete example:
+
+```py
+from lmi import LiteLLMModel
+from aviary.core import Message
+
+vertex_config = {
+   "vertex_project": "PROJECT_ID",
+   "vertex_location": "REGION"
+}
+llm = LiteLLMModel(name="vertex_ai/gemini-2.5-pro", config=vertex_config)
+await llm.call_single([Message(content="test")])
+```
+
 ### Embedding models
 
 This client also includes embedding models.
