@@ -77,7 +77,7 @@ class EvaluatorConfig(BaseModel):
 
     batch_size: int = 1
     num_eval_iterations: int | None = Field(
-        None,
+        default=None,
         description=(
             "Number of eval iterations. "
             "If not provided, will exhaust the dataset. "
