@@ -373,7 +373,7 @@ class LLMModel(ABC, BaseModel):
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
         **kwargs,
     ) -> LLMResult:
-        if type(messages) is str:
+        if isinstance(messages, str):
             # convenience for single message
             messages = [Message(role="user", content=messages)]
         results = await self.call(
