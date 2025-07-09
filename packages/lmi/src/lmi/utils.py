@@ -16,7 +16,7 @@ except ImportError:
     tqdm = None  # type: ignore[assignment,misc]
 
 if TYPE_CHECKING:
-    import vcr.request  # type: ignore[import-untyped]
+    import vcr.request
 
 
 def configure_llm_logs() -> None:
