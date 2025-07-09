@@ -56,7 +56,7 @@ result = await llm.call_single(messages)
 # assert result.text == "42"
 ```
 
-or, if you only have one message, just:
+or, if you only have one user message, just:
 
 ```python
 from lmi import LiteLLMModel
