@@ -391,7 +391,7 @@ Vertex requires a bit of extra set-up. First, install the extra dependency for a
 pip install google-api-python-client
 ```
 
-and then you need to configure which region/project your using for the model calls.
+and then you need to configure which region/project you're using for the model calls.
 Here's a complete example:
 
 ```py
