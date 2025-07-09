@@ -33,6 +33,7 @@ pip install fhlmi
     - [Timeout Configuration](#timeout-configuration)
     - [Weight-based Rate Limiting](#weight-based-rate-limiting)
   - [Tool calling](#tool-calling)
+  - [Vertex](#vertex)
   - [Embedding models](#embedding-models)
     - [LiteLLMEmbeddingModel](#litellmembeddingmodel)
     - [HybridEmbeddingModel](#hybridembeddingmodel)
