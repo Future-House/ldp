@@ -3,8 +3,7 @@ import contextlib
 import logging
 import logging.config
 import os
-from collections.abc import Awaitable, Callable, Iterable
-from inspect import signature
+from collections.abc import Awaitable, Iterable
 from typing import TYPE_CHECKING, Any, TypeVar
 from urllib.parse import parse_qs, urlencode, urlparse
 
@@ -50,15 +49,6 @@ def configure_llm_logs() -> None:
 def get_litellm_retrying_config(timeout: float = 60.0) -> dict[str, Any]:
     """Get retrying configuration for litellm.acompletion and litellm.aembedding."""
     return {"num_retries": 3, "timeout": timeout}
-
-
-def prepare_args(
-    func: Callable, completion: str, name: str | None = None
-) -> tuple[tuple, dict]:
-    with contextlib.suppress(TypeError):
-        if "name" in signature(func).parameters:
-            return (completion,), {"name": name}
-    return (completion,), {}
 
 
 def partial_format(value: str, **formats: dict[str, Any]) -> str:
