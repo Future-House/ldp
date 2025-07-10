@@ -162,6 +162,10 @@ new_action, new_agent_state, value = await agent.get_asv(agent_state, obs)
 Want to just run python code? No problem - here's a minimal example of an Agent that is deterministic:
 
 ```py
+from aviary.core import Message, Tool, ToolCall, ToolRequestMessage
+from ldp.agent import Agent
+
+
 class NoThinkAgent(Agent):
     async def init_state(self, tools):
         return None
@@ -169,7 +173,7 @@ class NoThinkAgent(Agent):
     async def get_asv(self, tools, obs):
         tool_call = ToolCall.from_name("specific_tool_call", arg1="foo")
         action = ToolRequestMessage(tool_calls=[tool_call])
-        return Agent.wrap_action(action), None, 0.0
+        return await Agent.wrap_action(action), None, 0.0
 ```
 
 This agent has a state of `None`, just makes one specific tool call with `arg1="foo"`,
