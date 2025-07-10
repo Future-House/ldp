@@ -9,7 +9,8 @@ import numpy as np
 from aviary.core import Message, Tool, ToolRequestMessage
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
-from ldp.graph import Op, OpResult
+from ldp.graph import IdentityOp, Op, OpResult
+from ldp.graph.ops import ResultOrValue
 
 try:
     # So we can skip torch objects when looking for Ops
@@ -82,6 +83,15 @@ class Agent(ABC, Generic[TAgentState]):
     @classmethod
     def from_name(cls, name: str, **kwargs) -> Agent:
         return _AGENT_REGISTRY[name](**kwargs)
+
+    @classmethod
+    async def wrap_action(
+        cls, action: ResultOrValue[ToolRequestMessage]
+    ) -> OpResult[ToolRequestMessage]:
+        """Wraps the action in an OpResult, if it isn't already."""
+        if isinstance(action, OpResult):
+            return action
+        return await IdentityOp[ToolRequestMessage]()(action)
 
 
 class AgentConfig(BaseModel):
