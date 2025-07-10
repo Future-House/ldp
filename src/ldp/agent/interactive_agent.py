@@ -103,7 +103,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
         tool_call = ToolCall.from_tool(tool, **params)
         action = ToolRequestMessage(tool_calls=[tool_call])
 
-        next_agent_state.messages = [*next_agent_state.messages, action.value]
+        next_agent_state.messages = [*next_agent_state.messages, action]
 
         return await Agent.wrap_action(action), next_agent_state, 0.0
 
