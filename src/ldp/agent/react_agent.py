@@ -26,6 +26,9 @@ from ldp.graph.modules.react import (
     REACT_DEFAULT_PROMPT_TEMPLATE,
     REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
     REACT_PLANNING_PROMPT_TEMPLATE,
+    REACT_PLANNING_CRITIC_PROMPT,
+    REACT_PLANNING_PLAN_PROMPT,
+    REACT_PLANNING_THOUGHT_PROMPT,
     ReActModule,
     ReActModuleSinglePrompt,
     ReActPlanningModule,
@@ -122,6 +125,22 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         ),
     )
 
+    # New fields for ReActPlanningModule prompts
+    critic_prompt: str = Field(
+        default=REACT_PLANNING_CRITIC_PROMPT,
+        description="Prompt for critic assessment in planning mode.",
+    )
+
+    plan_prompt: str = Field(
+        default=REACT_PLANNING_PLAN_PROMPT,
+        description="Prompt for plan generation in planning mode.",
+    )
+
+    thought_prompt: str = Field(
+        default=REACT_PLANNING_THOUGHT_PROMPT,
+        description="Prompt for thought generation in planning mode.",
+    )
+
     hide_old_env_states: bool = Field(
         default=False,
         description="See SimpleAgentState.hide_old_env_states.",
@@ -172,7 +191,10 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
             )
         elif self.planning:
             self._react_module = ReActPlanningModule(
-                self.llm_model, self.sys_prompt, self.tool_description_method
+                self.llm_model, self.sys_prompt, self.tool_description_method,
+                critic_prompt=self.critic_prompt,
+                plan_prompt=self.plan_prompt,
+                thought_prompt=self.thought_prompt,
             )
         else:
             self._react_module = ReActModule(

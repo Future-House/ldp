@@ -201,6 +201,34 @@ REACT_PLANNING_PROMPT_TEMPLATE_NO_THOUGHT = _DEFAULT_PROMPT_TEMPLATE.format(
     ),
 )
 
+# Default prompts for ReActPlanningModule components
+REACT_PLANNING_CRITIC_PROMPT = (
+    "Output ONLY a critic assessment. Assess whether the latest step of the trajectory has successfully "
+    "completed the latest step of the plan or not. Be critical and thorough to catch mistakes made in the "
+    "execution of the plan, even if minor. Use common sense: think of any mistakes the agent might have made "
+    "(not only in the code) but also in their reasoning or analysis process. Make sure that the model NEVER "
+    "hardcodes scientific facts into the code for purposes of analysis. For example, it should not put biology "
+    "knowledge or facts direclty into the code - instead, it should use a library to do the analysis. "
+    "Do not output plan or thought."
+)
+
+REACT_PLANNING_PLAN_PROMPT = (
+    "Output ONLY an updated plan. Give an updated plan as a checklist with [ ] for incomplete and [x] for "
+    "completed steps, where each step is ~3 sentences long. Below each step, include a list of criteria for "
+    "what counts as satisfying that particular step. Make sure that your plan is consistent with the previous "
+    "iteration of the plan. For example, don't change the order of steps that are unrelated to the criticism. "
+    "Pay close attention that the plan is exactly consistent with the query, and that the steps are in the "
+    "correct order. Do not output critic or thought."
+)
+
+REACT_PLANNING_THOUGHT_PROMPT = (
+    "Output ONLY a thought. Reason concretely about the immediate next step you're about to take, rather than "
+    "presenting several options about what to do. Make sure you are clearly addressing the next step of the "
+    "plan and resolving any criticism where applicable. When resolving criticism, always attempt simpler "
+    "solutions first. For instance, if a model is not working, you should begin by refining the parameters of "
+    "the model instead of trying a completely different model. Do not output critic or plan."
+)
+
 
 def parse_message(m: Message, tools: list[Tool]) -> ToolRequestMessage:  # noqa: C901
     """
@@ -493,6 +521,9 @@ class ReActPlanningModule(ReActModule):
         sys_prompt: str | None = None,
         tool_description_method: ToolDescriptionMethods = ToolDescriptionMethods.STR,
         use_thought: bool = False,  # Thoughts seem to make the tool call overly verbose and complicated
+        critic_prompt: str | None = None,
+        plan_prompt: str | None = None,
+        thought_prompt: str | None = None,
     ):
         self._tool_description_method = tool_description_method
         self.use_thought = use_thought
@@ -506,30 +537,15 @@ class ReActPlanningModule(ReActModule):
         self.prompt_op = PromptOp(sys_prompt)
         self.package_msg_op = FxnOp(prepend_sys)
 
-        # Create prompt ops for the three components
+        # Create prompt ops for the three components with configurable prompts
         self.critic_prompt_op = PromptOp(
-            "Output ONLY a critic assessment. Assess whether the latest step of the trajectory has successfully "
-            "completed the latest step of the plan or not. Be critical and thorough to catch mistakes made in the "
-            "execution of the plan, even if minor. Use common sense: think of any mistakes the agent might have made "
-            "(not only in the code) but also in their reasoning or analysis process. Make sure that the model NEVER "
-            "hardcodes scientific facts into the code for purposes of analysis. For example, it should not put biology "
-            "knowledge or facts direclty into the code - instead, it should use a library to do the analysis. "
-            "Do not output plan or thought."
+            critic_prompt or REACT_PLANNING_CRITIC_PROMPT
         )
         self.plan_prompt_op = PromptOp(
-            "Output ONLY an updated plan. Give an updated plan as a checklist with [ ] for incomplete and [x] for "
-            "completed steps, where each step is ~3 sentences long. Below each step, include a list of criteria for "
-            "what counts as satisfying that particular step. Make sure that your plan is consistent with the previous "
-            "iteration of the plan. For example, don't change the order of steps that are unrelated to the criticism. "
-            "Pay close attention that the plan is exactly consistent with the query, and that the steps are in the "
-            "correct order. Do not output critic or thought."
+            plan_prompt or REACT_PLANNING_PLAN_PROMPT
         )
         self.thought_prompt_op = PromptOp(
-            "Output ONLY a thought. Reason concretely about the immediate next step you're about to take, rather than "
-            "presenting several options about what to do. Make sure you are clearly addressing the next step of the "
-            "plan and resolving any criticism where applicable. When resolving criticism, always attempt simpler "
-            "solutions first. For instance, if a model is not working, you should begin by refining the parameters of "
-            "the model instead of trying a completely different model. Do not output critic or plan."
+            thought_prompt or REACT_PLANNING_THOUGHT_PROMPT
         )
 
     @property
