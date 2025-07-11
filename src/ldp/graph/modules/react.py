@@ -530,20 +530,20 @@ class ReActPlanningModule(ReActModule):
         llm_model["stop"] = ["Observation:", "Action:"]
         self.llm_config = llm_model
         self._llm_call_op = LLMCallOp()
-        
+
         # Use provided sys_prompt or select appropriate template based on use_thought
         if sys_prompt is None:
-            sys_prompt = REACT_PLANNING_PROMPT_TEMPLATE if use_thought else REACT_PLANNING_PROMPT_TEMPLATE_NO_THOUGHT
+            sys_prompt = (
+                REACT_PLANNING_PROMPT_TEMPLATE
+                if use_thought
+                else REACT_PLANNING_PROMPT_TEMPLATE_NO_THOUGHT
+            )
         self.prompt_op = PromptOp(sys_prompt)
         self.package_msg_op = FxnOp(prepend_sys)
 
         # Create prompt ops for the three components with configurable prompts
-        self.critic_prompt_op = PromptOp(
-            critic_prompt or REACT_PLANNING_CRITIC_PROMPT
-        )
-        self.plan_prompt_op = PromptOp(
-            plan_prompt or REACT_PLANNING_PLAN_PROMPT
-        )
+        self.critic_prompt_op = PromptOp(critic_prompt or REACT_PLANNING_CRITIC_PROMPT)
+        self.plan_prompt_op = PromptOp(plan_prompt or REACT_PLANNING_PLAN_PROMPT)
         self.thought_prompt_op = PromptOp(
             thought_prompt or REACT_PLANNING_THOUGHT_PROMPT
         )
@@ -621,14 +621,24 @@ class ReActPlanningModule(ReActModule):
 
         # Step 2: Plan - generate updated plan
         plan_msg = await self._execute_step(
-            current_messages, sys_prompt, self.plan_prompt_op, tools, "Plan:", "Thought:"
+            current_messages,
+            sys_prompt,
+            self.plan_prompt_op,
+            tools,
+            "Plan:",
+            "Thought:",
         )
 
         # Step 3: Thought - reason about immediate next step (conditional)
         thought_msg = None
         if self.use_thought:
             thought_msg = await self._execute_step(
-                [*current_messages, plan_msg], sys_prompt, self.thought_prompt_op, tools, "Thought:", "Action:"
+                [*current_messages, plan_msg],
+                sys_prompt,
+                self.thought_prompt_op,
+                tools,
+                "Thought:",
+                "Action:",
             )
 
         # Combine all reasoning into a single message for tool selection
@@ -654,7 +664,11 @@ class ReActPlanningModule(ReActModule):
 
         # Create the new messages that will be added
         new_messages = [
-            Message(content=tool_selection_prompt, role="assistant", info={"is_thought": True}),
+            Message(
+                content=tool_selection_prompt,
+                role="assistant",
+                info={"is_thought": True},
+            ),
             Message(content="Continue..."),
         ]
 

@@ -23,7 +23,9 @@ def hide_action_content(msg: ToolRequestMessage) -> ToolRequestMessage:
     return msg.model_copy(update={"content": None})
 
 
-def hide_thought_content(msg: Message | ToolRequestMessage) -> Message | ToolRequestMessage:
+def hide_thought_content(
+    msg: Message | ToolRequestMessage,
+) -> Message | ToolRequestMessage:
     """Hide thought content from a message by replacing it with a placeholder."""
     return msg.model_copy(update={"content": "[Previous thought - hidden]"})
 
@@ -95,7 +97,7 @@ class SimpleAgentState(BaseModel):
                 hide_action_content(m) if isinstance(m, ToolRequestMessage) else m
                 for m in old_messages
             ]
-        
+
         if self.hide_old_thoughts:
             # Find the most recent thought message object
             last_thought_msg = None
@@ -103,9 +105,11 @@ class SimpleAgentState(BaseModel):
                 if has_thought_content(msg):
                     last_thought_msg = msg
                     break
-            
+
             old_messages = [
-                hide_thought_content(msg) if has_thought_content(msg) and msg is not last_thought_msg else msg
+                hide_thought_content(msg)
+                if has_thought_content(msg) and msg is not last_thought_msg
+                else msg
                 for msg in old_messages
             ]
 

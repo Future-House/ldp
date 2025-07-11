@@ -25,9 +25,9 @@ from ldp.graph.modules.react import (
     ACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
     REACT_DEFAULT_PROMPT_TEMPLATE,
     REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
-    REACT_PLANNING_PROMPT_TEMPLATE,
     REACT_PLANNING_CRITIC_PROMPT,
     REACT_PLANNING_PLAN_PROMPT,
+    REACT_PLANNING_PROMPT_TEMPLATE,
     REACT_PLANNING_THOUGHT_PROMPT,
     ReActModule,
     ReActModuleSinglePrompt,
@@ -191,7 +191,9 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
             )
         elif self.planning:
             self._react_module = ReActPlanningModule(
-                self.llm_model, self.sys_prompt, self.tool_description_method,
+                self.llm_model,
+                self.sys_prompt,
+                self.tool_description_method,
                 critic_prompt=self.critic_prompt,
                 plan_prompt=self.plan_prompt,
                 thought_prompt=self.thought_prompt,
@@ -203,7 +205,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:
         return SimpleAgentState(
-            tools=tools, 
+            tools=tools,
             hide_old_env_states=self.hide_old_env_states,
             hide_old_thoughts=self.hide_old_thoughts,
         )
