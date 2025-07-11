@@ -136,7 +136,7 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
     ),
 )
 
-# Planning mode prompt template
+# Planning mode prompt templates
 REACT_PLANNING_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
     fields=(
         "Critic: Assess whether the previous step of the trajectory has successfully completed the last step of the "
@@ -165,6 +165,37 @@ REACT_PLANNING_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
         "  - Information is presented clearly and concisely\n"
         "  - Response addresses the user's original question"
         "\nThought: I need to start by getting the weather information for New York using the get_weather tool"
+        '\nAction: get_weather("New York", 7)'
+        "\nObservation: The 7 day forecast for New York is [...]"
+    ),
+)
+
+REACT_PLANNING_PROMPT_TEMPLATE_NO_THOUGHT = _DEFAULT_PROMPT_TEMPLATE.format(
+    fields=(
+        "Critic: Assess whether the previous step of the trajectory has successfully completed the last step of the "
+        "plan."
+        "\nPlan: Give an updated plan as a checklist with [ ] for incomplete and [x] for completed steps. "
+        "Each step should be ~3 sentences long. Below each step, include a list of criteria for what counts as "
+        "satisfying that particular step."
+        "\nAction: the action to take, should be one of the provided tools with necessary arguments"
+        "\nObservation: the result of the action"
+    ),
+    fields_description="Critic/Plan/Action/Observation",
+    example=(
+        "Critic: This is the first step, so not applicable."
+        "\nPlan: Updated plan:\n[ ] Get weather information for New York. This involves calling the weather API with "
+        "the correct parameters. "
+        "We need to retrieve a comprehensive 7-day forecast that includes temperature, conditions, and any relevant "
+        "weather alerts.\n"
+        "  - Successfully called get_weather function with correct parameters\n"
+        "  - Received valid weather data response\n"
+        "  - Data includes temperature and forecast information\n"
+        "[ ] Format the response appropriately. Take the raw weather data and present it in a clear, readable format "
+        "for the user. "
+        "The response should be well-structured and easy to understand.\n"
+        "  - Weather data is organized in a logical format\n"
+        "  - Information is presented clearly and concisely\n"
+        "  - Response addresses the user's original question"
         '\nAction: get_weather("New York", 7)'
         "\nObservation: The 7 day forecast for New York is [...]"
     ),
@@ -459,7 +490,7 @@ class ReActPlanningModule(ReActModule):
     def __init__(
         self,
         llm_model: dict[str, Any],
-        sys_prompt: str = REACT_PLANNING_PROMPT_TEMPLATE,
+        sys_prompt: str | None = None,
         tool_description_method: ToolDescriptionMethods = ToolDescriptionMethods.STR,
         use_thought: bool = False,  # Thoughts seem to make the tool call overly verbose and complicated
     ):
@@ -468,6 +499,10 @@ class ReActPlanningModule(ReActModule):
         llm_model["stop"] = ["Observation:", "Action:"]
         self.llm_config = llm_model
         self._llm_call_op = LLMCallOp()
+        
+        # Use provided sys_prompt or select appropriate template based on use_thought
+        if sys_prompt is None:
+            sys_prompt = REACT_PLANNING_PROMPT_TEMPLATE if use_thought else REACT_PLANNING_PROMPT_TEMPLATE_NO_THOUGHT
         self.prompt_op = PromptOp(sys_prompt)
         self.package_msg_op = FxnOp(prepend_sys)
 
