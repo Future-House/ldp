@@ -461,7 +461,7 @@ class ReActPlanningModule(ReActModule):
         llm_model: dict[str, Any],
         sys_prompt: str = REACT_PLANNING_PROMPT_TEMPLATE,
         tool_description_method: ToolDescriptionMethods = ToolDescriptionMethods.STR,
-        use_thought: bool = False,
+        use_thought: bool = False,  # Thoughts seem to make the tool call overly verbose and complicated
     ):
         self._tool_description_method = tool_description_method
         self.use_thought = use_thought
