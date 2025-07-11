@@ -516,7 +516,10 @@ class ReActPlanningModule(ReActModule):
         self.plan_prompt_op = PromptOp(
             "Output ONLY an updated plan. Give an updated plan as a checklist with [ ] for incomplete and [x] for "
             "completed steps, where each step is ~3 sentences long. Below each step, include a list of criteria for "
-            "what counts as satisfying that particular step. Do not output critic or thought."
+            "what counts as satisfying that particular step. Make sure that your plan is consistent with the previous "
+            "iteration of the plan. For example, don't change the order of steps that are unrelated to the criticism. "
+            "Pay close attention that the plan is exactly consistent with the query, and that the steps are in the "
+            "correct order. Do not output critic or thought."
         )
         self.thought_prompt_op = PromptOp(
             "Output ONLY a thought. Reason concretely about the immediate next step you're about to take, rather than "
