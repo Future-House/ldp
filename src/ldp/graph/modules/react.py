@@ -461,8 +461,10 @@ class ReActPlanningModule(ReActModule):
         llm_model: dict[str, Any],
         sys_prompt: str = REACT_PLANNING_PROMPT_TEMPLATE,
         tool_description_method: ToolDescriptionMethods = ToolDescriptionMethods.STR,
+        use_thought: bool = False,
     ):
         self._tool_description_method = tool_description_method
+        self.use_thought = use_thought
         llm_model["stop"] = ["Observation:", "Action:"]
         self.llm_config = llm_model
         self._llm_call_op = LLMCallOp()
@@ -484,7 +486,9 @@ class ReActPlanningModule(ReActModule):
         self.thought_prompt_op = PromptOp(
             "Output ONLY a thought. Reason concretely about the immediate next step you're about to take, rather than "
             "presenting several options about what to do. Make sure you are clearly addressing the next step of the "
-            "plan and resolving any criticism where applicable.  Do not output critic or plan."
+            "plan and resolving any criticism where applicable. When resolving criticism, always attempt simpler "
+            "solutions first. For instance, if a model is not working, you should begin by refining the parameters of "
+            "the model instead of trying a completely different model. Do not output critic or plan."
         )
 
     @property
@@ -563,24 +567,26 @@ class ReActPlanningModule(ReActModule):
             current_messages, sys_prompt, self.plan_prompt_op, tools, "Plan:", "Thought:"
         )
 
-        # Step 3: Thought - reason about immediate next step
-        thought_msg = await self._execute_step(
-            [*current_messages, plan_msg], sys_prompt, self.thought_prompt_op, tools, "Thought:", "Action:"
-        )
+        # Step 3: Thought - reason about immediate next step (conditional)
+        thought_msg = None
+        if self.use_thought:
+            thought_msg = await self._execute_step(
+                [*current_messages, plan_msg], sys_prompt, self.thought_prompt_op, tools, "Thought:", "Action:"
+            )
 
         # Combine all reasoning into a single message for tool selection
         if is_first_step:
-            combined_reasoning = (
-                f"Plan: {plan_msg.content or ''}\n\n"
-                f"Thought: {thought_msg.content or ''}"
-            )
+            combined_reasoning = f"Plan: {plan_msg.content or ''}\n\n"
+            if self.use_thought and thought_msg:
+                combined_reasoning += f"Thought: {thought_msg.content or ''}"
         else:
             assert critic_msg is not None
             combined_reasoning = (
                 f"Critic: {critic_msg.content or ''}\n\n"
                 f"Plan: {plan_msg.content or ''}\n\n"
-                f"Thought: {thought_msg.content or ''}"
             )
+            if self.use_thought and thought_msg:
+                combined_reasoning += f"Thought: {thought_msg.content or ''}"
 
         # Step 4: Tool selection based on combined reasoning
         tool_selection_prompt = (
