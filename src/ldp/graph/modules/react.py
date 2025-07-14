@@ -643,22 +643,22 @@ class ReActPlanningModule(ReActModule):
 
         # Combine all reasoning into a single message for tool selection
         if is_first_step:
-            combined_reasoning = f"Plan: {plan_msg.content or ''}\n\n"
+            combined_reasoning = f"Thought:\nPlan: {plan_msg.content or ''}\n\n"
             if self.use_thought and thought_msg:
-                combined_reasoning += f"Thought: {thought_msg.content or ''}"
+                combined_reasoning += f"{thought_msg.content or ''}"
         else:
             assert critic_msg is not None
             combined_reasoning = (
-                f"Critic: {critic_msg.content or ''}\n\n"
-                f"Plan: {plan_msg.content or ''}\n\n"
+                f"Thought:\nCritic: {critic_msg.content or ''}\n\n"
+                f"Plan:{plan_msg.content or ''}\n\n"
             )
             if self.use_thought and thought_msg:
-                combined_reasoning += f"Thought: {thought_msg.content or ''}"
+                combined_reasoning += f"{thought_msg.content or ''}"
 
         # Step 4: Tool selection based on combined reasoning
         tool_selection_prompt = (
-            f"{combined_reasoning}."
-            " Based on this reasoning, let's select the appropriate tool!"
+            f"{combined_reasoning}"
+            "Based on this reasoning, let's select the appropriate tool!"
             "\n\nAction: "
         )
 
