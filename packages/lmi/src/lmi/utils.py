@@ -41,8 +41,13 @@ def configure_llm_logs() -> None:
     logging.config.dictConfig({
         "version": 1,
         "disable_existing_loggers": False,
-        # Lower level for httpx and LiteLLM
-        "loggers": {"httpx": {"level": "WARNING"}} | litellm_loggers_config,
+        "loggers": {
+            "asyncio": {"level": "WARNING"},  # For selector_events selector
+            "httpx": {"level": "WARNING"},
+            "httpcore.connection": {"level": "WARNING"},  # For TCP connection events
+            "httpcore.http11": {"level": "WARNING"},  # For request send/receive events
+        }
+        | litellm_loggers_config,
     })
 
 
