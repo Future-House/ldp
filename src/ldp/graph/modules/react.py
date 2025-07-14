@@ -151,7 +151,7 @@ REACT_PLANNING_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
     fields_description="Critic/Plan/Thought/Action/Observation",
     example=(
         "Critic: This is the first step, so not applicable."
-        "\nPlan: Updated plan:\n[ ] Get weather information for New York. This involves calling the weather API with "
+        "\nPlan:\n[ ] Get weather information for New York. This involves calling the weather API with "
         "the correct parameters. "
         "We need to retrieve a comprehensive 7-day forecast that includes temperature, conditions, and any relevant "
         "weather alerts.\n"
@@ -183,7 +183,7 @@ REACT_PLANNING_PROMPT_TEMPLATE_NO_THOUGHT = _DEFAULT_PROMPT_TEMPLATE.format(
     fields_description="Critic/Plan/Action/Observation",
     example=(
         "Critic: This is the first step, so not applicable."
-        "\nPlan: Updated plan:\n[ ] Get weather information for New York. This involves calling the weather API with "
+        "\nPlan:\n[ ] Get weather information for New York. This involves calling the weather API with "
         "the correct parameters. "
         "We need to retrieve a comprehensive 7-day forecast that includes temperature, conditions, and any relevant "
         "weather alerts.\n"

@@ -27,7 +27,7 @@ from ldp.graph.modules.react import (
     REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
     REACT_PLANNING_CRITIC_PROMPT,
     REACT_PLANNING_PLAN_PROMPT,
-    REACT_PLANNING_PROMPT_TEMPLATE,
+    REACT_PLANNING_PROMPT_TEMPLATE_NO_THOUGHT,
     REACT_PLANNING_THOUGHT_PROMPT,
     ReActModule,
     ReActModuleSinglePrompt,
@@ -176,7 +176,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         # set sys_prompt if not provided
         if "sys_prompt" not in kwargs:
             if planning:
-                kwargs["sys_prompt"] = REACT_PLANNING_PROMPT_TEMPLATE
+                kwargs["sys_prompt"] = REACT_PLANNING_PROMPT_TEMPLATE_NO_THOUGHT
             else:
                 kwargs["sys_prompt"] = (
                     REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE
@@ -197,6 +197,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
                 critic_prompt=self.critic_prompt,
                 plan_prompt=self.plan_prompt,
                 thought_prompt=self.thought_prompt,
+                use_thought=False,
             )
         else:
             self._react_module = ReActModule(
