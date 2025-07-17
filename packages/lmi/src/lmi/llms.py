@@ -23,6 +23,7 @@ from collections.abc import (
     Coroutine,
     Iterable,
     Mapping,
+    Sequence,
 )
 from enum import StrEnum
 from inspect import isasyncgenfunction, isawaitable, signature
@@ -151,8 +152,10 @@ def validate_json_completion(
 
 
 def prepare_args(
-    func: Callable, completion: str, name: str | None
-) -> tuple[tuple, dict]:
+    func: Callable[..., Any] | Callable[..., Awaitable],
+    completion: str,
+    name: str | None,
+) -> tuple[tuple[str, ...], dict[str, Any]]:
     with contextlib.suppress(TypeError):
         if "name" in signature(func).parameters:
             return (completion,), {"name": name}
@@ -224,7 +227,9 @@ class LLMModel(ABC, BaseModel):
     async def call(  # noqa: C901, PLR0915
         self,
         messages: list[Message],
-        callbacks: Iterable[Callable] | None = None,
+        callbacks: (
+            Sequence[Callable[..., Any] | Callable[..., Awaitable]] | None
+        ) = None,
         name: str | None = None,
         output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = None,
         tools: list[Tool] | None = None,
@@ -234,14 +239,17 @@ class LLMModel(ABC, BaseModel):
     ) -> list[LLMResult]:
         """Call the LLM model with the given messages and configuration.
 
-        messages: A list of messages to send to the language model.
-        callbacks: A list of callback functions to execute
-        name: Optional name for the result.
-        output_type: The type of the output.
-        tools: A list of tools to use.
-        tool_choice: The tool choice to use.
+        Args:
+            messages: A list of messages to send to the language model.
+            callbacks: A list of callback functions to execute.
+            name: Optional name for the result.
+            output_type: The type of the output.
+            tools: A list of tools to use.
+            tool_choice: The tool choice to use.
+            kwargs: Additional keyword arguments for the chat completion.
 
-        Results: A list of LLMResult objects containing the result of the call.
+        Returns:
+            A list of LLMResult objects containing the result of the call.
 
         Raises:
             ValueError: If the LLM type is unknown.
@@ -354,19 +362,32 @@ class LLMModel(ABC, BaseModel):
 
     async def call_single(
         self,
-        messages: list[Message],
-        callbacks: Iterable[Callable] | None = None,
+        messages: list[Message] | str,
+        callbacks: (
+            Sequence[Callable[..., Any] | Callable[..., Awaitable]] | None
+        ) = None,
         name: str | None = None,
         output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = None,
         tools: list[Tool] | None = None,
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
         **kwargs,
     ) -> LLMResult:
+        if isinstance(messages, str):
+            # convenience for single message
+            messages = [Message(content=messages)]
         results = await self.call(
-            messages, callbacks, name, output_type, tools, tool_choice, n=1, **kwargs
+            messages,
+            callbacks,
+            name,
+            output_type,
+            tools,
+            tool_choice,
+            n=1,
+            **kwargs,
         )
-        if not results:
-            raise ValueError("No results returned from call")
+        if len(results) != 1:
+            # Can be caused by issues like https://github.com/BerriAI/litellm/issues/12298
+            raise ValueError(f"Got {len(results)} results when expecting just one.")
         return results[0]
 
 

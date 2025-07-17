@@ -196,6 +196,16 @@ class TrajectoryFileCallback(Callback):
         )
 
 
+class StoreEnvironmentsCallback(Callback):
+    """Callback to store the environment underlying each trajectory."""
+
+    def __init__(self):
+        self.traj_id_to_envs: dict[str, Environment] = {}
+
+    async def before_rollout(self, traj_id: str, env: Environment) -> None:
+        self.traj_id_to_envs[traj_id] = env
+
+
 class RolloutDebugDumpCallback(Callback):
     """Dump JSONL files for each agent and environment step to a directory."""
 

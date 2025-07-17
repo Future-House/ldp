@@ -5,7 +5,7 @@ from enum import IntEnum, auto
 from functools import partial
 from pathlib import Path
 from typing import cast
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import networkx as nx
 import pytest
@@ -696,7 +696,20 @@ class TestReActAgent:
         ]
         user_msg = Message(content="Cast the string '5.6' to a float.")
         with (
-            patch.object(LLMModel, "acompletion") as mock_acompletion,
+            patch.object(
+                LLMModel,
+                "acompletion",
+                side_effect=[
+                    [
+                        Mock(
+                            # Stub values to resemble one LLMResult
+                            prompt_count=1,
+                            completion_count=1,
+                            messages=[Mock(spec=Message)],
+                        )
+                    ]
+                ],
+            ) as mock_acompletion,
             patch.object(ReActModuleSinglePrompt, "parse_message"),
         ):
             agent = ReActAgent(

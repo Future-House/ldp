@@ -33,6 +33,7 @@ pip install fhlmi
     - [Timeout Configuration](#timeout-configuration)
     - [Weight-based Rate Limiting](#weight-based-rate-limiting)
   - [Tool calling](#tool-calling)
+  - [Vertex](#vertex)
   - [Embedding models](#embedding-models)
     - [LiteLLMEmbeddingModel](#litellmembeddingmodel)
     - [HybridEmbeddingModel](#hybridembeddingmodel)
@@ -53,6 +54,16 @@ llm = LiteLLMModel()
 messages = [Message(content="What is the meaning of life?")]
 
 result = await llm.call_single(messages)
+# assert result.text == "42"
+```
+
+or, if you only have one user message, just:
+
+```python
+from lmi import LiteLLMModel
+
+llm = LiteLLMModel()
+result = await llm.call_single("What is the meaning of life?")
 # assert result.text == "42"
 ```
 
@@ -381,6 +392,33 @@ result = await llm.call_single(
 
 # result.messages[0] will be a ToolRequestMessage with tool_calls containing
 # the calculator invocation with x=2, y=2, operation="+"
+```
+
+### Vertex
+
+Vertex requires a bit of extra set-up. First, install the extra dependency for auth:
+
+```sh
+pip install google-api-python-client
+```
+
+and then you need to configure which region/project you're using for the model calls.
+Make sure you're authed for that region/project. Typically that means running:
+
+```sh
+gcloud auth application-default login
+```
+
+Then you can use vertex models:
+
+```py
+from lmi import LiteLLMModel
+from aviary.core import Message
+
+vertex_config = {"vertex_project": "PROJECT_ID", "vertex_location": "REGION"}
+
+llm = LiteLLMModel(name="vertex_ai/gemini-2.5-pro", config=vertex_config)
+await llm.call_single("hey")
 ```
 
 ### Embedding models

@@ -20,7 +20,7 @@ from aviary.core import Message, Tool, ToolCall, ToolRequestMessage
 from lmi import CommonLLMNames
 from pydantic import BaseModel, ConfigDict, Field
 
-from ldp.graph import FxnOp, LLMCallOp, OpResult, compute_graph, get_call_id, op_call
+from ldp.graph import FxnOp, LLMCallOp, OpResult, compute_graph
 from ldp.llms import prepend_sys
 
 from . import DEFAULT_LLM_COMPLETION_TIMEOUT
@@ -143,11 +143,4 @@ class TreeofThoughtsAgent(BaseModel, Agent[SimpleAgentState]):
         result = ToolRequestMessage(content=current_paths[0], tool_calls=tool_calls)
 
         new_state.messages = [*new_state.messages, result]
-        async with op_call():
-            op_result: OpResult[ToolRequestMessage] = OpResult(
-                call_id=get_call_id(),
-                op_name="TreeofThoughtsAgentOp",
-                op_class_name=type(self).__name__,
-                value=result,
-            )
-        return op_result, new_state, 0.0
+        return await Agent.wrap_action(result), new_state, 0.0

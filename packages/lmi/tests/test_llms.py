@@ -317,6 +317,15 @@ class TestLiteLLMModel:
             assert completion.cost > 0
             assert completion.completion_count > 100, "Expected a long completion"
 
+        with subtests.test(msg="autowraps message"):
+
+            def mock_call(messages, *_, **__):
+                assert isinstance(messages, list)
+                return [None]
+
+            with patch.object(LiteLLMModel, "call", side_effect=mock_call):
+                await llm.call_single("Test message")
+
     @pytest.mark.vcr
     @pytest.mark.parametrize(
         ("config", "bypassed_router"),
@@ -810,6 +819,20 @@ class TestTooling:
         else:
             assert isinstance(result.messages[0], ToolRequestMessage)
             assert not result.messages[0].tool_calls
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_multi_response_validation(self) -> None:
+        model = LiteLLMModel(name="text-completion-openai/babbage-002")
+        with pytest.raises(ValueError, match="2 results"):
+            # Confirming https://github.com/BerriAI/litellm/issues/12298
+            # does not silently pass through LMI
+            await model.call_single(
+                messages=[
+                    Message(role="system", content="Answer in a concise tone."),
+                    Message(content="What is your name?"),
+                ]
+            )
 
 
 class TestReasoning:
