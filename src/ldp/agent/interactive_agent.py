@@ -4,7 +4,7 @@ from typing import Any
 
 from aviary.core import Message, Tool, ToolCall, ToolRequestMessage
 
-from ldp.graph import IdentityOp, OpResult, compute_graph
+from ldp.graph import OpResult, compute_graph
 
 from .agent import Agent
 from .simple_agent import SimpleAgentState
@@ -18,9 +18,6 @@ EXIT = "EXIT"
 
 class InteractiveAgent(Agent[SimpleAgentState]):
     """An "agent" that provides an interface for human users to interact with environments."""
-
-    def __init__(self):
-        self.action_op = IdentityOp[ToolRequestMessage]()
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:
         print()  # add a newline to flush any progress bars, etc
@@ -104,11 +101,11 @@ class InteractiveAgent(Agent[SimpleAgentState]):
                 break
 
         tool_call = ToolCall.from_tool(tool, **params)
-        action = await self.action_op(ToolRequestMessage(tool_calls=[tool_call]))
+        action = ToolRequestMessage(tool_calls=[tool_call])
 
-        next_agent_state.messages = [*next_agent_state.messages, action.value]
+        next_agent_state.messages = [*next_agent_state.messages, action]
 
-        return action, next_agent_state, 0.0
+        return await Agent.wrap_action(action), next_agent_state, 0.0
 
     @staticmethod
     def _get_param_string(pname: str, pprops: dict[str, Any]) -> str:

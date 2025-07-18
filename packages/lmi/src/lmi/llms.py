@@ -373,7 +373,7 @@ class LLMModel(ABC, BaseModel):
 
     async def call_single(
         self,
-        messages: list[Message],
+        messages: list[Message] | str,
         callbacks: (
             Sequence[Callable[..., Any] | Callable[..., Awaitable]] | None
         ) = None,
@@ -383,8 +383,18 @@ class LLMModel(ABC, BaseModel):
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
         **kwargs,
     ) -> LLMResult:
+        if isinstance(messages, str):
+            # convenience for single message
+            messages = [Message(content=messages)]
         results = await self.call(
-            messages, callbacks, name, output_type, tools, tool_choice, n=1, **kwargs
+            messages,
+            callbacks,
+            name,
+            output_type,
+            tools,
+            tool_choice,
+            n=1,
+            **kwargs,
         )
         if len(results) != 1:
             # Can be caused by issues like https://github.com/BerriAI/litellm/issues/12298

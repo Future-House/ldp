@@ -157,6 +157,30 @@ new_action, new_agent_state, value = await agent.get_asv(agent_state, obs)
   but rather the returned value from `env.step`.
 - The `value` is the agent's state/action value estimate used for reinforcment learning training. It may default to 0.
 
+## A plain python agent
+
+Want to just run python code? No problem - here's a minimal example of an Agent that is deterministic:
+
+```py
+from aviary.core import Message, Tool, ToolCall, ToolRequestMessage
+from ldp.agent import Agent
+
+
+class NoThinkAgent(Agent):
+    async def init_state(self, tools):
+        return None
+
+    async def get_asv(self, tools, obs):
+        tool_call = ToolCall.from_name("specific_tool_call", arg1="foo")
+        action = ToolRequestMessage(tool_calls=[tool_call])
+        return await Agent.wrap_action(action), None, 0.0
+```
+
+This agent has a state of `None`, just makes one specific tool call with `arg1="foo"`,
+and then converts that into an action.
+The only "magic" line of code is the `wrap_action`,
+which just converts the action constructed by plain python into a node in a compute graph - see more below.
+
 ## Stochastic Computation Graph (SCG)
 
 For more advanced use-cases, LDP features a stochastic computation graph [^2]
