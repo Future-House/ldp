@@ -17,7 +17,7 @@ import json
 import logging
 from abc import ABC
 from collections.abc import (
-    AsyncIterable,
+    AsyncGenerator,
     Awaitable,
     Callable,
     Coroutine,
@@ -27,7 +27,7 @@ from collections.abc import (
 )
 from enum import StrEnum
 from inspect import isasyncgenfunction, isawaitable, signature
-from typing import Any, ClassVar, Literal, ParamSpec, TypeAlias, cast, overload
+from typing import Any, ClassVar, ParamSpec, TypeAlias, cast, overload
 
 import litellm
 from aviary.core import (
@@ -201,7 +201,7 @@ class LLMModel(ABC, BaseModel):
 
     async def acompletion_iter(
         self, messages: list[Message], **kwargs
-    ) -> AsyncIterable[LLMResult]:
+    ) -> AsyncGenerator[LLMResult]:
         """Return an async generator that yields completions.
 
         Only the last tuple will be non-zero.
@@ -252,7 +252,7 @@ class LLMModel(ABC, BaseModel):
         tool_choice: Tool | str | None = ...,
         stream: bool = True,
         **kwargs,
-    ) -> AsyncIterable[LLMResult]: ...
+    ) -> AsyncGenerator[LLMResult]: ...
 
     async def call(  # noqa: C901, PLR0915
         self,
@@ -266,7 +266,7 @@ class LLMModel(ABC, BaseModel):
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
         stream: bool = False,
         **kwargs,
-    ) -> list[LLMResult] | AsyncIterable[LLMResult]:
+    ) -> list[LLMResult] | AsyncGenerator[LLMResult]:
         """Call the LLM model with the given messages and configuration.
 
         Args:
@@ -281,7 +281,7 @@ class LLMModel(ABC, BaseModel):
 
         Returns:
             A list of LLMResult objects containing the result of the call when stream=False,
-            or an AsyncIterable[LLMResult] when stream=True.
+            or an AsyncGenerator[LLMResult] when stream=True.
 
         Raises:
             ValueError: If the LLM type is unknown.
@@ -393,13 +393,13 @@ class LLMModel(ABC, BaseModel):
                         await possibly_awaitable_result
             return results
 
-        # If streaming, return an AsyncIterable[LLMResult]
+        # If streaming, return an AsyncGenerator[LLMResult]
         if tools:
             raise NotImplementedError("Using tools with streaming is not supported")
         if callbacks:
             raise NotImplementedError("Using callbacks with streaming is not supported")
 
-        async def process_stream() -> AsyncIterable[LLMResult]:
+        async def process_stream() -> AsyncGenerator[LLMResult]:
             async_iterable = await self.acompletion_iter(messages, **chat_kwargs)
             async for result in async_iterable:
                 usage = result.prompt_count, result.completion_count
@@ -443,7 +443,7 @@ class LLMModel(ABC, BaseModel):
         tool_choice: Tool | str | None = ...,
         stream: bool = True,
         **kwargs,
-    ) -> AsyncIterable[LLMResult]: ...
+    ) -> AsyncGenerator[LLMResult]: ...
 
     async def call_single(
         self,
@@ -457,7 +457,7 @@ class LLMModel(ABC, BaseModel):
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
         stream: bool = False,
         **kwargs,
-    ) -> LLMResult | AsyncIterable[LLMResult]:
+    ) -> LLMResult | AsyncGenerator[LLMResult]:
         if isinstance(messages, str):
             # convenience for single message
             messages = [Message(content=messages)]
@@ -474,8 +474,8 @@ class LLMModel(ABC, BaseModel):
         )
 
         if stream:
-            if not isinstance(results, AsyncIterable):
-                raise TypeError("Expected AsyncIterable of results when streaming")
+            if not isinstance(results, AsyncGenerator):
+                raise TypeError("Expected AsyncGenerator of results when streaming")
             return results
 
         if not isinstance(results, list):
@@ -497,8 +497,8 @@ def rate_limited(
 
 @overload
 def rate_limited(
-    func: Callable[P, AsyncIterable[LLMResult]],
-) -> Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]]: ...
+    func: Callable[P, AsyncGenerator[LLMResult]],
+) -> Callable[P, Coroutine[Any, Any, AsyncGenerator[LLMResult]]]: ...
 
 
 def rate_limited(func):
@@ -524,7 +524,7 @@ def rate_limited(func):
         # portion before yielding
         if isasyncgenfunction(func):
 
-            async def rate_limited_generator() -> AsyncIterable[LLMResult]:
+            async def rate_limited_generator() -> AsyncGenerator[LLMResult]:
                 async for item in func(self, *args, **kwargs):
                     token_count = 0
                     if isinstance(item, LLMResult):
@@ -553,8 +553,8 @@ def request_limited(
 
 @overload
 def request_limited(
-    func: Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]],
-) -> Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]]: ...
+    func: Callable[P, Coroutine[Any, Any, AsyncGenerator[LLMResult]]],
+) -> Callable[P, Coroutine[Any, Any, AsyncGenerator[LLMResult]]]: ...
 
 
 def request_limited(func):
@@ -571,7 +571,7 @@ def request_limited(func):
 
         if isasyncgenfunction(func):
 
-            async def request_limited_generator() -> AsyncIterable[LLMResult]:
+            async def request_limited_generator() -> AsyncGenerator[LLMResult]:
                 first_item = True
                 async for item in func(self, *args, **kwargs):
                     # Skip rate limit check for first item since we already checked at generator start
@@ -793,7 +793,7 @@ class LiteLLMModel(LLMModel):
     @rate_limited
     async def acompletion_iter(
         self, messages: list[Message], **kwargs
-    ) -> AsyncIterable[LLMResult]:
+    ) -> AsyncGenerator[LLMResult]:
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
         prompts = cast(
             "list[litellm.types.llms.openai.AllMessageValues]",
