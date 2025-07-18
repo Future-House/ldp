@@ -27,7 +27,7 @@ from collections.abc import (
 )
 from enum import StrEnum
 from inspect import isasyncgenfunction, isawaitable, signature
-from typing import Any, ClassVar, ParamSpec, TypeAlias, cast, overload
+from typing import Any, ClassVar, Literal, ParamSpec, TypeAlias, cast, overload
 
 import litellm
 from aviary.core import (
@@ -224,9 +224,39 @@ class LLMModel(ABC, BaseModel):
     # None means we won't provide a tool_choice to the LLM API
     UNSPECIFIED_TOOL_CHOICE: ClassVar[None] = None
 
+    @overload
+    async def call(
+        self,
+        messages: list[Message] | str,
+        callbacks: (
+            Sequence[Callable[..., Any] | Callable[..., Awaitable]] | None
+        ) = ...,
+        name: str | None = ...,
+        output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = ...,
+        tools: list[Tool] | None = ...,
+        tool_choice: Tool | str | None = ...,
+        stream: bool = False,
+        **kwargs,
+    ) -> list[LLMResult]: ...
+
+    @overload
+    async def call(  # type: ignore[overload-cannot-match]
+        self,
+        messages: list[Message] | str,
+        callbacks: (
+            Sequence[Callable[..., Any] | Callable[..., Awaitable]] | None
+        ) = ...,
+        name: str | None = ...,
+        output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = ...,
+        tools: list[Tool] | None = ...,
+        tool_choice: Tool | str | None = ...,
+        stream: bool = True,
+        **kwargs,
+    ) -> AsyncIterable[LLMResult]: ...
+
     async def call(  # noqa: C901, PLR0915
         self,
-        messages: list[Message],
+        messages: list[Message] | str,
         callbacks: (
             Sequence[Callable[..., Any] | Callable[..., Awaitable]] | None
         ) = None,
@@ -236,7 +266,7 @@ class LLMModel(ABC, BaseModel):
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
         stream: bool = False,
         **kwargs,
-    ) -> list[LLMResult]:
+    ) -> list[LLMResult] | AsyncIterable[LLMResult]:
         """Call the LLM model with the given messages and configuration.
 
         Args:
@@ -246,14 +276,19 @@ class LLMModel(ABC, BaseModel):
             output_type: The type of the output.
             tools: A list of tools to use.
             tool_choice: The tool choice to use.
+            stream: Whether to stream the response or return all results at once.
             kwargs: Additional keyword arguments for the chat completion.
 
         Returns:
-            A list of LLMResult objects containing the result of the call.
+            A list of LLMResult objects containing the result of the call when stream=False,
+            or an AsyncIterable[LLMResult] when stream=True.
 
         Raises:
             ValueError: If the LLM type is unknown.
         """
+        if isinstance(messages, str):
+            # convenience for single message
+            messages = [Message(content=messages)]
         chat_kwargs = copy.deepcopy(kwargs)
         # if using the config for an LLMModel,
         # there may be a nested 'config' key
@@ -333,32 +368,82 @@ class LLMModel(ABC, BaseModel):
             for m in messages
         ]
 
-        results: list[LLMResult] = []
         start_clock = asyncio.get_running_loop().time()
+
+        # If not streaming, simply return the results
         if not stream:
-            sync_callbacks = [f for f in (callbacks or []) if not is_coroutine_callable(f)]
+            sync_callbacks = [
+                f for f in (callbacks or []) if not is_coroutine_callable(f)
+            ]
             async_callbacks = [f for f in (callbacks or []) if is_coroutine_callable(f)]
             results = await self.acompletion(messages, **chat_kwargs)
-            await do_callbacks(async_callbacks, sync_callbacks, results, name)
-        else:
-            if tools:
-                raise NotImplementedError("Using tools with callbacks is not supported")
-            stream_results = await self.acompletion_iter(messages, **chat_kwargs)
-            return stream_results
+            for result in results:
+                text = cast("str", result.text)
+                await do_callbacks(async_callbacks, sync_callbacks, text, name)
+                usage = result.prompt_count, result.completion_count
+                if not sum(usage):
+                    result.completion_count = self.count_tokens(text)
+                result.seconds_to_last_token = (
+                    asyncio.get_running_loop().time() - start_clock
+                )
+                result.name = name
+                if self.llm_result_callback:
+                    possibly_awaitable_result = self.llm_result_callback(result)
+                    if isawaitable(possibly_awaitable_result):
+                        await possibly_awaitable_result
+            return results
 
-        for result in results:
-            usage = result.prompt_count, result.completion_count
-            if not sum(usage):
-                result.completion_count = self.count_tokens(cast("str", result.text))
-            result.seconds_to_last_token = (
-                asyncio.get_running_loop().time() - start_clock
-            )
-            result.name = name
-            if self.llm_result_callback:
-                possibly_awaitable_result = self.llm_result_callback(result)
-                if isawaitable(possibly_awaitable_result):
-                    await possibly_awaitable_result
-        return results
+        # If streaming, return an AsyncIterable[LLMResult]
+        if tools:
+            raise NotImplementedError("Using tools with streaming is not supported")
+        if callbacks:
+            raise NotImplementedError("Using callbacks with streaming is not supported")
+
+        async def process_stream() -> AsyncIterable[LLMResult]:
+            async_iterable = await self.acompletion_iter(messages, **chat_kwargs)
+            async for result in async_iterable:
+                usage = result.prompt_count, result.completion_count
+                if not sum(usage):
+                    result.completion_count = self.count_tokens(
+                        cast("str", result.text)
+                    )
+                result.seconds_to_last_token = (
+                    asyncio.get_running_loop().time() - start_clock
+                )
+                result.name = name
+                yield result
+
+        return process_stream()
+
+    @overload
+    async def call_single(
+        self,
+        messages: list[Message] | str,
+        callbacks: (
+            Sequence[Callable[..., Any] | Callable[..., Awaitable]] | None
+        ) = ...,
+        name: str | None = ...,
+        output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = ...,
+        tools: list[Tool] | None = ...,
+        tool_choice: Tool | str | None = ...,
+        stream: bool = False,
+        **kwargs,
+    ) -> LLMResult: ...
+
+    @overload
+    async def call_single(  # type: ignore[overload-cannot-match]
+        self,
+        messages: list[Message] | str,
+        callbacks: (
+            Sequence[Callable[..., Any] | Callable[..., Awaitable]] | None
+        ) = ...,
+        name: str | None = ...,
+        output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = ...,
+        tools: list[Tool] | None = ...,
+        tool_choice: Tool | str | None = ...,
+        stream: bool = True,
+        **kwargs,
+    ) -> AsyncIterable[LLMResult]: ...
 
     async def call_single(
         self,
@@ -370,11 +455,13 @@ class LLMModel(ABC, BaseModel):
         output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = None,
         tools: list[Tool] | None = None,
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
+        stream: bool = False,
         **kwargs,
-    ) -> LLMResult:
+    ) -> LLMResult | AsyncIterable[LLMResult]:
         if isinstance(messages, str):
             # convenience for single message
             messages = [Message(content=messages)]
+        kwargs = {**kwargs, "n": 1}
         results = await self.call(
             messages,
             callbacks,
@@ -382,9 +469,17 @@ class LLMModel(ABC, BaseModel):
             output_type,
             tools,
             tool_choice,
-            n=1,
+            stream,
             **kwargs,
         )
+
+        if stream:
+            if not isinstance(results, AsyncIterable):
+                raise TypeError("Expected AsyncIterable of results when streaming")
+            return results
+
+        if not isinstance(results, list):
+            raise TypeError("Expected list of results when not streaming")
         if len(results) != 1:
             # Can be caused by issues like https://github.com/BerriAI/litellm/issues/12298
             raise ValueError(f"Got {len(results)} results when expecting just one.")
@@ -597,16 +692,6 @@ class LiteLLMModel(LLMModel):
             _DeploymentTypedDictValidator.validate_python(model_list)
         return data
 
-    # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
-    # > `none` means the model will not call any tool and instead generates a message.
-    # > `auto` means the model can pick between generating a message or calling one or more tools.
-    # > `required` means the model must call one or more tools.
-    NO_TOOL_CHOICE: ClassVar[str] = "none"
-    MODEL_CHOOSES_TOOL: ClassVar[str] = "auto"
-    TOOL_CHOICE_REQUIRED: ClassVar[str] = "required"
-    # None means we won't provide a tool_choice to the LLM API
-    UNSPECIFIED_TOOL_CHOICE: ClassVar[None] = None
-
     def __getstate__(self):
         # Prevent _router from being pickled, SEE: https://stackoverflow.com/a/2345953
         state = super().__getstate__()
@@ -717,7 +802,7 @@ class LiteLLMModel(LLMModel):
         stream_options = {
             "include_usage": True,
         }
-        # NOTE: Specifically requesting reasoning for deepseek-r1 models
+
         if kwargs.get("include_reasoning"):
             stream_options["include_reasoning"] = True
 
@@ -729,43 +814,41 @@ class LiteLLMModel(LLMModel):
             **kwargs,
         )
         start_clock = asyncio.get_running_loop().time()
-        outputs = []
+        accumulated_text = ""
         logprobs = []
         role = None
         reasoning_content = []
         used_model = None
+        first_token_time = None
+
         async for completion in stream_completions:
             if not used_model:
                 used_model = completion.model or self.name
             choice = completion.choices[0]
             delta = choice.delta
-            # logprobs can be None, or missing a content attribute,
-            # or a ChoiceLogprobs object with a NoneType/empty content attribute
+
+            if first_token_time is None and delta.content:
+                first_token_time = asyncio.get_running_loop().time()
+
             if logprob_content := getattr(choice.logprobs, "content", None):
                 logprobs.append(logprob_content[0].logprob or 0)
-            outputs.append(delta.content or "")
-            role = delta.role or role
-            if hasattr(delta, "reasoning_content"):
-                reasoning_content.append(delta.reasoning_content or "")
-        text = "".join(outputs)
-        result = LLMResult(
-            model=used_model,
-            text=text,
-            prompt=messages,
-            messages=[Message(role=role, content=text)],
-            logprob=sum_logprobs(logprobs),
-            reasoning_content="".join(reasoning_content),
-        )
+            if delta.content:
+                accumulated_text += delta.content
+                role = delta.role or role
+                if hasattr(delta, "reasoning_content"):
+                    reasoning_content.append(delta.reasoning_content or "")
 
-        if text:
-            result.seconds_to_first_token = (
-                asyncio.get_running_loop().time() - start_clock
-            )
-        if hasattr(completion, "usage"):
-            result.prompt_count = completion.usage.prompt_tokens
-            result.completion_count = completion.usage.completion_tokens
-
-        yield result
+                yield LLMResult(
+                    model=used_model,
+                    text=delta.content,
+                    prompt=messages,
+                    messages=[Message(role=role, content=accumulated_text)],
+                    logprob=sum_logprobs(logprobs),
+                    reasoning_content="".join(reasoning_content),
+                    seconds_to_first_token=(
+                        first_token_time - start_clock if first_token_time else None
+                    ),
+                )
 
     def count_tokens(self, text: str) -> int:
         return litellm.token_counter(model=self.name, text=text)

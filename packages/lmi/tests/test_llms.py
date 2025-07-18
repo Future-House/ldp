@@ -1,6 +1,6 @@
 import pathlib
 import pickle
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterable, AsyncIterator
 from typing import Any, ClassVar
 from unittest.mock import Mock, patch
 
@@ -286,6 +286,7 @@ class TestLiteLLMModel:
             messages=messages,
             callbacks=[accum],
         )
+        assert isinstance(completion, LLMResult)
         assert completion.model == CommonLLMNames.OPENAI_TEST.value
         assert completion.seconds_to_last_token > 0
         assert completion.prompt_count > 0
@@ -296,6 +297,7 @@ class TestLiteLLMModel:
         completion = await llm.call_single(
             messages=messages,
         )
+        assert isinstance(completion, LLMResult)
         assert completion.seconds_to_last_token > 0
         assert completion.cost > 0
 
@@ -307,6 +309,7 @@ class TestLiteLLMModel:
             messages=messages,
             callbacks=[accum, ac],
         )
+        assert isinstance(completion, LLMResult)
         assert completion.cost > 0
 
         with subtests.test(msg="passing-kwargs"):
@@ -314,6 +317,7 @@ class TestLiteLLMModel:
                 messages=[Message(role="user", content="Tell me a very long story")],
                 max_tokens=1000,
             )
+            assert isinstance(completion, LLMResult)
             assert completion.cost > 0
             assert completion.completion_count > 100, "Expected a long completion"
 
@@ -498,7 +502,9 @@ class TestMultipleCompletion:
     DEFAULT_CONFIG: ClassVar[dict] = {"n": NUM_COMPLETIONS}
     MODEL_CLS: ClassVar[type[LiteLLMModel]] = LiteLLMModel
 
-    async def call_model(self, model: LiteLLMModel, *args, **kwargs) -> list[LLMResult]:
+    async def call_model(
+        self, model: LiteLLMModel, *args, **kwargs
+    ) -> list[LLMResult] | AsyncIterable[LLMResult]:
         return await model.call(*args, **kwargs)
 
     @pytest.mark.parametrize(
@@ -544,6 +550,7 @@ class TestMultipleCompletion:
             Message(content="Hello, how are you?"),
         ]
         results = await self.call_model(model, messages)
+        assert isinstance(results, list)
         assert len(results) == self.NUM_COMPLETIONS
 
         for result in results:
@@ -594,6 +601,7 @@ class TestMultipleCompletion:
             messages=[Message(content="Please win.")],
             tools=[Tool.from_function(play)],
         )
+        assert isinstance(results, list)
         assert len(results) == self.NUM_COMPLETIONS
         for result in results:
             assert result.messages
@@ -636,6 +644,7 @@ class TestMultipleCompletion:
             ),
         ]
         results = await self.call_model(model, messages, output_type=output_type)
+        assert isinstance(results, list)
         assert len(results) == self.NUM_COMPLETIONS
         for result in results:
             assert result.messages
@@ -662,6 +671,7 @@ class TestMultipleCompletion:
                 )
             ],
         )
+        assert isinstance(results, list)
         assert len(results) == self.NUM_COMPLETIONS
         for result in results:
             assert result.messages is not None, (
@@ -687,7 +697,6 @@ class TestMultipleCompletion:
         result = await model.call_single(messages)
         assert isinstance(result, LLMResult)
 
-        assert isinstance(result, LLMResult)
         assert result.messages
         assert len(result.messages) == 1
         assert result.messages[0].content
@@ -720,10 +729,12 @@ class TestMultipleCompletion:
                 await model.call(messages)
         else:
             results = await model.call(messages)  # noqa: FURB120
+            assert isinstance(results, list)
             assert len(results) == self.NUM_COMPLETIONS
 
             model = self.MODEL_CLS(name=model_name, config={"n": 5})
             results = await model.call(messages, n=self.NUM_COMPLETIONS)
+            assert isinstance(results, list)
             assert len(results) == self.NUM_COMPLETIONS
 
 
@@ -813,6 +824,7 @@ class TestTooling:
             tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL,
         )
 
+        assert isinstance(result, LLMResult)
         assert isinstance(result.messages, list)
         if tools is None:
             assert isinstance(result.messages[0], Message)
@@ -861,11 +873,13 @@ class TestReasoning:
             Message(content="What is the meaning of life?"),
         ]
         results = await llm.call(messages)
+        assert isinstance(results, list)
         for result in results:
             assert result.reasoning_content
 
         outputs: list[str] = []
         results = await llm.call(messages, callbacks=[outputs.append])
+        assert isinstance(results, list)
 
         for i, result in enumerate(results):
             assert result.reasoning_content
@@ -897,6 +911,7 @@ class TestReasoning:
             Message(content="What is the meaning of life?"),
         ]
         results = await llm.call(messages)
+        assert isinstance(results, list)
         for result in results:
             assert result.reasoning_content is not None, "Should have reasoning content"
             assert result.text is not None
