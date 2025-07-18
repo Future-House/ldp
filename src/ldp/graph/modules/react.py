@@ -208,7 +208,7 @@ REACT_PLANNING_CRITIC_PROMPT = (
     "execution of the plan, even if minor. Use common sense: think of any mistakes the agent might have made "
     "(not only in the code) but also in their reasoning or analysis process. Make sure that the model NEVER "
     "hardcodes scientific facts into the code for purposes of analysis. For example, it should not put biology "
-    "knowledge or facts direclty into the code - instead, it should use a library to do the analysis. "
+    "knowledge or facts directly into the code - instead, it should use a library to do the analysis. "
     "Do not output plan or thought."
 )
 
