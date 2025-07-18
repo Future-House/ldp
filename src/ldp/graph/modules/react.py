@@ -389,9 +389,9 @@ class ReActModuleSinglePrompt:
         return parse_message(m, tools)
 
     async def _create_system_prompt(self, tools: list[Tool]) -> OpResult[str]:
-        tool_info = "\n".join(
-            [getattr(t.info, self._tool_description_method)() for t in tools]
-        )
+        tool_info = "\n".join([
+            getattr(t.info, self._tool_description_method)() for t in tools
+        ])
         if prefix := self._tool_description_method.get_prompt_prefix():
             tool_info = f"{prefix}\n{tool_info}"
         tool_names = ", ".join([t.info.name for t in tools])
