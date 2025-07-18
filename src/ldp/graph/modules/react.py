@@ -20,6 +20,37 @@ from ldp.llms import prepend_sys
 
 from .llm_call import ParsedLLMCallModule
 
+
+def clean_llm_output(
+    content: str, prefix: str | None = None, truncate_at: str | None = None
+) -> str:
+    """
+    Clean LLM output by removing prefix and truncating at specified marker.
+
+    Args:
+        content: The raw LLM output content
+        prefix: Optional prefix to remove (e.g., "Plan:", "Thought:")
+        truncate_at: Optional marker to truncate at (e.g., "Action:", "Thought:")
+
+    Returns:
+        Cleaned content string
+    """
+    if not content:
+        return content
+
+    cleaned_content = content
+
+    # Remove prefix if present
+    if prefix and cleaned_content.startswith(prefix):
+        cleaned_content = cleaned_content[len(prefix) :].strip()
+
+    # Truncate at marker if present
+    if truncate_at and truncate_at in cleaned_content:
+        cleaned_content = cleaned_content.split(truncate_at)[0].strip()
+
+    return cleaned_content
+
+
 # These prompts are meant to be used with ReActModuleSinglePrompt
 _DEFAULT_SINGLE_PROMPT_TEMPLATE = textwrap.dedent(
     """    Answer the following questions as best you can. You have access to the following tools:
@@ -103,6 +134,99 @@ ACT_DEFAULT_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
         'Action: get_weather("New York", 7)'
         "\nObservation: The 7 day forecast for New York is [...]"
     ),
+)
+
+# Planning mode prompt templates
+REACT_PLANNING_PROMPT_TEMPLATE = _DEFAULT_PROMPT_TEMPLATE.format(
+    fields=(
+        "Critic: Assess whether the previous step of the trajectory has successfully completed the last step of the "
+        "plan."
+        "\nPlan: Give an updated plan as a checklist with [ ] for incomplete and [x] for completed steps. "
+        "Each step should be ~3 sentences long. Below each step, include a list of criteria for what counts as "
+        "satisfying that particular step."
+        "\nThought: Reason about the immediate next step you're about to take"
+        "\nAction: the action to take, should be one of the provided tools with necessary arguments"
+        "\nObservation: the result of the action"
+    ),
+    fields_description="Critic/Plan/Thought/Action/Observation",
+    example=(
+        "Critic: This is the first step, so not applicable."
+        "\nPlan:\n[ ] Get weather information for New York. This involves calling the weather API with "
+        "the correct parameters. "
+        "We need to retrieve a comprehensive 7-day forecast that includes temperature, conditions, and any relevant "
+        "weather alerts.\n"
+        "  - Successfully called get_weather function with correct parameters\n"
+        "  - Received valid weather data response\n"
+        "  - Data includes temperature and forecast information\n"
+        "[ ] Format the response appropriately. Take the raw weather data and present it in a clear, readable format "
+        "for the user. "
+        "The response should be well-structured and easy to understand.\n"
+        "  - Weather data is organized in a logical format\n"
+        "  - Information is presented clearly and concisely\n"
+        "  - Response addresses the user's original question"
+        "\nThought: I need to start by getting the weather information for New York using the get_weather tool"
+        '\nAction: get_weather("New York", 7)'
+        "\nObservation: The 7 day forecast for New York is [...]"
+    ),
+)
+
+REACT_PLANNING_PROMPT_TEMPLATE_NO_THOUGHT = _DEFAULT_PROMPT_TEMPLATE.format(
+    fields=(
+        "Critic: Assess whether the previous step of the trajectory has successfully completed the last step of the "
+        "plan."
+        "\nPlan: Give an updated plan as a checklist with [ ] for incomplete and [x] for completed steps. "
+        "Each step should be ~3 sentences long. Below each step, include a list of criteria for what counts as "
+        "satisfying that particular step."
+        "\nAction: the action to take, should be one of the provided tools with necessary arguments"
+        "\nObservation: the result of the action"
+    ),
+    fields_description="Critic/Plan/Action/Observation",
+    example=(
+        "Critic: This is the first step, so not applicable."
+        "\nPlan:\n[ ] Get weather information for New York. This involves calling the weather API with "
+        "the correct parameters. "
+        "We need to retrieve a comprehensive 7-day forecast that includes temperature, conditions, and any relevant "
+        "weather alerts.\n"
+        "  - Successfully called get_weather function with correct parameters\n"
+        "  - Received valid weather data response\n"
+        "  - Data includes temperature and forecast information\n"
+        "[ ] Format the response appropriately. Take the raw weather data and present it in a clear, readable format "
+        "for the user. "
+        "The response should be well-structured and easy to understand.\n"
+        "  - Weather data is organized in a logical format\n"
+        "  - Information is presented clearly and concisely\n"
+        "  - Response addresses the user's original question"
+        '\nAction: get_weather("New York", 7)'
+        "\nObservation: The 7 day forecast for New York is [...]"
+    ),
+)
+
+# Default prompts for ReActPlanningModule components
+REACT_PLANNING_CRITIC_PROMPT = (
+    "Output ONLY a critic assessment. Assess whether the latest step of the trajectory has successfully "
+    "completed the latest step of the plan or not. Be critical and thorough to catch mistakes made in the "
+    "execution of the plan, even if minor. Use common sense: think of any mistakes the agent might have made "
+    "(not only in the code) but also in their reasoning or analysis process. Make sure that the model NEVER "
+    "hardcodes scientific facts into the code for purposes of analysis. For example, it should not put biology "
+    "knowledge or facts directly into the code - instead, it should use a library to do the analysis. "
+    "Do not output plan or thought."
+)
+
+REACT_PLANNING_PLAN_PROMPT = (
+    "Output ONLY an updated plan. Give an updated plan as a checklist with [ ] for incomplete and [x] for "
+    "completed steps, where each step is ~3 sentences long. Below each step, include a list of criteria for "
+    "what counts as satisfying that particular step. Make sure that your plan is consistent with the previous "
+    "iteration of the plan. For example, don't change the order of steps that are unrelated to the criticism. "
+    "Pay close attention that the plan is exactly consistent with the query, and that the steps are in the "
+    "correct order. Do not output critic or thought."
+)
+
+REACT_PLANNING_THOUGHT_PROMPT = (
+    "Output ONLY a thought. Reason concretely about the immediate next step you're about to take, rather than "
+    "presenting several options about what to do. Make sure you are clearly addressing the next step of the "
+    "plan and resolving any criticism where applicable. When resolving criticism, always attempt simpler "
+    "solutions first. For instance, if a model is not working, you should begin by refining the parameters of "
+    "the model instead of trying a completely different model. Do not output critic or plan."
 )
 
 
@@ -323,6 +447,7 @@ def postprocess_and_concat_resoning_msg(
             ),
             # Role is 'assistant' here (normally 'user') since we use the model's reasoning to ask for an action.
             role="assistant",
+            info={"is_thought": True},
         ),
         # We interleave a user message as required by Anthropic's API
         Message(content="Continue..."),
@@ -383,5 +508,181 @@ class ReActModule(ReActModuleSinglePrompt):
             # the "continue..." (user) message from user,
             # and tool selection (assistant) message
             *packaged_msgs_with_reasoning.value[-2:],
+            tool_selection_msg.value,
+        ]
+
+
+class ReActPlanningModule(ReActModule):
+    """A planning variant of ReActModule that makes three separate LLM calls for structured reasoning."""
+
+    def __init__(
+        self,
+        llm_model: dict[str, Any],
+        sys_prompt: str | None = None,
+        tool_description_method: ToolDescriptionMethods = ToolDescriptionMethods.STR,
+        use_thought: bool = False,  # Thoughts seem to make the tool call overly verbose and complicated
+        critic_prompt: str | None = None,
+        plan_prompt: str | None = None,
+        thought_prompt: str | None = None,
+    ):
+        self._tool_description_method = tool_description_method
+        self.use_thought = use_thought
+        llm_model["stop"] = ["Observation:", "Action:"]
+        self.llm_config = llm_model
+        self._llm_call_op = LLMCallOp()
+
+        # Use provided sys_prompt or select appropriate template based on use_thought
+        if sys_prompt is None:
+            sys_prompt = (
+                REACT_PLANNING_PROMPT_TEMPLATE
+                if use_thought
+                else REACT_PLANNING_PROMPT_TEMPLATE_NO_THOUGHT
+            )
+        self.prompt_op = PromptOp(sys_prompt)
+        self.package_msg_op = FxnOp(prepend_sys)
+
+        # Create prompt ops for the three components with configurable prompts
+        self.critic_prompt_op = PromptOp(critic_prompt or REACT_PLANNING_CRITIC_PROMPT)
+        self.plan_prompt_op = PromptOp(plan_prompt or REACT_PLANNING_PLAN_PROMPT)
+        self.thought_prompt_op = PromptOp(
+            thought_prompt or REACT_PLANNING_THOUGHT_PROMPT
+        )
+
+    @property
+    def llm_call_op(self) -> LLMCallOp:
+        return self._llm_call_op
+
+    async def _execute_step(
+        self,
+        messages: list[Message],
+        sys_prompt: OpResult[str],
+        instruction_prompt_op: PromptOp,
+        tools: list[Tool],
+        prefix: str | None = None,
+        truncate_at: str | None = None,
+    ) -> Message:
+        """
+        Helper method to execute a single step (Critic, Plan, or Thought).
+
+        Args:
+            messages: Current messages
+            sys_prompt: System prompt
+            instruction_prompt_op: Prompt op for the step instruction
+            tools: Available tools
+            prefix: Optional prefix to clean from output
+            truncate_at: Optional marker to truncate output at
+
+        Returns:
+            The processed message from the LLM
+        """
+        instruction = await instruction_prompt_op()
+        packaged_msgs = await self.package_msg_op(messages, sys_content=sys_prompt)
+        step_msgs = [
+            *packaged_msgs.value,
+            Message(content=instruction.value),
+        ]
+        step_result = await self.llm_call_op(
+            self.llm_config,
+            msgs=step_msgs,
+            tools=tools,
+            tool_choice="none",
+        )
+        step_msg = step_result.value
+
+        # Clean up output if prefix or truncate_at are provided
+        if step_msg.content and (prefix is not None or truncate_at is not None):
+            step_msg.content = clean_llm_output(
+                step_msg.content, prefix=prefix, truncate_at=truncate_at
+            )
+
+        return step_msg
+
+    @compute_graph()
+    async def __call__(
+        self, messages: Iterable[Message], tools: list[Tool]
+    ) -> tuple[OpResult[ToolRequestMessage], Messages]:
+        sys_prompt = await self.prompt_op()
+        messages = list(messages)
+
+        # Check if this is the first step (no previous tool responses)
+        is_first_step = not any(
+            hasattr(msg, "tool_calls") and msg.tool_calls for msg in messages
+        )
+
+        # Step 1: Critic - assess previous step (skip on first step)
+        if is_first_step:
+            critic_msg = None
+            current_messages = messages
+        else:
+            critic_msg = await self._execute_step(
+                messages, sys_prompt, self.critic_prompt_op, tools, "Critic:", "Plan:"
+            )
+            current_messages = [*messages, critic_msg]
+
+        # Step 2: Plan - generate updated plan
+        plan_msg = await self._execute_step(
+            current_messages,
+            sys_prompt,
+            self.plan_prompt_op,
+            tools,
+            "Plan:",
+            "Thought:",
+        )
+
+        # Step 3: Thought - reason about immediate next step (conditional)
+        thought_msg = None
+        if self.use_thought:
+            thought_msg = await self._execute_step(
+                [*current_messages, plan_msg],
+                sys_prompt,
+                self.thought_prompt_op,
+                tools,
+                "Thought:",
+                "Action:",
+            )
+
+        # Combine all reasoning into a single message for tool selection
+        if is_first_step:
+            # On the first step, there is nothing to criticize, so we just have a plan
+            combined_reasoning = f"Thought:\nPlan: {plan_msg.content or ''}\n\n"
+            if self.use_thought and thought_msg:
+                combined_reasoning += str(thought_msg.content or "")
+        else:
+            assert critic_msg is not None
+            combined_reasoning = (
+                f"Thought:\nCritic: {critic_msg.content or ''}\n\n"
+                f"Plan:{plan_msg.content or ''}\n\n"
+            )
+            if self.use_thought and thought_msg:
+                combined_reasoning += str(thought_msg.content or "")
+
+        # Step 4: Tool selection based on combined reasoning
+        tool_selection_prompt = (
+            f"{combined_reasoning}"
+            "Based on this reasoning, let's select the appropriate tool!"
+            "\n\nAction: "
+        )
+
+        # Create the new messages that will be added
+        new_messages = [
+            Message(
+                content=tool_selection_prompt,
+                role="assistant",
+                info={"is_thought": True},
+            ),
+            Message(content="Continue..."),
+        ]
+
+        packaged_msgs_final = await self.package_msg_op(
+            [*messages, *new_messages],
+            sys_content=sys_prompt,
+        )
+
+        tool_selection_msg = await self.llm_call_op(
+            self.llm_config, msgs=packaged_msgs_final, tools=tools
+        )
+
+        return cast("OpResult[ToolRequestMessage]", tool_selection_msg), [
+            *new_messages,
             tool_selection_msg.value,
         ]
