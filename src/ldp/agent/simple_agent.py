@@ -99,7 +99,8 @@ class SimpleAgentState(BaseModel):
             ]
 
         if self.hide_old_thoughts:
-            # Find the most recent thought message object
+            # We keep the most recent thought because when updating the plan, we want to have access to the previous
+            # plan.
             last_thought_msg = None
             for msg in reversed(old_messages):
                 if has_thought_content(msg):
@@ -107,9 +108,11 @@ class SimpleAgentState(BaseModel):
                     break
 
             old_messages = [
-                hide_thought_content(msg)
-                if has_thought_content(msg) and msg is not last_thought_msg
-                else msg
+                (
+                    hide_thought_content(msg)
+                    if has_thought_content(msg) and msg is not last_thought_msg
+                    else msg
+                )
                 for msg in old_messages
             ]
 
