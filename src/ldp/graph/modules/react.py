@@ -646,7 +646,7 @@ class ReActPlanningModule(ReActModule):
             # On the first step, there is nothing to criticize, so we just have a plan
             combined_reasoning = f"Thought:\nPlan: {plan_msg.content or ''}\n\n"
             if self.use_thought and thought_msg:
-                combined_reasoning += f"{thought_msg.content or ''}"
+                combined_reasoning += str(thought_msg.content or "")
         else:
             assert critic_msg is not None
             combined_reasoning = (
@@ -654,7 +654,7 @@ class ReActPlanningModule(ReActModule):
                 f"Plan:{plan_msg.content or ''}\n\n"
             )
             if self.use_thought and thought_msg:
-                combined_reasoning += f"{thought_msg.content or ''}"
+                combined_reasoning += str(thought_msg.content or "")
 
         # Step 4: Tool selection based on combined reasoning
         tool_selection_prompt = (
