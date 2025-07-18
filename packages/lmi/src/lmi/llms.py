@@ -202,7 +202,7 @@ class LLMModel(ABC, BaseModel):
     async def acompletion_iter(
         self, messages: list[Message], **kwargs
     ) -> AsyncGenerator[LLMResult]:
-        """Return an async generator that yields completions.
+        """Return an async generator that `yield`s completions.
 
         Only the last tuple will be non-zero.
         """
@@ -828,7 +828,7 @@ class LiteLLMModel(LLMModel):
             delta = choice.delta
 
             if first_token_time is None and delta.content:
-                first_token_time = asyncio.get_running_loop().time()
+                seconds_to_first_token = asyncio.get_running_loop().time() - start_clock
 
             if logprob_content := getattr(choice.logprobs, "content", None):
                 logprobs.append(logprob_content[0].logprob or 0)
@@ -845,9 +845,7 @@ class LiteLLMModel(LLMModel):
                     messages=[Message(role=role, content=accumulated_text)],
                     logprob=sum_logprobs(logprobs),
                     reasoning_content="".join(reasoning_content),
-                    seconds_to_first_token=(
-                        first_token_time - start_clock if first_token_time else None
-                    ),
+                    seconds_to_first_token=seconds_to_first_token,
                 )
 
     def count_tokens(self, text: str) -> int:
