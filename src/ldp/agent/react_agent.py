@@ -27,6 +27,7 @@ from ldp.graph.modules.react import (
     REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
     REACT_PLANNING_CRITIC_PROMPT,
     REACT_PLANNING_PLAN_PROMPT,
+    REACT_PLANNING_PROMPT_TEMPLATE,
     REACT_PLANNING_PROMPT_TEMPLATE_NO_THOUGHT,
     REACT_PLANNING_THOUGHT_PROMPT,
     ReActModule,
@@ -124,6 +125,14 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
             " next immediate action to take. The plan is updated after each step."
         ),
     )
+    planning_thought: bool = Field(
+        default=False,
+        description=(
+            "Specifies whether to use thought generation in planning mode. When enabled,"
+            " the agent will generate critic/plan/thought, and when disabled, the agent only generate"
+            " critic/plan. Currently not recommended due to causing tool use to be overly verbose."
+        ),
+    )
 
     # New fields for ReActPlanningModule prompts
     critic_prompt: str = Field(
@@ -164,9 +173,9 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         )
 
     def __init__(self, **kwargs):
-        # Validate planning mode compatibility
         single_prompt = kwargs.get("single_prompt", False)
         planning = kwargs.get("planning", False)
+        planning_thought = kwargs.get("planning_thought", False)
 
         if planning and single_prompt:
             raise ValueError(
@@ -176,7 +185,11 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         # set sys_prompt if not provided
         if "sys_prompt" not in kwargs:
             if planning:
-                kwargs["sys_prompt"] = REACT_PLANNING_PROMPT_TEMPLATE_NO_THOUGHT
+                kwargs["sys_prompt"] = (
+                    REACT_PLANNING_PROMPT_TEMPLATE
+                    if planning_thought
+                    else REACT_PLANNING_PROMPT_TEMPLATE_NO_THOUGHT
+                )
             else:
                 kwargs["sys_prompt"] = (
                     REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE
@@ -197,7 +210,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
                 critic_prompt=self.critic_prompt,
                 plan_prompt=self.plan_prompt,
                 thought_prompt=self.thought_prompt,
-                use_thought=False,
+                use_thought=self.planning_thought,
             )
         else:
             self._react_module = ReActModule(
