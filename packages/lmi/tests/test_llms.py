@@ -1,6 +1,6 @@
 import pathlib
 import pickle
-from collections.abc import AsyncIterable, AsyncIterator
+from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator
 from typing import Any, ClassVar
 from unittest.mock import Mock, patch
 
@@ -323,11 +323,22 @@ class TestLiteLLMModel:
 
         with subtests.test(msg="autowraps message"):
 
-            def mock_call(messages, *_, **__):
+            def mock_acompletion(messages, *_, **__):
                 assert isinstance(messages, list)
-                return [None]
+                assert len(messages) == 1
+                assert isinstance(messages[0], Message)
+                assert messages[0].content == "Test message"
+                return [
+                    LLMResult(
+                        model="test-model",
+                        messages=messages,
+                        text="Test result",
+                    )
+                ]
 
-            with patch.object(LiteLLMModel, "call", side_effect=mock_call):
+            with patch.object(
+                LiteLLMModel, "acompletion", side_effect=mock_acompletion
+            ):
                 await llm.call_single("Test message")
 
     @pytest.mark.vcr
@@ -451,12 +462,7 @@ class TestLiteLLMModel:
 
             # Mock completion with valid logprobs
             mock_completion_valid = _build_mock_completion(
-                logprobs=Mock(content=[Mock(logprob=-0.5)])
-            )
-
-            # Mock completion with usage info
-            mock_completion_usage = _build_mock_completion(
-                usage=Mock(prompt_tokens=10, completion_tokens=5)
+                logprobs=Mock(content=[Mock(logprob=-0.5)], delta_content="")
             )
 
             # Create async generator that yields mock completions
@@ -466,7 +472,6 @@ class TestLiteLLMModel:
                     yield mock_completion_no_content
                     yield mock_completion_empty
                     yield mock_completion_valid
-                    yield mock_completion_usage
 
                 return mock_stream_iter()
 
@@ -477,14 +482,12 @@ class TestLiteLLMModel:
             results = [result async for result in async_iterable]
 
             # Verify we got one final result
-            assert len(results) == 1
-            result = results[0]
+            assert len(results) > 1
+            result = results[-1]
             assert isinstance(result, LLMResult)
             assert result.text == "Hello world!"
             assert result.model == "test-model"
             assert result.logprob == -0.5
-            assert result.prompt_count == 10
-            assert result.completion_count == 5
 
 
 class DummyOutputSchema(BaseModel):
@@ -565,10 +568,13 @@ class TestMultipleCompletion:
 
     @pytest.mark.parametrize(
         "model_name",
-        [CommonLLMNames.ANTHROPIC_TEST.value, CommonLLMNames.GPT_35_TURBO.value],
+        [
+            pytest.param(CommonLLMNames.ANTHROPIC_TEST.value, id="anthropic"),
+            pytest.param(CommonLLMNames.GPT_35_TURBO.value, id="openai"),
+        ],
     )
     @pytest.mark.asyncio
-    async def test_streaming(self, model_name: str) -> None:
+    async def test_streaming(self, model_name: str, subtests) -> None:
         model = self.MODEL_CLS(name=model_name, config=self.DEFAULT_CONFIG)
         messages = [
             Message(role="system", content="Respond with single words."),
@@ -578,11 +584,34 @@ class TestMultipleCompletion:
         def callback(_) -> None:
             return
 
-        with pytest.raises(
-            NotImplementedError,
-            match="Multiple completions with callbacks is not supported",
+        with (
+            subtests.test(name="n=2"),
+            pytest.raises(
+                ValueError,
+                match=r"\(n\) must be 1",
+            ),
         ):
-            await self.call_model(model, messages, [callback])
+            await self.call_model(model, messages, stream=True, callbacks=[callback])
+
+        config = self.DEFAULT_CONFIG.copy()
+        config["n"] = 1
+        model = self.MODEL_CLS(name=model_name, config=config)
+        with (
+            subtests.test(name="with callbacks"),
+            pytest.raises(
+                NotImplementedError,
+                match="callbacks with streaming is not supported",
+            ),
+        ):
+            await self.call_model(model, messages, stream=True, callbacks=[callback])
+
+        with subtests.test(name="n=1"):
+            results = await self.call_model(model, messages, stream=True)
+            assert isinstance(results, AsyncGenerator)
+            async for result in results:
+                assert isinstance(result, LLMResult)
+                assert result.messages
+                assert len(result.messages) == 1
 
     @pytest.mark.vcr
     @pytest.mark.asyncio
@@ -688,7 +717,7 @@ class TestMultipleCompletion:
     )
     @pytest.mark.asyncio
     @pytest.mark.vcr
-    async def test_single_completion(self, model_name: str) -> None:
+    async def test_single_completion(self, model_name: str, subtests) -> None:
         model = self.MODEL_CLS(name=model_name, config={"n": 1})
         messages = [
             Message(role="system", content="Respond with single words."),

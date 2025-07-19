@@ -27,7 +27,7 @@ from collections.abc import (
 )
 from enum import StrEnum
 from inspect import isasyncgenfunction, isawaitable, signature
-from typing import Any, ClassVar, ParamSpec, TypeAlias, cast, overload
+from typing import Any, ClassVar, Literal, ParamSpec, TypeAlias, cast, overload
 
 import litellm
 from aviary.core import (
@@ -235,12 +235,12 @@ class LLMModel(ABC, BaseModel):
         output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = ...,
         tools: list[Tool] | None = ...,
         tool_choice: Tool | str | None = ...,
-        stream: bool = False,
+        stream: Literal[False] = ...,
         **kwargs,
     ) -> list[LLMResult]: ...
 
     @overload
-    async def call(  # type: ignore[overload-cannot-match]
+    async def call(
         self,
         messages: list[Message] | str,
         callbacks: (
@@ -280,8 +280,8 @@ class LLMModel(ABC, BaseModel):
             kwargs: Additional keyword arguments for the chat completion.
 
         Returns:
-            A list of LLMResult objects containing the result of the call when stream=False,
-            or an AsyncGenerator[LLMResult] when stream=True.
+            When not streaming, it's a list of result objects for each call,
+                otherwise it's an async generator of result objects.
 
         Raises:
             ValueError: If the LLM type is unknown.
@@ -294,7 +294,6 @@ class LLMModel(ABC, BaseModel):
         # there may be a nested 'config' key
         # that can't be used by chat
         chat_kwargs.pop("config", None)
-        chat_kwargs.pop("stream", None)
         n = chat_kwargs.get("n") or self.config.get("n", 1)
         if n < 1:
             raise ValueError("Number of completions (n) must be >= 1.")
@@ -426,12 +425,12 @@ class LLMModel(ABC, BaseModel):
         output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = ...,
         tools: list[Tool] | None = ...,
         tool_choice: Tool | str | None = ...,
-        stream: bool = False,
+        stream: Literal[False] = ...,
         **kwargs,
     ) -> LLMResult: ...
 
     @overload
-    async def call_single(  # type: ignore[overload-cannot-match]
+    async def call_single(
         self,
         messages: list[Message] | str,
         callbacks: (
@@ -441,7 +440,7 @@ class LLMModel(ABC, BaseModel):
         output_type: type[BaseModel] | TypeAdapter | JSONSchema | None = ...,
         tools: list[Tool] | None = ...,
         tool_choice: Tool | str | None = ...,
-        stream: bool = True,
+        stream: Literal[True] = ...,
         **kwargs,
     ) -> AsyncGenerator[LLMResult]: ...
 
@@ -458,9 +457,6 @@ class LLMModel(ABC, BaseModel):
         stream: bool = False,
         **kwargs,
     ) -> LLMResult | AsyncGenerator[LLMResult]:
-        if isinstance(messages, str):
-            # convenience for single message
-            messages = [Message(content=messages)]
         kwargs = {**kwargs, "n": 1}
         results = await self.call(
             messages,
@@ -819,7 +815,6 @@ class LiteLLMModel(LLMModel):
         role = None
         reasoning_content = []
         used_model = None
-        first_token_time = None
 
         async for completion in stream_completions:
             if not used_model:
@@ -827,7 +822,7 @@ class LiteLLMModel(LLMModel):
             choice = completion.choices[0]
             delta = choice.delta
 
-            if first_token_time is None and delta.content:
+            if delta.content:
                 seconds_to_first_token = asyncio.get_running_loop().time() - start_clock
 
             if logprob_content := getattr(choice.logprobs, "content", None):
@@ -837,16 +832,15 @@ class LiteLLMModel(LLMModel):
                 role = delta.role or role
                 if hasattr(delta, "reasoning_content"):
                     reasoning_content.append(delta.reasoning_content or "")
-
-                yield LLMResult(
-                    model=used_model,
-                    text=delta.content,
-                    prompt=messages,
-                    messages=[Message(role=role, content=accumulated_text)],
-                    logprob=sum_logprobs(logprobs),
-                    reasoning_content="".join(reasoning_content),
-                    seconds_to_first_token=seconds_to_first_token,
-                )
+            yield LLMResult(
+                model=used_model,
+                text=accumulated_text,
+                prompt=messages,
+                messages=[Message(role=role, content=accumulated_text)],
+                logprob=sum_logprobs(logprobs),
+                reasoning_content="".join(reasoning_content),
+                seconds_to_first_token=seconds_to_first_token,
+            )
 
     def count_tokens(self, text: str) -> int:
         return litellm.token_counter(model=self.name, text=text)
