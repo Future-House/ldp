@@ -457,7 +457,7 @@ class LLMModel(ABC, BaseModel):
         stream: bool = False,
         **kwargs,
     ) -> LLMResult | AsyncGenerator[LLMResult]:
-        kwargs = {**kwargs, "n": 1}
+        kwargs = kwargs | {"n": 1}
         results = await self.call(
             messages,
             callbacks,
