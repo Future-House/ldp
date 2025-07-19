@@ -1,6 +1,6 @@
 import pathlib
 import pickle
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator
 from typing import Any, ClassVar
 from unittest.mock import Mock, patch
 
@@ -286,6 +286,7 @@ class TestLiteLLMModel:
             messages=messages,
             callbacks=[accum],
         )
+        assert isinstance(completion, LLMResult)
         assert completion.model == CommonLLMNames.OPENAI_TEST.value
         assert completion.seconds_to_last_token > 0
         assert completion.prompt_count > 0
@@ -296,6 +297,7 @@ class TestLiteLLMModel:
         completion = await llm.call_single(
             messages=messages,
         )
+        assert isinstance(completion, LLMResult)
         assert completion.seconds_to_last_token > 0
         assert completion.cost > 0
 
@@ -307,6 +309,7 @@ class TestLiteLLMModel:
             messages=messages,
             callbacks=[accum, ac],
         )
+        assert isinstance(completion, LLMResult)
         assert completion.cost > 0
 
         with subtests.test(msg="passing-kwargs"):
@@ -314,16 +317,28 @@ class TestLiteLLMModel:
                 messages=[Message(role="user", content="Tell me a very long story")],
                 max_tokens=1000,
             )
+            assert isinstance(completion, LLMResult)
             assert completion.cost > 0
             assert completion.completion_count > 100, "Expected a long completion"
 
         with subtests.test(msg="autowraps message"):
 
-            def mock_call(messages, *_, **__):
+            def mock_acompletion(messages, *_, **__):
                 assert isinstance(messages, list)
-                return [None]
+                assert len(messages) == 1
+                assert isinstance(messages[0], Message)
+                assert messages[0].content == "Test message"
+                return [
+                    LLMResult(
+                        model="test-model",
+                        messages=messages,
+                        text="Test result",
+                    )
+                ]
 
-            with patch.object(LiteLLMModel, "call", side_effect=mock_call):
+            with patch.object(
+                LiteLLMModel, "acompletion", side_effect=mock_acompletion
+            ):
                 await llm.call_single("Test message")
 
     @pytest.mark.vcr
@@ -447,12 +462,7 @@ class TestLiteLLMModel:
 
             # Mock completion with valid logprobs
             mock_completion_valid = _build_mock_completion(
-                logprobs=Mock(content=[Mock(logprob=-0.5)])
-            )
-
-            # Mock completion with usage info
-            mock_completion_usage = _build_mock_completion(
-                usage=Mock(prompt_tokens=10, completion_tokens=5)
+                logprobs=Mock(content=[Mock(logprob=-0.5)], delta_content="")
             )
 
             # Create async generator that yields mock completions
@@ -462,7 +472,6 @@ class TestLiteLLMModel:
                     yield mock_completion_no_content
                     yield mock_completion_empty
                     yield mock_completion_valid
-                    yield mock_completion_usage
 
                 return mock_stream_iter()
 
@@ -473,14 +482,12 @@ class TestLiteLLMModel:
             results = [result async for result in async_iterable]
 
             # Verify we got one final result
-            assert len(results) == 1
-            result = results[0]
+            assert len(results) > 1
+            result = results[-1]
             assert isinstance(result, LLMResult)
             assert result.text == "Hello world!"
             assert result.model == "test-model"
             assert result.logprob == -0.5
-            assert result.prompt_count == 10
-            assert result.completion_count == 5
 
 
 class DummyOutputSchema(BaseModel):
@@ -498,7 +505,9 @@ class TestMultipleCompletion:
     DEFAULT_CONFIG: ClassVar[dict] = {"n": NUM_COMPLETIONS}
     MODEL_CLS: ClassVar[type[LiteLLMModel]] = LiteLLMModel
 
-    async def call_model(self, model: LiteLLMModel, *args, **kwargs) -> list[LLMResult]:
+    async def call_model(
+        self, model: LiteLLMModel, *args, **kwargs
+    ) -> list[LLMResult] | AsyncIterable[LLMResult]:
         return await model.call(*args, **kwargs)
 
     @pytest.mark.parametrize(
@@ -544,6 +553,7 @@ class TestMultipleCompletion:
             Message(content="Hello, how are you?"),
         ]
         results = await self.call_model(model, messages)
+        assert isinstance(results, list)
         assert len(results) == self.NUM_COMPLETIONS
 
         for result in results:
@@ -558,10 +568,13 @@ class TestMultipleCompletion:
 
     @pytest.mark.parametrize(
         "model_name",
-        [CommonLLMNames.ANTHROPIC_TEST.value, CommonLLMNames.GPT_35_TURBO.value],
+        [
+            pytest.param(CommonLLMNames.ANTHROPIC_TEST.value, id="anthropic"),
+            pytest.param(CommonLLMNames.GPT_35_TURBO.value, id="openai"),
+        ],
     )
     @pytest.mark.asyncio
-    async def test_streaming(self, model_name: str) -> None:
+    async def test_streaming(self, model_name: str, subtests) -> None:
         model = self.MODEL_CLS(name=model_name, config=self.DEFAULT_CONFIG)
         messages = [
             Message(role="system", content="Respond with single words."),
@@ -571,11 +584,34 @@ class TestMultipleCompletion:
         def callback(_) -> None:
             return
 
-        with pytest.raises(
-            NotImplementedError,
-            match="Multiple completions with callbacks is not supported",
+        with (
+            subtests.test(name="n=2"),
+            pytest.raises(
+                ValueError,
+                match=r"\(n\) must be 1",
+            ),
         ):
-            await self.call_model(model, messages, [callback])
+            await self.call_model(model, messages, stream=True, callbacks=[callback])
+
+        config = self.DEFAULT_CONFIG.copy()
+        config["n"] = 1
+        model = self.MODEL_CLS(name=model_name, config=config)
+        with (
+            subtests.test(name="with callbacks"),
+            pytest.raises(
+                NotImplementedError,
+                match="callbacks with streaming is not supported",
+            ),
+        ):
+            await self.call_model(model, messages, stream=True, callbacks=[callback])
+
+        with subtests.test(name="n=1"):
+            results = await self.call_model(model, messages, stream=True)
+            assert isinstance(results, AsyncGenerator)
+            async for result in results:
+                assert isinstance(result, LLMResult)
+                assert result.messages
+                assert len(result.messages) == 1
 
     @pytest.mark.vcr
     @pytest.mark.asyncio
@@ -594,6 +630,7 @@ class TestMultipleCompletion:
             messages=[Message(content="Please win.")],
             tools=[Tool.from_function(play)],
         )
+        assert isinstance(results, list)
         assert len(results) == self.NUM_COMPLETIONS
         for result in results:
             assert result.messages
@@ -636,6 +673,7 @@ class TestMultipleCompletion:
             ),
         ]
         results = await self.call_model(model, messages, output_type=output_type)
+        assert isinstance(results, list)
         assert len(results) == self.NUM_COMPLETIONS
         for result in results:
             assert result.messages
@@ -662,6 +700,7 @@ class TestMultipleCompletion:
                 )
             ],
         )
+        assert isinstance(results, list)
         assert len(results) == self.NUM_COMPLETIONS
         for result in results:
             assert result.messages is not None, (
@@ -678,7 +717,7 @@ class TestMultipleCompletion:
     )
     @pytest.mark.asyncio
     @pytest.mark.vcr
-    async def test_single_completion(self, model_name: str) -> None:
+    async def test_single_completion(self, model_name: str, subtests) -> None:
         model = self.MODEL_CLS(name=model_name, config={"n": 1})
         messages = [
             Message(role="system", content="Respond with single words."),
@@ -687,7 +726,6 @@ class TestMultipleCompletion:
         result = await model.call_single(messages)
         assert isinstance(result, LLMResult)
 
-        assert isinstance(result, LLMResult)
         assert result.messages
         assert len(result.messages) == 1
         assert result.messages[0].content
@@ -720,10 +758,12 @@ class TestMultipleCompletion:
                 await model.call(messages)
         else:
             results = await model.call(messages)  # noqa: FURB120
+            assert isinstance(results, list)
             assert len(results) == self.NUM_COMPLETIONS
 
             model = self.MODEL_CLS(name=model_name, config={"n": 5})
             results = await model.call(messages, n=self.NUM_COMPLETIONS)
+            assert isinstance(results, list)
             assert len(results) == self.NUM_COMPLETIONS
 
 
@@ -813,6 +853,7 @@ class TestTooling:
             tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL,
         )
 
+        assert isinstance(result, LLMResult)
         assert isinstance(result.messages, list)
         if tools is None:
             assert isinstance(result.messages[0], Message)
@@ -861,11 +902,13 @@ class TestReasoning:
             Message(content="What is the meaning of life?"),
         ]
         results = await llm.call(messages)
+        assert isinstance(results, list)
         for result in results:
             assert result.reasoning_content
 
         outputs: list[str] = []
         results = await llm.call(messages, callbacks=[outputs.append])
+        assert isinstance(results, list)
 
         for i, result in enumerate(results):
             assert result.reasoning_content
@@ -897,6 +940,7 @@ class TestReasoning:
             Message(content="What is the meaning of life?"),
         ]
         results = await llm.call(messages)
+        assert isinstance(results, list)
         for result in results:
             assert result.reasoning_content is not None, "Should have reasoning content"
             assert result.text is not None
