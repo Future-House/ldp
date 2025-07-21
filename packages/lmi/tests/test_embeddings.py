@@ -229,7 +229,7 @@ class TestLiteLLMEmbeddingModel:
             mock_Router_aembedding.assert_not_awaited()
         mock_aembedding.assert_awaited_once()
         # Confirm use of the sentinel timeout in the Router's model_list or pass through
-        mock_aembedding.call_args.kwargs["timeout"] = self.SENTINEL_TIMEOUT
+        assert mock_aembedding.call_args.kwargs["timeout"] == self.SENTINEL_TIMEOUT
 
 
 @pytest.mark.asyncio

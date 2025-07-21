@@ -125,20 +125,15 @@ class MemoryOpt(BaseModel, Optimizer):
                     for m in output.get_upstream_results(self.memory_op)
                     if self._memory_filter(m.call_id, self.memory_op, d_return)
                 }
-
-                self.example_buffer.extend(
-                    (
-                        mem_call_id,
-                        output_call_id,
-                        d_return,
-                        {
-                            "timestep": step.timestep,
-                            "done": step.done,
-                            "truncated": step.truncated,
-                        },
-                    )
+                metadata: JsonValue = {
+                    "timestep": step.timestep,
+                    "done": step.done,
+                    "truncated": step.truncated,
+                }
+                self.example_buffer.extend([
+                    (mem_call_id, output_call_id, d_return, metadata)
                     for mem_call_id in mem_call_ids
-                )
+                ])
 
     async def update(self) -> None:
         """Create new memories from the example buffer and add them to MemoryOp."""
