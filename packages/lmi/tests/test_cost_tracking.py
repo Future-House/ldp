@@ -107,7 +107,7 @@ class TestLiteLLMModel:
             with assert_costs_increased():
                 await llm.call(messages, [ac])
 
-    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    # @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.parametrize(
         "config",
         [
