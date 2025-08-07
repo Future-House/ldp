@@ -176,7 +176,7 @@ class GlobalRateLimiter:
         """
         namespace, primary_key = namespace_and_key
 
-        if namespace.startswith("get") and primary_key is not None:
+        if namespace.startswith("get"):
             # for URLs to be parsed correctly, they need a protocol
             if not primary_key.startswith(("http://", "https://")):
                 primary_key = "https://" + primary_key
