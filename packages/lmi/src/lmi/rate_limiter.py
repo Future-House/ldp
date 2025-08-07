@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 from collections.abc import Collection
-from typing import ClassVar, Literal, cast
+from typing import ClassVar, Literal, TypeAlias, cast
 from urllib.parse import urlparse
 
 import aiohttp
@@ -31,7 +31,7 @@ CROSSREF_BASE_URL = f"https://{CROSSREF_HOST}"
 GLOBAL_RATE_LIMITER_TIMEOUT = float(os.environ.get("RATE_LIMITER_TIMEOUT", "60"))
 
 MATCH_ALL = None
-MatchAllInputs = Literal[None]  # noqa: PYI061
+MatchAllInputs: TypeAlias = Literal[None]  # noqa: PYI061
 MATCH_MACHINE_ID = "<machine_id>"
 
 FALLBACK_RATE_LIMIT = RateLimitItemPerSecond(3, 1)
