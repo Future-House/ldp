@@ -25,7 +25,7 @@ dependencies = [
     "coredis",
     "fhaviary>=0.14.0",  # For multi-image support
     "limits>=4.8",  # Pin for RedisBridge.key_prefix
-    "litellm>=1.63.5,<1.75",  # Lower pin for reasoning + streaming fix, upper-pin for https://github.com/BerriAI/litellm/issues/13081 
+    "litellm>=1.63.5,<1.75",  # Lower pin for reasoning + streaming fix, upper-pin for https://github.com/BerriAI/litellm/issues/13081
     "pydantic~=2.0,>=2.10.1",
     "tiktoken>=0.4.0",
     "typing-extensions; python_version <= '3.11'",  # for typing.override
@@ -41,8 +41,8 @@ requires-python = ">=3.11"
 dev = [
     "fhaviary[xml]",
     "fhlmi[local,progress,typing,vcr]",
-    "litellm>=1.68,<1.71",  # Lower pin for PydanticDeprecatedSince20 fixes, upper pin for VCR cassette breaks (https://github.com/BerriAI/litellm/issues/11724)
     "ipython>=8",  # Pin to keep recent
+    "litellm>=1.68,<1.71",  # Lower pin for PydanticDeprecatedSince20 fixes, upper pin for VCR cassette breaks (https://github.com/BerriAI/litellm/issues/11724)
     "mypy>=1.8",  # Pin for mutable-override
     "pre-commit>=3.4",  # Pin to keep recent
     "pylint-pydantic",
