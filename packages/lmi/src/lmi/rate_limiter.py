@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 from collections.abc import Collection
-from typing import ClassVar, Literal, cast
+from typing import ClassVar, Literal, TypeAlias, cast
 from urllib.parse import urlparse
 
 import aiohttp
@@ -31,7 +31,7 @@ CROSSREF_BASE_URL = f"https://{CROSSREF_HOST}"
 GLOBAL_RATE_LIMITER_TIMEOUT = float(os.environ.get("RATE_LIMITER_TIMEOUT", "60"))
 
 MATCH_ALL = None
-MatchAllInputs = Literal[None]  # noqa: PYI061
+MatchAllInputs: TypeAlias = Literal[None]  # noqa: PYI061
 MATCH_MACHINE_ID = "<machine_id>"
 
 FALLBACK_RATE_LIMIT = RateLimitItemPerSecond(3, 1)
@@ -64,7 +64,9 @@ RATE_CONFIG: dict[tuple[str, str | MatchAllInputs], RateLimitItem] = {
     ("client|request", "claude-3.5-sonnet"): ANTHROPIC_DEFAULT_RPM,
     ("client|request", "gemini-2.0-flash"): GOOGLE_DEFAULT_RPM,
     ("client", MATCH_ALL): TOKEN_FALLBACK_RATE_LIMIT,
-    # MATCH_MACHINE_ID is a sentinel for the machine_id passed in by the caller
+    # MATCH_MACHINE_ID is a sentinel for the machine_id passed in by the caller.
+    # In other words, it means the rate limit will be machine-specific,
+    # not global to all machines in a distributed system.
     (f"get|{MATCH_MACHINE_ID}", MATCH_ALL): FALLBACK_RATE_LIMIT,
 }
 
@@ -176,7 +178,7 @@ class GlobalRateLimiter:
         """
         namespace, primary_key = namespace_and_key
 
-        if namespace.startswith("get") and primary_key is not None:
+        if namespace.startswith("get"):
             # for URLs to be parsed correctly, they need a protocol
             if not primary_key.startswith(("http://", "https://")):
                 primary_key = "https://" + primary_key
