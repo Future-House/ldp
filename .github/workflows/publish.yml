@@ -19,6 +19,8 @@ jobs:
         with:
           name: ${{ steps.build-ldp.outputs.artifact-name }}
           path: dist_ldp
+      - name: Clean up ldp build # Work around https://github.com/hynek/build-and-inspect-python-package/issues/174
+        run: rm -r ${{ steps.build-ldp.outputs.dist }}
       - id: build-fhlmi
         uses: hynek/build-and-inspect-python-package@v2
         with:
@@ -29,6 +31,8 @@ jobs:
         with:
           name: ${{ steps.build-fhlmi.outputs.artifact-name }}
           path: dist_fhlmi
+      - name: Clean up fhlmi build # Work around https://github.com/hynek/build-and-inspect-python-package/issues/174
+        run: rm -r ${{ steps.build-fhlmi.outputs.dist }}
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_LDP_TOKEN }}
