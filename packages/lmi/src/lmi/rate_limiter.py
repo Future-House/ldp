@@ -64,7 +64,9 @@ RATE_CONFIG: dict[tuple[str, str | MatchAllInputs], RateLimitItem] = {
     ("client|request", "claude-3.5-sonnet"): ANTHROPIC_DEFAULT_RPM,
     ("client|request", "gemini-2.0-flash"): GOOGLE_DEFAULT_RPM,
     ("client", MATCH_ALL): TOKEN_FALLBACK_RATE_LIMIT,
-    # MATCH_MACHINE_ID is a sentinel for the machine_id passed in by the caller
+    # MATCH_MACHINE_ID is a sentinel for the machine_id passed in by the caller.
+    # In other words, it means the rate limit will be machine-specific,
+    # not global to all machines in a distributed system.
     (f"get|{MATCH_MACHINE_ID}", MATCH_ALL): FALLBACK_RATE_LIMIT,
 }
 
