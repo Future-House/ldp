@@ -1,4 +1,4 @@
-"""Test file for code examples extracted from the README.md file."""
+"""Test file for code examples extracted from the README.md file with a no-extra install."""
 
 from dataclasses import dataclass, field
 from datetime import datetime

@@ -8,16 +8,17 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
 from uuid import UUID
 
-import aiofiles
-import networkx as nx
 from aviary.core import Message, ToolRequestMessage, ToolResponseMessage, join
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
 
 from ldp.graph import OpResult
+from ldp.graph.op_utils import _lazy_import_networkx
 from ldp.utils import discounted_returns
 
 if TYPE_CHECKING:
+    import networkx as nx  # noqa: F401
     from aviary.core import Environment
+
 
 logger = logging.getLogger(__name__)
 
@@ -123,11 +124,10 @@ class Trajectory(BaseModel):
             return False
         return self.steps[-1].done
 
-    async def to_jsonl(self, filename: str | os.PathLike) -> None:
-        async with aiofiles.open(filename, "w") as f:
-            await f.write(json.dumps(self.traj_id) + "\n")
-            for s in self.steps:
-                await f.write(s.model_dump_json() + "\n")
+    def to_jsonl(self, filename: str | os.PathLike) -> None:
+        with open(filename, "w", encoding="utf-8") as f:
+            f.write(json.dumps(self.traj_id) + "\n")
+            f.writelines(s.model_dump_json() + "\n" for s in self.steps)
 
     @classmethod
     async def from_env(cls, env: Environment, **kwargs) -> Self:
@@ -180,6 +180,7 @@ class TransitionTree:
         """
         self.root_id = str(root_id)
 
+        nx = _lazy_import_networkx()
         self.tree = nx.DiGraph()  # the actual tree
         self.rev_tree = nx.DiGraph()  # the same as self.tree, but with reversed edges
 
@@ -292,7 +293,7 @@ class TransitionTree:
             discount_factor: The discount factor to use when computing cumulative
                 future rewards.
         """
-        for step_id in nx.topological_sort(self.rev_tree):
+        for step_id in _lazy_import_networkx().topological_sort(self.rev_tree):
             step: Transition | None = self.tree.nodes[step_id]["transition"]
             if step is None:
                 continue
@@ -324,7 +325,9 @@ class TransitionTree:
         """
         state_values: dict[str, float] = {}
 
-        for step_id in cast("Iterable[str]", nx.topological_sort(self.tree)):
+        for step_id in cast(
+            "Iterable[str]", _lazy_import_networkx().topological_sort(self.tree)
+        ):
             # topological sort means we will update a parent node in-place before
             # descending to its children
 
@@ -412,7 +415,7 @@ class TransitionTree:
         # old step ID -> new step ID
         node_remap: dict[str, str] = {self.root_id: self.root_id}
 
-        for step_id in nx.topological_sort(self.tree):
+        for step_id in _lazy_import_networkx().topological_sort(self.tree):
             step: Transition | None = self.tree.nodes[step_id]["transition"]
             if step is None:
                 continue
