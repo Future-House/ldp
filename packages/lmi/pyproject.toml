@@ -41,6 +41,7 @@ requires-python = ">=3.11"
 dev = [
     "fhaviary[xml]",
     "fhlmi[local,progress,typing,vcr]",
+    "httpx",
     "ipython>=8",  # Pin to keep recent
     "litellm>=1.68,<1.71",  # Lower pin for PydanticDeprecatedSince20 fixes, upper pin for VCR cassette breaks (https://github.com/BerriAI/litellm/issues/11724)
     "mypy>=1.8",  # Pin for mutable-override
