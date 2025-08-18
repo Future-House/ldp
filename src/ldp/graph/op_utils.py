@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 
 def _lazy_import_networkx() -> "nx":
-    """Lazy import of networkx to avoid import overhead when not needed."""
     try:
         import networkx as nx
     except ImportError as e:
@@ -25,7 +24,6 @@ def _lazy_import_networkx() -> "nx":
 
 
 def _lazy_import_tree() -> "tree":
-    """Lazy import of tree to avoid import overhead when not needed."""
     try:
         import tree
     except ImportError as e:
