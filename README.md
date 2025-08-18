@@ -185,7 +185,15 @@ which just converts the action constructed by plain python into a node in a comp
 
 For more advanced use-cases, LDP features a stochastic computation graph [^2]
 which enables differentiatiation with respect to agent parameters
-(including the weights of the LLM). The example computation graph below illustrates the functionality
+(including the weights of the LLM).
+
+You should install the `scg` subpackage to work with it:
+
+```bash
+pip install ldp[scg]
+```
+
+The example computation graph below illustrates the functionality
 
 ```py
 from ldp.graph import FxnOp, LLMCallOp, PromptOp, compute_graph

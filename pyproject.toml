@@ -74,20 +74,19 @@ nn = [
     "dask-cuda>=24.8.2",
     "dask-jobqueue",
     "dask[distributed]",
-    "dm-tree",
-    "networkx[default]~=3.4",  # Pin for pydot fix
+    "ldp[scg]",
     "tokenizers>0.20",
     "torch>=2.5,<2.6",  # Temporarily pin <2.6 until someone fixes our CI with newer versions
     "transformers>=4.46,<4.51",  # Temporarily pin <4.51 until someone fixes our CI with newer versions, and also https://github.com/huggingface/transformers/issues/37339
     "wandb",
 ]
-ops = [
-    "dm-tree",
-    "networkx[default]~=3.4",  # Pin for pydot fix
-]
 rich = [
     "rich",
     "tqdm>=4.56",  # When tqdm.rich was created
+]
+scg = [
+    "dm-tree",
+    "networkx[default]~=3.4",  # Pin for pydot fix
 ]
 server = [
     "fastapi>=0.109",  # For Python 3.12 support

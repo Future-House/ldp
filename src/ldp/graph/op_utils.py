@@ -19,7 +19,7 @@ def _lazy_import_networkx() -> "nx":
     except ImportError as e:
         raise ImportError(
             "networkx is required for compute graph operations. "
-            "Please install it with: pip install ldp[ops]"
+            "Please install it with: pip install ldp[scg]"
         ) from e
     return nx
 
@@ -31,7 +31,7 @@ def _lazy_import_tree() -> "tree":
     except ImportError as e:
         raise ImportError(
             "tree is required for compute graph operations. "
-            "Please install it with: pip install ldp[ops]"
+            "Please install it with: pip install ldp[scg]"
         ) from e
     return tree
 
