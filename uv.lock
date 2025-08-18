@@ -1292,6 +1292,10 @@ nn = [
     { name = "transformers" },
     { name = "wandb" },
 ]
+ops = [
+    { name = "dm-tree" },
+    { name = "networkx", extra = ["default"] },
+]
 rich = [
     { name = "rich" },
     { name = "tqdm" },
@@ -1321,6 +1325,7 @@ requires-dist = [
     { name = "dask-cuda", marker = "extra == 'nn'", specifier = ">=24.8.2" },
     { name = "dask-jobqueue", marker = "extra == 'nn'" },
     { name = "dm-tree", marker = "extra == 'nn'" },
+    { name = "dm-tree", marker = "extra == 'ops'" },
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.109" },
     { name = "fhaviary", specifier = ">=0.20.0" },
     { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'", specifier = ">=0.19" },
@@ -1332,6 +1337,7 @@ requires-dist = [
     { name = "litellm", marker = "extra == 'dev'" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
     { name = "networkx", extras = ["default"], marker = "extra == 'nn'", specifier = "~=3.4" },
+    { name = "networkx", extras = ["default"], marker = "extra == 'ops'", specifier = "~=3.4" },
     { name = "numpy", specifier = ">=1.20" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.4" },
     { name = "pydantic", specifier = "~=2.0" },
@@ -1366,7 +1372,7 @@ requires-dist = [
     { name = "wandb", marker = "extra == 'monitor'" },
     { name = "wandb", marker = "extra == 'nn'" },
 ]
-provides-extras = ["dev", "monitor", "nn", "rich", "server", "typing", "visualization"]
+provides-extras = ["dev", "monitor", "nn", "ops", "rich", "server", "typing", "visualization"]
 
 [package.metadata.requires-dev]
 dev = [

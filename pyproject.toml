@@ -81,6 +81,10 @@ nn = [
     "transformers>=4.46,<4.51",  # Temporarily pin <4.51 until someone fixes our CI with newer versions, and also https://github.com/huggingface/transformers/issues/37339
     "wandb",
 ]
+ops = [
+    "dm-tree",
+    "networkx[default]~=3.4",  # Pin for pydot fix
+]
 rich = [
     "rich",
     "tqdm>=4.56",  # When tqdm.rich was created
