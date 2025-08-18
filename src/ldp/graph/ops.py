@@ -264,9 +264,8 @@ class OpResult(Generic[TOutput_co]):
             An iterator over the nodes of this graph.
         """
         if topological_order:
-            nx = _lazy_import_networkx()
             G = self.get_compute_graph()
-            for node in nx.topological_sort(G):
+            for node in _lazy_import_networkx().topological_sort(G):
                 if filter_fn(node):
                     yield node
 
