@@ -226,8 +226,7 @@ class OpResult(Generic[TOutput_co]):
                     graph.add_edge(*edge)
                     add_edges(graph, x)
 
-        nx = _lazy_import_networkx()
-        graph = nx.DiGraph()
+        graph = _lazy_import_networkx().DiGraph()
         graph.add_node(self)
         add_edges(graph, self)
 
