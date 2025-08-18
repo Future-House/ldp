@@ -12,6 +12,7 @@ import numpy as np
 from aviary.core import Message, Tool, ToolRequestMessage, join
 
 from ldp.graph import OpResult
+from ldp.graph.op_utils import _lazy_import_networkx
 from ldp.graph.ops import GradOutType
 
 
@@ -37,7 +38,7 @@ def to_network(  # noqa: C901
     Returns:
         Populated a NetworkX multi-edge directed graph.
     """
-    import networkx as nx
+    nx = _lazy_import_networkx()
 
     def gvizify(x: Any) -> str:
         """Stringify and then escape colons for Graphviz labels."""

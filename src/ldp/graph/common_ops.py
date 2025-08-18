@@ -24,7 +24,7 @@ from lmi import LiteLLMModel as LLMModel
 from pydantic import BaseModel
 
 from .memory import Memory, MemoryModel, UIndexMemoryModel
-from .op_utils import CallID, get_call_id, get_training_mode
+from .op_utils import CallID, _lazy_import_tree, get_call_id, get_training_mode
 from .ops import GradInType, Op, OpCtx, ResultOrValue, TOutput_co
 
 if TYPE_CHECKING:
@@ -104,8 +104,7 @@ class ConfigOp(Op[TConfig], Generic[TConfig]):
         call_id: CallID,
     ) -> GradInType:
         # Check that the grad_output structure is consistent with our config
-        import tree
-
+        tree = _lazy_import_tree()
         tree.assert_same_structure(
             grad_output, ctx.get(call_id, "output").value, check_types=False
         )
@@ -404,7 +403,7 @@ class LLMCallOp(Op[Message]):
         # but not necessarily each message or tool.
 
         # tree.map_structure allows us to assign a gradient of 0 to all fields of config
-        import tree
+        tree = _lazy_import_tree()
 
         grad_config = tree.map_structure(lambda _: 0.0, input_kwargs["config"])
         grad_kwargs = {"config": grad_config}

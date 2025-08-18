@@ -7,6 +7,30 @@ from aviary.core import is_coroutine_callable
 from pydantic import BaseModel, field_serializer, field_validator
 
 
+def _lazy_import_networkx():
+    """Lazy import of networkx to avoid import overhead when not needed."""
+    try:
+        import networkx as nx
+    except ImportError as e:
+        raise ImportError(
+            "networkx is required for compute graph operations. "
+            "Please install it with: pip install ldp[ops]"
+        ) from e
+    return nx
+
+
+def _lazy_import_tree():
+    """Lazy import of tree to avoid import overhead when not needed."""
+    try:
+        import tree
+    except ImportError as e:
+        raise ImportError(
+            "tree is required for compute graph operations. "
+            "Please install it with: pip install ldp[ops]"
+        ) from e
+    return tree
+
+
 class CallID(BaseModel):
     run_id: UUID
     fwd_id: UUID

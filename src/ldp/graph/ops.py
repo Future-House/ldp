@@ -17,21 +17,17 @@ if TYPE_CHECKING:
     import tree
 from pydantic import BaseModel, Field
 
-from .op_utils import CallID, compute_graph, get_call_id, get_training_mode, op_call
+from .op_utils import (
+    CallID,
+    _lazy_import_networkx,
+    _lazy_import_tree,
+    compute_graph,
+    get_call_id,
+    get_training_mode,
+    op_call,
+)
 
 logger = logging.getLogger(__name__)
-
-
-def _lazy_import_networkx():
-    """Lazy import of networkx to avoid import overhead when not needed."""
-    try:
-        import networkx as nx
-    except ImportError as e:
-        raise ImportError(
-            "networkx is required for compute graph operations. "
-            "Please install it with: pip install networkx"
-        ) from e
-    return nx
 
 
 GradOutType: TypeAlias = (
@@ -108,10 +104,11 @@ class OpResult(Generic[TOutput_co]):
             (a) define the backward computation
             (b) store internal gradients for optimizer updates.
         """
-        import tree
+        tree = _lazy_import_tree()
 
-        # call ID -> [d op(x) / d x] for each op that consumes x
-        grad_outputs: dict[CallID, list[tree.Structure]] = defaultdict(list)
+        # call ID -> [d op(x) / d x] for each op that consumes x[
+        # due to interaction between ruff and mypy, we need type ignore
+        grad_outputs: dict[CallID, list[tree.Structure]] = defaultdict(list)  # type: ignore[name-defined]
 
         # grad_outputs stores a list of output grads (corresponding to each consuming op call).
         # Since the root node is not consumed by any other node, we create a singleton list here.
