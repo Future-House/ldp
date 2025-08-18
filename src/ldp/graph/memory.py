@@ -177,7 +177,7 @@ class UIndexMemoryModel(MemoryModel["Index"]):
         except ImportError as e:
             raise ImportError(
                 "U-Search library not found. Unable to use UIndexMemoryModel."
-                " To install U-Search dependencies, please run `pip install ldp[usearch]`."
+                " To install U-Search dependencies, please run `pip install usearch`."
             ) from e
         self._index = Index(ndim=self.embedding_model.ndim)
 
