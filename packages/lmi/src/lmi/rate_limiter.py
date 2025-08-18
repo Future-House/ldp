@@ -55,8 +55,8 @@ ANTHROPIC_DEFAULT_RPM = RateLimitItemPerMinute(50, 1)  # Anthropic Claude defaul
 GOOGLE_DEFAULT_RPM = RateLimitItemPerMinute(15, 1)  # Google Gemini default RPM
 
 RATE_CONFIG: dict[tuple[str, str | MatchAllInputs], RateLimitItem] = {
-    ("get", CROSSREF_BASE_URL): RateLimitItemPerSecond(30, 1),
-    ("get", SEMANTIC_SCHOLAR_BASE_URL): RateLimitItemPerSecond(15, 1),
+    ("get", CROSSREF_HOST): RateLimitItemPerSecond(30, 1),
+    ("get", SEMANTIC_SCHOLAR_HOST): RateLimitItemPerSecond(15, 1),
     ("client|request", "gpt-3.5-turbo"): RateLimitItemPerMinute(3500, 1),
     ("client|request", "gpt-4o"): OPENAI_DEFAULT_RPM,
     ("client|request", "gpt-4"): OPENAI_DEFAULT_RPM,
