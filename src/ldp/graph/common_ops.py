@@ -8,11 +8,10 @@ import inspect
 import logging
 from collections.abc import Awaitable, Callable
 from functools import lru_cache
-from typing import Generic, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Generic, TypeVar, cast, overload
 
 import numpy as np
 import tenacity
-import tree
 from aviary.core import Message, Tool, ToolRequestMessage, is_coroutine_callable
 from lmi import (
     EmbeddingModel,
@@ -24,10 +23,12 @@ from lmi import (
 from lmi import LiteLLMModel as LLMModel
 from pydantic import BaseModel
 
-from .gradient_estimators import assign_constant_grads
 from .memory import Memory, MemoryModel, UIndexMemoryModel
 from .op_utils import CallID, get_call_id, get_training_mode
 from .ops import GradInType, Op, OpCtx, ResultOrValue, TOutput_co
+
+if TYPE_CHECKING:
+    import tree
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,8 @@ class StopGradOp(IdentityOp[TOutput_co]):
         grad_output: tree.Structure,
         call_id: CallID,
     ) -> GradInType:
+        from .gradient_estimators import assign_constant_grads
+
         return assign_constant_grads(input_args, input_kwargs, None)
 
 
@@ -101,6 +104,8 @@ class ConfigOp(Op[TConfig], Generic[TConfig]):
         call_id: CallID,
     ) -> GradInType:
         # Check that the grad_output structure is consistent with our config
+        import tree
+
         tree.assert_same_structure(
             grad_output, ctx.get(call_id, "output").value, check_types=False
         )
@@ -186,6 +191,8 @@ class FxnOp(Op[TOutput_co]):
         grad_output: tree.Structure,
         call_id: CallID,
     ) -> GradInType:
+        from .gradient_estimators import assign_constant_grads
+
         return assign_constant_grads(input_args, input_kwargs, 0.0)
 
 
@@ -397,6 +404,8 @@ class LLMCallOp(Op[Message]):
         # but not necessarily each message or tool.
 
         # tree.map_structure allows us to assign a gradient of 0 to all fields of config
+        import tree
+
         grad_config = tree.map_structure(lambda _: 0.0, input_kwargs["config"])
         grad_kwargs = {"config": grad_config}
         for arg in ("msgs", "tools", "tool_choice"):
@@ -472,6 +481,8 @@ class MemoryOp(Op[list[Memory]]):
         call_id: CallID,
     ) -> GradInType:
         """Backward pass for memory retrieval - goes back to item."""
+        from .gradient_estimators import assign_constant_grads
+
         return assign_constant_grads(input_args, input_kwargs, 0.0)
 
 

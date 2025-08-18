@@ -17,9 +17,10 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from usearch.index import Index
 
 if TYPE_CHECKING:
+    from usearch.index import Index  # noqa: F401
+
     from .common_ops import MemoryOp
     from .op_utils import CallID
     from .ops import Op, OpResult, TOutput_co
@@ -164,13 +165,20 @@ class MemoryModel(BaseModel, ABC, Generic[TIndex]):
         """Search the internal Index, returning a 'matches' amount of Memories."""
 
 
-class UIndexMemoryModel(MemoryModel[Index]):
+class UIndexMemoryModel(MemoryModel["Index"]):
     """Memory model using a U-Search index."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if not self.embedding_model.ndim:
             raise TypeError("Specify dimensions to the embedding model.")
+        try:
+            from usearch.index import Index
+        except ImportError as e:
+            raise ImportError(
+                "U-Search library not found. Unable to use UIndexMemoryModel."
+                " To install U-Search dependencies, please run `pip install ldp[usearch]`."
+            ) from e
         self._index = Index(ndim=self.embedding_model.ndim)
 
     async def _add_to_index(self, embedding: np.ndarray) -> int:

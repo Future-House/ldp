@@ -9,11 +9,12 @@ import secrets
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Collection, Iterable, Iterator, Mapping, Sequence
-from typing import Any, ClassVar, Generic, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeAlias, TypeVar
 from uuid import UUID
 
-import networkx as nx
-import tree
+if TYPE_CHECKING:
+    import networkx as nx
+    import tree
 from pydantic import BaseModel, Field
 
 from .op_utils import CallID, compute_graph, get_call_id, get_training_mode, op_call
@@ -21,11 +22,25 @@ from .op_utils import CallID, compute_graph, get_call_id, get_training_mode, op_
 logger = logging.getLogger(__name__)
 
 
-GradOutType: TypeAlias = tree.Structure | None  # None means the gradient has terminated
+def _lazy_import_networkx():
+    """Lazy import of networkx to avoid import overhead when not needed."""
+    try:
+        import networkx as nx
+    except ImportError as e:
+        raise ImportError(
+            "networkx is required for compute graph operations. "
+            "Please install it with: pip install networkx"
+        ) from e
+    return nx
+
+
+GradOutType: TypeAlias = (
+    "tree.Structure | None"  # None means the gradient has terminated
+)
 GradInType: TypeAlias = tuple[Sequence[GradOutType], Mapping[str, GradOutType]]
 BackwardsType: TypeAlias = Callable[
     # Call signature of Op.backward
-    ["OpCtx", list, dict, tree.Structure, CallID],
+    ["OpCtx", list, dict, "tree.Structure", CallID],
     GradInType,
 ]
 TOutput_co = TypeVar("TOutput_co", covariant=True)
@@ -93,6 +108,8 @@ class OpResult(Generic[TOutput_co]):
             (a) define the backward computation
             (b) store internal gradients for optimizer updates.
         """
+        import tree
+
         # call ID -> [d op(x) / d x] for each op that consumes x
         grad_outputs: dict[CallID, list[tree.Structure]] = defaultdict(list)
 
@@ -212,6 +229,7 @@ class OpResult(Generic[TOutput_co]):
                     graph.add_edge(*edge)
                     add_edges(graph, x)
 
+        nx = _lazy_import_networkx()
         graph = nx.DiGraph()
         graph.add_node(self)
         add_edges(graph, self)
@@ -250,6 +268,7 @@ class OpResult(Generic[TOutput_co]):
             An iterator over the nodes of this graph.
         """
         if topological_order:
+            nx = _lazy_import_networkx()
             G = self.get_compute_graph()
             for node in nx.topological_sort(G):
                 if filter_fn(node):
