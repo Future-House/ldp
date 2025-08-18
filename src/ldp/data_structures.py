@@ -126,7 +126,7 @@ class Trajectory(BaseModel):
         return self.steps[-1].done
 
     async def to_jsonl(self, filename: str | os.PathLike) -> None:
-        async with aiofiles.open(filename, "w", encoding="utf-8") as f:
+        async with aiofiles.open(filename, "w") as f:
             await f.write(json.dumps(self.traj_id) + "\n")
             for s in self.steps:
                 await f.write(s.model_dump_json() + "\n")
