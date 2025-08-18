@@ -190,3 +190,23 @@ def test_custom_state_agent():
     # Test that agent can be instantiated
     agent = MyAgent()
     assert agent is not None
+
+
+# =============================================================================
+# Rollout - Basic Example
+# =============================================================================
+@pytest.mark.asyncio
+async def test_rollout():
+    """Test basic example of running a rollout."""
+    from aviary.core import DummyEnv
+
+    from ldp.agent import SimpleAgent
+    from ldp.alg import RolloutManager
+
+    env = DummyEnv()
+    agent = SimpleAgent()
+
+    rollout_manager = RolloutManager(agent)
+    traj, *_ = await rollout_manager.sample_trajectories(environments=[env])
+
+    assert traj is not None
