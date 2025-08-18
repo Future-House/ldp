@@ -1,13 +1,18 @@
 import contextvars
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from aviary.core import is_coroutine_callable
 from pydantic import BaseModel, field_serializer, field_validator
 
+if TYPE_CHECKING:
+    import networkx as nx
+    import tree
 
-def _lazy_import_networkx():
+
+def _lazy_import_networkx() -> "nx":
     """Lazy import of networkx to avoid import overhead when not needed."""
     try:
         import networkx as nx
@@ -19,7 +24,7 @@ def _lazy_import_networkx():
     return nx
 
 
-def _lazy_import_tree():
+def _lazy_import_tree() -> "tree":
     """Lazy import of tree to avoid import overhead when not needed."""
     try:
         import tree
