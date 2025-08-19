@@ -1,18 +1,14 @@
 import contextvars
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING
+from types import ModuleType
 from uuid import UUID, uuid4
 
 from aviary.core import is_coroutine_callable
 from pydantic import BaseModel, field_serializer, field_validator
 
-if TYPE_CHECKING:
-    import networkx as nx
-    import tree
 
-
-def _lazy_import_networkx() -> "nx":
+def _lazy_import_networkx() -> ModuleType:
     try:
         import networkx as nx
     except ImportError as e:
@@ -23,7 +19,7 @@ def _lazy_import_networkx() -> "nx":
     return nx
 
 
-def _lazy_import_tree() -> "tree":
+def _lazy_import_tree() -> ModuleType:
     try:
         import tree
     except ImportError as e:

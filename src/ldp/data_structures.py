@@ -17,7 +17,6 @@ from ldp.graph.op_utils import _lazy_import_networkx
 from ldp.utils import discounted_returns
 
 if TYPE_CHECKING:
-    import networkx as nx  # noqa: F401
     from aviary.core import Environment
 
 
