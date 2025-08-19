@@ -70,7 +70,7 @@ interactions:
   - request:
       body:
         '{"messages":[{"role":"user","content":"Cast ''5.5'' to a float, then to
-        an integer, and finally use it to write a story of that many words."}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        an integer, and finally use it to write a story of that many words."}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -84,13 +84,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1048"
+          - "1030"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.86.0
+          - AsyncOpenAI/Python 1.97.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -100,7 +100,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.86.0
+          - 1.97.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -116,18 +116,18 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFPBjpswEL3zFdackxUksNlwa7pttT1UPfTWrJBjxsSssV3btFlF+fcK
-          kwWSTaVyQNa8eW/ejMfHiBAQJeQE2J561hg539Sbj3TB44fN0/pLnWqXpPcfnlZ/ljVfL2HWMfSu
-          RubfWHdMN0aiF1r1MLNIPXaqySqLk3iVLeIANLpE2dEq4+epni/iRTpPkvkiPhP3WjB0kJOfESGE
-          HMO/s6hKPEBOgkyINOgcrRDyIYkQsFp2EaDOCeep8jAbQaaVR9W5Vq2UE8BrLQtGpRwL999xch7n
-          RKUsGm5/HH7V+0dUn77X6eemFfbh2+rrpF4v/WqCId4qNsxngg/x/KoYIaBog31B5wsuNfVXbEKA
-          2qptUPnOORy3cNhCvoXsLtvCCS6ST9Gt8/NkDBZ566h8Px+qlPa0sxkG9HxGTsNdSF0Zq3fuigpc
-          KOH2hUXqQovTSUdvRoIFaC8uE4zVjfGF1y8YiibpuleFcdcm6P0Z9NpTOY1nsxt6RYmeinDbw4Ix
-          yvZYjtRx0WhbCj0Boknv793c0u77F6r6H/kRYAyNx7IwFkvBLjse0yx2T/FfacOUg2FwaH8LhoUX
-          aLv7KJHTVvZ7Be7VeWwKLlSF1lgRngpwU2Q7vlyyBFkK0Sn6CwAA//8DAPldh5EzBAAA
+          H4sIAAAAAAAAAwAAAP//jFPBbtswDL37KwSe48JJ7WTxce2ADetlGFAkWApDlWhHqywZEh00C/Lv
+          g+3EdtIMmA+GwMdHPj5Rh4AxUBJSBmLLSZSVDh/mT8+r5e7r+ovXcfxZPv/Iib+tlvu1FwYmDcO+
+          /kZBZ9adsGWlkZQ9wcIhJ2yqThdJMp99mi+WLVBaibqhFRWFsQ1n0SwOp9NwFp2IW6sEekjZr4Ax
+          xg7tv5FoJL5DyqLJOVKi97xASPskxsBZ3USAe688cUMwGUBhDaFpVJta6xFA1upMcK2Hxt13GJ0H
+          n7jWmVp9U49/3O7p+ypez6OHHcefe/6Io35d6X3VCsprI3p/RngfT6+aMQaGl9g19JTl2nK6YjMG
+          3BV1iYYa5XDYwPsG0g0kd8kGjnCRfAxunV9GNjjMa8/1R3+4MZZ4I7M16OWEHPu70LaonH31V1TI
+          lVF+mznkvh1x7HRwFtJKgPriMqFytqwoI/uGbdNpvOyqwrBrI3R+AskS1+N4MrlRL5NIXLW33S+Y
+          4GKLcqAOi8ZrqewICEazf1Rzq3Y3vzLF/5QfACGwIpRZ5VAqcTnxkOaweYr/SutdbgWDR7dTAjNS
+          6Jr7kJjzWnd7BX7vCcssV6ZAVznVPhXIqyyP8D5aJPcLCcEx+AsAAP//AwB8+uw1MwQAAA==
       headers:
         CF-RAY:
-          - 950d3a017d49faaa-SJC
+          - 971bc3eec83bcf16-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -135,15 +135,17 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Mon, 16 Jun 2025 20:58:40 GMT
+          - Tue, 19 Aug 2025 18:37:59 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=V5254uWRrrlbOekg4HG10T17Z22w71L5PN3VXfkBXqo-1750107520-1.0.1.1-7RbMNvlGmkxdKPWUIkqSyb7xKCgNDWk0AiutVXJNFFT4xCCyc4t3x.xc15JuNJkw9ELE0LBbfZydh.jLhiuHNTITKfUfaItQpLlQuNr1Pn0;
-            path=/; expires=Mon, 16-Jun-25 21:28:40 GMT; domain=.api.openai.com; HttpOnly;
+          - __cf_bm=0R3FygBDUN9Pt9_zW1ij6fEuT0tAVKXe7h8Pzj.E25c-1755628679-1.0.1.1-sctkRJcta3hhCI3L1Y0iEgT7She7p9LGJm93HG4Dujo5dt_GMTdUac44.lo894wOxA5ZzYdalVv5T4G0M0mCBvbIKZu0XL0wVvcExEkxI2c;
+            path=/; expires=Tue, 19-Aug-25 19:07:59 GMT; domain=.api.openai.com; HttpOnly;
             Secure; SameSite=None
-          - _cfuvid=MQBMu461FuEQoiUYEgjYByEMpgGMCqHa9tgV03CmPfk-1750107520635-0.0.1.1-604800000;
+          - _cfuvid=qFmz4XlgHGnr05aY7U9AzTBmfeHeOX1d_HzL5rl2BiI-1755628679957-0.0.1.1-604800000;
             path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Strict-Transport-Security:
+          - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -157,13 +159,13 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "293"
+          - "378"
+        openai-project:
+          - proj_RpeV6PrPclPHBb5GlExPXSBj
         openai-version:
           - "2020-10-01"
-        strict-transport-security:
-          - max-age=31536000; includeSubDomains; preload
         x-envoy-upstream-service-time:
-          - "294"
+          - "406"
         x-ratelimit-limit-requests:
           - "10000"
         x-ratelimit-limit-tokens:
@@ -177,7 +179,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_a589dd590ac31a4f3ebde2d6a370eaca
+          - req_203ff3af52b349cb9111a3fdc3c8b506
       status:
         code: 200
         message: OK
@@ -211,7 +213,7 @@ interactions:
     response:
       body:
         string:
-          '[{"call_id":{"run_id":"ab476bd8-b3a2-4381-91f4-5efffa8998bf","fwd_id":"211d1aad-22a0-4387-96c1-f55dede3c99c"},"op_name":"_llm_call_op","op_class_name":"ldp.graph.common_ops.LLMCallOp","value":{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_mfrTxqjhDenEPj4Fmuir8N7J","type":"function","function":{"arguments":"{\"x\":
+          '[{"call_id":{"run_id":"73ebad95-5011-4923-b7a7-0b38ad25bd9c","fwd_id":"9f16d54d-2c6e-4419-85ed-125978a1bcce"},"op_name":"_llm_call_op","op_class_name":"ldp.graph.common_ops.LLMCallOp","value":{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_iXIiDzrvLKX4Y60CvaeSyaDe","type":"function","function":{"arguments":"{\"x\":
           \"5.5\"}","name":"cast_float"}}]},"logprob":null},{"tools":[{"type":"function","function":{"name":"print_story","description":"Print
           a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
           to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
@@ -219,7 +221,7 @@ interactions:
           the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
           a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}],"messages":[{"role":"user","content":"Cast
           ''5.5'' to a float, then to an integer, and finally use it to write a story
-          of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_mfrTxqjhDenEPj4Fmuir8N7J","type":"function","function":{"arguments":"{\"x\":
+          of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_iXIiDzrvLKX4Y60CvaeSyaDe","type":"function","function":{"arguments":"{\"x\":
           \"5.5\"}","name":"cast_float"}}]}],"hide_old_env_states":false,"hide_old_action_content":false},0.0]'
       headers:
         content-length:
@@ -232,7 +234,7 @@ interactions:
   - request:
       body:
         '{"messages":[{"role":"user","content":"Cast ''5.5'' to a float, then to
-        an integer, and finally use it to write a story of that many words."}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        an integer, and finally use it to write a story of that many words."}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -246,13 +248,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1048"
+          - "1030"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.86.0
+          - AsyncOpenAI/Python 1.97.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -262,7 +264,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.86.0
+          - 1.97.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -278,18 +280,18 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFPBjpswEL3zFdackxUQaFqOW+226qFSm0Zqt1khxwzg1NiWbdpEUf69
-          wmSBZFOpHJA1b96bN+PxMSAEeAEZAVZTxxot5ve7+/f0UZq3u/rHOjp83YXr9eenp5U+1AsLs46h
-          tjtk7oV1x1SjBTquZA8zg9Rhpxot0zAKl2kceqBRBYqOVmk3T9Q8DuNkHkXzODwTa8UZWsjIz4AQ
-          Qo7+31mUBe4hI17GRxq0llYI2ZBECBglughQa7l1VDqYjSBT0qHsXMtWiAnglBI5o0KMhfvvODmP
-          c6JC5N8+lX8ev3/5EC/XD+HHZBUd9npVPqwn9Xrpg/aGylayYT4TfIhnV8UIAUkb7Atal5dCUXfF
-          JgSoqdoGpeucw3ED+w1kG0jv0g2c4CL5FNw6P0/GYLBsLRWv50OlVI52Nv2Ans/IabgLoSpt1NZe
-          UaHkkts6N0itb3E66eDFiLcA7cVlgjaq0S536hf6olHyrleFcdcm6Jsz6JSjYhpPZzf08gId5f62
-          hwVjlNVYjNRx0WhbcDUBgknvr93c0u7757L6H/kRYAy1wyLXBgvOLjse0wx2T/FfacOUvWGwaH5z
-          hrnjaLr7KLCkrej3CuzBOmzykssKjTbcPxUodZ5uy8WCRcgSCE7BXwAAAP//AwD2uE9LMwQAAA==
+          H4sIAAAAAAAAAwAAAP//jFPLbtswELzrK4g924H8kJ3oVqQvJLn00gfqQKDJlcyaIlVylcQ1/O+F
+          KEeSHReoDgKxszM7u1zuI8ZASUgZiA0nUVZ6fLt4+PrDbOXi5dvyu1h/Evf3Hx+ed7sbG1MJo4Zh
+          179Q0CvrStiy0kjKmhYWDjlhozpZJslier24jgNQWom6oRUVjed2PI2n8/FkMp7GR+LGKoEeUvYz
+          Yoyxffg3Fo3EF0hZkAmREr3nBULaJTEGzuomAtx75YkbglEPCmsITePa1FoPALJWZ4Jr3Rduv/3g
+          3M+Ja529v7vdFcX89xf57nkW8+2ynP65+/D5aVCvld5VwVBeG9HNZ4B38fSsGGNgeIltQU9Zri2n
+          MzZjwF1Rl2iocQ77FbysIF1BcpWs4AAnyYfo0vlxMAaHee25fjsfbowl3tgMA3o8IofuLrQtKmfX
+          /owKuTLKbzKH3IcWh5OOXo0EC1CfXCZUzpYVZWS3GIpO5jetKvS7NkAXR5AscT2MJ6MLeplE4irc
+          drdggosNyp7aLxqvpbIDIBr0/tbNJe22f2WK/5HvASGwIpRZ5VAqcdpxn+aweYr/SuumHAyDR/ek
+          BGak0DX3ITHntW73CvzOE5ZZrkyBrnIqPBXIqyyPcRYvk9lSQnSI/gIAAP//AwADQmnYMwQAAA==
       headers:
         CF-RAY:
-          - 950d3a048917faaa-SJC
+          - 971bc3f1e8dfcf16-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -297,9 +299,11 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Mon, 16 Jun 2025 20:58:41 GMT
+          - Tue, 19 Aug 2025 18:38:00 GMT
         Server:
           - cloudflare
+        Strict-Transport-Security:
+          - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -313,13 +317,13 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "358"
+          - "365"
+        openai-project:
+          - proj_RpeV6PrPclPHBb5GlExPXSBj
         openai-version:
           - "2020-10-01"
-        strict-transport-security:
-          - max-age=31536000; includeSubDomains; preload
         x-envoy-upstream-service-time:
-          - "362"
+          - "385"
         x-ratelimit-limit-requests:
           - "10000"
         x-ratelimit-limit-tokens:
@@ -333,7 +337,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_fab7ed83750686bed24dde6065718173
+          - req_1c03341d400a43c0b6a9c04942a65d92
       status:
         code: 200
         message: OK
@@ -367,7 +371,7 @@ interactions:
     response:
       body:
         string:
-          '[{"call_id":{"run_id":"d651dab2-81eb-4e68-b67e-55b636802248","fwd_id":"a688d20e-236d-4464-9910-680b9db22f78"},"op_name":"_llm_call_op","op_class_name":"ldp.graph.common_ops.LLMCallOp","value":{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_TJfwFXQG27UE0H4S1yxpSfEU","type":"function","function":{"arguments":"{\"x\":
+          '[{"call_id":{"run_id":"209efb31-2c7b-4162-8d41-70ea96ee3552","fwd_id":"78784269-8bce-4f16-97ab-698b7e9aeacd"},"op_name":"_llm_call_op","op_class_name":"ldp.graph.common_ops.LLMCallOp","value":{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_DJCygg4qQdAw30ak7m2zJEHv","type":"function","function":{"arguments":"{\"x\":
           \"5.5\"}","name":"cast_float"}}]},"logprob":null},{"tools":[{"type":"function","function":{"name":"print_story","description":"Print
           a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
           to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
@@ -375,7 +379,7 @@ interactions:
           the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
           a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}],"messages":[{"role":"user","content":"Cast
           ''5.5'' to a float, then to an integer, and finally use it to write a story
-          of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_TJfwFXQG27UE0H4S1yxpSfEU","type":"function","function":{"arguments":"{\"x\":
+          of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_DJCygg4qQdAw30ak7m2zJEHv","type":"function","function":{"arguments":"{\"x\":
           \"5.5\"}","name":"cast_float"}}]}],"hide_old_env_states":false,"hide_old_action_content":false},0.0]'
       headers:
         content-length:
@@ -388,7 +392,7 @@ interactions:
   - request:
       body:
         '{"messages":[{"role":"user","content":"Cast ''5.5'' to a float, then to
-        an integer, and finally use it to write a story of that many words."}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        an integer, and finally use it to write a story of that many words."}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -402,13 +406,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1048"
+          - "1030"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.86.0
+          - AsyncOpenAI/Python 1.97.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -418,7 +422,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.86.0
+          - 1.97.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -434,18 +438,18 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFPBbqMwEL3zFdacQwVJSFSO2fawK63Uw2ovmwoZewCnxnZt06Yb5d9X
-          QAIkTaXlgKx582bePI8PASEgOKQEWEU9q40MN7vNt5zrqHj6icnq4W+9Zve5xM0v+r5yMGsZOt8h
-          82fWHdO1keiFVj3MLFKPbdV4nURxtE7mcQfUmqNsaaXx4VKH82i+DOM4nEcnYqUFQwcp+RMQQsih
-          +7cSFcc9pCSanSM1OkdLhHRIIgSslm0EqHPCeao8zEaQaeVRtapVI+UE8FrLjFEpx8b9d5icR5+o
-          lNkDf1xxVex/v73uFt/fo7z68ZRUr+WkX1/6w3SCikaxwZ8JPsTTq2aEgKI19g2dzwqpqb9iEwLU
-          lk2NyrfK4bCF/RbSLSR3yRaOcJF8DG6dnyc2WCwaR+Vnf6hS2tNWZmfQ8wk5DnchdWmszt0VFQqh
-          hKsyi9R1I06dDs5COgnQXFwmGKtr4zOvX7BrGi/v+6ow7toEXZ1Arz2V03gyu1Ev4+ip6G57WDBG
-          WYV8pI6LRhsu9AQIJrN/VnOrdj+/UOX/lB8BxtB45JmxyAW7nHhMs9g+xa/SBpc7weDQvgmGmRdo
-          2/vgWNBG9nsF7sN5rLNCqBKtsaJ7KlCYLMmLxYLFyJYQHIN/AAAA//8DAADrWVMzBAAA
+          H4sIAAAAAAAAA4xTTW+jMBC98yusOScVpCFpufZL+6FtT62qpkKuPYA3xrZsU6Ub5b+vMCmQNCst
+          B2TNm/fmzXi8jQgBwSEjwCrqWW3k9Grx8/H5h/R/Kuue4uT220N85a6L+fNl8vgdJi1Dv/1G5j9Z
+          Z0zXRqIXWnUws0g9tqrJMk0Xs4vFRRyAWnOULa00fjrX01k8m0+TZDqL98RKC4YOMvISEULINvxb
+          i4rjBjISZEKkRudoiZD1SYSA1bKNAHVOOE+Vh8kAMq08qta1aqQcAV5rmTMq5VC4+7aj8zAnKmUu
+          7f0DX6u79PrX09Ild5vk5n79XiWjep30hwmGikaxfj4jvI9nR8UIAUVr7Ao6nxdSU3/EJgSoLZsa
+          lW+dw3YFmxVkK0jP0hXs4CB5F506v47GYLFoHJVf50OV0p62NsOAXvfIrr8LqUtj9Zs7okIhlHBV
+          bpG60OJ40tGnkWABmoPLBGN1bXzu9RpD0WR+2anCsGsjdLEHvfZUjuPp5IReztFTEW67XzBGWYV8
+          oA6LRhsu9AiIRr1/dXNKu+tfqPJ/5AeAMTQeeW4scsEOOx7SLLZP8V9p/ZSDYXBo3wXD3Au07X1w
+          LGgju70C9+E81nkhVInWWBGeChQmL2I8j5fp+ZJDtIv+AgAA//8DANeuZqozBAAA
       headers:
         CF-RAY:
-          - 950d3a078c72faaa-SJC
+          - 971bc3f4e9fecf16-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -453,9 +457,11 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Mon, 16 Jun 2025 20:58:41 GMT
+          - Tue, 19 Aug 2025 18:38:01 GMT
         Server:
           - cloudflare
+        Strict-Transport-Security:
+          - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -469,13 +475,13 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "274"
+          - "509"
+        openai-project:
+          - proj_RpeV6PrPclPHBb5GlExPXSBj
         openai-version:
           - "2020-10-01"
-        strict-transport-security:
-          - max-age=31536000; includeSubDomains; preload
         x-envoy-upstream-service-time:
-          - "281"
+          - "554"
         x-ratelimit-limit-requests:
           - "10000"
         x-ratelimit-limit-tokens:
@@ -489,7 +495,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_ef14fd56939f7c51a96b43d74eaf7976
+          - req_18309937c2ac4498bc20d150bccffae3
       status:
         code: 200
         message: OK
@@ -523,7 +529,7 @@ interactions:
     response:
       body:
         string:
-          '[{"call_id":{"run_id":"81e2570b-535f-4a03-9d77-7aa6d0825770","fwd_id":"2d221cb9-54ca-4d50-8a5a-58fa8f8f9de4"},"op_name":"_llm_call_op","op_class_name":"ldp.graph.common_ops.LLMCallOp","value":{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_DdE6dnfxVvqj3Iw0bhJP5hqg","type":"function","function":{"arguments":"{\"x\":
+          '[{"call_id":{"run_id":"916241b8-f40e-4b65-81e6-f942942bcf89","fwd_id":"6e0338fb-9913-49f3-b8ca-3165eef41a3b"},"op_name":"_llm_call_op","op_class_name":"ldp.graph.common_ops.LLMCallOp","value":{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_lrOPdknG5DNW7s1Gx1EOkvh1","type":"function","function":{"arguments":"{\"x\":
           \"5.5\"}","name":"cast_float"}}]},"logprob":null},{"tools":[{"type":"function","function":{"name":"print_story","description":"Print
           a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
           to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
@@ -531,7 +537,7 @@ interactions:
           the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
           a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}],"messages":[{"role":"user","content":"Cast
           ''5.5'' to a float, then to an integer, and finally use it to write a story
-          of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_DdE6dnfxVvqj3Iw0bhJP5hqg","type":"function","function":{"arguments":"{\"x\":
+          of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_lrOPdknG5DNW7s1Gx1EOkvh1","type":"function","function":{"arguments":"{\"x\":
           \"5.5\"}","name":"cast_float"}}]}],"hide_old_env_states":false,"hide_old_action_content":false},0.0]'
       headers:
         content-length:
@@ -544,8 +550,8 @@ interactions:
   - request:
       body:
         '{"messages":[{"role":"user","content":"Cast ''5.5'' to a float, then to
-        an integer, and finally use it to write a story of that many words."},{"role":"assistant","tool_calls":[{"id":"call_DdE6dnfxVvqj3Iw0bhJP5hqg","type":"function","function":{"arguments":"{\"x\":
-        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"5.5","name":"cast_float","tool_call_id":"call_DdE6dnfxVvqj3Iw0bhJP5hqg"}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        an integer, and finally use it to write a story of that many words."},{"role":"assistant","tool_calls":[{"id":"call_lrOPdknG5DNW7s1Gx1EOkvh1","type":"function","function":{"arguments":"{\"x\":
+        \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"5.5","name":"cast_float","tool_call_id":"call_lrOPdknG5DNW7s1Gx1EOkvh1"}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -559,13 +565,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1304"
+          - "1286"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.86.0
+          - AsyncOpenAI/Python 1.97.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -575,7 +581,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.86.0
+          - 1.97.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -591,18 +597,18 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFNNi9swEL37V4g5J4vtJA31bVMoWzbsobQstLsYRR47cmVJSOPWIeS/
-          F9uJ7eymUB2EmDcfb96MjgFjIDNIGIg9J1FZNd+Um0+7oim/bRfq3h8W2bppfjyK8P5ZPzzArI0w
-          uxIFXaLuhKmsQpJG97BwyAnbrNF6FUbhehVHHVCZDFUbVliaL808DuPlPIrmcXgO3Bsp0EPCfgaM
-          MXbs7paizrCBhIWzi6VC73mBkAxOjIEzqrUA91564ppgNoLCaELdsta1UhOAjFGp4EqNhftznLxH
-          nbhSqXObsnmMy698m28/q+c/9CV8+v6UT+r1qQ+2I5TXWgz6TPDBnrwpxhhoXmFf0FMqr3o5e3BX
-          1BVqannD8QWaF0hWd6sTXDmeglvv14kADvPac/VeGa61Id4S7KR5PSOnYQrKFNaZnX8TCrnU0u9T
-          h9x3zU01Di5EOgpQX40RrDOVpZTML+yKRusPfVYYt2yCXkAyxNXE/jGe3ciXZkhcdnMeVktwscds
-          DB1XjNeZNBMgmPT+ns2t3H3/Uhf/k34EhEBLmKXWYSbFdcejm8P2E/7LbVC5Iwwe3W8pMCWJrp1H
-          hjmvVb9T4A+esEpzqQt01snuk0Bu09UuXyxEhGIJwSn4CwAA//8DAM6jWaktBAAA
+          H4sIAAAAAAAAA4xTTW+cMBC98yusOS8RkLBsubU5tKp6SJpVWrWJkGMGMDG2Y5to09X+9wrYBTbZ
+          SPHBsubNx5s3461HCPAcUgKsoo41WviXyx+3fzbX8fVV8Fz/fhI36ulLXV9eVezXt3+w6CLUQ43M
+          HaLOmGq0QMeVHGBmkDrssoZJHC+j1XIV9kCjchRdWKmdf6H8KIgu/DD0o2AfWCnO0EJK/nqEELLt
+          746izHEDKQkWB0uD1tISIR2dCAGjRGcBai23jkoHiwlkSjqUHWvZCjEDnFIiY1SIqfBwtrP3pBMV
+          Ilsn+mZtvpdBINdK3SZfP69+1o9JPas3pH7RPaGilWzUZ4aP9vRVMUJA0gaHgtZl/KiXvQc1Zdug
+          dB1v2N7B5g7S+CzewZHjzjv1vp8JYLBoLRVvlaFSKkc7gr0093tkN05BqFIb9WBfhULBJbdVZpDa
+          vrm5xt6BSE8B2qMxgjaq0S5z6hH7omGyHLLCtGUz9AA65aiY2T9FixP5shwd5f2cx9VilFWYT6HT
+          itE252oGeLPe37I5lXvon8vyI+kngDHUDvNMG8w5O+54cjPYfcL33EaVe8Jg0TxzhpnjaLp55FjQ
+          Vgw7BfbFOmyygssSjTa8/yRQ6KwI8DxI4vMkB2/n/QcAAP//AwBwKkfZLQQAAA==
       headers:
         CF-RAY:
-          - 950d3a0a5fe9faaa-SJC
+          - 971bc3f8eef6cf16-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -610,9 +616,11 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Mon, 16 Jun 2025 20:58:42 GMT
+          - Tue, 19 Aug 2025 18:38:01 GMT
         Server:
           - cloudflare
+        Strict-Transport-Security:
+          - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -626,13 +634,13 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "280"
+          - "419"
+        openai-project:
+          - proj_RpeV6PrPclPHBb5GlExPXSBj
         openai-version:
           - "2020-10-01"
-        strict-transport-security:
-          - max-age=31536000; includeSubDomains; preload
         x-envoy-upstream-service-time:
-          - "284"
+          - "451"
         x-ratelimit-limit-requests:
           - "10000"
         x-ratelimit-limit-tokens:
@@ -640,13 +648,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "9999"
         x-ratelimit-remaining-tokens:
-          - "29999969"
+          - "29999970"
         x-ratelimit-reset-requests:
           - 6ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_406e17e2569ec8b7fc477058364e2e21
+          - req_7f8a44a285754087827c3740a4a443cd
       status:
         code: 200
         message: OK
@@ -659,8 +667,8 @@ interactions:
         the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","info":{"name":"get_random_int","description":"Get
         a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}],"messages":[{"role":"user","content":"Cast
         ''5.5'' to a float, then to an integer, and finally use it to write a story
-        of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_DdE6dnfxVvqj3Iw0bhJP5hqg","type":"function","function":{"arguments":"{\"x\":
-        \"5.5\"}","name":"cast_float"}}]}],"hide_old_env_states":false,"hide_old_action_content":false},"obs":[{"role":"tool","content":"5.5","name":"cast_float","tool_call_id":"call_DdE6dnfxVvqj3Iw0bhJP5hqg"}],"training":false}'
+        of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_lrOPdknG5DNW7s1Gx1EOkvh1","type":"function","function":{"arguments":"{\"x\":
+        \"5.5\"}","name":"cast_float"}}]}],"hide_old_env_states":false,"hide_old_action_content":false},"obs":[{"role":"tool","content":"5.5","name":"cast_float","tool_call_id":"call_lrOPdknG5DNW7s1Gx1EOkvh1"}],"training":false}'
       headers:
         accept:
           - "*/*"
@@ -681,7 +689,7 @@ interactions:
     response:
       body:
         string:
-          '[{"call_id":{"run_id":"170ed765-d634-49c4-ad5c-643537fa6d88","fwd_id":"0c051eb0-2e20-45fe-b7ee-e0fdb9b63442"},"op_name":"_llm_call_op","op_class_name":"ldp.graph.common_ops.LLMCallOp","value":{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_rrBjxK2jRaLfLFlWwtI0NUNf","type":"function","function":{"arguments":"{\"x\":
+          '[{"call_id":{"run_id":"98ae66d3-65df-4670-ba5f-f7a2ab96568e","fwd_id":"ee50299f-ebba-433b-b918-0570f0113e0a"},"op_name":"_llm_call_op","op_class_name":"ldp.graph.common_ops.LLMCallOp","value":{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_T7pSTrJg00nTooV7GA8Rjk7j","type":"function","function":{"arguments":"{\"x\":
           5.5}","name":"cast_int"}}]},"logprob":null},{"tools":[{"type":"function","function":{"name":"print_story","description":"Print
           a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
           to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
@@ -689,8 +697,8 @@ interactions:
           the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
           a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}],"messages":[{"role":"user","content":"Cast
           ''5.5'' to a float, then to an integer, and finally use it to write a story
-          of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_DdE6dnfxVvqj3Iw0bhJP5hqg","type":"function","function":{"arguments":"{\"x\":
-          \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"5.5","name":"cast_float","tool_call_id":"call_DdE6dnfxVvqj3Iw0bhJP5hqg"},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_rrBjxK2jRaLfLFlWwtI0NUNf","type":"function","function":{"arguments":"{\"x\":
+          of that many words."},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_lrOPdknG5DNW7s1Gx1EOkvh1","type":"function","function":{"arguments":"{\"x\":
+          \"5.5\"}","name":"cast_float"}}]},{"role":"tool","content":"5.5","name":"cast_float","tool_call_id":"call_lrOPdknG5DNW7s1Gx1EOkvh1"},{"role":"assistant","content":null,"function_call":null,"tool_calls":[{"id":"call_T7pSTrJg00nTooV7GA8Rjk7j","type":"function","function":{"arguments":"{\"x\":
           5.5}","name":"cast_int"}}]}],"hide_old_env_states":false,"hide_old_action_content":false},0.0]'
       headers:
         content-length:

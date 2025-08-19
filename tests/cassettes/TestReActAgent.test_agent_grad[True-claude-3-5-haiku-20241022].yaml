@@ -2,7 +2,7 @@ interactions:
   - request:
       body:
         '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
-        a 5 word story via print_story"}]}],"temperature":0.1,"stop_sequences":["Observation:"],"max_tokens":4096,"system":[{"type":"text","text":"Answer
+        a 5 word story via print_story"}]}],"temperature":0.1,"stop_sequences":["Observation:"],"system":[{"type":"text","text":"Answer
         the following questions as best you can. You have access to the following tools:\n\nNAME:
         print_story\n\nSYNOPSIS:\n    print_story(string story)\n\nDESCRIPTION:\n    Print
         a story.\n\nPARAMETERS:\n    story (string): Story to print.\n\nNAME: cast_float\n\nSYNOPSIS:\n    cast_float(string
@@ -17,7 +17,7 @@ interactions:
         of the action\n... (this Thought/Action/Action Input/Observation can repeat
         N times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction:
         get_weather\nAction Input: \"New York\", 7\nObservation: The 7 day forecast
-        for New York is [...]"}]}'
+        for New York is [...]"}],"max_tokens":4096}'
       headers:
         accept:
           - application/json
@@ -40,15 +40,16 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//ZFDBbsIwDP2VyJdtUjtBWQ/kxmUS0tB2QLusUxUSQzOKXRKHgRD/PrWI
-          A9rJen728/M7g3egYRc39Wi8PC4Os+3PJ35MF6+r6X61NuumgAzk1GE/hTGaDUIGgdu+YWL0UQwJ
-          ZLBjhy1osK1JDvNJXuaN8duUF6PiZTwqeh3LJEgC+ut80xQ89ttD0bBsOG0a0Wr+0LbKBjSCyijL
-          ZH1EVea/HJyKwuGkhFUXPElFMyueSV9hPbC3pppTl0SrxwremLA9qcArFrXmRE4lwmOHVtAp5zde
-          TKtaPuBzBU8VweU7gyjc1QFNZAJ9RRH3Ccn2MdxjDe+riOFgBjeQQRrS0mfwvYlaeIsUQU/KMgNr
-          bIP18KFnqu8nRjc+oHH/OU5ypzfNoL/rLdbiMQxGDTkTHFwufwAAAP//AwCFxauf4gEAAA==
+          H4sIAAAAAAAAA3RQwUoDMRD9lTAXFbLSri5obj14EARFhB6sLDGZdkPTmTWZqKX032VXilTxNLx5
+          b2bemx0EDwY2edVOplf1zeXj3M3X/Ueez2dvblY/9EvQINseBxXmbFcIGhLHoWFzDlksCWjYsMcI
+          Bly0xWN1UTVVZ8O6VPWkvpxO6ho0OCZBEjDPu8NOwc9heiwGnjouq06Muj2JUbmEVlBZ5ZhcyKia
+          6oOTV1k4bZWw6lMgWdDMSWAy37Ad2UNT3VJfxKjTBdwxYdyqxK8sasmFvCqEnz06Qa98WAWxUUV+
+          x/MFnC0I9i8asnDfJrSZCcw3yvhWkNzwhmNs4P41Y3q3oxvQUMZvmR2EwUQrvEbKYC6aRoOzrsN2
+          TBiY2mPF5MAntP4/7jA7HMC+ww0mG9tm81f/w0673+xeAxc5snetYYgRHLYSMI25LXmbPOz3XwAA
+          AP//AwCSfbzyMQIAAA==
       headers:
         CF-RAY:
-          - 950d39fefbf650a1-SJC
+          - 971bc3ecaacd67ad-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -56,7 +57,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Mon, 16 Jun 2025 20:58:41 GMT
+          - Tue, 19 Aug 2025 18:38:00 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -70,33 +71,35 @@ interactions:
         anthropic-ratelimit-input-tokens-remaining:
           - "5000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2025-06-16T20:58:40Z"
+          - "2025-08-19T18:37:59Z"
         anthropic-ratelimit-output-tokens-limit:
           - "1000000"
         anthropic-ratelimit-output-tokens-remaining:
           - "1000000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2025-06-16T20:58:41Z"
+          - "2025-08-19T18:38:00Z"
         anthropic-ratelimit-requests-limit:
           - "5000"
         anthropic-ratelimit-requests-remaining:
           - "4999"
         anthropic-ratelimit-requests-reset:
-          - "2025-06-16T20:58:39Z"
+          - "2025-08-19T18:37:59Z"
         anthropic-ratelimit-tokens-limit:
           - "6000000"
         anthropic-ratelimit-tokens-remaining:
           - "6000000"
         anthropic-ratelimit-tokens-reset:
-          - "2025-06-16T20:58:40Z"
+          - "2025-08-19T18:37:59Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_011CQCa4pfxWoMBUyMpH62JG
+          - req_011CSHZ7E6G7rShsSFoWQFvd
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
         via:
           - 1.1 google
+        x-envoy-upstream-service-time:
+          - "1354"
       status:
         code: 200
         message: OK
