@@ -59,6 +59,12 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - run:
+          | # this is to check that we can run README examples with lazily imported dependencies (the [scg] subpackage)
+          uv pip uninstall dm-tree usearch networkx && uv run --no-sync pytest --noconftest tests/test_readme.py
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
   test-lmi:
     runs-on: ubuntu-latest
     steps:

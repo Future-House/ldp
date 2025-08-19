@@ -1,10 +1,33 @@
 import contextvars
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from types import ModuleType
 from uuid import UUID, uuid4
 
 from aviary.core import is_coroutine_callable
 from pydantic import BaseModel, field_serializer, field_validator
+
+
+def _lazy_import_networkx() -> ModuleType:
+    try:
+        import networkx as nx
+    except ImportError as e:
+        raise ImportError(
+            "networkx is required for compute graph operations. "
+            "Please install it with: pip install ldp[scg]"
+        ) from e
+    return nx
+
+
+def _lazy_import_tree() -> ModuleType:
+    try:
+        import tree
+    except ImportError as e:
+        raise ImportError(
+            "tree is required for compute graph operations. "
+            "Please install it with: pip install ldp[scg]"
+        ) from e
+    return tree
 
 
 class CallID(BaseModel):

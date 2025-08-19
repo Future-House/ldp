@@ -9,23 +9,34 @@ import secrets
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Collection, Iterable, Iterator, Mapping, Sequence
-from typing import Any, ClassVar, Generic, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeAlias, TypeVar
 from uuid import UUID
 
-import networkx as nx
-import tree
+if TYPE_CHECKING:
+    import networkx as nx
+    import tree
 from pydantic import BaseModel, Field
 
-from .op_utils import CallID, compute_graph, get_call_id, get_training_mode, op_call
+from .op_utils import (
+    CallID,
+    _lazy_import_networkx,
+    _lazy_import_tree,
+    compute_graph,
+    get_call_id,
+    get_training_mode,
+    op_call,
+)
 
 logger = logging.getLogger(__name__)
 
 
-GradOutType: TypeAlias = tree.Structure | None  # None means the gradient has terminated
+GradOutType: TypeAlias = (
+    "tree.Structure | None"  # None means the gradient has terminated
+)
 GradInType: TypeAlias = tuple[Sequence[GradOutType], Mapping[str, GradOutType]]
 BackwardsType: TypeAlias = Callable[
     # Call signature of Op.backward
-    ["OpCtx", list, dict, tree.Structure, CallID],
+    ["OpCtx", list, dict, "tree.Structure", CallID],
     GradInType,
 ]
 TOutput_co = TypeVar("TOutput_co", covariant=True)
@@ -93,8 +104,11 @@ class OpResult(Generic[TOutput_co]):
             (a) define the backward computation
             (b) store internal gradients for optimizer updates.
         """
-        # call ID -> [d op(x) / d x] for each op that consumes x
-        grad_outputs: dict[CallID, list[tree.Structure]] = defaultdict(list)
+        tree = _lazy_import_tree()
+
+        # call ID -> [d op(x) / d x] for each op that consumes x[
+        # due to interaction between ruff and mypy, we need type ignore
+        grad_outputs: dict[CallID, list[tree.Structure]] = defaultdict(list)  # type: ignore[name-defined]
 
         # grad_outputs stores a list of output grads (corresponding to each consuming op call).
         # Since the root node is not consumed by any other node, we create a singleton list here.
@@ -212,7 +226,7 @@ class OpResult(Generic[TOutput_co]):
                     graph.add_edge(*edge)
                     add_edges(graph, x)
 
-        graph = nx.DiGraph()
+        graph = _lazy_import_networkx().DiGraph()
         graph.add_node(self)
         add_edges(graph, self)
 
@@ -251,7 +265,7 @@ class OpResult(Generic[TOutput_co]):
         """
         if topological_order:
             G = self.get_compute_graph()
-            for node in nx.topological_sort(G):
+            for node in _lazy_import_networkx().topological_sort(G):
                 if filter_fn(node):
                     yield node
 

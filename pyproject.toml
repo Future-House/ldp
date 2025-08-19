@@ -23,18 +23,15 @@ classifiers = [
 ]
 dependencies = [
     "aiofiles",
-    "dm-tree",
     "fhaviary>=0.20.0",  # For Environment.get_id
     "fhlmi",  # For new LLM client interface
     "httpx",
-    "networkx[default]~=3.4",  # Pin for pydot fix
     "numpy>=1.20",  # For numpy.typing
     "pydantic~=2.0",
     "tenacity",
     "tiktoken",
     "tqdm",
     "typing-extensions; python_version <= '3.11'",  # for typing.override
-    "usearch>=2.13",  # For py.typed
 ]
 description = "Agent framework for constructing language model agents and training on constructive tasks."
 dynamic = ["version"]
@@ -66,6 +63,7 @@ dev = [
     "pytest-xdist",
     "pytest>=8",  # Pin to keep recent
     "refurb>=2",  # Pin to keep recent
+    "usearch>=2.13",  # For py.typed
     "vcrpy>=6",  # Pin for https://github.com/kevin1024/vcrpy/issues/884
 ]
 monitor = [
@@ -76,6 +74,7 @@ nn = [
     "dask-cuda>=24.8.2",
     "dask-jobqueue",
     "dask[distributed]",
+    "ldp[scg]",
     "tokenizers>0.20",
     "torch>=2.5,<2.6",  # Temporarily pin <2.6 until someone fixes our CI with newer versions
     "transformers>=4.46,<4.51",  # Temporarily pin <4.51 until someone fixes our CI with newer versions, and also https://github.com/huggingface/transformers/issues/37339
@@ -84,6 +83,10 @@ nn = [
 rich = [
     "rich",
     "tqdm>=4.56",  # When tqdm.rich was created
+]
+scg = [
+    "dm-tree",
+    "networkx[default]~=3.4",  # Pin for pydot fix
 ]
 server = [
     "fastapi>=0.109",  # For Python 3.12 support

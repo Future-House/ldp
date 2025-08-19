@@ -4,13 +4,15 @@ import inspect
 import itertools
 import random
 from collections.abc import Awaitable, Callable, Hashable, Iterable, Sequence
-from typing import Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 
-import networkx as nx
+if TYPE_CHECKING:
+    import networkx as nx
 import numpy as np
 from aviary.core import Message, Tool, ToolRequestMessage, join
 
 from ldp.graph import OpResult
+from ldp.graph.op_utils import _lazy_import_networkx
 from ldp.graph.ops import GradOutType
 
 
@@ -36,6 +38,7 @@ def to_network(  # noqa: C901
     Returns:
         Populated a NetworkX multi-edge directed graph.
     """
+    nx = _lazy_import_networkx()
 
     def gvizify(x: Any) -> str:
         """Stringify and then escape colons for Graphviz labels."""

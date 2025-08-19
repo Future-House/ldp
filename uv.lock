@@ -1227,18 +1227,15 @@ name = "ldp"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
-    { name = "dm-tree" },
     { name = "fhaviary" },
     { name = "fhlmi" },
     { name = "httpx" },
-    { name = "networkx", extra = ["default"] },
     { name = "numpy" },
     { name = "pydantic" },
     { name = "tenacity" },
     { name = "tiktoken" },
     { name = "tqdm" },
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
-    { name = "usearch" },
 ]
 
 [package.optional-dependencies]
@@ -1247,12 +1244,14 @@ dev = [
     { name = "dask", extra = ["distributed"] },
     { name = "dask-cuda" },
     { name = "dask-jobqueue" },
+    { name = "dm-tree" },
     { name = "fastapi" },
     { name = "fhaviary", extra = ["xml"] },
     { name = "fhlmi", extra = ["dev"] },
     { name = "ipython" },
     { name = "litellm" },
     { name = "mypy" },
+    { name = "networkx", extra = ["default"] },
     { name = "pre-commit" },
     { name = "pydantic" },
     { name = "pydot" },
@@ -1276,6 +1275,7 @@ dev = [
     { name = "transformers" },
     { name = "types-aiofiles" },
     { name = "types-tqdm" },
+    { name = "usearch" },
     { name = "vcrpy" },
     { name = "wandb" },
 ]
@@ -1287,6 +1287,8 @@ nn = [
     { name = "dask", extra = ["distributed"] },
     { name = "dask-cuda" },
     { name = "dask-jobqueue" },
+    { name = "dm-tree" },
+    { name = "networkx", extra = ["default"] },
     { name = "tokenizers" },
     { name = "torch" },
     { name = "transformers" },
@@ -1295,6 +1297,10 @@ nn = [
 rich = [
     { name = "rich" },
     { name = "tqdm" },
+]
+scg = [
+    { name = "dm-tree" },
+    { name = "networkx", extra = ["default"] },
 ]
 server = [
     { name = "fastapi" },
@@ -1320,7 +1326,7 @@ requires-dist = [
     { name = "dask", extras = ["distributed"], marker = "extra == 'nn'" },
     { name = "dask-cuda", marker = "extra == 'nn'", specifier = ">=24.8.2" },
     { name = "dask-jobqueue", marker = "extra == 'nn'" },
-    { name = "dm-tree" },
+    { name = "dm-tree", marker = "extra == 'scg'" },
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.109" },
     { name = "fhaviary", specifier = ">=0.20.0" },
     { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'", specifier = ">=0.19" },
@@ -1329,9 +1335,10 @@ requires-dist = [
     { name = "httpx" },
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "ldp", extras = ["monitor", "nn", "rich", "server", "typing", "visualization"], marker = "extra == 'dev'", editable = "." },
+    { name = "ldp", extras = ["scg"], marker = "extra == 'nn'", editable = "." },
     { name = "litellm", marker = "extra == 'dev'" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
-    { name = "networkx", extras = ["default"], specifier = "~=3.4" },
+    { name = "networkx", extras = ["default"], marker = "extra == 'scg'", specifier = "~=3.4" },
     { name = "numpy", specifier = ">=1.20" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.4" },
     { name = "pydantic", specifier = "~=2.0" },
@@ -1361,12 +1368,12 @@ requires-dist = [
     { name = "types-aiofiles", marker = "extra == 'typing'" },
     { name = "types-tqdm", marker = "extra == 'typing'" },
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
-    { name = "usearch", specifier = ">=2.13" },
+    { name = "usearch", marker = "extra == 'dev'", specifier = ">=2.13" },
     { name = "vcrpy", marker = "extra == 'dev'", specifier = ">=6" },
     { name = "wandb", marker = "extra == 'monitor'" },
     { name = "wandb", marker = "extra == 'nn'" },
 ]
-provides-extras = ["dev", "monitor", "nn", "rich", "server", "typing", "visualization"]
+provides-extras = ["dev", "monitor", "nn", "rich", "scg", "server", "typing", "visualization"]
 
 [package.metadata.requires-dev]
 dev = [
