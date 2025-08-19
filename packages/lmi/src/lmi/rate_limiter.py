@@ -55,8 +55,8 @@ ANTHROPIC_DEFAULT_RPM = RateLimitItemPerMinute(50, 1)  # Anthropic Claude defaul
 GOOGLE_DEFAULT_RPM = RateLimitItemPerMinute(15, 1)  # Google Gemini default RPM
 
 RATE_CONFIG: dict[tuple[str, str | MatchAllInputs], RateLimitItem] = {
-    ("get", CROSSREF_BASE_URL): RateLimitItemPerSecond(30, 1),
-    ("get", SEMANTIC_SCHOLAR_BASE_URL): RateLimitItemPerSecond(15, 1),
+    ("get", CROSSREF_HOST): RateLimitItemPerSecond(30, 1),
+    ("get", SEMANTIC_SCHOLAR_HOST): RateLimitItemPerSecond(15, 1),
     ("client|request", "gpt-3.5-turbo"): RateLimitItemPerMinute(3500, 1),
     ("client|request", "gpt-4o"): OPENAI_DEFAULT_RPM,
     ("client|request", "gpt-4"): OPENAI_DEFAULT_RPM,
@@ -202,7 +202,6 @@ class GlobalRateLimiter:
         This parsing logic finds the correct rate limits for a namespace/primary_key.
         It's a bit complex due to the <MATCH ALL> and <MATCH MACHINE ID> placeholders.
         These allow users to match
-
         """
         # the namespace may have a machine_id in it -- we replace if that's the case
         namespace_w_stub_machine_id = namespace
@@ -357,29 +356,29 @@ class GlobalRateLimiter:
         """Returns when the limit is satisfied for the namespace_and_key.
 
         Args:
-            namespace_and_key (:obj:`tuple[str, str]`): is
-                composed of a tuple with namespace (e.g. "get") and a primary-key
-                (e.g. "arxiv.org"). namespaces can be nested with multiple '|',
-                primary-keys in the "get" namespace will be stripped to the domain.
-            rate_limit (:obj:`RateLimitItem | str | None`, optional): Optional
-                RateLimitItem to be used for the namespace and primary-key.
+            namespace_and_key: A two-tuple of namespace (e.g. "get") and a primary key
+                (e.g. "arxiv.org"). Namespaces can be nested with multiple '|'.
+                Primary keys in the "get" namespace will be stripped to the domain.
+            rate_limit: Optional rate limit to be used for the namespace and primary-key.
                 If not provided, RATE_CONFIG will be used to find the rate limit.
                 Can also use a string of the form:
                 [count] [per|/] [n (optional)] [second|minute|hour|day|month|year]
-            machine_id (:obj:`int`, optional): will be used to modify the namespace
-                of GET requests if the primary key is not in the
-                NO_MACHINE_ID_EXTENSIONS list. In that case, the outbound IP will be
-                used to modify the namespace.
-            acquire_timeout (:obj:`float`, optional): is the maximum time (in seconds) to
-                wait for the rate limit to be satisfied.
-            weight (:obj:`int`, optional): is the cost of the request,
-                default is 1. (could be tokens for example)
-            raise_impossible_limits (:obj:`bool`, optional): flag will raise a
-                ValueError for weights that exceed the rate.
+            machine_id: Identifier used only for namespaces that start with "get".
+                - If the host (taken from the primary key, see above namespace_and_key)
+                  matches an entry in `NO_MACHINE_ID_EXTENSIONS`, this value is discarded
+                  in favor of the machine's outbound IP (e.g. "get|198.51.100.4").
+                - If the default value of 0 is used, all requests will be grouped (e.g. "get|0")
+                  into the default shared rate limit bucket.
+                - Otherwise, non-zero values will isolate buckets per machine.
+            acquire_timeout: Maximum wait time (seconds) for the rate limit to be satisfied.
+            weight: Per-unit cost of the request (e.g. cost/token).
+            raise_impossible_limits: Opt-in flag to raise a ValueError for weights
+                that exceed the rate limit.
 
         Raises:
             TimeoutError: if the acquire_timeout is exceeded.
-            ValueError: if the weight exceeds the rate limit and raise_impossible_limits is True.
+            ValueError: if the weight exceeds the rate limit.
+                Only raised if raise_impossible_limits was specified.
         """
         namespace, primary_key = await self.parse_namespace_and_primary_key(
             namespace_and_key, machine_id=machine_id

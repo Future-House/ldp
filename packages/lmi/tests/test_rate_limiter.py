@@ -2,7 +2,9 @@ import asyncio
 import time
 from itertools import product
 from typing import Any
+from unittest.mock import patch
 
+import httpx
 import pytest
 from aviary.core import Message
 from limits import RateLimitItemPerSecond
@@ -10,6 +12,7 @@ from limits import RateLimitItemPerSecond
 from lmi.constants import CHARACTERS_PER_TOKEN_ASSUMPTION
 from lmi.embeddings import LiteLLMEmbeddingModel
 from lmi.llms import CommonLLMNames, LiteLLMModel
+from lmi.rate_limiter import CROSSREF_BASE_URL, FALLBACK_RATE_LIMIT, GlobalRateLimiter
 from lmi.types import LLMResult
 
 LLM_CONFIG_W_RATE_LIMITS = [
@@ -387,3 +390,25 @@ async def test_rpm_concurrent_requests(llm_config_w_request_limits: dict[str, An
     await _run_rpm_request_test(
         is_concurrent=True, llm_config_w_request_limits=llm_config_w_request_limits
     )
+
+
+class TestGlobalRateLimiter:
+    @pytest.mark.asyncio
+    async def test_parsing_namespace(self) -> None:
+        limiter = GlobalRateLimiter()
+        async with httpx.AsyncClient() as client:  # Throwaway client to build a request
+            req = client.build_request(method="GET", url=f"{CROSSREF_BASE_URL}/stub")
+        with patch.object(
+            limiter.rate_limiter,
+            "hit",
+            side_effect=limiter.rate_limiter.hit,
+            autospec=True,
+        ) as mock_hit:
+            await limiter.try_acquire((req.method, str(req.url.host)))
+            await limiter.try_acquire((req.method.lower(), str(req.url.host)))
+        assert mock_hit.await_count == 2
+        # Our rate limiter's namespace is case-sensitive,
+        # so the first call won't match a rate limit (GET vs get),
+        # but the second call will
+        assert mock_hit.await_args_list[0][0][0] == FALLBACK_RATE_LIMIT
+        assert mock_hit.await_args_list[1][0][0] > FALLBACK_RATE_LIMIT
