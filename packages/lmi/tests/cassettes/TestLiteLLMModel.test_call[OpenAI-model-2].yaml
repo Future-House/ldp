@@ -1,9 +1,8 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"user","content":"Hello!"}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"talk","description":"Say
-        something to me.","parameters":{"type":"object","properties":{"message":{"description":"what
-        you want to say","title":"Message","type":"string"}},"required":["message"]}}}]}'
+        '{"messages":[{"role":"system","content":"Respond with single words."},{"role":"user","content":"What
+        is the meaning of the universe?"}],"model":"gpt-5-mini-2025-08-07","n":1,"temperature":1.0}'
       headers:
         accept:
           - application/json
@@ -12,7 +11,7 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "372"
+          - "192"
         content-type:
           - application/json
         host:
@@ -32,7 +31,7 @@ interactions:
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
-          - "120.0"
+          - "60.0"
         x-stainless-retry-count:
           - "0"
         x-stainless-runtime:
@@ -44,18 +43,16 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA4xTUW/aMBB+z6/w7hkmkkKgeZtQNzTxUqmaKo0qMs4lcevYnu0gOsR/n+JAEiiV
-          lofIuu++u+++sw8BIcAzSAiwkjpWaTFexutf5fd5NA+fVjJ8iub0cffwY7e+f3Q/Sxg1DLV9RebO
-          rK9MVVqg40q2MDNIHTZVw/lsFkeLeHHvgUplKBpaod14qsbRJJqOw3AcTU7EUnGGFhLyOyCEkIP/
-          NxJlhntIyGR0jlRoLS0Qki6JEDBKNBGg1nLrqHQw6kGmpEPZqJa1EAPAKSVSRoXoG7ffYXDufaJC
-          pHa5/lavnpd7xvPnv/uJ0vxPOZ3wQb+29Lv2gvJass6fAd7Fk6tmhICklec6Kt6ueIQANUVdoXSN
-          Zjhszn5sINnACoVQXzZwhAvWMbh1fhk4YTCvLRUfLaJSKkcbpd6jlxNy7NYhVKGN2torKuRcclum
-          Bqn1Uw7NDs5CvASoL/YJ2qhKu9SpN/RNZ3dtUehvWw+GsxPolKOij8eL0Y1qaYaOcr/u7oYxykrM
-          emZ/02idcTUAgsHkH8Xcqt1Oz2XxP+V7gDHUDrNUG8w4uxy4TzPYvMXP0jqPvWCwaHacYeo4mmYb
-          Gea0Fu0zAftuHVZpzmWBRhvu3wrkOo23Gc3ju+kMITgG/wAAAP//AwCNQ5tPNAQAAA==
+          H4sIAAAAAAAAA3SSMU/DMBCF9/wKy3OD0kBS2hUhBmCiYiiqImNfEoNjW/YFKFX/O7JbmlTQJYO/
+          u5d3726bEEKloAtCecuQd1alN+XDrX5a9p/18uZ5meHd6rv5WrHPdn4Pl3QSOszrG3D87brgprMK
+          UBq9x9wBQwiq01lRlPmsvJpG0BkBKrQ1FtMi7aSWaZ7lRZpdp9ns0NwaycHTBXlJCCFkG7/Bphbw
+          RRckm/y+dOA9a4AujkWEUGdUeKHMe+mRaaSTAXKjEXR0/rjxCG4zpg7q3rNgUPdKjQDT2iALA0Zf
+          6wPZHZ3UUkvfVg6YNzqoezSWRrpLCFnHyfoTs9Q601ms0LxDlM0v93J0iHMEy9mBokGmRmB+yONU
+          rxKATCo/yoZyxlsQQ+sQJOuFNCOQjKb7a+c/7f3kUjcjZ0V59gcD4BwsgqisAyH56dBDmYNwcOfK
+          jjlHy9SD+5AcKpTgwi4E1KxX+zugPqy9q2qpG3DWyXgMYd3JLvkBAAD//wMAi9uPlg4DAAA=
       headers:
         CF-RAY:
-          - 971bc42a09e3cfd9-SJC
+          - 971baa96fe3515d6-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -63,14 +60,14 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 19 Aug 2025 18:38:09 GMT
+          - Tue, 19 Aug 2025 18:20:45 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=bJPLUH1AFTEbVSwqU_.wLLf.IlazGF1AThCliquCGqc-1755628689-1.0.1.1-YlhGxBn37cs6eAF.b.flsCFi2SFOL4bDx7fAT5WZtkKVSCpJA4xeU5lYGnGyvr7gyz0c78cXCXZoQwXQGWkgu8rhFz2puFw_kiX03w9bD0E;
-            path=/; expires=Tue, 19-Aug-25 19:08:09 GMT; domain=.api.openai.com; HttpOnly;
+          - __cf_bm=BiL4CWRmYY.Nx0J0OAmyVqp29WlTKiZg5wKmqYOiofw-1755627645-1.0.1.1-iAODe8oKBFIV9q86KPOXc2eAqh3DeP7mDiROW86AQMDjQBnwqTYC664ntAZ86sCvTQF6bYmMartD1lSmcfZd.UfRfQCknUfCsAoPSzbyga4;
+            path=/; expires=Tue, 19-Aug-25 18:50:45 GMT; domain=.api.openai.com; HttpOnly;
             Secure; SameSite=None
-          - _cfuvid=Ub3mn0ctD4BEnJmx4Apm.KQyJ8DLOcrakmiK9XRH1KA-1755628689586-0.0.1.1-604800000;
+          - _cfuvid=k5.SapkR00HiwUpEGYMI2GTCYrSXRu3RYWl4clzpAiY-1755627645995-0.0.1.1-604800000;
             path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Strict-Transport-Security:
           - max-age=31536000; includeSubDomains; preload
@@ -87,35 +84,34 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "512"
+          - "4468"
         openai-project:
           - proj_RpeV6PrPclPHBb5GlExPXSBj
         openai-version:
           - "2020-10-01"
         x-envoy-upstream-service-time:
-          - "543"
+          - "4490"
         x-ratelimit-limit-requests:
-          - "10000"
+          - "30000"
         x-ratelimit-limit-tokens:
-          - "30000000"
+          - "180000000"
         x-ratelimit-remaining-requests:
-          - "9999"
+          - "29999"
         x-ratelimit-remaining-tokens:
-          - "29999996"
+          - "179999982"
         x-ratelimit-reset-requests:
-          - 6ms
+          - 2ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_32c3b6174d1b4856a4a34975765ab78a
+          - req_4f277ef6e17b48a69407e3d6fa1daf1a
       status:
         code: 200
         message: OK
   - request:
       body:
-        '{"messages":[{"role":"user","content":"Hello!"}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"talk","description":"Say
-        something to me.","parameters":{"type":"object","properties":{"message":{"description":"what
-        you want to say","title":"Message","type":"string"}},"required":["message"]}}}]}'
+        '{"messages":[{"role":"system","content":"Respond with single words."},{"role":"user","content":"What
+        is the meaning of the universe?"}],"model":"gpt-5-mini-2025-08-07","n":1,"temperature":1.0}'
       headers:
         accept:
           - application/json
@@ -124,7 +120,7 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "372"
+          - "192"
         content-type:
           - application/json
         host:
@@ -144,7 +140,7 @@ interactions:
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
-          - "120.0"
+          - "60.0"
         x-stainless-retry-count:
           - "0"
         x-stainless-runtime:
@@ -156,18 +152,16 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFNNj9MwEL3nV5g5t6hfCW1uCMFyWBBCYoWgq8h1Jql3J7ZlOy1L1f++
-          irNN0m6RyCGy5vnNvHkzPkSMgcwhZSC23IvK0PhDcnu3vfmyuN0lO6L9aj79W36/uXv4tf8qCUYN
-          Q28eUPgT663QlSH0UqsWFha5xybr9F0cJ7NlslwFoNI5UkMrjR8v9Hg2mS3G0+l4NnkhbrUU6CBl
-          vyPGGDuEfyNR5fgHUjYZnSIVOsdLhLS7xBhYTU0EuHPSea48jHpQaOVRNapVTTQAvNaUCU7UF26/
-          w+Dc+8SJsvnHjZG7+f5TvPBGrVB/+7GPf74f1mtTP5kgqKiV6PwZ4F08vSjGGCheBa7n9HjBYwy4
-          LesKlW80w2F98mMN6Ro+I5F+s4YjnLGO0bXz/cAJi0XtOL22iCulPW+UBo/uX5BjNw7SpbF64y6o
-          UEgl3TazyF3ocmh2dBISJEB9Nk8wVlfGZ14/Yigaz9uk0G9bD07jF9Brz6mPJ8vRlWxZjp7LMO5u
-          wwQXW8x7Zr9pvM6lHgDRoPPXYq7lbruXqvyf9D0gBBqPeWYs5lKcN9xfs9i8xX9d6zwOgsGh3UmB
-          mZdom2nkWPCa2rUF9+Q8VlkhVYnWWBneChQmSzY5L5L5IkaIjtEzAAAA//8DAAWlXME0BAAA
+          H4sIAAAAAAAAA3SSy27CMBBF9/kKy2tShRSSwhaVqlIr9bGoqgpFrj2AqWNb9qQqRfx7ZfNIUGGT
+          hc/cmzuPTUIIlYKOCeVLhry2Kp0UD7f+Sd29vmR88lxO6/fRCn/vp35g3xTtBYX5XAHHg+qKm9oq
+          QGn0DnMHDCG49svhsMjLYlBEUBsBKsgWFtNhWkst0zzLh2l2k2blXrw0koOnY/KREELIJn5DTC3g
+          h45J1ju81OA9WwAdH4sIoc6o8EKZ99Ij00h7LeRGI+iY/HHtEdy6Sx3MG89CQN0o1QFMa4MsNBhz
+          zfZke0wyl1r6ZeWAeaODu0djaaTbhJBZ7Kw5CUutM7XFCs0XRNv8emdH23F2YHagaJCpDsiL3hm/
+          SgAyqXxnNpQzvgTRSttBskZI0wFJp7v/cc557zqXetG69Ef5xR+0gHOwCKKyDoTkp023ZQ7CwV0q
+          O845RqYe3LfkUKEEF3YhYM4atbsD6sPa62ou9QKcdTIeQ1h3sk3+AAAA//8DADSZWw4OAwAA
       headers:
         CF-RAY:
-          - 971bc42a0d03ce9c-SJC
+          - 971baab42f5b15d6-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -175,15 +169,9 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 19 Aug 2025 18:38:09 GMT
+          - Tue, 19 Aug 2025 18:20:50 GMT
         Server:
           - cloudflare
-        Set-Cookie:
-          - __cf_bm=eYXygxwVq07qr7JLUQexY9onCk.B_ycl1ZZ5hwH9z9Q-1755628689-1.0.1.1-4fmhmM2DaLbn7_Qk5U9p1ShpiY7xHNrKDd6bxa40QA6VQOJTYR1.kt6vYEUj2wOUuKPwHvSThn.YLamaPkKRiDsxeDICNZ9IiZoPUZfhato;
-            path=/; expires=Tue, 19-Aug-25 19:08:09 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=v5zD9i06CQ9rShkHgtA0yKCoeACJNrdpZACzHCtyK1g-1755628689620-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
         Strict-Transport-Security:
           - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
@@ -199,27 +187,27 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "570"
+          - "3826"
         openai-project:
           - proj_RpeV6PrPclPHBb5GlExPXSBj
         openai-version:
           - "2020-10-01"
         x-envoy-upstream-service-time:
-          - "583"
+          - "3868"
         x-ratelimit-limit-requests:
-          - "10000"
+          - "30000"
         x-ratelimit-limit-tokens:
-          - "30000000"
+          - "180000000"
         x-ratelimit-remaining-requests:
-          - "9999"
+          - "29999"
         x-ratelimit-remaining-tokens:
-          - "29999996"
+          - "179999982"
         x-ratelimit-reset-requests:
-          - 6ms
+          - 2ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_14a0a415c7b64d00b7557e3d405f7d22
+          - req_8e94e7d585154cb3af801d9a3e27a247
       status:
         code: 200
         message: OK

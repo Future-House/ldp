@@ -2,12 +2,12 @@ interactions:
   - request:
       body:
         '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
-        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        a 5 word story via print_story"}]}],"temperature":0.1,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
         a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
         the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
         the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
-        a random integer in 1 to 10."}],"tool_choice":{"type":"any"}}'
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"},"max_tokens":4096}'
       headers:
         accept:
           - application/json
@@ -30,15 +30,15 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//ZFDbagIxEP2VZZ6zZV23i+axhdKHViqItJQSYjJoMJtZc5HaZf+9RBEq
-          fZxzmzMzgNHAoQtbUU3mK71Yp0NrFs3r41uaN/t6tlwDg3jqMaswBLlFYODJZkCGYEKULgKDjjRa
-          4KCsTBrLaXlf7qTZp7Ku6mZS1TUwUOQiugj8c7hmRiIrUsih5yZ5TqKarHbv4ePnuae2nc3xYUnt
-          cfPkgYGTXfb13rgoQiR/ylbXpwh8gAvA4YWOWGwsUYe6MK5IDr97VBF1EYxFp/AOxvGLZUMvPMpA
-          7rbNmQh4SFkM3CVrGaTz/Xy4LBSR9ugC8HYyZaCk2qFQHmU05MStorryHqX+z1GKf5FmyiCgPxqF
-          Ihr0wCG/WUuvYRx/AQAA//8DACDlACu0AQAA
+          H4sIAAAAAAAAA3SRSWvDMBCF/4qZs1y8JA3oVueW9FAoDTSlCMUaYjWypGjJgvF/L0oI3ehx3vfe
+          LMwAUgCF3m9ZUZbHpV/h/NjMntbd7lWs11PrGyAQzhaTC73nWwQCzqgkcO+lD1wHINAbgQootIpH
+          gXmdT/OOy13Mq6KalEVVAYHW6IA6AH0bbj2DMYpFn5peNkl1ZEVZz0o7X5wfFg1+nBbN5nn5sl8l
+          l+Z9ylkndWA+GHdOUW1jADrAVaDwaA6YbZQxPYpM6ixqPFlsA4rMS4W6xTsYx3eSApY55N7on9tc
+          gMd9TGagOipFIF7up8N1IAtmh9oDvS9rAi1vO2StQx6k0eyno7hxh1z8x27ZNABthz06rti0/+v/
+          omX3m44ETAzfpUlNwKM7yBZZkOiAQvqa4E7AOH4CAAD//wMAkeXVxgMCAAA=
       headers:
         CF-RAY:
-          - 950d39feff987ad0-SJC
+          - 971bc3ecab21f9cc-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -46,7 +46,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Mon, 16 Jun 2025 20:58:40 GMT
+          - Tue, 19 Aug 2025 18:38:00 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -60,33 +60,35 @@ interactions:
         anthropic-ratelimit-input-tokens-remaining:
           - "5000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2025-06-16T20:58:40Z"
+          - "2025-08-19T18:38:00Z"
         anthropic-ratelimit-output-tokens-limit:
           - "1000000"
         anthropic-ratelimit-output-tokens-remaining:
           - "1000000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2025-06-16T20:58:40Z"
+          - "2025-08-19T18:38:00Z"
         anthropic-ratelimit-requests-limit:
           - "5000"
         anthropic-ratelimit-requests-remaining:
-          - "4998"
+          - "4999"
         anthropic-ratelimit-requests-reset:
-          - "2025-06-16T20:58:39Z"
+          - "2025-08-19T18:37:59Z"
         anthropic-ratelimit-tokens-limit:
           - "6000000"
         anthropic-ratelimit-tokens-remaining:
           - "6000000"
         anthropic-ratelimit-tokens-reset:
-          - "2025-06-16T20:58:40Z"
+          - "2025-08-19T18:38:00Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_011CQCa4piSKm9vVHGkaQuYR
+          - req_011CSHZ7E9EqmZ4Z9AJPsKCc
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
         via:
           - 1.1 google
+        x-envoy-upstream-service-time:
+          - "1176"
       status:
         code: 200
         message: OK

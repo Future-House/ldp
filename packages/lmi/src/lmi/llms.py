@@ -75,6 +75,8 @@ class CommonLLMNames(StrEnum):
     """When you don't want to think about models, just use one from here."""
 
     # Use these to avoid thinking about exact versions
+    GPT_5 = "gpt-5-2025-08-07"
+    GPT_5_MINI = "gpt-5-mini-2025-08-07"
     GPT_4O = "gpt-4o-2024-11-20"
     GPT_35_TURBO = "gpt-3.5-turbo-0125"
     CLAUDE_35_SONNET = "claude-3-5-sonnet-20241022"
@@ -566,6 +568,7 @@ class LiteLLMModel(LLMModel):
         if "name" not in data:
             data["name"] = data["config"].get("name", cls.model_fields["name"].default)
         if "model_list" not in data["config"]:
+            max_tokens = data["config"].get("max_tokens")
             data["config"] = {
                 "model_list": [
                     {
@@ -582,6 +585,7 @@ class LiteLLMModel(LLMModel):
                                 if "gemini" not in data["name"]
                                 else {"safety_settings": DEFAULT_VERTEX_SAFETY_SETTINGS}
                             )
+                            | ({} if max_tokens else {"max_tokens": max_tokens})
                         ),
                     }
                 ],

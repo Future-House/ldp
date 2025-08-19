@@ -2,7 +2,7 @@ interactions:
   - request:
       body:
         '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
-        a 5 word story via print_story"}]}],"temperature":0.1,"stop_sequences":["Observation:"],"max_tokens":4096,"system":[{"type":"text","text":"Answer
+        a 5 word story via print_story"}]}],"temperature":0.1,"stop_sequences":["Observation:"],"system":[{"type":"text","text":"Answer
         the following questions as best you can. You have access to the following tools:\n\nNAME:
         print_story\n\nSYNOPSIS:\n    print_story(string story)\n\nDESCRIPTION:\n    Print
         a story.\n\nPARAMETERS:\n    story (string): Story to print.\n\nNAME: cast_float\n\nSYNOPSIS:\n    cast_float(string
@@ -17,7 +17,7 @@ interactions:
         of the action\n... (this Thought/Action/Action Input/Observation can repeat
         N times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction:
         get_weather\nAction Input: \"New York\", 7\nObservation: The 7 day forecast
-        for New York is [...]"}]}'
+        for New York is [...]"}],"max_tokens":4096}'
       headers:
         accept:
           - application/json
@@ -40,15 +40,16 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA2RQwUrDQBD9lWUuKmwkTQ3K3lQQCgURRA9Glu3upFma7KS7E20t/XdJpIfiaXjz
-          3sybNwfwDhR0aa3z2UPxsqxv97F829bl7ul91e1+ykeQwPseRxWmZNYIEiK1Y8Ok5BObwCChI4ct
-          KLCtGRxm86zMGuM3Q1bkxc0sLwqQYCkwBgb1cTjtZNyN01NR8NrQsG5YicVF2wob0TAKIywF6xOK
-          Mvum6ERiinvBJProA1fh3rKnoP6gnthTUyxCP7ASlxUsfY1i1RJ16ISpGaPgBkU0PlxXcFUFOH5K
-          SEy9jmgSBVB/KOF2wGDH3OdYwfMqYfwykz1IGKb3qAP40VUzbTAkUPOylGCNbVBPkTwFfa7IT3xE
-          4/5zNPDZvjsJo6+3qNljnA41wZno4Hj8BQAA//8DAGEY0/TTAQAA
+          H4sIAAAAAAAAA3SQUUvDMBSF/0q4Lyqk0nUrSN5EFAaCDxMcOCnX9G6Na3NrcquO0f8u7Rgyxadw
+          7nduTk724Eow0MRNkU6eFu1iGrI3e8ehuVlul7tbpBlokF1Lg4tixA2BhsD1MMAYXRT0AhoaLqkG
+          A7bGrqRkmuRJhW7bJVmazSZploEGy17IC5jn/fFOoa9hezwMPFbcbSoxan5W18oGQiGFyrK3LpLK
+          k08OpYrCYaeEVRucl5W/tuLYm4MsRnocqrlvOzHqfAX3bk3qtWZuqFS4FgpKKlIBnb9cwcXKQ/+i
+          IQq3RSCM7MEcVKT3jrwdep9qAw+vkcIHjvGgoRu/x+zBDamF8JZ8BDPNcw0WbUXFWMmxL04d6ZEH
+          wvI/dtwdAqitqKGAdZE3f/0/dFL9pr0G7uTkeVcahhrOUiGOwtgbfYmhhL7/BgAA//8DAEiegCIi
+          AgAA
       headers:
         CF-RAY:
-          - 950d3a0888f3cf16-SJC
+          - 971bc3f67c6af997-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -56,7 +57,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Mon, 16 Jun 2025 20:58:42 GMT
+          - Tue, 19 Aug 2025 18:38:02 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -70,33 +71,35 @@ interactions:
         anthropic-ratelimit-input-tokens-remaining:
           - "5000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2025-06-16T20:58:42Z"
+          - "2025-08-19T18:38:01Z"
         anthropic-ratelimit-output-tokens-limit:
           - "1000000"
         anthropic-ratelimit-output-tokens-remaining:
           - "1000000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2025-06-16T20:58:42Z"
+          - "2025-08-19T18:38:01Z"
         anthropic-ratelimit-requests-limit:
           - "5000"
         anthropic-ratelimit-requests-remaining:
           - "4999"
         anthropic-ratelimit-requests-reset:
-          - "2025-06-16T20:58:41Z"
+          - "2025-08-19T18:38:00Z"
         anthropic-ratelimit-tokens-limit:
           - "6000000"
         anthropic-ratelimit-tokens-remaining:
           - "6000000"
         anthropic-ratelimit-tokens-reset:
-          - "2025-06-16T20:58:42Z"
+          - "2025-08-19T18:38:01Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_011CQCa4wQX5p49VCzHKSTG1
+          - req_011CSHZ7Ls4AokZqXZrbthnz
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
         via:
           - 1.1 google
+        x-envoy-upstream-service-time:
+          - "1182"
       status:
         code: 200
         message: OK
