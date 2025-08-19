@@ -568,6 +568,7 @@ class LiteLLMModel(LLMModel):
         if "name" not in data:
             data["name"] = data["config"].get("name", cls.model_fields["name"].default)
         if "model_list" not in data["config"]:
+            max_tokens = data["config"].get("max_tokens")
             data["config"] = {
                 "model_list": [
                     {
@@ -584,6 +585,7 @@ class LiteLLMModel(LLMModel):
                                 if "gemini" not in data["name"]
                                 else {"safety_settings": DEFAULT_VERTEX_SAFETY_SETTINGS}
                             )
+                            | ({} if max_tokens else {"max_tokens": max_tokens})
                         ),
                     }
                 ],

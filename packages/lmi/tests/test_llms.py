@@ -77,7 +77,10 @@ class TestLiteLLMModel:
                         }
                     ],
                 },
-                id="OpenAI-model",
+                id="OpenAI-model-1",
+            ),
+            pytest.param(
+                {"name": CommonLLMNames.GPT_5_MINI.value}, id="OpenAI-model-2"
             ),
             pytest.param(
                 {
