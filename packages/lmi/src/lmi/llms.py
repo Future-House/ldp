@@ -5,6 +5,7 @@ __all__ = [
     "PassThroughRouter",
     "rate_limited",
     "request_limited",
+    "extract_top_logprobs",
     "sum_logprobs",
     "validate_json_completion",
 ]
@@ -71,6 +72,8 @@ if not IS_PYTHON_BELOW_312:
 JSONSchema: TypeAlias = Mapping[str, Any]
 
 
+
+
 class CommonLLMNames(StrEnum):
     """When you don't want to think about models, just use one from here."""
 
@@ -116,6 +119,22 @@ def sum_logprobs(choice: litellm.utils.Choices | list[float]) -> float | None:
     elif isinstance(choice, list):
         return sum(choice)
     return None
+
+
+def extract_top_logprobs(completion: litellm.utils.Choices) -> list[list[tuple[str, float]]]:
+    """Extract the top logprobs from an litellm completion."""
+    if not hasattr(completion, "logprobs") or not completion.logprobs:
+        return []    
+    
+    content = getattr(completion.logprobs, "content", None)
+    if not content or not isinstance(content, list):
+        return []
+    
+    out = []
+    for pos in content:
+        tops = getattr(pos, "top_logprobs", []) or []
+        out.append([(t.token, float(t.logprob)) for t in tops])
+    return out
 
 
 def validate_json_completion(
@@ -586,6 +605,16 @@ class LiteLLMModel(LLMModel):
                                 else {"safety_settings": DEFAULT_VERTEX_SAFETY_SETTINGS}
                             )
                             | ({} if max_tokens else {"max_tokens": max_tokens})
+                            | (
+                                {}
+                                if "logprobs" not in data["config"]
+                                else {"logprobs": data["config"]["logprobs"]}
+                            )
+                            | (
+                                {}
+                                if "top_logprobs" not in data["config"]
+                                else {"top_logprobs": data["config"]["top_logprobs"]}
+                            )
                         ),
                     }
                 ],
@@ -710,6 +739,7 @@ class LiteLLMModel(LLMModel):
                     prompt=messages,
                     messages=output_messages,
                     logprob=sum_logprobs(completion),
+                    top_logprobs=extract_top_logprobs(completion),
                     prompt_count=completions.usage.prompt_tokens,  # type: ignore[attr-defined]
                     completion_count=completions.usage.completion_tokens,  # type: ignore[attr-defined]
                     system_fingerprint=completions.system_fingerprint,
@@ -769,6 +799,7 @@ class LiteLLMModel(LLMModel):
             prompt=messages,
             messages=[Message(role=role, content=text)],
             logprob=sum_logprobs(logprobs),
+            top_logprobs=extract_top_logprobs(completion),
             reasoning_content="".join(reasoning_content),
         )
 

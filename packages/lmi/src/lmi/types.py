@@ -79,6 +79,9 @@ class LLMResult(BaseModel):
     logprob: float | None = Field(
         default=None, description="Sum of logprobs in the completion."
     )
+    top_logprobs: list[list[tuple[str, float]]] = Field(
+        default_factory=list, description="Top logprobs for each position in the completion."
+    )
     reasoning_content: str | None = Field(
         default=None, description="Reasoning content from LLMs such as DeepSeek-R1."
     )

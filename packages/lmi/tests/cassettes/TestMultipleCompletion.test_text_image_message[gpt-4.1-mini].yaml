@@ -1,0 +1,854 @@
+interactions:
+- request:
+    body: '{"messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAMElEQVR4nO3NMQEAIAzAsIF/zyCh175EQHve7LrL/TFIBskgGSSDZJAMkkEySAZTPqPEAT9XMVNHAAAAAElFTkSuQmCC"}},{"type":"text","text":"What
+      color is this square? Respond only with the color name."}]}],"model":"gpt-4.1-mini","n":2,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '381'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.100.2
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.100.2
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA8RTTW/UMBC951dYc95Um3SjTfeK4AKoEhyoQFXk2pPE4HiMPamoqv535GS7ST+Q
+        OCBx8WHevOf3POP7TAgwGg4CVC9ZDd7mb/YXb2kvy4/vx7pU7/qrq6+Xt/WHz5f0826ETWLQzXdU
+        /Mg6UzR4i2zIzbAKKBmTarGvqrq4qHflBAyk0SZa5znfnRX5YJzJy21Z5dtdXuyO9J6MwggH8S0T
+        Qoj76UxGncZfcBDbzWNlwBhlh3A4NQkBgWyqgIzRRJaOYbOAihyjm7x/6Q3jGgvYjlEmg260dgVI
+        54hlCji5uj4iDycfljof6CY+o0JrnIl9E1BGcunOyOQhW5FfhCv+TbhPqP9ftEyI62mU45MA4AMN
+        nhumHzhdV57PcrBs0Ao8Ykws7apcbV4RazSyNDauHguUVD3qhbmsjRy1oRWwHshLL69pz7GN6/5G
+        fgGUQs+oGx9QG/U079IWMH2vP7WdnngyDBHDrVHYsMGQxqCxlaOd1wLiXWQcmta4DoMPZt6N1jfn
+        bVXroijbPWQP2W8AAAD//wMAtz/aXQcEAAA=
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972dff000d921bbe-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 21 Aug 2025 23:44:03 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=7RT9vHdEwejPbRBusO_1u_7_vbuNprOqpyFuDSQMZ7Q-1755819843-1.0.1.1-_._q0RHzHbnhGIJuKzOoNCazMwiCzRkNKS2SLeZ3C4yMEEkA7T8eWjYmIkwRVTfjcWMgwPzGRe3HV9KOmJTiuwnxAcX.6sUY1IyRv3OlTBM;
+        path=/; expires=Fri, 22-Aug-25 00:14:03 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=I3m4ju1AiUiaa7aFuYofuo7cRdHmFDT5DbG2oRAwu.A-1755819843261-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '511'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '555'
+      x-ratelimit-limit-input-images:
+      - '50000'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-input-images:
+      - '49999'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999217'
+      x-ratelimit-reset-input-images:
+      - 1ms
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_382863aa849f4ad49d143167c168f45c
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAMElEQVR4nO3NMQEAIAzAsIF/zyCh175EQHve7LrL/TFIBskgGSSDZJAMkkEySAZTPqPEAT9XMVNHAAAAAElFTkSuQmCC"}},{"type":"text","text":"What
+      color is this square? Respond only with the color name."}]}],"model":"gpt-4.1-mini","n":2,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '381'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.100.2
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.100.2
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972dff000d921bbe-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 21 Aug 2025 23:44:03 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=7RT9vHdEwejPbRBusO_1u_7_vbuNprOqpyFuDSQMZ7Q-1755819843-1.0.1.1-_._q0RHzHbnhGIJuKzOoNCazMwiCzRkNKS2SLeZ3C4yMEEkA7T8eWjYmIkwRVTfjcWMgwPzGRe3HV9KOmJTiuwnxAcX.6sUY1IyRv3OlTBM;
+        path=/; expires=Fri, 22-Aug-25 00:14:03 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=I3m4ju1AiUiaa7aFuYofuo7cRdHmFDT5DbG2oRAwu.A-1755819843261-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '511'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '555'
+      x-ratelimit-limit-input-images:
+      - '50000'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-input-images:
+      - '49999'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999217'
+      x-ratelimit-reset-input-images:
+      - 1ms
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_382863aa849f4ad49d143167c168f45c
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAMElEQVR4nO3NMQEAIAzAsIF/zyCh175EQHve7LrL/TFIBskgGSSDZJAMkkEySAZTPqPEAT9XMVNHAAAAAElFTkSuQmCC"}},{"type":"text","text":"What
+      color is this square? Respond only with the color name."}]}],"model":"gpt-4.1-mini","n":2,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '381'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.100.2
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.100.2
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA8RTTU/cMBC951dYc96gzW7CZvdGoR+IQ1upN4QiY08St45t2RMERfz3ysmyCV8S
+        B6RefJg37/k9z/g+YQyUhB0D0XISndPp6Wb7uV+7spA/Tr79DT+/nG+K/ld7c3F28ukYFpFhr3+j
+        oEfWkbCd00jKmhEWHjlhVM02RVFm2zIvB6CzEnWkNY7S/ChLO2VUulquinSZp1m+p7dWCQywY5cJ
+        Y4zdD2c0aiTewo4tF4+VDkPgDcLu0MQYeKtjBXgIKhA3BIsJFNYQmsH7V49o5pjHug88GjS91jOA
+        G2OJx4CDq6s98nDwoW3jvL0Oz6hQK6NCW3nkwZp4ZyDrIJmRX4TLPibcd89Ng/8vXcLY1TDN/kkG
+        cN52jiqyf3C4brUe5WBaohm4x8gS17NysXhFrJJIXOkwey8QXLQoJ+a0ObyXys6A+UxeenlNe4yt
+        TPMe+QkQAh2hrJxHqcTTvFObx/jD3mo7PPFgGAL6GyWwIoU+jkFizXs9bgaEu0DYVbUyDXrn1bge
+        tavWG5EXyI+3JSQPyT8AAAD//wMAnic/1AoEAAA=
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972dff243f871bbe-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 21 Aug 2025 23:44:09 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '1166'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1205'
+      x-ratelimit-limit-input-images:
+      - '50000'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-input-images:
+      - '49999'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999217'
+      x-ratelimit-reset-input-images:
+      - 1ms
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_0219d7da43524c528ece6b8ba4b470ab
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAMElEQVR4nO3NMQEAIAzAsIF/zyCh175EQHve7LrL/TFIBskgGSSDZJAMkkEySAZTPqPEAT9XMVNHAAAAAElFTkSuQmCC"}},{"type":"text","text":"What
+      color is this square? Respond only with the color name."}]}],"model":"gpt-4.1-mini","n":2,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '381'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.100.2
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.100.2
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972dff243f871bbe-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 21 Aug 2025 23:44:09 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '1166'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1205'
+      x-ratelimit-limit-input-images:
+      - '50000'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-input-images:
+      - '49999'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999217'
+      x-ratelimit-reset-input-images:
+      - 1ms
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_0219d7da43524c528ece6b8ba4b470ab
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAMElEQVR4nO3NMQEAIAzAsIF/zyCh175EQHve7LrL/TFIBskgGSSDZJAMkkEySAZTPqPEAT9XMVNHAAAAAElFTkSuQmCC"}},{"type":"text","text":"What
+      color is this square? Respond only with the color name."}]}],"model":"gpt-4.1-mini","n":2,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '381'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.100.2
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.100.2
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA8RTy27bMBC86yuIPVuBpVjx49a6KHpogKJAT0UgMORK2poiGXLVB4L8e0E5tpRH
+        gR4K9MIDZ2c4s7u8z4QA0rAToDrJqvcm36+378tVfLel6w9789mvzY+yf3P4crd/e30Hi8Rwt99Q
+        8Yl1oVzvDTI5e4RVQMmYVIt1VW2K7aa6GoHeaTSJ1nrOVxdF3pOlvFyWVb5c5cXqkd45UhhhJ75m
+        QghxP57JqNX4E3ZiuTjd9BijbBF25yIhIDiTbkDGSJGlZVhMoHKW0Y7eP1LbsVAuSDOvCNgMUSab
+        djBmBkhrHcsUc/R284g8nN0Y1/rgbuMzKjRkKXZ1QBmdTS9Hdh6yGflFxOLfRPxE9vD/smVC3IwT
+        HZ4kAB9c77lmd8DxufLyKAfTIk3gCWPH0sw4V4tXxGqNLMnEWbdASdWhnpjT9shBk5sB84m89PKa
+        9jE22fZv5CdAKfSMuvYBNamneaeygOmX/ans3OLRMEQM30lhzYQhjUFjIwdz3AuIvyJjXzdkWww+
+        0HE5Gl9fNtVGF0XZrCF7yH4DAAD//wMATGx1PA4EAAA=
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972dff50ff2d1bbe-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 21 Aug 2025 23:44:16 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '344'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '461'
+      x-ratelimit-limit-input-images:
+      - '50000'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-input-images:
+      - '49999'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999215'
+      x-ratelimit-reset-input-images:
+      - 1ms
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_cf097cc982eb491e882d3dc27eea442d
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAMElEQVR4nO3NMQEAIAzAsIF/zyCh175EQHve7LrL/TFIBskgGSSDZJAMkkEySAZTPqPEAT9XMVNHAAAAAElFTkSuQmCC"}},{"type":"text","text":"What
+      color is this square? Respond only with the color name."}]}],"model":"gpt-4.1-mini","n":2,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '381'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.100.2
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.100.2
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972dff50ff2d1bbe-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 21 Aug 2025 23:44:16 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '344'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '461'
+      x-ratelimit-limit-input-images:
+      - '50000'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-input-images:
+      - '49999'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999215'
+      x-ratelimit-reset-input-images:
+      - 1ms
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_cf097cc982eb491e882d3dc27eea442d
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAMElEQVR4nO3NMQEAIAzAsIF/zyCh175EQHve7LrL/TFIBskgGSSDZJAMkkEySAZTPqPEAT9XMVNHAAAAAElFTkSuQmCC"}},{"type":"text","text":"What
+      color is this square? Respond only with the color name."}]}],"model":"gpt-4.1-mini","n":2,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '381'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.100.2
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.100.2
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA8RTTWvjMBC9+1eIOcclduPEzbVQlp7ahR52l2IUaWxrI0tCGi8tpf99kZ3GTj+g
+        h0IvOsyb9/SeZvSUMAZKwpaBaDmJzun0cnNxVa7Lfbvc/X64xWZtOivwx69wfXO3h0Vk2N1fFPTC
+        OhO2cxpJWTPCwiMnjKrZpijK7KJc5wPQWYk60hpH6eosSztlVJov8yJdrtJsdaC3VgkMsGV/EsYY
+        exrOaNRIfIAtWy5eKh2GwBuE7bGJMfBWxwrwEFQgbggWEyisITSD95veO41z0GPdBx4dml7rGcCN
+        scRjwsHW/QF5PhrRtnHe7sIrKtTKqNBWHnmwJl4ayDpIZuQ36bKvSfcT5fdFSxi7H2bZnwQA523n
+        qCK7x+G6/HyUg2mFZuABI0tcz8rF4h2xSiJxpcPssUBw0aKcmNPe8F4qOwPmA3nr5T3tMbYyzWfk
+        J0AIdISych6lEqd5pzaP8X991HZ84sEwBPT/lMCKFPo4Bok17/W4FhAeA2FX1co06J1X427Urjqv
+        i1JmWV5vIHlO/gMAAP//AwA/7jwMCAQAAA==
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972dff7c6d4d1bbe-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 21 Aug 2025 23:44:23 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '585'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '716'
+      x-ratelimit-limit-input-images:
+      - '50000'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-input-images:
+      - '49999'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999217'
+      x-ratelimit-reset-input-images:
+      - 1ms
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_f7307a9910cd490c9e1ed87d83b782cf
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAMElEQVR4nO3NMQEAIAzAsIF/zyCh175EQHve7LrL/TFIBskgGSSDZJAMkkEySAZTPqPEAT9XMVNHAAAAAElFTkSuQmCC"}},{"type":"text","text":"What
+      color is this square? Respond only with the color name."}]}],"model":"gpt-4.1-mini","n":2,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '381'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.100.2
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.100.2
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972dff7c6d4d1bbe-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 21 Aug 2025 23:44:23 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '585'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '716'
+      x-ratelimit-limit-input-images:
+      - '50000'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-input-images:
+      - '49999'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999217'
+      x-ratelimit-reset-input-images:
+      - 1ms
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_f7307a9910cd490c9e1ed87d83b782cf
+    status:
+      code: 200
+      message: OK
+version: 1
