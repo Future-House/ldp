@@ -127,7 +127,7 @@ def extract_top_logprobs(
         return None
     
     logprobs = getattr(completion, "logprobs", None)
-    if logprobs.content in [None, []]:
+    if logprobs.content is None:
         return None
 
     content = getattr(completion.logprobs, "content", None)
