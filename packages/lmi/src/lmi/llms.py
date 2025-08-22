@@ -123,7 +123,11 @@ def extract_top_logprobs(
     completion: litellm.utils.Choices,
 ) -> list[list[tuple[str, float]]] | None:
     """Extract the top logprobs from an litellm completion."""
-    if not hasattr(completion, "logprobs") or completion.logprobs.content is None:
+    if not hasattr(completion, "logprobs"):
+        return None
+    
+    logprobs = getattr(completion, "logprobs", None)
+    if logprobs.content is None:
         return None
 
     content = getattr(completion.logprobs, "content", None)
