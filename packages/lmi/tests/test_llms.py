@@ -61,9 +61,9 @@ class TestLiteLLMModel:
         # Test logprobs and top_logprobs configuration passing through (OpenAI-specific)
         name = CommonLLMNames.OPENAI_TEST.value
         config_with_logprobs = {
-            "logprobs": True, 
-            "top_logprobs": 20, 
-            "temperature": 0.7
+            "logprobs": True,
+            "top_logprobs": 20,
+            "temperature": 0.7,
         }
         model5 = LiteLLMModel(name=name, config=config_with_logprobs)
         assert model5.config["model_list"][0]["litellm_params"]["logprobs"] is True
@@ -136,7 +136,7 @@ class TestLiteLLMModel:
             assert isinstance(result.logprob, float)
             assert result.logprob <= 0
             # Test top_logprobs only for OpenAI models (top_logprobs is OpenAI-specific)
-            if (llm.config["model_list"][0]["litellm_params"].get("top_logprobs")):
+            if llm.config["model_list"][0]["litellm_params"].get("top_logprobs"):
                 assert isinstance(result.top_logprobs, list)
                 assert len(result.top_logprobs) > 0
                 # Each position should have a list of (token, logprob) tuples
