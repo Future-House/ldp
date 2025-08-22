@@ -589,7 +589,9 @@ class LiteLLMModel(LLMModel):
         if "model_list" not in data["config"]:
             is_openai_model = "openai" in litellm.get_llm_provider(data["name"])
             max_tokens = data["config"].get("max_tokens")
-            if ("logprobs" in data["config"] or "top_logprobs" in data["config"]) and not is_openai_model:
+            if (
+                "logprobs" in data["config"] or "top_logprobs" in data["config"]
+            ) and not is_openai_model:
                 logger.warning(
                     "Ignoring token logprobs for non-OpenAI model %s, as they are not supported.",
                     data["name"],
