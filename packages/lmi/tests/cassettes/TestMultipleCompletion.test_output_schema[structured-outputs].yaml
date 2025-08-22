@@ -1,113 +1,814 @@
 interactions:
-  - request:
-      body:
-        '{"messages":[{"role":"user","content":"My name is Claude and I am 1 year
-        old. What is my name and age?"}],"model":"gpt-4o-2024-11-20","n":2,"response_format":{"type":"json_schema","json_schema":{"strict":true,"schema":{"properties":{"name":{"title":"Name","type":"string"},"age":{"description":"Age
-        in years.","title":"Age","type":"integer"}},"required":["name","age"],"title":"DummyOutputSchema","type":"object","additionalProperties":false},"name":"DummyOutputSchema"}},"temperature":1.0}'
-      headers:
-        accept:
-          - application/json
-        accept-encoding:
-          - gzip, deflate
-        connection:
-          - keep-alive
-        content-length:
-          - "490"
-        content-type:
-          - application/json
-        host:
-          - api.openai.com
-        user-agent:
-          - AsyncOpenAI/Python 1.97.0
-        x-stainless-arch:
-          - arm64
-        x-stainless-async:
-          - async:asyncio
-        x-stainless-lang:
-          - python
-        x-stainless-os:
-          - MacOS
-        x-stainless-package-version:
-          - 1.97.0
-        x-stainless-raw-response:
-          - "true"
-        x-stainless-read-timeout:
-          - "60.0"
-        x-stainless-retry-count:
-          - "0"
-        x-stainless-runtime:
-          - CPython
-        x-stainless-runtime-version:
-          - 3.12.8
-      method: POST
-      uri: https://api.openai.com/v1/chat/completions
-    response:
-      body:
-        string: !!binary |
-          H4sIAAAAAAAAAwAAAP//3FNNj9MwFLznV1jvnKAm23a7uVWVlgMgBAeEIKvItV9SU8fPsh0+VPW/
-          IyfdJssuEmcuObx5M5mxx6eEMVASSgbiwIPorM5267dv6OO7rTm+Lj7dvd+K3fb+y+1d/+H+x/Ez
-          pJFB+28owiPrlaDOagyKzAgLhzxgVM1vV6t1sVnkywHoSKKOtNaGbElZsSiWWZ5nxeJCPJAS6KFk
-          XxPGGDsN32jRSPwJJVukj5MOvectQnldYgwc6TgB7r3ygZsA6QQKMgHN4PpUgeEdVlBWsNO8l1hB
-          WgFv4yg/z1kOm97zaNr0Ws8AbgwFHkMPfh8uyPnqUFNrHe39H1RolFH+UDvknkx04wNZSGbkZ7Hz
-          /zx2wtjDUID+STiwjjob6kBHHH63WY1yMDVuAvPNBQwUuJ7NFzfpC3K1xMCV9rOjBMHFAeVEnerG
-          e6loBsyv67mbl7TH4Mq0/yI/AUKgDShr61Aq8TTxtOYwPsi/rV0PeTAMHt13JbAOCl28CIkN7/VY
-          GvC/fMCubpRp0VmnxuY0tl7vJW/WN8sVQnJOfgMAAP//AwCM24ftOQQAAA==
-      headers:
-        CF-RAY:
-          - 971bb3afd952cf27-SJC
-        Connection:
-          - keep-alive
-        Content-Encoding:
-          - gzip
-        Content-Type:
-          - application/json
-        Date:
-          - Tue, 19 Aug 2025 18:26:54 GMT
-        Server:
-          - cloudflare
-        Set-Cookie:
-          - __cf_bm=za8iqYYq.OaxtnhxeSCOg.m8k4bkeHeWOe_DSBN7Mns-1755628014-1.0.1.1-Pk6jiPDc2M.xBvYIkb093o7kVql_QzgWYN.G_E.5x4jeckpP81bZM6F2gluyWWMsmqtvX7zaZvKZuzBIx.zbl6ZSHs_XUdU7uITPes47NzQ;
-            path=/; expires=Tue, 19-Aug-25 18:56:54 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=CcP2Iv8GgeKHPSSSO3oTZpcUKYxfYrvFGKb4pdJ8qAg-1755628014942-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
-        Strict-Transport-Security:
-          - max-age=31536000; includeSubDomains; preload
-        Transfer-Encoding:
-          - chunked
-        X-Content-Type-Options:
-          - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
-        alt-svc:
-          - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
-        openai-organization:
-          - future-house-xr4tdh
-        openai-processing-ms:
-          - "721"
-        openai-project:
-          - proj_RpeV6PrPclPHBb5GlExPXSBj
-        openai-version:
-          - "2020-10-01"
-        x-envoy-upstream-service-time:
-          - "829"
-        x-ratelimit-limit-requests:
-          - "10000"
-        x-ratelimit-limit-tokens:
-          - "30000000"
-        x-ratelimit-remaining-requests:
-          - "9999"
-        x-ratelimit-remaining-tokens:
-          - "29999981"
-        x-ratelimit-reset-requests:
-          - 6ms
-        x-ratelimit-reset-tokens:
-          - 0s
-        x-request-id:
-          - req_f3cd7c025017467cbfe52e1c21f66450
-      status:
-        code: 200
-        message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"My name is Claude and I am 1 year
+      old. What is my name and age?"}],"model":"gpt-4o-2024-11-20","n":2,"response_format":{"type":"json_schema","json_schema":{"strict":true,"schema":{"properties":{"name":{"title":"Name","type":"string"},"age":{"description":"Age
+      in years.","title":"Age","type":"integer"}},"required":["name","age"],"title":"DummyOutputSchema","type":"object","additionalProperties":false},"name":"DummyOutputSchema"}},"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '490'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//3FM9b9swFNz1K4g3S4Xl+EPRVmQIMmQI0DZDFQjP5JPMhiIZkgqaGv7v
+        BSXHUpoU6NxFw7t3pzvyeEgYAymgZMD3GHhnVXa1vaRnvb2//eU+313eGPH4VDTya19cf/tyC2lk
+        mN0P4uGV9YmbzioK0ugR5o4wUFTNt+t1scxXm3wAOiNIRVprQ7Yy2XKxXGV5ni0XJ+LeSE4eSvY9
+        YYyxw/CNFrWgn1CyRfo66ch7bAnK8xJj4IyKE0DvpQ+oA6QTyI0OpAfXhwo0dlRBWcGVwl5QBWkF
+        2MZRfpyzHDW9x2ha90rNANTaBIyhB78PJ+R4dqhMa53Z+T+o0Egt/b52hN7o6MYHYyGZkd/Fzv/z
+        2AljD0MB+jfhwDrT2VAH80jD74r1KAdT4yYwL05gMAHVbL64SD+QqwUFlMrPjhI48j2JiTrVDXsh
+        zQyYX9d7Nx9pj8Glbv9FfgI4JxtI1NaRkPxt4mnNUXyQf1s7H/JgGDy5Z8mpDpJcvAhBDfZqLA34
+        Fx+oqxupW3LWybE5ja03O4HN5mK1JkiOyW8AAAD//wMACkQ9mTkEAAA=
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e26864bf5026b-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:11:02 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=P1T.05BwX5kgYU.5jqMRZScljCF5bxQhhJ2hHHMt_L4-1755821462-1.0.1.1-hzFTnPT834cOliVX2DFnAAgd8.QLttKJcNDfR6cWDGJ2l5k93LzbW1Tx3pieT.VAXl7VxNfnPZ4HQ4TIxXGxLPCwwu1wGfYvO5yyNLE97W0;
+        path=/; expires=Fri, 22-Aug-25 00:41:02 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=MeAkK_1C3bX53zWpdWgFWP04GxjuJzwXtKKeQXLq0kI-1755821462065-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '330'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '349'
+      x-ratelimit-limit-requests:
+      - '10000'
+      x-ratelimit-limit-tokens:
+      - '30000000'
+      x-ratelimit-remaining-requests:
+      - '9999'
+      x-ratelimit-remaining-tokens:
+      - '29999981'
+      x-ratelimit-reset-requests:
+      - 6ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_eb8e2da053714a6fad28446374b07ee0
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"My name is Claude and I am 1 year
+      old. What is my name and age?"}],"model":"gpt-4o-2024-11-20","n":2,"response_format":{"type":"json_schema","json_schema":{"strict":true,"schema":{"properties":{"name":{"title":"Name","type":"string"},"age":{"description":"Age
+      in years.","title":"Age","type":"integer"}},"required":["name","age"],"title":"DummyOutputSchema","type":"object","additionalProperties":false},"name":"DummyOutputSchema"}},"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '490'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e26864bf5026b-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:11:02 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=P1T.05BwX5kgYU.5jqMRZScljCF5bxQhhJ2hHHMt_L4-1755821462-1.0.1.1-hzFTnPT834cOliVX2DFnAAgd8.QLttKJcNDfR6cWDGJ2l5k93LzbW1Tx3pieT.VAXl7VxNfnPZ4HQ4TIxXGxLPCwwu1wGfYvO5yyNLE97W0;
+        path=/; expires=Fri, 22-Aug-25 00:41:02 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=MeAkK_1C3bX53zWpdWgFWP04GxjuJzwXtKKeQXLq0kI-1755821462065-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '330'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '349'
+      x-ratelimit-limit-requests:
+      - '10000'
+      x-ratelimit-limit-tokens:
+      - '30000000'
+      x-ratelimit-remaining-requests:
+      - '9999'
+      x-ratelimit-remaining-tokens:
+      - '29999981'
+      x-ratelimit-reset-requests:
+      - 6ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_eb8e2da053714a6fad28446374b07ee0
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"My name is Claude and I am 1 year
+      old. What is my name and age?"}],"model":"gpt-4o-2024-11-20","n":2,"response_format":{"type":"json_schema","json_schema":{"strict":true,"schema":{"properties":{"name":{"title":"Name","type":"string"},"age":{"description":"Age
+      in years.","title":"Age","type":"integer"}},"required":["name","age"],"title":"DummyOutputSchema","type":"object","additionalProperties":false},"name":"DummyOutputSchema"}},"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '490'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//3FO7btwwEOz1FcTWUiDdwzqrtasUDpIiKSJDoMmVxITiEiTlPA737wGl
+        80l+BEidRsXOzmiGHB4TxkBJqBiIngcxWJ3dlNdt8eX93bX7qNSHR7otP93urvqR7j7//gFpZNDD
+        NxThifVO0GA1BkVmhoVDHjCqFuV+f9gUu6tyAgaSqCOtsyHbUbbJN7usKLJNfib2pAR6qNjXhDHG
+        jtM3WjQSf0LF8vRpMqD3vEOoLkuMgSMdJ8C9Vz5wEyBdQEEmoJlcH2swfMAaqhpuNB8l1pDWwLs4
+        Kk5rlsN29DyaNqPWK4AbQ4HH0JPf+zNyujjU1FlHD/4FFVpllO8bh9yTiW58IAvJivwqdvGfx04Y
+        u58KMD4LB9bRYEMT6DtOvzvsZzlYGreAxeEMBgpcr+b5Nn1DrpEYuNJ+dZQguOhRLtSlbnyUilbA
+        +rpeu3lLew6uTPcv8gsgBNqAsrEOpRLPEy9rDuOD/Nva5ZAnw+DRPSqBTVDo4kVIbPmo59KA/+UD
+        Dk2rTIfOOjU3p7VNm+M2L/fbUkJySv4AAAD//wMAALGTizkEAAA=
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e26acb940026b-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:11:08 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '340'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '369'
+      x-ratelimit-limit-requests:
+      - '10000'
+      x-ratelimit-limit-tokens:
+      - '30000000'
+      x-ratelimit-remaining-requests:
+      - '9999'
+      x-ratelimit-remaining-tokens:
+      - '29999981'
+      x-ratelimit-reset-requests:
+      - 6ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_78d69cf3ca9a42199d33a689e16ed428
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"My name is Claude and I am 1 year
+      old. What is my name and age?"}],"model":"gpt-4o-2024-11-20","n":2,"response_format":{"type":"json_schema","json_schema":{"strict":true,"schema":{"properties":{"name":{"title":"Name","type":"string"},"age":{"description":"Age
+      in years.","title":"Age","type":"integer"}},"required":["name","age"],"title":"DummyOutputSchema","type":"object","additionalProperties":false},"name":"DummyOutputSchema"}},"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '490'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e26acb940026b-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:11:08 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '340'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '369'
+      x-ratelimit-limit-requests:
+      - '10000'
+      x-ratelimit-limit-tokens:
+      - '30000000'
+      x-ratelimit-remaining-requests:
+      - '9999'
+      x-ratelimit-remaining-tokens:
+      - '29999981'
+      x-ratelimit-reset-requests:
+      - 6ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_78d69cf3ca9a42199d33a689e16ed428
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"My name is Claude and I am 1 year
+      old. What is my name and age?"}],"model":"gpt-4o-2024-11-20","n":2,"response_format":{"type":"json_schema","json_schema":{"strict":true,"schema":{"properties":{"name":{"title":"Name","type":"string"},"age":{"description":"Age
+      in years.","title":"Age","type":"integer"}},"required":["name","age"],"title":"DummyOutputSchema","type":"object","additionalProperties":false},"name":"DummyOutputSchema"}},"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '490'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA9xTu27jMBDs9RXE1tLB8ttqHSBlmsMVFwUCTa5kJhTJI1dBAsP/fqDkWMrjgKvT
+        qNjZGc2Qw1PCGCgJBQNx5CRap7P9Zldv7vbY/ul+r29J619ysdv+NHe725sZpJFhD48o6I31Q9jW
+        aSRlzQALj5wwquab1Wo7z5ebRQ+0VqKOtMZRtrTZfDZfZnmezS+64miVwAAFu08YY+zUf6NFI/EF
+        CjZL3yYthsAbhOK6xBh4q+MEeAgqEDcE6QgKawhN7/pUguEtllCUsNe8k1hCWgJv4ig/T1ke6y7w
+        aNp0Wk8AbowlHkP3fh8uyPnqUNvGeXsIH6hQK6PCsfLIgzXRTSDrIJmQP8XOv3nshLGHvgDdu3Dg
+        vG0dVWSfsP/ddjXIwdi4Ecy3F5AscT2ZzxbpF3KVROJKh8lRguDiiHKkjnXjnVR2Akyv67Obr7SH
+        4Mo0/yM/AkKgI5SV8yiVeJ94XPMYH+S/1q6H3BuGgP5ZCaxIoY8XIbHmnR5KA+E1ELZVrUyD3nk1
+        NKd21fogeb1eLFcIyTn5CwAA//8DAIqQamg5BAAA
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e26d368d6026b-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:11:14 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '413'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '433'
+      x-ratelimit-limit-requests:
+      - '10000'
+      x-ratelimit-limit-tokens:
+      - '30000000'
+      x-ratelimit-remaining-requests:
+      - '9999'
+      x-ratelimit-remaining-tokens:
+      - '29999981'
+      x-ratelimit-reset-requests:
+      - 6ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_57ca05cc168b4c7cb56ebc902936ee4b
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"My name is Claude and I am 1 year
+      old. What is my name and age?"}],"model":"gpt-4o-2024-11-20","n":2,"response_format":{"type":"json_schema","json_schema":{"strict":true,"schema":{"properties":{"name":{"title":"Name","type":"string"},"age":{"description":"Age
+      in years.","title":"Age","type":"integer"}},"required":["name","age"],"title":"DummyOutputSchema","type":"object","additionalProperties":false},"name":"DummyOutputSchema"}},"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '490'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e26d368d6026b-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:11:14 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '413'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '433'
+      x-ratelimit-limit-requests:
+      - '10000'
+      x-ratelimit-limit-tokens:
+      - '30000000'
+      x-ratelimit-remaining-requests:
+      - '9999'
+      x-ratelimit-remaining-tokens:
+      - '29999981'
+      x-ratelimit-reset-requests:
+      - 6ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_57ca05cc168b4c7cb56ebc902936ee4b
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"My name is Claude and I am 1 year
+      old. What is my name and age?"}],"model":"gpt-4o-2024-11-20","n":2,"response_format":{"type":"json_schema","json_schema":{"strict":true,"schema":{"properties":{"name":{"title":"Name","type":"string"},"age":{"description":"Age
+      in years.","title":"Age","type":"integer"}},"required":["name","age"],"title":"DummyOutputSchema","type":"object","additionalProperties":false},"name":"DummyOutputSchema"}},"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '490'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//3FOxbtswFNz1FcSbpcKyrVjRmrYIkKXo0A5VINDkk8yGIhnyqWhh+N8L
+        So6lNCmQOYuGd+9Od+TxmDAGSkLFQBw4id7p7GZ33X5sb933T+6uVGJjise7h2+f3ZevZVdAGhl2
+        /xMFPbE+CNs7jaSsmWDhkRNG1XxXFOU63+6uR6C3EnWkdY6yrc3Wq/U2y/NsvToTD1YJDFCxHwlj
+        jB3Hb7RoJP6Giq3Sp0mPIfAOobosMQbe6jgBHoIKxA1BOoPCGkIzuj7WYHiPNVQ13Gg+SKwhrYF3
+        cZSfliyP7RB4NG0GrRcAN8YSj6FHv/dn5HRxqG3nvN2Hf6jQKqPCofHIgzXRTSDrIFmQX8TO33ns
+        hLH7sQDDs3DgvO0dNWQfcPxdWUxyMDduBvPyDJIlrhfz1SZ9Ra6RSFzpsDhKEFwcUM7UuW58kMou
+        gOV1vXTzmvYUXJnuLfIzIAQ6Qtk4j1KJ54nnNY/xQf5v7XLIo2EI6H8pgQ0p9PEiJLZ80FNpIPwJ
+        hH3TKtOhd15NzWldc7WXvL3abAuE5JT8BQAA//8DADesdeM5BAAA
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e26f81bb7026b-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:11:20 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '331'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '352'
+      x-ratelimit-limit-requests:
+      - '10000'
+      x-ratelimit-limit-tokens:
+      - '30000000'
+      x-ratelimit-remaining-requests:
+      - '9999'
+      x-ratelimit-remaining-tokens:
+      - '29999981'
+      x-ratelimit-reset-requests:
+      - 6ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_91e47f4bcbf843d4953c30c27788365c
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"My name is Claude and I am 1 year
+      old. What is my name and age?"}],"model":"gpt-4o-2024-11-20","n":2,"response_format":{"type":"json_schema","json_schema":{"strict":true,"schema":{"properties":{"name":{"title":"Name","type":"string"},"age":{"description":"Age
+      in years.","title":"Age","type":"integer"}},"required":["name","age"],"title":"DummyOutputSchema","type":"object","additionalProperties":false},"name":"DummyOutputSchema"}},"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '490'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e26f81bb7026b-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:11:20 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '331'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '352'
+      x-ratelimit-limit-requests:
+      - '10000'
+      x-ratelimit-limit-tokens:
+      - '30000000'
+      x-ratelimit-remaining-requests:
+      - '9999'
+      x-ratelimit-remaining-tokens:
+      - '29999981'
+      x-ratelimit-reset-requests:
+      - 6ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_91e47f4bcbf843d4953c30c27788365c
+    status:
+      code: 200
+      message: OK
 version: 1

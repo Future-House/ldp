@@ -1,111 +1,810 @@
 interactions:
-  - request:
-      body: '{"messages":[{"role":"user","content":"What does 42 mean?"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":56,"n":1,"temperature":1.0}'
-      headers:
-        accept:
-          - application/json
-        accept-encoding:
-          - gzip, deflate
-        connection:
-          - keep-alive
-        content-length:
-          - "134"
-        content-type:
-          - application/json
-        host:
-          - api.openai.com
-        user-agent:
-          - AsyncOpenAI/Python 1.86.0
-        x-stainless-arch:
-          - arm64
-        x-stainless-async:
-          - async:asyncio
-        x-stainless-lang:
-          - python
-        x-stainless-os:
-          - MacOS
-        x-stainless-package-version:
-          - 1.86.0
-        x-stainless-raw-response:
-          - "true"
-        x-stainless-read-timeout:
-          - "60.0"
-        x-stainless-retry-count:
-          - "0"
-        x-stainless-runtime:
-          - CPython
-        x-stainless-runtime-version:
-          - 3.12.8
-      method: POST
-      uri: https://api.openai.com/v1/chat/completions
-    response:
-      body:
-        string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFNNb9swDL3nVxC69GIXSZqPNbcW7doBBYYB3YBhLQxFomUmsmSIctqg
-          6H8vZKdJtnXALgbMRz498pEvAwBBWixAqEpGVTc2v1xdzs3T1Wo1u+dVeL4tzXJz/XXz88fnu2kU
-          WarwyxWq+F51qnzdWIzkXQ+rgDJiYh3Np8PRcD4ezTqg9hptKjNNzCc+r8lRPh6OJ/lwno8+7aor
-          TwpZLODXAADgpfsmnU7js1jAMHuP1MgsDYrFPglABG9TREhm4ihdr3kHKu8iuk76fYXg2nqJASZj
-          IIZS1r5lu4W1808OJMODiBXCheMnDBA9pL/vNlItI8K3Fjn1DL6EOyox62FHGwyMGUin4XqDYRsr
-          ciZ7ECCV8kGTM4nryrfGSoYLLWs+AVaETiGUpDpSxkCYFCSZtxRVVdEawwnDTUsa39XcSCuft6cP
-          Ar64LsDRh20GEkzwbZO0VdsGQ04uorVk0EVYIjnDsGzJagZ5PJ+AZcsyeeRaa48A6ZyPMknrnHnc
-          Ia97L6w3TfBL/qNUlOSIqyKgZO/S3C06EyvR4a8DgMfO9fY3I0UTfN3EIvo1dg+OznpCcdi1Azid
-          7cDoo7SH+Ow8+4Ct0BglWT7aGqGkqlAfKg8rJltN/ggYHHX9t5iPuPvOyZn/oT8ASmETURdNQN3v
-          xEdpAdMl/ittP+NOsGAMG1JYRMKQnNBYytbubpq3HLEuSnIGQxOoP5KyKc4mcjqReH6mxOB18AYA
-          AP//AwCIRjZxMgQAAA==
-      headers:
-        CF-RAY:
-          - 950d3295da6deb2c-SJC
-        Connection:
-          - keep-alive
-        Content-Encoding:
-          - gzip
-        Content-Type:
-          - application/json
-        Date:
-          - Mon, 16 Jun 2025 20:53:37 GMT
-        Server:
-          - cloudflare
-        Set-Cookie:
-          - __cf_bm=BgHCI9jhHynxufqvqM_7ea2DPt.x2jpS1Ojbe9ioPZI-1750107217-1.0.1.1-yBSSEfFw7C.67tAg6L8iP1ICvEVeqUGzVQYgnTQnD0eEpk1uTymSJ.PsfkP0Kxt0rmLyt0cD9Et1eviUWZ2RpCmLwNABseGQomHAOc0rKfY;
-            path=/; expires=Mon, 16-Jun-25 21:23:37 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=kYLwE37sjlQ.JOumP626CcfqTuT1Lb6Eeqdraj_kJIE-1750107217268-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
-        Transfer-Encoding:
-          - chunked
-        X-Content-Type-Options:
-          - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
-        alt-svc:
-          - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
-        openai-organization:
-          - future-house-xr4tdh
-        openai-processing-ms:
-          - "879"
-        openai-version:
-          - "2020-10-01"
-        strict-transport-security:
-          - max-age=31536000; includeSubDomains; preload
-        x-envoy-upstream-service-time:
-          - "881"
-        x-ratelimit-limit-requests:
-          - "30000"
-        x-ratelimit-limit-tokens:
-          - "150000000"
-        x-ratelimit-remaining-requests:
-          - "29999"
-        x-ratelimit-remaining-tokens:
-          - "149999992"
-        x-ratelimit-reset-requests:
-          - 2ms
-        x-ratelimit-reset-tokens:
-          - 0s
-        x-request-id:
-          - req_eb8454c873286318d75ca0111cacf4a2
-      status:
-        code: 200
-        message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"What does 42 mean?"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":56,"n":1,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '134'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//jFPBbtswDL3nKwhddrGLJI3TNreiG7oOuwzbUAxrYSgSbbORJUGU0wZF
+        gf7Gfm9fMshu62zrgF0MmI98euQj7ycAgrRYgVCNjKr1Jj87OqHDz9pvFpcXl5sP29bNkG6Ls2+b
+        m0UhslTh1jeo4nPVgXKtNxjJ2QFWAWXExDo7Korj+WxZFD3QOo0mldU+5guXt2Qpn0/ni3x6lM+O
+        n6obRwpZrOD7BADgvv8mnVbjnVjBNHuOtMgsaxSrlyQAEZxJESGZiaO0UWQjqJyNaHvpXxoE27Vr
+        DLCYAzFUsnUdmx1srLu1IBmuRGwQTi3fYoDoIP19NZFaGRE+dcipZ3AVfKQKswG2tMXAmIG0Gt5t
+        MexiQ7bOrgRIpVzQZOvE9dZ1tZEMp1q2/PPxB7AitAqhItXTMgbCpCEJfU9RNQ1tMLxhOO9I47Oe
+        c2nk3e7gSsCF7QMcXdhlIKEOrvNJXbPzGHKyEY2hGm2ENZKtGdYdGc0g9ycUsOpYJpdsZ8weIK11
+        USZpvTfXT8jDixvG1T64Nf9RKiqyxE0ZULKzafIGbR0b0eMPE4Dr3vfuNyuFD671sYxug/2Ds8OB
+        UIzbNoLF8gmMLkozxpcn2StspcYoyfDe3gglVYN6rByXTHaa3B4w2ev6bzGvcQ+dk63/h34ElEIf
+        UZc+oB524rW0gOkW/5X2MuNesGAMW1JYRsKQnNBYyc4MFyJ4xxHbsiJbY/CBhjOpfFksp7JaYlGc
+        iMnD5BcAAAD//wMAqPfegzQEAAA=
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e2b419e68041d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:16 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=fXFcKTU430BsjJMpvMl3IQ4HFE1re.sm9rAY.szFVoU-1755821656-1.0.1.1-GSkZPTDjwMHiFnDQeIBIILcyAlAHjGPJgI48wfPfuw1QP0vy2PGu2nkRfJJqvm7jbCGtbEq.DPuDNidkLgLeoqAZStBDKMxQ1.Oq_6hCba8;
+        path=/; expires=Fri, 22-Aug-25 00:44:16 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=bayXU0UJfHbFiK6XLATS4xNk_Ir8TI2scz21CegXMg8-1755821656417-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '940'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '982'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999992'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_48f2812e43904475bf591bdc6584213d
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"What does 42 mean?"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":56,"n":1,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '134'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e2b419e68041d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:16 GMT
+      Server:
+      - cloudflare
+      Set-Cookie:
+      - __cf_bm=fXFcKTU430BsjJMpvMl3IQ4HFE1re.sm9rAY.szFVoU-1755821656-1.0.1.1-GSkZPTDjwMHiFnDQeIBIILcyAlAHjGPJgI48wfPfuw1QP0vy2PGu2nkRfJJqvm7jbCGtbEq.DPuDNidkLgLeoqAZStBDKMxQ1.Oq_6hCba8;
+        path=/; expires=Fri, 22-Aug-25 00:44:16 GMT; domain=.api.openai.com; HttpOnly;
+        Secure; SameSite=None
+      - _cfuvid=bayXU0UJfHbFiK6XLATS4xNk_Ir8TI2scz21CegXMg8-1755821656417-0.0.1.1-604800000;
+        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '940'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '982'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999992'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_48f2812e43904475bf591bdc6584213d
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"What does 42 mean?"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":56,"n":1,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '134'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//jFPBThtBDL3nK6y5cNmgJJCE5IZKC5WqSkVUHBq0Gma8u4bZmdXYA0QV
+        /17NLpC0pVIvK62fn+fZz/45AlBk1RqUabSYtnPjD8sVrfxJtUyXp5fN1fWndH2x/Ho5nfijuzNV
+        ZEa4vUMjr6xDE9rOoVDwA2wiasFcdbqcz09m08Vi2gNtsOgyre5kfBzGLXkazyaz4/FkOZ6evLCb
+        QAZZreHHCADgZ//NOr3FJ7WGSfEaaZFZ16jWb0kAKgaXI0ozE4v2ooodaIIX9L30qwbBp/YWIxzP
+        gBgq3YbEbgv3Pjx60AwbJQ3CqedHjCAB8t93J9RqQfiWkHPPECr4QhUWA+zpASNjAdpb+PiAcSsN
+        +XqjgDychVQ7zXBqdcsHwIbQG4SKTF+JMRJyAZte3AWJaRq6x3jAcJ7I4quGc+300/Zwo+Cz7wMs
+        IW4L0MCpw5j9SIIRvG7RwhliB1dNSHUjYFEwtuSRQRotmb0/n4hVYp098sm5PUB7H0Rnlb0zNy/I
+        85sXLtRdDLf8B1VV5ImbMqLm4PPcHfpaGtXjzyOAm9719JuRqouh7aSUcI/9g9OjoaDa7doOnC9e
+        QAmi3S6+WBXvVCstiibHe1ujjDYN2h1zt2I6WQp7wGiv67/FvFd76Jx8/T/ld4Ax2Anasotoh/V4
+        Ly1ivsR/pb3NuBesGOMDGSyFMGYnLFY6ueE+FG9ZsC0r8jXGLtJwJFVXzhcTXS1wPl+p0fPoFwAA
+        AP//AwBGtL9mMgQAAA==
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e2b69b9ea041d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:22 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '940'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '964'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999992'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_3679486cebfd4d6f83b4bf1d31223119
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"What does 42 mean?"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":56,"n":1,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '134'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e2b69b9ea041d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:22 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '940'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '964'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999992'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_3679486cebfd4d6f83b4bf1d31223119
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"What does 42 mean?"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":56,"n":1,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '134'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//jFPBbtswDL3nKwhdenGKJIvTNrdi7dphO2xDt8tSGKpMW1xkyRCptsHQ
+        fx9sp3W2dcAuBsxHPj3ykT8nAIpKtQZlrBbTtG769uSMrr59unAfvNU1vlte53y52H65zOfpVGVd
+        Rbj7gUaeq45NaFqHQsEPsImoBTvW+Umeny7mq9VpDzShRNeV1a1Ml2HakKfpYrZYTmcn0/me3NhA
+        Blmt4fsEAOBn/+10+hIf1Rpm2XOkQWZdo1q/JAGoGFwXUZqZWLQXlY2gCV7Q99JvLIJPzR1GWC6A
+        GCrdhMRuB1sfHjxoBrEIG3Xu+QEjSOj/vzqhRgvC54Tc9Qyhgo9UYTbAnu4xMmagfQmX9xh3YsnX
+        GwXk4SKk2mmG81I3fARsCL1BqMj0TIyRkDPY9OKuSYy1tMV4xHCVqMRnDVfa6cfd8UbBe98HWELc
+        ZaCBU4ux8yMJRvC6wRIuEFu4sSHVVro+9/aAhMPJRKwS684dn5w7ALT3QXSnr/fkdo88vbjgQt3G
+        cMd/lKqKPLEtImoOvpu4Q1+LVT3+NAG47f1Ov1mo2hiaVgoJW+wfnL8ZCNW4ZSOYr/agBNFujK/O
+        slfYihJFk+ODfVFGG4vlWDkul04lhQNgctD132Je4x46J1//D/0IGIOtYFm0EcthMV5Li9jd4L/S
+        XmbcC1aM8Z4MFkIYOydKrHRyw2Uo3rFgU1Tka4xtpOE8qrbIVzNdrTDPz9TkafILAAD//wMAZnCG
+        hCwEAAA=
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e2b924e24041d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:29 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '1074'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1101'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999992'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_136548270aed46e9a766493241dd3bf7
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"What does 42 mean?"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":56,"n":1,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '134'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e2b924e24041d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:29 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '1074'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1101'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999992'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_136548270aed46e9a766493241dd3bf7
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"What does 42 mean?"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":56,"n":1,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '134'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//jFNNb9swDL3nVxC69OIUSRonTW7F1nUFhgHFPi5LYSgSbXORKUOU0wZF
+        //tgu6mzrQN2MWA+8umRj3waASiyag3KlDqaqnbjd8sVfd4v+frO2RVepPMv24cPs/L77HZX3qik
+        rfDbn2jiserc+Kp2GMlzD5uAOmLLOl2m6eVsulimHVB5i64tK+o4nvtxRUzj2WQ2H0+W4+nlS3Xp
+        yaCoNfwYAQA8dd9WJ1t8VGuYJMdIhSK6QLV+TQJQwbs2orQISdQcVTKAxnNE7qR/LRG4qbYYYD4D
+        Esh15RtxB9ixf2DQArFE2KgrlgcMEH33/81FqnREuGtQ2p7B5/CJckx6mGmPQTABzRau9xgOsSQu
+        Ngq0MT5Y4qKleu+bwmmBK6srOQMxhGwQcjIdp2AglAQ2ncyPFE1Z0g7DmcBNQxaPam6004+H842C
+        W+4CEn04JKChCL6pW23locYwJo7oHBXIEbZIXAhsG3JWTqcTMG9Etw5x49wJoJl91K2yzpf7F+T5
+        1Qnnizr4rfxRqnJikjILqMVzO3WHXMRSdfjzCOC+87z5zUZVB1/VMYt+h92D04ueUA2bNoDp4gWM
+        Pmo3xBer5A22zGLU5ORkZ5TRpkQ7VA4LphtL/gQYnXT9t5i3uPvOiYv/oR8AY7COaLM6oO1X4q20
+        gO0d/ivtdcadYCUY9mQwi4ShdcJirhvXX4eSg0Ssspy4wFAH6k8kr7N0MdH5AtN0pUbPo18AAAD/
+        /wMAaOVjczAEAAA=
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e2bbcaf1c041d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:36 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '1027'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1047'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999992'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_bc2af32f5c15409c9097ca07f58cab27
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"messages":[{"role":"user","content":"What does 42 mean?"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":56,"n":1,"temperature":1.0}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '134'
+      content-type:
+      - application/json
+      host:
+      - api.openai.com
+      user-agent:
+      - AsyncOpenAI/Python 1.99.9
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - async:asyncio
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 1.99.9
+      x-stainless-raw-response:
+      - 'true'
+      x-stainless-read-timeout:
+      - '60.0'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.12.9
+    method: POST
+    uri: https://api.openai.com/v1/chat/completions
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Expose-Headers:
+      - X-Request-ID
+      CF-RAY:
+      - 972e2bbcaf1c041d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:36 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains; preload
+      Transfer-Encoding:
+      - chunked
+      X-Content-Type-Options:
+      - nosniff
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      openai-organization:
+      - future-house-xr4tdh
+      openai-processing-ms:
+      - '1027'
+      openai-project:
+      - proj_RpeV6PrPclPHBb5GlExPXSBj
+      openai-version:
+      - '2020-10-01'
+      x-envoy-upstream-service-time:
+      - '1047'
+      x-ratelimit-limit-requests:
+      - '30000'
+      x-ratelimit-limit-tokens:
+      - '150000000'
+      x-ratelimit-remaining-requests:
+      - '29999'
+      x-ratelimit-remaining-tokens:
+      - '149999992'
+      x-ratelimit-reset-requests:
+      - 2ms
+      x-ratelimit-reset-tokens:
+      - 0s
+      x-request-id:
+      - req_bc2af32f5c15409c9097ca07f58cab27
+    status:
+      code: 200
+      message: OK
 version: 1

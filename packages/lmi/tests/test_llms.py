@@ -136,7 +136,7 @@ class TestLiteLLMModel:
             assert isinstance(result.logprob, float)
             assert result.logprob <= 0
             # Test top_logprobs only for OpenAI models (top_logprobs is OpenAI-specific)
-            is_openai_model = "gpt" in llm.name.lower() or "openai" in llm.name.lower()
+            is_openai_model = "openai" in litellm.get_llm_provider(llm.name)
             if (llm.config["model_list"][0]["litellm_params"].get("top_logprobs") 
                 and is_openai_model):
                 assert isinstance(result.top_logprobs, list)
@@ -149,10 +149,10 @@ class TestLiteLLMModel:
                         assert isinstance(logprob, float)
             else:
                 # For non-OpenAI models or when top_logprobs not configured
-                assert result.top_logprobs == []
+                assert result.top_logprobs is None
         else:
             assert result.logprob is None
-            assert result.top_logprobs == []
+            assert result.top_logprobs is None
         assert result.name == result_name
         result = await llm.call_single(messages)
         assert isinstance(result, LLMResult)

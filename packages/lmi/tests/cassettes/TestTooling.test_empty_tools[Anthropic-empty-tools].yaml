@@ -1,90 +1,682 @@
 interactions:
-  - request:
-      body:
-        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"What
-        does 42 mean?"}]}],"temperature":1.0,"max_tokens":56}'
-      headers:
-        accept:
-          - application/json
-        accept-encoding:
-          - gzip, deflate
-        anthropic-version:
-          - "2023-06-01"
-        connection:
-          - keep-alive
-        content-length:
-          - "156"
-        content-type:
-          - application/json
-        host:
-          - api.anthropic.com
-        user-agent:
-          - litellm/1.70.4
-      method: POST
-      uri: https://api.anthropic.com/v1/messages
-    response:
-      body:
-        string: !!binary |
-          H4sIAAAAAAAAAwAAAP//ZFHRjtNADPwVyy/3skVtaJHI2wmO46QDCUGfKIrMrtMs2eyGtbfXUvXf
-          UcJVAvFkeWY8GnnO6B3WOMi+Wa4+v/512Dx+fDPabdXGD3db+0Pf9WhQTyNPKhahPaPBnMIEkIgX
-          pahocEiOA9ZoAxXHi5eLzaIj35dFtazWq2VVoUGbonJUrL+er57Kx+l6HjU+RBjTWAJlsCVoyWxg
-          XYEXaGlIRcIJ+pieIpCAdgw7vI3yxBk0zfs2qB9IGT4VFvUpQmrh0bds/tDRHzgLG6Do4O7A+aSd
-          j/sdQpvTAG9T2QcSuHU0yA2I9RwtQ+vt7GXTwO4EwtmzwA6/dAzvvdqu8z3nG4H74h1fs9xToOPp
-          xQ7hIc7A95R6AwRSRs42DWNRznj5ZlA0jU1mkhSnN9Ox0dRzFHymhH+WKQnWsYRgsMw11Gf0cSx6
-          FdertUFLtuPGZqYpcvOvYHnlM5P7n0tF/0Y2rwwK54O33KjnjDVOZTvKDi+X3wAAAP//AwDyo0H/
-          OgIAAA==
-      headers:
-        CF-RAY:
-          - 950d3288c98eeb36-SJC
-        Connection:
-          - keep-alive
-        Content-Encoding:
-          - gzip
-        Content-Type:
-          - application/json
-        Date:
-          - Mon, 16 Jun 2025 20:53:36 GMT
-        Server:
-          - cloudflare
-        Transfer-Encoding:
-          - chunked
-        X-Robots-Tag:
-          - none
-        anthropic-organization-id:
-          - f2c99ed9-038a-406f-9cb5-1f840b758a20
-        anthropic-ratelimit-input-tokens-limit:
-          - "5000000"
-        anthropic-ratelimit-input-tokens-remaining:
-          - "5000000"
-        anthropic-ratelimit-input-tokens-reset:
-          - "2025-06-16T20:53:35Z"
-        anthropic-ratelimit-output-tokens-limit:
-          - "1000000"
-        anthropic-ratelimit-output-tokens-remaining:
-          - "1000000"
-        anthropic-ratelimit-output-tokens-reset:
-          - "2025-06-16T20:53:36Z"
-        anthropic-ratelimit-requests-limit:
-          - "5000"
-        anthropic-ratelimit-requests-remaining:
-          - "4999"
-        anthropic-ratelimit-requests-reset:
-          - "2025-06-16T20:53:34Z"
-        anthropic-ratelimit-tokens-limit:
-          - "6000000"
-        anthropic-ratelimit-tokens-remaining:
-          - "6000000"
-        anthropic-ratelimit-tokens-reset:
-          - "2025-06-16T20:53:35Z"
-        cf-cache-status:
-          - DYNAMIC
-        request-id:
-          - req_011CQCZgJ181t6tu3kkASnY6
-        strict-transport-security:
-          - max-age=31536000; includeSubDomains; preload
-        via:
-          - 1.1 google
-      status:
-        code: 200
-        message: OK
+- request:
+    body: '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"What
+      does 42 mean?"}]}],"temperature":1.0,"max_tokens":56}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '156'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - litellm/1.74.15.post2
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//dJJNi9swEIb/yjCXvSglSZ0t+BbIkrZsoYXtITTFzEpjS1iWXI2UTQj5
+        78VpQ7/oSWieZ15GH2d0BmscpGvmi5X+8OZ9tXnc3a93x49lt9pWcSRUmE8jTxaLUMeoMEU/FUjE
+        SaaQUeEQDXusUXsqhmevZ6uZJdeX2XK+rBbz5RIV6hgyh4z1l/MtM/Nx6r4uNVZLcAItDbGIP0Ef
+        4kuANsUBNrF0ngTWhga5A9GOg2Zonc4uBtBxYHOC5xh72OOTZXjrsrbW9ZzuBLbFGYYcIVuGLXk6
+        nvYIJNf9HtdBXjjd+Gef3UCZ4VNhuabHFh5dy+oHDu7ASVgBBQMPB06nbF3oXu0R3oWrMo2hgEDK
+        yEnHYSyZE2jyng1smEd4srF0NuPlq0LJcWwSk8QwXTIdmxx7DoI/kfC3Mh0W61C8V1iuj1Cf0YWx
+        5JtcLyqFmrTlRiemae7mT2F+44nJ/I/deqd8Hi0PnMg3q+Ff/xdd2L/pRWEs+ffS6l6hcDo4zU12
+        nLDG6ecYSgYvl+8AAAD//wMAyMOIO4cCAAA=
+    headers:
+      CF-RAY:
+      - 972e2be85a23e07d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:43 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Robots-Tag:
+      - none
+      anthropic-organization-id:
+      - f2c99ed9-038a-406f-9cb5-1f840b758a20
+      anthropic-ratelimit-input-tokens-limit:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2025-08-22T00:14:42Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2025-08-22T00:14:43Z'
+      anthropic-ratelimit-requests-limit:
+      - '5000'
+      anthropic-ratelimit-requests-remaining:
+      - '4999'
+      anthropic-ratelimit-requests-reset:
+      - '2025-08-22T00:14:42Z'
+      anthropic-ratelimit-tokens-limit:
+      - '6000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '6000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2025-08-22T00:14:42Z'
+      cf-cache-status:
+      - DYNAMIC
+      request-id:
+      - req_011CSMnQJ8MaD9FLUpXRo3kb
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-envoy-upstream-service-time:
+      - '1185'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"What
+      does 42 mean?"}]}],"temperature":1.0,"max_tokens":56}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '156'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - litellm/1.74.15.post2
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: ''
+    headers:
+      CF-RAY:
+      - 972e2be85a23e07d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:43 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Robots-Tag:
+      - none
+      anthropic-organization-id:
+      - f2c99ed9-038a-406f-9cb5-1f840b758a20
+      anthropic-ratelimit-input-tokens-limit:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2025-08-22T00:14:42Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2025-08-22T00:14:43Z'
+      anthropic-ratelimit-requests-limit:
+      - '5000'
+      anthropic-ratelimit-requests-remaining:
+      - '4999'
+      anthropic-ratelimit-requests-reset:
+      - '2025-08-22T00:14:42Z'
+      anthropic-ratelimit-tokens-limit:
+      - '6000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '6000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2025-08-22T00:14:42Z'
+      cf-cache-status:
+      - DYNAMIC
+      request-id:
+      - req_011CSMnQJ8MaD9FLUpXRo3kb
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-envoy-upstream-service-time:
+      - '1185'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"What
+      does 42 mean?"}]}],"temperature":1.0,"max_tokens":56}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '156'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - litellm/1.74.15.post2
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//dJJPbxMxEMW/ymguvTgoSRMOe6vUKkVCiJYiERG0GuzJ2qzXXjx2/hDl
+        u6NdGgFFnKx5vzdPY49P6AxW2ElTT2fXj/v9t/W7xf1u9fjwY7Zep08f+veoMB97HlwsQg2jwhT9
+        IJCIk0who8IuGvZYofZUDE+uJ8uJJdeWyXw6X8ym8zkq1DFkDhmrz6dLZubD0D0eFS7m4AS21MUi
+        /ghtiPsAJJAtwwZvguw5QY5j/dFn11FmeCgs2cUAcQtv3ZbVLxzcjpOwAgoG7nacjtm60GwQXIDb
+        WBpPAjeGOrkC0Y6DZtg6PSbp2LE5gnByLLDBJ8tw77K21rWcrgRWxRm+TLIiT4fjqw3CmzAKX2Ns
+        FRBI6Tnp2PUlcwJN3rOBW+Yenmwsjc14/qJQcuzrxCQxDI9MhzrHloPgMxL+XobpsArFe4VlXEJ1
+        Qhf6ki/marZQqElbrnViGq5R/22YXnhiMv9jl94hn3vLHSfy9bL71/+bzuxLelYYS/5TWr5WKJx2
+        TnOdHSescPg5hpLB8/knAAAA//8DAIkVQbuHAgAA
+    headers:
+      CF-RAY:
+      - 972e2c107ef9e07d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:49 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Robots-Tag:
+      - none
+      anthropic-organization-id:
+      - f2c99ed9-038a-406f-9cb5-1f840b758a20
+      anthropic-ratelimit-input-tokens-limit:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2025-08-22T00:14:48Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2025-08-22T00:14:49Z'
+      anthropic-ratelimit-requests-limit:
+      - '5000'
+      anthropic-ratelimit-requests-remaining:
+      - '4999'
+      anthropic-ratelimit-requests-reset:
+      - '2025-08-22T00:14:48Z'
+      anthropic-ratelimit-tokens-limit:
+      - '6000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '6000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2025-08-22T00:14:48Z'
+      cf-cache-status:
+      - DYNAMIC
+      request-id:
+      - req_011CSMnQmc6JSFkhT9z1E2ia
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-envoy-upstream-service-time:
+      - '1248'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"What
+      does 42 mean?"}]}],"temperature":1.0,"max_tokens":56}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '156'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - litellm/1.74.15.post2
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: ''
+    headers:
+      CF-RAY:
+      - 972e2c107ef9e07d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:49 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Robots-Tag:
+      - none
+      anthropic-organization-id:
+      - f2c99ed9-038a-406f-9cb5-1f840b758a20
+      anthropic-ratelimit-input-tokens-limit:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2025-08-22T00:14:48Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2025-08-22T00:14:49Z'
+      anthropic-ratelimit-requests-limit:
+      - '5000'
+      anthropic-ratelimit-requests-remaining:
+      - '4999'
+      anthropic-ratelimit-requests-reset:
+      - '2025-08-22T00:14:48Z'
+      anthropic-ratelimit-tokens-limit:
+      - '6000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '6000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2025-08-22T00:14:48Z'
+      cf-cache-status:
+      - DYNAMIC
+      request-id:
+      - req_011CSMnQmc6JSFkhT9z1E2ia
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-envoy-upstream-service-time:
+      - '1248'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"What
+      does 42 mean?"}]}],"temperature":1.0,"max_tokens":56}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '156'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - litellm/1.74.15.post2
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAA3SSW28TMRBG/8poXvrioGxIkNi3Sq0KKkiNoAhB0Gpiz2bd+LJ47DQhyn9HuxBB
+        i3iyPOfMp/HliNZgjV42zbS6r74sN+8f7q4fftx9ul0vuw+3y8+vUWE+9DxYLEIbRoUpuqFAIlYy
+        hYwKfTTssEbtqBievJwsJh3ZbZnMprN5NZ3NUKGOIXPIWH89njMz74fucanxY8cQil9zgvkMrEBL
+        PhZxB9iG+BigTdHDVSwbRwKXhrxcgGjLQTO0VmcbA4S4YwerMeuNzbrr7JbThcBNsYYhR8gdww05
+        2h9WCCTjfoWXQR45nfm9y9ZTZlgWljE3tvDOtqx+4WB3nIQVUDBwveN0yJ0NmxcrhLdhVNYxbhUQ
+        SOk56ej7kjlBIM8Grph7PH1TKDn2TWKSGIYLpn2T45aD4G8k/L0Mp8M6FOcUlvEB6iPa0Jd8lutq
+        rlCT7rjRiWkYt3kqTM88MZn/sXPvkM99x54TuWbh//X/0Kp7Tk8KY8l/lxavFAqnndXcZMsJaxx+
+        jaFk8HT6CQAA//8DAE5WuYeDAgAA
+    headers:
+      CF-RAY:
+      - 972e2c3c6d9ce07d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:56 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Robots-Tag:
+      - none
+      anthropic-organization-id:
+      - f2c99ed9-038a-406f-9cb5-1f840b758a20
+      anthropic-ratelimit-input-tokens-limit:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2025-08-22T00:14:55Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2025-08-22T00:14:56Z'
+      anthropic-ratelimit-requests-limit:
+      - '5000'
+      anthropic-ratelimit-requests-remaining:
+      - '4999'
+      anthropic-ratelimit-requests-reset:
+      - '2025-08-22T00:14:55Z'
+      anthropic-ratelimit-tokens-limit:
+      - '6000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '6000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2025-08-22T00:14:55Z'
+      cf-cache-status:
+      - DYNAMIC
+      request-id:
+      - req_011CSMnRHcsRXSQAyc1mmsYW
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-envoy-upstream-service-time:
+      - '1263'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"What
+      does 42 mean?"}]}],"temperature":1.0,"max_tokens":56}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '156'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - litellm/1.74.15.post2
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: ''
+    headers:
+      CF-RAY:
+      - 972e2c3c6d9ce07d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:14:56 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Robots-Tag:
+      - none
+      anthropic-organization-id:
+      - f2c99ed9-038a-406f-9cb5-1f840b758a20
+      anthropic-ratelimit-input-tokens-limit:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2025-08-22T00:14:55Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2025-08-22T00:14:56Z'
+      anthropic-ratelimit-requests-limit:
+      - '5000'
+      anthropic-ratelimit-requests-remaining:
+      - '4999'
+      anthropic-ratelimit-requests-reset:
+      - '2025-08-22T00:14:55Z'
+      anthropic-ratelimit-tokens-limit:
+      - '6000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '6000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2025-08-22T00:14:55Z'
+      cf-cache-status:
+      - DYNAMIC
+      request-id:
+      - req_011CSMnRHcsRXSQAyc1mmsYW
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-envoy-upstream-service-time:
+      - '1263'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"What
+      does 42 mean?"}]}],"temperature":1.0,"max_tokens":56}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '156'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - litellm/1.74.15.post2
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: !!binary |
+        H4sIAAAAAAAAAwAAAP//dJJPb9swDMW/CsFLL8qQeMky+FagRbdhlw3NaRkMTqItwbLkiVIaL8h3
+        H5w12D/0JPD9Hh8oUSd0BmscpGuWq52uVm+PP3j6PIaOTLvrth+2W1SYp5FnF4tQx6gwRT8LJOIk
+        U8iocIiGPdaoPRXDi9eLzcKS68uiWlbr1bKqUKGOIXPIWH85XTMzH+fuy1HjugIn0NIQi/gJ+hCf
+        ArQpDnAXS+dJ4NbQIDcg2nHQDK3T2cUAIR7Ywx4fLcM7l7W1rud0I/BQnGHIEbJleCBPx2mPQHKp
+        93gb5InTle98dgNlhk+F5ZIbW/joWla/cHAHTsIKKBi4P3CasnWhe7VHeB8ulm8x9goIpIycdBzG
+        kjmBJu/ZwB3zCI82ls7mWdN4/qpQchybxCQxzG9MxybHnoPgMxL+Xua7Yh2K9wrLZQf1CV0YS76a
+        69VaoSZtudGJaR6++duwvPLEZF5i1945n0fLAyfyzWb43/+bruy/9KwwlvyntHmjUDgdnOYmO05Y
+        4/xxDCWD5/NPAAAA//8DAEE0pDqGAgAA
+    headers:
+      CF-RAY:
+      - 972e2c688cfbe07d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:15:03 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Robots-Tag:
+      - none
+      anthropic-organization-id:
+      - f2c99ed9-038a-406f-9cb5-1f840b758a20
+      anthropic-ratelimit-input-tokens-limit:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2025-08-22T00:15:02Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2025-08-22T00:15:03Z'
+      anthropic-ratelimit-requests-limit:
+      - '5000'
+      anthropic-ratelimit-requests-remaining:
+      - '4999'
+      anthropic-ratelimit-requests-reset:
+      - '2025-08-22T00:15:02Z'
+      anthropic-ratelimit-tokens-limit:
+      - '6000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '6000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2025-08-22T00:15:02Z'
+      cf-cache-status:
+      - DYNAMIC
+      request-id:
+      - req_011CSMnRotY9HwCgji5yKdv1
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-envoy-upstream-service-time:
+      - '1134'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"What
+      does 42 mean?"}]}],"temperature":1.0,"max_tokens":56}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2023-06-01'
+      connection:
+      - keep-alive
+      content-length:
+      - '156'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - litellm/1.74.15.post2
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: ''
+    headers:
+      CF-RAY:
+      - 972e2c688cfbe07d-MAD
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:15:03 GMT
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Via:
+      - 1.1 google
+      X-Robots-Tag:
+      - none
+      anthropic-organization-id:
+      - f2c99ed9-038a-406f-9cb5-1f840b758a20
+      anthropic-ratelimit-input-tokens-limit:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '5000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2025-08-22T00:15:02Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2025-08-22T00:15:03Z'
+      anthropic-ratelimit-requests-limit:
+      - '5000'
+      anthropic-ratelimit-requests-remaining:
+      - '4999'
+      anthropic-ratelimit-requests-reset:
+      - '2025-08-22T00:15:02Z'
+      anthropic-ratelimit-tokens-limit:
+      - '6000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '6000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2025-08-22T00:15:02Z'
+      cf-cache-status:
+      - DYNAMIC
+      request-id:
+      - req_011CSMnRotY9HwCgji5yKdv1
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      x-envoy-upstream-service-time:
+      - '1134'
+    status:
+      code: 200
+      message: OK
 version: 1

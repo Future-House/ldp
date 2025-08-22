@@ -1,967 +1,114 @@
 interactions:
-  - request:
-      body:
-        '{"model": "deepseek/deepseek-r1", "messages": [{"role": "system", "content":
-        "Think deeply about the following question and answer it."}, {"role": "user",
-        "content": "What is the meaning of life?"}], "temperature": 1.0, "n": 1, "stream":
-        false, "max_retries": 0}'
-      headers:
-        accept:
-          - "*/*"
-        accept-encoding:
-          - gzip, deflate
-        connection:
-          - keep-alive
-        content-length:
-          - "262"
-        content-type:
-          - application/json
-        host:
-          - openrouter.ai
-        http-referer:
-          - https://litellm.ai
-        user-agent:
-          - litellm/1.70.4
-        x-title:
-          - liteLLM
-      method: POST
-      uri: https://openrouter.ai/api/v1/chat/completions
-    response:
-      body:
-        string: !!binary |
-          H4sIAAAAAAAAAwAAAP//4lKAAS4AAAAA///iQjABAAAA//9CYgIAAAD//0JiAgAAAP//QmICAAAA
-          //9CYgIAAAD//0JiAgAAAP//QmICAAAA//9CYgIAAAD//0JiAgAAAP//QmICAAAA//9CYgIAAAD/
-          /0JiAgAAAP//QmICAAAA//9CYgIAAAD//0JiAgAAAP//QmICAAAA//9CYgIAAAD//0JiAgAAAP//
-          QmICAAAA//9CYgIAAAD//0JiAgAAAP//nFdbr9zGDf4rrPxgZ6GzyXHiXLYPhn3Q1KdoEiPHjVHU
-          hcEdURK9o6EynNGejWEgP6Iv/Xv5JQVH2otT9KVvu7pwyO9CUu8rbqpN1VG4uv7qyZMvH3/92TeP
-          r4Z3zR0mfZ6aJ9mF6/vr/uZxVVdjlIkbitWmeoWxk1DV1SAN+WpTNUSjEu0+Pf64itdVXcn2HblU
-          bSrXY1o7GUZPicubLhImaqrN+eC6cr2wI602/3hfeenGKFutNiF7X1ctB9b+bSRUCdWm0iRjVVcB
-          E0/09n/c5dDQfbX5rK4GUsWOqs37KoqnalOhKmvCkCwbCYmCZfqqJ/g5k1qaIC14bumhwkAYOHTA
-          CmOUVnJoAEMDPSpsiQLQ/eglUgOpj5K7HsaevaiM/aGGSJ47llCDOqbgqC4vjxRVAnqI1HpyduQa
-          XlAkwEigMlB5ZLRbEykkASdBjYTNm/AmPHjwAK7XsFq9PJ7FDj28vHhntQJ4EwDgClarP92zWpmM
-          nnVYrTbwV26p1BAEOPQUKaRjrX+EPcFq5mkFY46jKJ3KW6iqYTQcJehckpNh4DRQSAqPaN2ta7jD
-          mCLVcIND1k/WF/k822qOzUUqv/36bwWPbmfI/z4fwx4hUbDjDAsathENyyAJIqn4ieDRfx9zl4Td
-          csp3SyyMrKTQRhnA82SXJo4pS1Z/KJWgczQmu7HvMZXMtnSQ0IDkaDykKL4cMxPx2Ii4Gzlyyug/
-          /XGmPCv8xLS/5OFGQiCXqAmkhVOExjKgE8YLcEqxJPZnaWpA1zOVvxQ8d32iYCjXIBFGjIkdj1jS
-          5QAITnRgB6PHcIHFnUkqRWzYtKZAw9ij8i8EXiaqjb2FzhI3RQzqKDQWNvUE1Ak8ep6bpmcdanjB
-          ocnl13DQVLR3Dv7JBTafF2xM+olbdvBtxIH2Ene/0+ckPtvLGA/wnMVLdzDS7nKceEJvRhqjNLlY
-          ZRacpWVkcMh46dlLAdzMYFz4wqI+2xNgKgFy4ImizvqbUFOhBheurV8AavGeK5RuiUOni+cL5umi
-          2i+KJY/etih3uTRCnugowIu6Xy6sS5usjwwUu6MyI/lSlPY8ag3FizxxOtTQRdmnvtBUtMjbXNhP
-          ApJ6iif7RWQtiocWB/aHGjAm05NF0uFCHT/xLkk0csLOFyhWXroSDcfDCjB2mT5qhXMf5GDuG2XR
-          iRT8y/uuR+8pWD17Tj003AVOhwusnhhW1nP/IjkGOsBtUvLtCZ6i2HIwpB4T2GyxU45JrFhXhcLl
-          wm+//sv+jVGcUSjtqZlz6GrwhHH+ZbTQJN4steTzvYAhZWQH3VOElpMCel8b+8cTZ5oaGik0ChKA
-          g9m3yehhQp+tJ7rsU4609ES6HymWtq9r+HFu9Rt4beVsYxHSQTK8k4MZsPSGowERlEKRBqhB17LD
-          4OgpvJA9NFLe22NIBjoPI7pZznuJvrH3ZyU8teJeS/YlFZxpkgAYDhY59aRU+mfARDNRB8lPq7qK
-          1GZFfxzB83Tl0FWb6ocdHurZPEqx9GYtzOBWcrqk5OzIVz2mh9bEt2wJ0B/gW46aariFQDY6z/MN
-          9tb8LczhYTSHDxbJTLGGZ8sNaIm8XfZiQVyOZs4C3ICHLUFDWO6Xkmycpr400PMYfAqvLNBgDRW2
-          1galFNFKBKtWczTALWTDbTvPo8uZvDZsPxq/foZlGeITlqQATVe6ho9HMGjuOtKkNmrnSVs6juzD
-          Eb01/DDbuWXbGJZeUSw37xSWmx7HTjHXudHO2cxgcIG+kKNLPy3qvGypa7jri05uwclE0cS/6AMN
-          jqKkW9D5oTGSGh5nZCam/Shsw98wt7PGrAV0E9tH7lrDrWXEwygxLRqe0HNjIBSvzxnDvDben7ey
-          QmcQU9CVDa8r8+mVpXqM/F2p2OajPd+bWU45Hr0JOI5R0PXAqYYksoZnXqU+6vi4k03nfVAXofTk
-          R4NlABPUDjid1iK7quRNGfD9oukdUXkckgQCzaNVbHHLgBkpXFFoqFnDs0m4AbWmahnYZsSq9qR5
-          eaJoq4nDhgZ2VuTOos1mALpHg0mL6srcwK0nqylazjVoitmlvIyrxRNzr1HwvKP/e2P9mxJss/eU
-          YCHf7OM8Rk4H2Oa0KNDWtFbigN6oK71woGFLcab71EtcUdeW5hlowtmi23XRcKlBF0A5AQfns+Fz
-          pM715HbALdw+HKBgtyhvwHe2J10aF/5O2Nd2rcfR9rDs+tIVY4Li/ovRa/1fJUdHZaScrPk6Ykkk
-          j7A9AAUnOWK3bEtD2VHnz4ICXnGwLZOnZqsnQP1hDTcivp6xKO7TAskWlc52KpuHqbXoYd+Tt8a4
-          rj58+Gdd5eMXzhhlGNPbJDsKWm0ef25fOMePr9PlL796UldJEvrzpW++/vDhPwAAAP//AwA9tafG
-          CA8AAA==
-      headers:
-        Access-Control-Allow-Origin:
-          - "*"
-        CF-RAY:
-          - 971bb5986fcc2366-SJC
-        Connection:
-          - keep-alive
-        Content-Encoding:
-          - gzip
-        Content-Type:
-          - application/json
-        Date:
-          - Tue, 19 Aug 2025 18:28:12 GMT
-        Permissions-Policy:
-          - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
-            "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
-        Referrer-Policy:
-          - no-referrer, strict-origin-when-cross-origin
-        Server:
-          - cloudflare
-        Transfer-Encoding:
-          - chunked
-        Vary:
-          - Accept-Encoding
-        X-Content-Type-Options:
-          - nosniff
-      status:
-        code: 200
-        message: OK
-  - request:
-      body:
-        '{"model": "deepseek/deepseek-r1", "messages": [{"role": "system", "content":
-        "Think deeply about the following question and answer it."}, {"role": "user",
-        "content": "What is the meaning of life?"}], "temperature": 1.0, "n": 1, "stream":
-        true, "stream_options": {"include_usage": true}, "max_retries": 0}'
-      headers:
-        accept:
-          - "*/*"
-        accept-encoding:
-          - gzip, deflate
-        connection:
-          - keep-alive
-        content-length:
-          - "304"
-        content-type:
-          - application/json
-        host:
-          - openrouter.ai
-        http-referer:
-          - https://litellm.ai
-        user-agent:
-          - litellm/1.70.4
-        x-title:
-          - liteLLM
-      method: POST
-      uri: https://openrouter.ai/api/v1/chat/completions
-    response:
-      body:
-        string:
-          "data: {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"Okay\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\",
-          so the\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          user is\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          asking,\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          \\\"What is the\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          meaning of life?\\\"\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          Hmm, that\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"'s
-          a big\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          one.\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          I know\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          this\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          is a classic philosophical\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          question, and\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          people have been debating\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          it for ages\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\".
-          Let\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          me try\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          to break it down\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\".\\n\\n\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"First,
-          maybe\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          I should consider\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          different perspectives. There\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"'s
-          the\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          philosophical\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          angle\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"\u2014\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"like
-          existentialism,\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          which suggests\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          that life\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          has no inherent meaning\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          and it\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"'s
-          up to each\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          individual to create their\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          own.\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          Then there's religious\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          viewpoints\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\",
-          where the\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          meaning might\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          be tied to fulfilling\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          a divine purpose or\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          following certain\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          teachings. For\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          example, in\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          Christianity, the\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          purpose\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          could be to\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          love God and others\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\",
-          while\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          in Buddhism, it\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"'s\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          about reaching\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          enlightenment and escaping\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          suffering.\\n\\nScience\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          might\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          approach it\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          differently\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\",\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          perhaps looking at biological\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          purposes\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          like\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          survival and reproduction,\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          but that\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          feels\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          a\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          bit reductionist.\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          Then there's the\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          more\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          personal\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          angle\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"\u2014people\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          finding meaning through\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          relationships, achievements\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\",
-          personal growth,\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          or helping\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          others.\\n\\n\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"I
-          need to make\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          sure I cover\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          different\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          schools\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          of thought without being\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          too biased\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\".
-          Also, recognize\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          that there\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"'s
-          no single\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          answer and\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          that it's subjective\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\".
-          Maybe mention\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          that some\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          argue\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          the\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          question itself is flawed\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          because \\\"\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"meaning\\\"
-          is\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          something\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          humans project\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          onto existence\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\".\\n\\n\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"I\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          should structure\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          the answer to outline\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          these different perspectives\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\":\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          religious\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\",
-          philosophical, scientific\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\",
-          and personal\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\".
-          But\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          also emphasize\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          that it\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"'s
-          a\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          deeply individual\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          question and\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          encourage\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          the\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          user to reflect\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          on their own values\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          and experiences.\\n\\n\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"Wait,
-          am\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          I missing\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          any major\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          points\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"?
-          Maybe\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          existential\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"ist\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          thinkers\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          like Sart\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"re
-          or\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          Camus,\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          who emphasize\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          creating\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          one\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"'s
-          own\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          meaning.\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          Abs\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"urdism\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\",
-          which\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          deals\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          with the conflict\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          between seeking\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          meaning and\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          the\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          universe's indifference.\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          Also\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\",
-          utilitarian\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          perspectives\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          where\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          maximizing\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          happiness could\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          be a purpose\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\".\\n\\n\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"In\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          terms\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          of potential\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          pitfalls, I\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          don\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"'t
-          want to present\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          any\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          one view\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          as the correct\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          answer but\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          rather highlight\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          the diversity of\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          thoughts\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\".
-          Also, make\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          sure not\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          to dismiss\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          the question\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          as un\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"answerable
-          but\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          validate\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          its importance\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\".\\n\\nOkay\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\",
-          so\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          the\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          answer\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          should start\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          by acknowledging the complexity\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          and\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          varied\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          answers\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\".
-          Then go\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          into\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          different\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          categories: religious/sp\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"iritual,
-          philosophical\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          (\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"exist\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"entialism,
-          absurd\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"ism),
-          scientific\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\",\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          and personal.\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          Con\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"clude
-          by\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          noting\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          that it\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"'s
-          up\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          to each\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          person\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          to determine\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          their own meaning through\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          reflection\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"
-          and experience\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\".\\n\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":\"\",\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"The
-          question \\\"\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"What
-          is the meaning\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          of life?\\\"\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          is\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          profound\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          and deeply\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          subjective, with\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          answers varying\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          across\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          cultural\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          philosophical, religious\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          and individual\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          perspectives. Here\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\u2019s
-          a\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          synthesis of key\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          viewpoints\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\":\\n\\n1.
-          **\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Religious/Sp\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"iritual
-          Perspectives\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"**:
-          \ \\n   Many\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          traditions attribute\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          life\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\u2019s
-          purpose\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          to a divine\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          or transcendent goal\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".
-          For example:\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          \ \\n   - **Christian\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"ity**:
-          To\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          love and serve God\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          follow\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          Christ\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\u2019s
-          teachings,\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          and attain\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          eternal life.  \\n\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          \  - **\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Buddhism\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"**:
-          To achieve\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          enlightenment (\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"nirvana)
-          by\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          overcoming\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          desire\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          and suffering\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          through\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          the\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          Eightfold Path.\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          \ \\n   -\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          **H\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"induism**:\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          To fulfill\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          dh\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"arma
-          (moral\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          duty),\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          attain\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          moksha (\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"liberation
-          from\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          the cycle of rebirth\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"),
-          and unite\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          with the divine\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".
-          \ \\n\\n2\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".
-          **Philosoph\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"ical
-          Views\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"**:
-          \ \\n   -\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          **Existentialism\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"**\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          (e\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".g.,
-          Sartre\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          Camus):\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          Life\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          has no inherent meaning\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\";
-          individuals\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          must\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          create their own through\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          choices\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          passions\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          and commitments\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".
-          \ \\n  \",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          - **Abs\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"urdism**\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          (Camus):\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          Recogn\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"izes
-          the conflict\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          between humans\u2019\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          search for meaning and\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          the\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          universe\u2019s indifference\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".
-          The\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          \\\"\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"meaning\\\"\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          lies in embracing\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          this tension\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          while\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          continuing\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          to live purpose\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"fully.
-          \ \\n  \",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          - **Utilit\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"arianism**\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          (Bentham\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          Mill): Meaning\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          arises\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          from maximizing\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\n:
-          OPENROUTER PROCESSING\n\ndata: {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          happiness and\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          minimizing\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          suffering for the\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          greatest number.\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          \ \\n\\n3. **\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Scientific/\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Evolutionary
-          Lens\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"**:
-          \ \\n\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          \  Biologically,\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          life\u2019\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"s
-          purpose might\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          relate\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          to survival, reproduction\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          and\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          the propagation of genes\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".
-          However, many\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          argue\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          this reduces\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          existence\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          to mechanistic\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          processes and overlook\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"s
-          deeper subjective\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          experiences.\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          \ \\n\\n4\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".
-          **Personal Meaning\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"**:
-          \ \\n\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          \  Individuals often derive\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          purpose from\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          relationships, creativity\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          achievements\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          self\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"-act\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"ualization
-          (\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Mas\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"low),\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          or contributing\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          to others\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          (alt\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"ruism).\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          Viktor Frankl\u2019\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"s
-          *\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"log\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"otherapy*
-          pos\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"its
-          that\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          meaning emerges\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          through\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          work\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          love, and\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          enduring\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          suffering with\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          courage.  \\n\\n5\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".
-          **The\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          \\\"\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"No\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          Meaning\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\\\"
-          Argument\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"**:
-          \ \\n\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          \  Some skept\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"ics
-          or\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          nihil\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"ists
-          argue\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          life\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          is\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          inherently meaningless, and\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          the\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          question\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          reflects\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          human\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          biases\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          However\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          even\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          this stance\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          can inspire\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          freedom\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\u2014\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"if\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          no\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          cosmic\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          purpose exists\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          we\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\u2019re
-          un\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"constrained\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          to\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          invent\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          our own.\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          \ \\n\\nUltimately\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          the\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          meaning of life\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          is a **sub\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"jective
-          journey\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"**.\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          It might\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          involve\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          introspection\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          connecting\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          to\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          others\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          pursuing\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          growth\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          or\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          finding\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          moments\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          of joy\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          and wonder\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".
-          As\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          R\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"ilke\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          suggested\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\",
-          the\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          quest\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          itself\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\u2014to\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          \\\"live the\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          questions\\\"\u2014\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"can\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          be transformative\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\".
-          What\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          resonates\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"
-          most with *\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"you\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"*?\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\",\"reasoning\":null,\"reasoning_details\":[]},\"finish_reason\":\"stop\",\"native_finish_reason\":\"stop\",\"logprobs\":null}]}\n\ndata:
-          {\"id\":\"gen-1755628102-5g7590soSQZtzM8wiJJB\",\"provider\":\"DeepInfra\",\"model\":\"deepseek/deepseek-r1\",\"object\":\"chat.completion.chunk\",\"created\":1755628102,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":null,\"native_finish_reason\":null,\"logprobs\":null}],\"usage\":{\"prompt_tokens\":22,\"completion_tokens\":952,\"total_tokens\":974,\"cost\":0.0020567,\"is_byok\":false,\"prompt_tokens_details\":{\"cached_tokens\":0,\"audio_tokens\":0},\"cost_details\":{\"upstream_inference_cost\":null,\"input_audio_cache_read_tokens\":null},\"completion_tokens_details\":{\"reasoning_tokens\":605}}}\n\ndata:
-          [DONE]\n\n"
-      headers:
-        Access-Control-Allow-Origin:
-          - "*"
-        CF-RAY:
-          - 971bb5d6ab5e2366-SJC
-        Cache-Control:
-          - no-cache
-        Connection:
-          - keep-alive
-        Content-Type:
-          - text/event-stream
-        Date:
-          - Tue, 19 Aug 2025 18:28:22 GMT
-        Permissions-Policy:
-          - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
-            "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
-        Referrer-Policy:
-          - no-referrer, strict-origin-when-cross-origin
-        Server:
-          - cloudflare
-        Transfer-Encoding:
-          - chunked
-        Vary:
-          - Accept-Encoding
-        X-Content-Type-Options:
-          - nosniff
-      status:
-        code: 200
-        message: OK
+- request:
+    body: '{"model": "deepseek/deepseek-r1", "messages": [{"role": "system", "content":
+      "Think deeply about the following question and answer it."}, {"role": "user",
+      "content": "What is the meaning of life?"}], "temperature": 1.0, "n": 1, "stream":
+      false, "max_retries": 0}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '262'
+      content-type:
+      - application/json
+      host:
+      - openrouter.ai
+      http-referer:
+      - https://litellm.ai
+      user-agent:
+      - litellm/1.74.15.post2
+      x-title:
+      - liteLLM
+    method: POST
+    uri: https://openrouter.ai/api/v1/chat/completions
+  response:
+    body:
+      string: '{"error":{"message":"No auth credentials found","code":401}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-RAY:
+      - 972e2d4f4965eeea-LIS
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:15:39 GMT
+      Permissions-Policy:
+      - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
+        "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
+      Referrer-Policy:
+      - no-referrer, strict-origin-when-cross-origin
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+    status:
+      code: 401
+      message: Unauthorized
+- request:
+    body: '{"model": "deepseek/deepseek-r1", "messages": [{"role": "system", "content":
+      "Think deeply about the following question and answer it."}, {"role": "user",
+      "content": "What is the meaning of life?"}], "temperature": 1.0, "n": 1, "stream":
+      false, "max_retries": 0}'
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '262'
+      content-type:
+      - application/json
+      host:
+      - openrouter.ai
+      http-referer:
+      - https://litellm.ai
+      user-agent:
+      - litellm/1.74.15.post2
+      x-title:
+      - liteLLM
+    method: POST
+    uri: https://openrouter.ai/api/v1/chat/completions
+  response:
+    body:
+      string: ''
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      CF-RAY:
+      - 972e2d4f4965eeea-LIS
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 22 Aug 2025 00:15:39 GMT
+      Permissions-Policy:
+      - payment=(self "https://checkout.stripe.com" "https://connect-js.stripe.com"
+        "https://js.stripe.com" "https://*.js.stripe.com" "https://hooks.stripe.com")
+      Referrer-Policy:
+      - no-referrer, strict-origin-when-cross-origin
+      Server:
+      - cloudflare
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding
+      X-Content-Type-Options:
+      - nosniff
+    status:
+      code: 401
+      message: Unauthorized
 version: 1
