@@ -1,222 +1,224 @@
 interactions:
-- request:
-    body: '{"messages":[{"role":"system","content":"You are a helpful assistant who
-      can use tools to do math. Use a tool if needed. If you don''t need a tool, just
-      respond with the answer."},{"role":"user","content":"What is double of 8?"}],"model":"gpt-4o-mini-2024-07-18","n":1,"temperature":1.0,"tool_choice":"auto","tools":[{"type":"function","function":{"name":"double","description":"Double
-      the input.","parameters":{"type":"object","properties":{"x":{"description":"The
-      input to double","title":"X","type":"integer"}},"required":["x"]}}}]}'
-    headers:
-      accept:
-      - application/json
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '534'
-      content-type:
-      - application/json
-      host:
-      - api.openai.com
-      user-agent:
-      - AsyncOpenAI/Python 1.97.0
-      x-stainless-arch:
-      - arm64
-      x-stainless-async:
-      - async:asyncio
-      x-stainless-lang:
-      - python
-      x-stainless-os:
-      - MacOS
-      x-stainless-package-version:
-      - 1.97.0
-      x-stainless-raw-response:
-      - 'true'
-      x-stainless-read-timeout:
-      - '60.0'
-      x-stainless-retry-count:
-      - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.12.9
-    method: POST
-    uri: https://api.openai.com/v1/chat/completions
-  response:
-    body:
-      string: !!binary |
-        H4sIAAAAAAAAAwAAAP//jFNNb6MwEL3zK6w5hxW0oaFcm1bqSpWqlVY5bCvkmAHc+oO1TdJslP++
-        wqRA0qy0HJA1b96bN+PxPiAEeAEZAVZTx2QjwrvFc7yz26JexunP7Xss5w9tuVm1cqceY5h1DL1+
-        Q+Y+Wd+Ylo1Ax7XqYWaQOuxU40WSpGmUJJEHpC5QdLSqceFch5IrHl5FV/MwWoRxemTXmjO0kJFf
-        ASGE7P2/86kK/ICMeC0fkWgtrRCyIYkQMFp0EaDWcuuocjAbQaaVQ9VZV60QE8BpLXJGhRgL999+
-        ch6HRYXInx9W98s/rr5/Sq5X2x9Pd99vl6g2vyf1euld4w2VrWLDkCb4EM/OihECikrPLXS7FnjG
-        JASoqVqJynWuYf8CHy+QpQc4STsEl86vk+YNlq2l4utUqFLa0c6cH8vrETkMNyB01Ri9tmdUKLni
-        ts4NUusbm843+DTiLUB7coXQGC0blzv9jr5omvaiMG7ZCMbXR9BpR8UkHsWzC3J5gY5yf8XDVjHK
-        aixG6rhdtC24ngDBpPWvbi5p9+1zVf2P/Agwho3DIm8MFpyddjymGewe4b/ShiF7w2DRbDjD3HE0
-        fp+wpK3onwbYnXUo85KrCk1juH8fUDZ5chPR8gaT5BaCQ/AXAAD//wMAqP2Tri0EAAA=
-    headers:
-      CF-RAY:
-      - 9733c91d3b629e6e-SJC
-      Connection:
-      - keep-alive
-      Content-Encoding:
-      - gzip
-      Content-Type:
-      - application/json
-      Date:
-      - Fri, 22 Aug 2025 16:35:50 GMT
-      Server:
-      - cloudflare
-      Set-Cookie:
-      - __cf_bm=voH76FoRBUPQrQ7NgTZC8hWVSGwY3IXG080YWXr2O8E-1755880550-1.0.1.1-lNPSk96OJYLgcampPLH3JnfxkgmcULwthbDODugragLrG7VUC7WtU.gEr0eBRWAq3632oG3DYPR1wkNxaAFhCBtrie1uc5EWCKOtuselJFY;
-        path=/; expires=Fri, 22-Aug-25 17:05:50 GMT; domain=.api.openai.com; HttpOnly;
-        Secure; SameSite=None
-      - _cfuvid=fyEV8e9LonYTYIe8pxwReOVCofaEWgiu4LrpYvEPN4s-1755880550576-0.0.1.1-604800000;
-        path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
-      alt-svc:
-      - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      openai-organization:
-      - future-house-xr4tdh
-      openai-processing-ms:
-      - '528'
-      openai-project:
-      - proj_RNqI6HcOEEHFt903C3PXpgXs
-      openai-version:
-      - '2020-10-01'
-      x-envoy-upstream-service-time:
-      - '546'
-      x-ratelimit-limit-requests:
-      - '30000'
-      x-ratelimit-limit-tokens:
-      - '150000000'
-      x-ratelimit-remaining-requests:
-      - '29999'
-      x-ratelimit-remaining-tokens:
-      - '149999957'
-      x-ratelimit-reset-requests:
-      - 2ms
-      x-ratelimit-reset-tokens:
-      - 0s
-      x-request-id:
-      - req_1440f150d18a4bb49b6333e37cbf44a3
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"messages":[{"role":"system","content":"You are a helpful assistant who
-      can use tools to do math. Use a tool if needed. If you don''t need a tool, just
-      respond with the answer."},{"role":"user","content":"What is double of 8?"},{"role":"assistant","tool_calls":[{"id":"call_PFWEDzthEM53WwRMCJ9Denvq","type":"function","function":{"arguments":"{\"x\":
-      8}","name":"double"}}]},{"role":"tool","content":"Observation: 16","name":"double","tool_call_id":"call_PFWEDzthEM53WwRMCJ9Denvq"}],"model":"gpt-4o-mini-2024-07-18","n":1,"temperature":1.0,"tool_choice":"auto","tools":[{"type":"function","function":{"name":"double","description":"Double
-      the input.","parameters":{"type":"object","properties":{"x":{"description":"The
-      input to double","title":"X","type":"integer"}},"required":["x"]}}}]}'
-    headers:
-      accept:
-      - application/json
-      accept-encoding:
-      - gzip, deflate
-      connection:
-      - keep-alive
-      content-length:
-      - '788'
-      content-type:
-      - application/json
-      host:
-      - api.openai.com
-      user-agent:
-      - AsyncOpenAI/Python 1.97.0
-      x-stainless-arch:
-      - arm64
-      x-stainless-async:
-      - async:asyncio
-      x-stainless-lang:
-      - python
-      x-stainless-os:
-      - MacOS
-      x-stainless-package-version:
-      - 1.97.0
-      x-stainless-raw-response:
-      - 'true'
-      x-stainless-read-timeout:
-      - '60.0'
-      x-stainless-retry-count:
-      - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.12.9
-    method: POST
-    uri: https://api.openai.com/v1/chat/completions
-  response:
-    body:
-      string: !!binary |
-        H4sIAAAAAAAAAwAAAP//jFLBTtwwFLznKyyfCUoWshv2WooQ4tAK2kuFIq/9krg4fpb9UhWh/ffK
-        zrLJtiD1ksObN5OZ8XvNGONa8S3jshckB2fyT5sv5cvz9ff6+tvN4C/Kz4/lzVe6v7stHh6Qn0UG
-        7n6CpDfWucTBGSCNdoKlB0EQVctNVdV1UVVFAgZUYCKtc5RfYj5oq/NVsbrMi01e1gd2j1pC4Fv2
-        I2OMsdf0jT6tgt98y5JWmgwQguiAb49LjHGPJk64CEEHEpb42QxKtAQ2WX/sgSkcdwYYtqxmOrBy
-        fb5c9tCOQUTDdjRmAQhrkUQMnGw+HZD90ZjBznnchb+ovNVWh77xIALaaCIQOp7QfcbYUypgPMnE
-        ncfBUUP4DOl3Zbma9Pjc+wI9tMMJSZjFfPXGOtFrFJDQJiwq5FLIHtRMnfsWo9K4ALJF6n/dvKc9
-        Jde2+x/5GZASHIFqnAel5Wniec1DPMuP1o4tJ8M8gP+lJTSkwceXUNCK0UzHwsNLIBiaVtsOvPN6
-        upjWNdW6EO0aquqKZ/vsDwAAAP//AwAaXQhlPwMAAA==
-    headers:
-      CF-RAY:
-      - 9733c92158289e6e-SJC
-      Connection:
-      - keep-alive
-      Content-Encoding:
-      - gzip
-      Content-Type:
-      - application/json
-      Date:
-      - Fri, 22 Aug 2025 16:35:51 GMT
-      Server:
-      - cloudflare
-      Strict-Transport-Security:
-      - max-age=31536000; includeSubDomains; preload
-      Transfer-Encoding:
-      - chunked
-      X-Content-Type-Options:
-      - nosniff
-      access-control-expose-headers:
-      - X-Request-ID
-      alt-svc:
-      - h3=":443"; ma=86400
-      cf-cache-status:
-      - DYNAMIC
-      openai-organization:
-      - future-house-xr4tdh
-      openai-processing-ms:
-      - '346'
-      openai-project:
-      - proj_RNqI6HcOEEHFt903C3PXpgXs
-      openai-version:
-      - '2020-10-01'
-      x-envoy-upstream-service-time:
-      - '360'
-      x-ratelimit-limit-requests:
-      - '30000'
-      x-ratelimit-limit-tokens:
-      - '150000000'
-      x-ratelimit-remaining-requests:
-      - '29999'
-      x-ratelimit-remaining-tokens:
-      - '149999950'
-      x-ratelimit-reset-requests:
-      - 2ms
-      x-ratelimit-reset-tokens:
-      - 0s
-      x-request-id:
-      - req_6a4b09fb335a4cb3a0918fc2a39a263b
-    status:
-      code: 200
-      message: OK
+  - request:
+      body:
+        '{"messages":[{"role":"system","content":"You are a helpful assistant who
+        can use tools to do math. Use a tool if needed. If you don''t need a tool, just
+        respond with the answer."},{"role":"user","content":"What is double of 8?"}],"model":"gpt-4o-mini-2024-07-18","n":1,"temperature":1.0,"tool_choice":"auto","tools":[{"type":"function","function":{"name":"double","description":"Double
+        the input.","parameters":{"type":"object","properties":{"x":{"description":"The
+        input to double","title":"X","type":"integer"}},"required":["x"]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "534"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.97.0
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 1.97.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "60.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.9
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//jFNNb6MwEL3zK6w5hxW0oaFcm1bqSpWqlVY5bCvkmAHc+oO1TdJslP++
+          wqRA0qy0HJA1b96bN+PxPiAEeAEZAVZTx2QjwrvFc7yz26JexunP7Xss5w9tuVm1cqceY5h1DL1+
+          Q+Y+Wd+Ylo1Ax7XqYWaQOuxU40WSpGmUJJEHpC5QdLSqceFch5IrHl5FV/MwWoRxemTXmjO0kJFf
+          ASGE7P2/86kK/ICMeC0fkWgtrRCyIYkQMFp0EaDWcuuocjAbQaaVQ9VZV60QE8BpLXJGhRgL999+
+          ch6HRYXInx9W98s/rr5/Sq5X2x9Pd99vl6g2vyf1euld4w2VrWLDkCb4EM/OihECikrPLXS7FnjG
+          JASoqVqJynWuYf8CHy+QpQc4STsEl86vk+YNlq2l4utUqFLa0c6cH8vrETkMNyB01Ri9tmdUKLni
+          ts4NUusbm843+DTiLUB7coXQGC0blzv9jr5omvaiMG7ZCMbXR9BpR8UkHsWzC3J5gY5yf8XDVjHK
+          aixG6rhdtC24ngDBpPWvbi5p9+1zVf2P/Agwho3DIm8MFpyddjymGewe4b/ShiF7w2DRbDjD3HE0
+          fp+wpK3onwbYnXUo85KrCk1juH8fUDZ5chPR8gaT5BaCQ/AXAAD//wMAqP2Tri0EAAA=
+      headers:
+        CF-RAY:
+          - 9733c91d3b629e6e-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 22 Aug 2025 16:35:50 GMT
+        Server:
+          - cloudflare
+        Set-Cookie:
+          - __cf_bm=voH76FoRBUPQrQ7NgTZC8hWVSGwY3IXG080YWXr2O8E-1755880550-1.0.1.1-lNPSk96OJYLgcampPLH3JnfxkgmcULwthbDODugragLrG7VUC7WtU.gEr0eBRWAq3632oG3DYPR1wkNxaAFhCBtrie1uc5EWCKOtuselJFY;
+            path=/; expires=Fri, 22-Aug-25 17:05:50 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=fyEV8e9LonYTYIe8pxwReOVCofaEWgiu4LrpYvEPN4s-1755880550576-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Strict-Transport-Security:
+          - max-age=31536000; includeSubDomains; preload
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        access-control-expose-headers:
+          - X-Request-ID
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "528"
+        openai-project:
+          - proj_RNqI6HcOEEHFt903C3PXpgXs
+        openai-version:
+          - "2020-10-01"
+        x-envoy-upstream-service-time:
+          - "546"
+        x-ratelimit-limit-requests:
+          - "30000"
+        x-ratelimit-limit-tokens:
+          - "150000000"
+        x-ratelimit-remaining-requests:
+          - "29999"
+        x-ratelimit-remaining-tokens:
+          - "149999957"
+        x-ratelimit-reset-requests:
+          - 2ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_1440f150d18a4bb49b6333e37cbf44a3
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"messages":[{"role":"system","content":"You are a helpful assistant who
+        can use tools to do math. Use a tool if needed. If you don''t need a tool, just
+        respond with the answer."},{"role":"user","content":"What is double of 8?"},{"role":"assistant","tool_calls":[{"id":"call_PFWEDzthEM53WwRMCJ9Denvq","type":"function","function":{"arguments":"{\"x\":
+        8}","name":"double"}}]},{"role":"tool","content":"Observation: 16","name":"double","tool_call_id":"call_PFWEDzthEM53WwRMCJ9Denvq"}],"model":"gpt-4o-mini-2024-07-18","n":1,"temperature":1.0,"tool_choice":"auto","tools":[{"type":"function","function":{"name":"double","description":"Double
+        the input.","parameters":{"type":"object","properties":{"x":{"description":"The
+        input to double","title":"X","type":"integer"}},"required":["x"]}}}]}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        connection:
+          - keep-alive
+        content-length:
+          - "788"
+        content-type:
+          - application/json
+        host:
+          - api.openai.com
+        user-agent:
+          - AsyncOpenAI/Python 1.97.0
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 1.97.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "60.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.9
+      method: POST
+      uri: https://api.openai.com/v1/chat/completions
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//jFLBTtwwFLznKyyfCUoWshv2WooQ4tAK2kuFIq/9krg4fpb9UhWh/ffK
+          zrLJtiD1ksObN5OZ8XvNGONa8S3jshckB2fyT5sv5cvz9ff6+tvN4C/Kz4/lzVe6v7stHh6Qn0UG
+          7n6CpDfWucTBGSCNdoKlB0EQVctNVdV1UVVFAgZUYCKtc5RfYj5oq/NVsbrMi01e1gd2j1pC4Fv2
+          I2OMsdf0jT6tgt98y5JWmgwQguiAb49LjHGPJk64CEEHEpb42QxKtAQ2WX/sgSkcdwYYtqxmOrBy
+          fb5c9tCOQUTDdjRmAQhrkUQMnGw+HZD90ZjBznnchb+ovNVWh77xIALaaCIQOp7QfcbYUypgPMnE
+          ncfBUUP4DOl3Zbma9Pjc+wI9tMMJSZjFfPXGOtFrFJDQJiwq5FLIHtRMnfsWo9K4ALJF6n/dvKc9
+          Jde2+x/5GZASHIFqnAel5Wniec1DPMuP1o4tJ8M8gP+lJTSkwceXUNCK0UzHwsNLIBiaVtsOvPN6
+          upjWNdW6EO0aquqKZ/vsDwAAAP//AwAaXQhlPwMAAA==
+      headers:
+        CF-RAY:
+          - 9733c92158289e6e-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 22 Aug 2025 16:35:51 GMT
+        Server:
+          - cloudflare
+        Strict-Transport-Security:
+          - max-age=31536000; includeSubDomains; preload
+        Transfer-Encoding:
+          - chunked
+        X-Content-Type-Options:
+          - nosniff
+        access-control-expose-headers:
+          - X-Request-ID
+        alt-svc:
+          - h3=":443"; ma=86400
+        cf-cache-status:
+          - DYNAMIC
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "346"
+        openai-project:
+          - proj_RNqI6HcOEEHFt903C3PXpgXs
+        openai-version:
+          - "2020-10-01"
+        x-envoy-upstream-service-time:
+          - "360"
+        x-ratelimit-limit-requests:
+          - "30000"
+        x-ratelimit-limit-tokens:
+          - "150000000"
+        x-ratelimit-remaining-requests:
+          - "29999"
+        x-ratelimit-remaining-tokens:
+          - "149999950"
+        x-ratelimit-reset-requests:
+          - 2ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_6a4b09fb335a4cb3a0918fc2a39a263b
+      status:
+        code: 200
+        message: OK
 version: 1
