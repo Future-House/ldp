@@ -130,10 +130,10 @@ def extract_top_logprobs(completion: litellm.utils.Choices) -> list[list[tuple[s
     if not content or not isinstance(content, list):
         return None
     
-    out = []
-    for pos in content:
-        tops = getattr(pos, "top_logprobs", []) or []
-        out.append([(t.token, float(t.logprob)) for t in tops])
+    out = [
+        [(t.token, float(t.logprob)) for t in (getattr(pos, "top_logprobs", []) or [])]
+        for pos in content
+    ]
     return out
 
 
