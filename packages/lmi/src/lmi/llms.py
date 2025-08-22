@@ -3,9 +3,9 @@ __all__ = [
     "LLMModel",
     "LiteLLMModel",
     "PassThroughRouter",
+    "extract_top_logprobs",
     "rate_limited",
     "request_limited",
-    "extract_top_logprobs",
     "sum_logprobs",
     "validate_json_completion",
 ]
@@ -72,8 +72,6 @@ if not IS_PYTHON_BELOW_312:
 JSONSchema: TypeAlias = Mapping[str, Any]
 
 
-
-
 class CommonLLMNames(StrEnum):
     """When you don't want to think about models, just use one from here."""
 
@@ -121,20 +119,21 @@ def sum_logprobs(choice: litellm.utils.Choices | list[float]) -> float | None:
     return None
 
 
-def extract_top_logprobs(completion: litellm.utils.Choices) -> list[list[tuple[str, float]]]:
+def extract_top_logprobs(
+    completion: litellm.utils.Choices,
+) -> list[list[tuple[str, float]]] | None:
     """Extract the top logprobs from an litellm completion."""
     if not hasattr(completion, "logprobs") or not completion.logprobs:
         return None
-    
+
     content = getattr(completion.logprobs, "content", None)
     if not content or not isinstance(content, list):
         return None
-    
-    out = [
+
+    return [
         [(t.token, float(t.logprob)) for t in (getattr(pos, "top_logprobs", []) or [])]
         for pos in content
     ]
-    return out
 
 
 def validate_json_completion(
@@ -608,12 +607,14 @@ class LiteLLMModel(LLMModel):
                             | ({} if max_tokens else {"max_tokens": max_tokens})
                             | (
                                 {}
-                                if "logprobs" not in data["config"] or not is_openai_model
+                                if "logprobs" not in data["config"]
+                                or not is_openai_model
                                 else {"logprobs": data["config"]["logprobs"]}
                             )
                             | (
                                 {}
-                                if "top_logprobs" not in data["config"] or not is_openai_model
+                                if "top_logprobs" not in data["config"]
+                                or not is_openai_model
                                 else {"top_logprobs": data["config"]["top_logprobs"]}
                             )
                         ),
