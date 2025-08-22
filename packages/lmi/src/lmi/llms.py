@@ -124,11 +124,11 @@ def sum_logprobs(choice: litellm.utils.Choices | list[float]) -> float | None:
 def extract_top_logprobs(completion: litellm.utils.Choices) -> list[list[tuple[str, float]]]:
     """Extract the top logprobs from an litellm completion."""
     if not hasattr(completion, "logprobs") or not completion.logprobs:
-        return []    
+        return None
     
     content = getattr(completion.logprobs, "content", None)
     if not content or not isinstance(content, list):
-        return []
+        return None
     
     out = []
     for pos in content:
@@ -587,6 +587,7 @@ class LiteLLMModel(LLMModel):
         if "name" not in data:
             data["name"] = data["config"].get("name", cls.model_fields["name"].default)
         if "model_list" not in data["config"]:
+            is_openai_model = "openai" in litellm.get_llm_provider(data["name"])
             max_tokens = data["config"].get("max_tokens")
             data["config"] = {
                 "model_list": [
@@ -607,12 +608,12 @@ class LiteLLMModel(LLMModel):
                             | ({} if max_tokens else {"max_tokens": max_tokens})
                             | (
                                 {}
-                                if "logprobs" not in data["config"]
+                                if "logprobs" not in data["config"] or not is_openai_model
                                 else {"logprobs": data["config"]["logprobs"]}
                             )
                             | (
                                 {}
-                                if "top_logprobs" not in data["config"]
+                                if "top_logprobs" not in data["config"] or not is_openai_model
                                 else {"top_logprobs": data["config"]["top_logprobs"]}
                             )
                         ),
