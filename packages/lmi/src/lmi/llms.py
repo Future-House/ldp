@@ -123,10 +123,11 @@ def extract_top_logprobs(
     completion: litellm.utils.Choices,
 ) -> list[list[tuple[str, float]]] | None:
     """Extract the top logprobs from an litellm completion."""
-    if not hasattr(completion, "logprobs") or not completion.logprobs:
+    logprobs_obj = getattr(completion, "logprobs", None)
+    if logprobs_obj is None:
         return None
 
-    content = getattr(completion.logprobs, "content", None)
+    content = getattr(logprobs_obj, "content", None)
     if not content or not isinstance(content, list):
         return None
 
@@ -588,6 +589,11 @@ class LiteLLMModel(LLMModel):
         if "model_list" not in data["config"]:
             is_openai_model = "openai" in litellm.get_llm_provider(data["name"])
             max_tokens = data["config"].get("max_tokens")
+            if ("logprobs" in data["config"] or "top_logprobs" in data["config"]) and not is_openai_model:
+                logger.warning(
+                    "Ignoring token logprobs for non-OpenAI model %s, as they are not supported.",
+                    data["name"],
+                )
             data["config"] = {
                 "model_list": [
                     {
