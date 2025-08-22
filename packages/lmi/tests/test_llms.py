@@ -136,9 +136,7 @@ class TestLiteLLMModel:
             assert isinstance(result.logprob, float)
             assert result.logprob <= 0
             # Test top_logprobs only for OpenAI models (top_logprobs is OpenAI-specific)
-            is_openai_model = "openai" in litellm.get_llm_provider(llm.name)
-            if (llm.config["model_list"][0]["litellm_params"].get("top_logprobs") 
-                and is_openai_model):
+            if (llm.config["model_list"][0]["litellm_params"].get("top_logprobs")):
                 assert isinstance(result.top_logprobs, list)
                 assert len(result.top_logprobs) > 0
                 # Each position should have a list of (token, logprob) tuples
