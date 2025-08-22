@@ -61,9 +61,9 @@ class TestLiteLLMModel:
         # Test logprobs and top_logprobs configuration passing through (OpenAI-specific)
         name = CommonLLMNames.OPENAI_TEST.value
         config_with_logprobs = {
-            "logprobs": True, 
-            "top_logprobs": 20, 
-            "temperature": 0.7
+            "logprobs": True,
+            "top_logprobs": 20,
+            "temperature": 0.7,
         }
         model5 = LiteLLMModel(name=name, config=config_with_logprobs)
         assert model5.config["model_list"][0]["litellm_params"]["logprobs"] is True
