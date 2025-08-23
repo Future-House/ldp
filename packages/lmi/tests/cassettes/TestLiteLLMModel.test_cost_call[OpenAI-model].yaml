@@ -1,8 +1,8 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAMElEQVR4nO3NMQEAIAzAsIF/zyCh175EQHve7LrL/TFIBskgGSSDZJAMkkEySAZTPqPEAT9XMVNHAAAAAElFTkSuQmCC"}},{"type":"text","text":"What
-        color is this square? Respond only with the color name."}]}],"model":"gpt-4o-mini-2024-07-18","n":2,"temperature":1.0}'
+        '{"messages":[{"role":"system","content":"Respond with single words."},{"role":"user","content":"What
+        is the meaning of the universe?"}],"model":"gpt-4o-mini-2024-07-18","max_tokens":56,"temperature":0}'
       headers:
         accept:
           - application/json
@@ -11,13 +11,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "391"
+          - "201"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.97.0
+          - AsyncOpenAI/Python 1.86.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.97.0
+          - 1.86.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -43,17 +43,17 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA9yTy27bMBBF9/oKYtZWIQmW7XrbV5CkKBCgqyIQaHIks6U4BDkqkgb594LyQ3LS
-          Al13owXP3OG9nNFTJgQYDVsBai9Z9d7m71a3N/76y/u1/fqoPz3UdPXhI3ef3/4qVu0dLJKCdt9R
-          8Un1RlHvLbIhd8AqoGRMXct1Xa+qTVHWI+hJo02yznO+pLw3zuRVUS3zYp2Xm6N6T0ZhhK34lgkh
-          xNP4TT6dxgfYimJxOukxRtkhbM9FQkAgm05AxmgiS8ewmKAix+hG63eo5yRgO0SZ3LnB2hmQzhHL
-          lG70dH8kz2cXljofaBdfSKE1zsR9E1BGcunGyOQhm4lfRSv/g2iZEPfjIIeLAOAD9Z4bph84Xrep
-          q+MkYVqgCVdHxsTSXqhO5KJho5GlsXH2YKCk2qOetNPiyEEbmoH5UF67+VPvQ3Tjun9pPwGl0DPq
-          xgfURl0mnsoCpv/rb2XnZx4NQ8Tw0yhs2GBIo9DYysEeVgPiY2Tsm9a4DoMP5rAfrW/qUu82S9nK
-          HWTP2W8AAAD//wMA+bDtfggEAAA=
+          H4sIAAAAAAAAA4yST2vcMBDF7/4UQud1cHadbnaPgUDpIRAIlBKCUaSxdxJJI6Rx/rLfvcjerJ02
+          hV500G/e6L3RvBdCSDRyK6TeKdYu2PICL37S5eumuqbrN2fc1fPNrx9PV9/bVp+BXGQF3T+A5g/V
+          iSYXLDCSH7GOoBhy19N1vTlfV3X9bQCODNgs6wKXNZUOPZbLalmX1bo8PT+od4QaktyK20IIId6H
+          M/v0Bl7kVlSLjxsHKakO5PZYJISMZPONVClhYuVZLiaoyTP4wfrlCyYGr+FkXhCh7ZPKJn1v7Qwo
+          74lVDjlYuzuQ/dGMpS5Euk9/SGWLHtOuiaAS+fxwYgpyoPtCiLshdP8phwyRXOCG6RGG55b12E5O
+          o57g6sCYWNmZZr34olljgBXaNJuZ1ErvwEzKacCqN0gzUMwi/+3lq95jbPTd/7SfgNYQGEwTIhjU
+          n/NOZRHyHv6r7DjiwbBMEJ9QQ8MIMX+DgVb1dtwOmV4Tg2ta9B3EEHFckTY0q1qd1Qo2Ky2LffEb
+          AAD//wMAKOdmwDADAAA=
       headers:
         CF-RAY:
-          - 971bb3b5dcc11828-SJC
+          - 94f69e14bfcbed3d-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -61,17 +61,15 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 19 Aug 2025 18:26:56 GMT
+          - Sat, 14 Jun 2025 03:07:27 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=TMtMijVip3a0h0qCy5vP5e4xSGO9NeeG014SlHnEhqE-1755628016-1.0.1.1-d0aAqG21_1szlGGwH2pawrN6IkdpAcdJrI57QDtVyHdij7VwDeX7oWVP99jcMj.I5gddAyjmcAv3X6T8RnDqPU.P0GpgAkJJcJ4vs8TNMKE;
-            path=/; expires=Tue, 19-Aug-25 18:56:56 GMT; domain=.api.openai.com; HttpOnly;
+          - __cf_bm=vdbgdDJt6AX5k0K1wX2kgirMFAjM9WdhjunYAlWLUSE-1749870447-1.0.1.1-tOIHVy4xixs8bmyAtzvLmhzARJ7CN7ELrkTnU7.pzok9augiRjaqAtBEL3Hnmkw5_eSdlVXySSAzjl..I4bjxZCExWbq2nCZ5cNZ9RCD1V8;
+            path=/; expires=Sat, 14-Jun-25 03:37:27 GMT; domain=.api.openai.com; HttpOnly;
             Secure; SameSite=None
-          - _cfuvid=2dNxUxN6mH.99Qj1WW6cqDbYSQRctjVCiMF8hGjsuBw-1755628016277-0.0.1.1-604800000;
+          - _cfuvid=eEjkt_JGtOZ6Tjz.epu67wE3MC37jjx6_KN7jMpvBPA-1749870447191-0.0.1.1-604800000;
             path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
-        Strict-Transport-Security:
-          - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
@@ -85,33 +83,27 @@ interactions:
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "1142"
-        openai-project:
-          - proj_RpeV6PrPclPHBb5GlExPXSBj
+          - "245"
         openai-version:
           - "2020-10-01"
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
         x-envoy-upstream-service-time:
-          - "1190"
-        x-ratelimit-limit-input-images:
-          - "50000"
+          - "248"
         x-ratelimit-limit-requests:
           - "30000"
         x-ratelimit-limit-tokens:
           - "150000000"
-        x-ratelimit-remaining-input-images:
-          - "49999"
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149999217"
-        x-ratelimit-reset-input-images:
-          - 1ms
+          - "149999981"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_9ed9799235ec4610a73bddc556298ae1
+          - req_419b00b013c237d17c774cc208436efb
       status:
         code: 200
         message: OK
