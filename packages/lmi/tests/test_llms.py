@@ -58,6 +58,18 @@ class TestLiteLLMModel:
         assert model4.config["model_list"][0]["litellm_params"]["temperature"] == 0.5
         assert model4.config["model_list"][0]["litellm_params"]["max_tokens"] == 100
 
+        # Test logprobs and top_logprobs configuration passing through (OpenAI-specific)
+        name = CommonLLMNames.OPENAI_TEST.value
+        config_with_logprobs = {
+            "logprobs": True,
+            "top_logprobs": 20,
+            "temperature": 0.7,
+        }
+        model5 = LiteLLMModel(name=name, config=config_with_logprobs)
+        assert model5.config["model_list"][0]["litellm_params"]["logprobs"] is True
+        assert model5.config["model_list"][0]["litellm_params"]["top_logprobs"] == 20
+        assert model5.config["model_list"][0]["litellm_params"]["temperature"] == 0.7
+
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.parametrize(
         "config",
@@ -73,6 +85,7 @@ class TestLiteLLMModel:
                                 "temperature": 0,
                                 "max_tokens": 56,
                                 "logprobs": True,
+                                "top_logprobs": 5,
                             },
                         }
                     ],
@@ -122,8 +135,22 @@ class TestLiteLLMModel:
         if llm.config["model_list"][0]["litellm_params"].get("logprobs"):
             assert isinstance(result.logprob, float)
             assert result.logprob <= 0
+            # Test top_logprobs only for OpenAI models (top_logprobs is OpenAI-specific)
+            if llm.config["model_list"][0]["litellm_params"].get("top_logprobs"):
+                assert isinstance(result.top_logprobs, list)
+                assert len(result.top_logprobs) > 0
+                # Each position should have a list of (token, logprob) tuples
+                for position_logprobs in result.top_logprobs:
+                    assert isinstance(position_logprobs, list)
+                    for token, logprob in position_logprobs:
+                        assert isinstance(token, str)
+                        assert isinstance(logprob, float)
+            else:
+                # For non-OpenAI models or when top_logprobs not configured
+                assert result.top_logprobs is None
         else:
             assert result.logprob is None
+            assert result.top_logprobs is None
         assert result.name == result_name
         result = await llm.call_single(messages)
         assert isinstance(result, LLMResult)

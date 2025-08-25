@@ -3,6 +3,7 @@ __all__ = [
     "LLMModel",
     "LiteLLMModel",
     "PassThroughRouter",
+    "extract_top_logprobs",
     "rate_limited",
     "request_limited",
     "sum_logprobs",
@@ -116,6 +117,24 @@ def sum_logprobs(choice: litellm.utils.Choices | list[float]) -> float | None:
     elif isinstance(choice, list):
         return sum(choice)
     return None
+
+
+def extract_top_logprobs(
+    completion: litellm.utils.Choices,
+) -> list[list[tuple[str, float]]] | None:
+    """Extract the top logprobs from an litellm completion."""
+    logprobs_obj = getattr(completion, "logprobs", None)
+    if logprobs_obj is None:
+        return None
+
+    content = getattr(logprobs_obj, "content", None)
+    if not content or not isinstance(content, list):
+        return None
+
+    return [
+        [(t.token, float(t.logprob)) for t in (getattr(pos, "top_logprobs", []) or [])]
+        for pos in content
+    ]
 
 
 def validate_json_completion(
@@ -568,7 +587,15 @@ class LiteLLMModel(LLMModel):
         if "name" not in data:
             data["name"] = data["config"].get("name", cls.model_fields["name"].default)
         if "model_list" not in data["config"]:
+            is_openai_model = "openai" in litellm.get_llm_provider(data["name"])
             max_tokens = data["config"].get("max_tokens")
+            if (
+                "logprobs" in data["config"] or "top_logprobs" in data["config"]
+            ) and not is_openai_model:
+                logger.warning(
+                    "Ignoring token logprobs for non-OpenAI model %s, as they are not supported.",
+                    data["name"],
+                )
             data["config"] = {
                 "model_list": [
                     {
@@ -586,6 +613,18 @@ class LiteLLMModel(LLMModel):
                                 else {"safety_settings": DEFAULT_VERTEX_SAFETY_SETTINGS}
                             )
                             | ({} if max_tokens else {"max_tokens": max_tokens})
+                            | (
+                                {}
+                                if "logprobs" not in data["config"]
+                                or not is_openai_model
+                                else {"logprobs": data["config"]["logprobs"]}
+                            )
+                            | (
+                                {}
+                                if "top_logprobs" not in data["config"]
+                                or not is_openai_model
+                                else {"top_logprobs": data["config"]["top_logprobs"]}
+                            )
                         ),
                     }
                 ],
@@ -710,6 +749,7 @@ class LiteLLMModel(LLMModel):
                     prompt=messages,
                     messages=output_messages,
                     logprob=sum_logprobs(completion),
+                    top_logprobs=extract_top_logprobs(completion),
                     prompt_count=completions.usage.prompt_tokens,  # type: ignore[attr-defined]
                     completion_count=completions.usage.completion_tokens,  # type: ignore[attr-defined]
                     system_fingerprint=completions.system_fingerprint,
@@ -769,6 +809,7 @@ class LiteLLMModel(LLMModel):
             prompt=messages,
             messages=[Message(role=role, content=text)],
             logprob=sum_logprobs(logprobs),
+            top_logprobs=extract_top_logprobs(completion),
             reasoning_content="".join(reasoning_content),
         )
 
