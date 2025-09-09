@@ -55,6 +55,12 @@ from lmi.constants import (
 )
 from lmi.cost_tracker import track_costs, track_costs_iter
 from lmi.exceptions import JSONSchemaValidationError
+from lmi.job_event_callback import (
+    _auto_configure_rest_client,
+    get_execution_context,
+    JobEventCallback,
+)
+from lmi.external import CostComponent
 from lmi.rate_limiter import GLOBAL_LIMITER
 from lmi.types import LLMResult
 from lmi.utils import get_litellm_retrying_config
@@ -174,30 +180,30 @@ def validate_json_completion(
 
 def prepare_args(
     func: Callable[..., Any] | Callable[..., Awaitable],
-    completion: str,
+    result: LLMResult,
     name: str | None,
-) -> tuple[tuple[str, ...], dict[str, Any]]:
+) -> tuple[tuple[LLMResult, ...], dict[str, Any]]:
     with contextlib.suppress(TypeError):
         if "name" in signature(func).parameters:
-            return (completion,), {"name": name}
-    return (completion,), {}
+            return (result,), {"name": name}
+    return (result,), {}
 
 
 async def do_callbacks(
     async_callbacks: Iterable[Callable[..., Awaitable]],
     sync_callbacks: Iterable[Callable[..., Any]],
-    completion: str,
+    result: LLMResult,
     name: str | None,
 ) -> None:
     await asyncio.gather(
         *(
             f(*args, **kwargs)
             for f in async_callbacks
-            for args, kwargs in (prepare_args(f, completion, name),)
+            for args, kwargs in (prepare_args(f, result, name),)
         )
     )
     for f in sync_callbacks:
-        args, kwargs = prepare_args(f, completion, name)
+        args, kwargs = prepare_args(f, result, name)
         f(*args, **kwargs)
 
 
@@ -215,6 +221,11 @@ class LLMModel(ABC, BaseModel):
         exclude=True,
     )
     config: dict = Field(default_factory=dict)
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Auto-configure job event client if available
+        _auto_configure_rest_client()
 
     async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:
         """Return the completion as string and the number of tokens in the prompt and completion."""
@@ -352,7 +363,19 @@ class LLMModel(ABC, BaseModel):
         results: list[LLMResult] = []
 
         start_clock = asyncio.get_running_loop().time()
-        if callbacks is None:
+        
+        # Automatically add job event callback if execution context is set
+        all_callbacks = list(callbacks) if callbacks else []
+        execution_id, execution_type = get_execution_context()
+        if execution_id and execution_type:
+            job_event_callback = JobEventCallback(
+                execution_id=execution_id,
+                execution_type=execution_type,
+                cost_component=CostComponent.LLM_USAGE,
+            )
+            all_callbacks.append(job_event_callback)
+        
+        if not all_callbacks:
             results = await self.acompletion(messages, **chat_kwargs)
         else:
             if tools:
@@ -362,8 +385,8 @@ class LLMModel(ABC, BaseModel):
                 raise NotImplementedError(
                     "Multiple completions with callbacks is not supported"
                 )
-            sync_callbacks = [f for f in callbacks if not is_coroutine_callable(f)]
-            async_callbacks = [f for f in callbacks if is_coroutine_callable(f)]
+            sync_callbacks = [f for f in all_callbacks if not is_coroutine_callable(f)]
+            async_callbacks = [f for f in all_callbacks if is_coroutine_callable(f)]
             stream_results = await self.acompletion_iter(messages, **chat_kwargs)
             text_result = []
             async for result in stream_results:
@@ -374,7 +397,7 @@ class LLMModel(ABC, BaseModel):
                         )
                     text_result.append(result.text)
                     await do_callbacks(
-                        async_callbacks, sync_callbacks, result.text, name
+                        async_callbacks, sync_callbacks, result, name
                     )
                 results.append(result)
 
