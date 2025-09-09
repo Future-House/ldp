@@ -1,4 +1,4 @@
-from typing import TypeVar
+from typing import TypeVar, cast
 
 import torch
 from transformers.generation.utils import GenerateDecoderOnlyOutput
@@ -113,7 +113,7 @@ class TensorChunker:
             return torch.cat(real_outputs, dim=0)
 
         if isinstance(real_outputs[0], GenerateDecoderOnlyOutput):
-            sequences = []
+            sequences: list[torch.Tensor] = []
             for output in real_outputs:
                 sequences.extend(output.sequences)
             scores: list[list[torch.Tensor | None]] | None = None
@@ -127,11 +127,13 @@ class TensorChunker:
                 # same access semantics. `score[i]` will be a tensor if it exists for batch element `i` and `None`
                 # otherwise.
                 scores = []
-                max_output_len = max(len(output.scores) for output in real_outputs)
+                max_output_len = max(
+                    len(output.scores or ()) for output in real_outputs
+                )
                 for i in range(max_output_len):
                     scores_step_i: list[torch.Tensor | None] = []
                     for output in real_outputs:
-                        if i < len(output.scores):
+                        if output.scores and i < len(output.scores):
                             scores_step_i.extend(list(output.scores[i]))
                         else:
                             # Add bsz Nones for this worker, since it did not reach token `i`.
@@ -140,8 +142,8 @@ class TensorChunker:
                     scores.append(scores_step_i)
 
             return GenerateDecoderOnlyOutput(
-                sequences=sequences,
-                scores=scores,
+                sequences=cast(torch.LongTensor, torch.cat(sequences, dim=0)),
+                scores=tuple(cast(torch.FloatTensor, scores)) if scores else None,
             )
 
         raise ValueError("Unsupported output type")
