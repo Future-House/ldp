@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import (
     Any,
     Concatenate,
-    Literal,
     ParamSpec,
     Self,
     TypeVar,
@@ -634,7 +633,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         func: Callable[Concatenate[ParallelTransformerHandler, TParams], TOutputType]
         | str,
         *args,
-        split_data: Literal[True],
+        split_data: bool = True,
         **kwargs,
     ) -> TOutputType: ...
 
@@ -643,7 +642,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         self,
         func: Callable[Concatenate[ParallelTransformerHandler, TParams], TReturn] | str,
         *args,
-        split_data: Literal[False] = ...,  # default
+        split_data: bool = False,  # default
         **kwargs,
     ) -> list[TReturn]: ...
 
