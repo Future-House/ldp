@@ -11,7 +11,16 @@ from collections.abc import Awaitable, Callable
 from enum import StrEnum, auto
 from functools import cache, partial, wraps
 from pathlib import Path
-from typing import Any, Concatenate, ParamSpec, Self, TypeVar, assert_never
+from typing import (
+    Any,
+    Concatenate,
+    Literal,
+    ParamSpec,
+    Self,
+    TypeVar,
+    assert_never,
+    cast,
+)
 
 import accelerate
 import torch
@@ -38,7 +47,7 @@ from transformers.tokenization_utils_base import BatchEncoding
 
 from ldp.graph.async_torch import AsyncBufferedWorker, AsyncTorchModule
 from ldp.nn.generation import LogitsProcessorWithFinalize
-from ldp.nn.handlers.chunking import TensorChunker
+from ldp.nn.handlers.chunking import TensorChunker, TOutputType
 from ldp.nn.handlers.module_handler import ModuleExecutionInterface, ModuleHandler
 from ldp.nn.lm_config import LMConfig, TorchDType
 from ldp.nn.utils import REPO_ROOT, set_seed
@@ -218,15 +227,24 @@ class TransformerHandler(ModuleHandler):
         # Use local_rank to resolve model location only in the main process *for each node*
         config.lm_config.resolve_model_location(is_main_process=self.local_rank == 0)
 
+        tokenizer: PreTrainedTokenizer
+        model: PreTrainedModel
+
         match config.lm_type:
             case LMType.GENERATION:
-                tokenizer, model = config.lm_config.get_causal_lm()
+                tokenizer, model = cast(
+                    tuple[PreTrainedTokenizer, PreTrainedModel],
+                    config.lm_config.get_causal_lm(),
+                )
                 # On left for https://github.com/huggingface/transformers/pull/7552
                 # ^ that seems to work for most HF models w/ absolute position embeddings
                 # Left padding always works for relative position embeddings
                 tokenizer.padding_side = "left"
             case LMType.REGRESSION:
-                tokenizer, model = config.lm_config.get_regression_lm()
+                tokenizer, model = cast(
+                    tuple[PreTrainedTokenizer, PreTrainedModel],
+                    config.lm_config.get_regression_lm(),
+                )
             case _:
                 assert_never(config.lm_type)
         super().__init__(model)
@@ -301,11 +319,15 @@ class AsyncTransformer(TransformerHandler, AsyncTransformerInterface):
         attention_mask: torch.Tensor | None = None,
         **kwargs,
     ) -> tuple[str, torch.Tensor]:
-        if inputs is None:
-            inputs = {"input_ids": input_ids, "attention_mask": attention_mask}
-        inputs_tokenized = _get_tokenized_inputs(self.tokenizer, inputs, tools_json).to(
-            device=_get_data_device()
+        inputs_to_tokenize: str | dict | BatchEncoding | list[dict]
+        inputs_to_tokenize = (
+            {"input_ids": input_ids, "attention_mask": attention_mask}
+            if inputs is None
+            else inputs
         )
+        inputs_tokenized = _get_tokenized_inputs(
+            self.tokenizer, inputs_to_tokenize, tools_json
+        ).to(device=_get_data_device())
         inputs_len = inputs_tokenized["input_ids"].shape[1]
         self.module.eval()
         outputs = await AsyncTorchModule.__call__(self, **inputs_tokenized, **kwargs)
@@ -594,9 +616,15 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         attention_mask: torch.Tensor | None = None,
         **kwargs,
     ) -> tuple[str, torch.Tensor]:
-        if inputs is None:
-            inputs = {"input_ids": input_ids, "attention_mask": attention_mask}
-        inputs_tokenized = _get_tokenized_inputs(self.tokenizer, inputs, tools_json)
+        inputs_to_tokenize: str | dict | BatchEncoding | list[dict]
+        inputs_to_tokenize = (
+            {"input_ids": input_ids, "attention_mask": attention_mask}
+            if inputs is None
+            else inputs
+        )
+        inputs_tokenized = _get_tokenized_inputs(
+            self.tokenizer, inputs_to_tokenize, tools_json
+        )
         inputs_len = inputs_tokenized["input_ids"].shape[1]
         outputs = await AsyncBufferedWorker.__call__(self, **inputs_tokenized, **kwargs)
         AsyncTransformer._maybe_finalize_logits_processors(
@@ -610,13 +638,32 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
             self.handler_call_fn, **batch_kwargs, split_data=True
         )
 
+    @overload
+    def _submit_and_gather(
+        self,
+        func: Callable[Concatenate[ParallelTransformerHandler, TParams], TOutputType]
+        | str,
+        *args,
+        split_data: Literal[True],
+        **kwargs,
+    ) -> TOutputType: ...
+
+    @overload
     def _submit_and_gather(
         self,
         func: Callable[Concatenate[ParallelTransformerHandler, TParams], TReturn] | str,
         *args,
+        split_data: Literal[False] = ...,  # default
+        **kwargs,
+    ) -> list[TReturn]: ...
+
+    def _submit_and_gather(
+        self,
+        func: Callable[Concatenate[ParallelTransformerHandler, TParams], Any] | str,
+        *args,
         split_data: bool = False,
         **kwargs,
-    ) -> list[TReturn]:
+    ) -> TOutputType | list[TReturn]:
         """Submit a function to all workers and gather the results.
 
         Args:
@@ -651,11 +698,11 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
                 self.actors, self.worker_ids, split_args, split_kwargs, strict=True
             )
         ]
-        results: list[TReturn] = self._client_gather(futures)
+        results = self._client_gather(futures)
 
         if split_data:
-            return chunker.dechunkify(results, dummy_flags)
-        return results
+            return chunker.dechunkify(cast(list[TOutputType], results), dummy_flags)
+        return cast(list[TReturn], results)
 
     def wrap_afunc(
         self,
@@ -901,20 +948,21 @@ def decollate_fn_transformer_decoder(
     batch_size = len(batched_output.sequences)
 
     return [
-        GenerateDecoderOnlyOutput({
-            "sequences": batched_output.sequences[i][None, :],
-            "scores": (
-                [
-                    score[i][None, :]
-                    for score in batched_output.scores
-                    if (score[i] is not None)
-                ]
-                if batched_output.scores
-                else None
+        GenerateDecoderOnlyOutput(
+            sequences=batched_output.sequences[i][None, :],
+            scores=cast(
+                tuple[torch.Tensor] | None,
+                (
+                    tuple(
+                        score[i][None, :]
+                        for score in batched_output.scores
+                        if (score[i] is not None)
+                    )
+                    if batched_output.scores
+                    else None
+                ),
             ),
-            # There are other fields in the batched output that we can add here,
-            # but no calling code is using them, so ignore for now.
-        })
+        )
         for i in range(batch_size)
     ]
 
@@ -977,12 +1025,17 @@ def _get_tokenized_inputs(
     if isinstance(inputs, str):
         return tokenizer(inputs, return_tensors="pt")
     if is_conversation(inputs):
-        return tokenizer.apply_chat_template(
-            inputs,
-            tools=tools_json,
-            return_tensors="pt",
-            return_dict=True,
-            add_generation_prompt=True,
+        return cast(
+            BatchEncoding,
+            tokenizer.apply_chat_template(
+                inputs,
+                tools=cast(
+                    list[dict[str, Any] | Callable[..., Any]] | None, tools_json
+                ),
+                return_tensors="pt",
+                return_dict=True,
+                add_generation_prompt=True,
+            ),
         )
     raise ValueError(
         f"inputs must be a str, BatchEncoding, or Conversation, but got {type(inputs)}"
