@@ -105,7 +105,7 @@ class TestLiteLLMModel:
         async def ac(x) -> None:
             pass
 
-        with cost_tracking_ctx(enabled=True):
+        with cost_tracking_ctx():
             with assert_costs_increased():
                 llm = LiteLLMModel(name=CommonLLMNames.GPT_4O.value)
                 image = np.zeros((32, 32, 3), dtype=np.uint8)
@@ -159,7 +159,7 @@ class TestLiteLLMModel:
     )
     @pytest.mark.asyncio
     async def test_cost_call_single(self, config: dict[str, Any]) -> None:
-        with cost_tracking_ctx(enabled=True), assert_costs_increased():
+        with cost_tracking_ctx(), assert_costs_increased():
             llm = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value, config=config)
 
             outputs = []
@@ -200,8 +200,12 @@ class TestRemoteCostTracking:
         mock_response.usage.completion_tokens = 5
 
         with (
-            cost_tracking_ctx(enabled=True),
+            cost_tracking_ctx(),
             remote_tracking_ctx(execution_id=execution_id),
+            patch.dict(
+                os.environ,
+                {"FUTUREHOUSE_API_KEY": "test-key"},  # pragma: allowlist secret
+            ),
         ):
             # Set the rest client directly
             GLOBAL_COST_TRACKER._job_event_client = mock_rest_client
@@ -240,9 +244,9 @@ class TestRemoteCostTracking:
         mock_rest_client.create_job_event = AsyncMock()
 
         with (
-            cost_tracking_ctx(enabled=True),
+            cost_tracking_ctx(),
             remote_tracking_ctx(),
-            patch.object(GLOBAL_COST_TRACKER, "_rest_client", mock_rest_client),
+            patch.object(GLOBAL_COST_TRACKER, "_job_event_client", mock_rest_client),
             patch("litellm.cost_calculator.completion_cost", return_value=0.001),
         ):
             # Call _record_remote directly with no execution ID
@@ -265,13 +269,17 @@ class TestRemoteCostTracking:
 
         # Mock the rest client to raise an exception
         mock_rest_client = AsyncMock()
-        mock_rest_client.acreate_job_event = AsyncMock(
+        mock_rest_client.create_job_event = AsyncMock(
             side_effect=Exception("API Error")
         )
 
         with (
             cost_tracking_ctx(enabled=True),
             remote_tracking_ctx(execution_id=execution_id),
+            patch.dict(
+                os.environ,
+                {"FUTUREHOUSE_API_KEY": "test-key"},  # pragma: allowlist secret
+            ),
         ):
             GLOBAL_COST_TRACKER._job_event_client = mock_rest_client
             try:

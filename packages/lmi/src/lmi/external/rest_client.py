@@ -15,13 +15,12 @@ from tenacity import (
     wait_exponential,
 )
 
-from lmi.external import FUTUREHOUSE_API_KEY
-
 from .job_event_models import (
     JobEventCreateRequest,
     JobEventCreateResponse,
     JobEventUpdateRequest,
 )
+from .utils import FUTUREHOUSE_API_KEY
 
 logger = logging.getLogger(__name__)
 

@@ -62,7 +62,7 @@ class CostTracker:
         # Not a contextvar because I can't imagine a scenario where you'd want more fine-grained control
         self.report_every_usd = 1.0
         self._job_event_client: RestClient | None = None
-        self._enabled = contextvars.ContextVar[bool]("track_costs", default=False)
+        self._enabled = contextvars.ContextVar[bool | None]("track_costs", default=None)
 
     @property
     def enabled(self) -> bool:
@@ -70,10 +70,10 @@ class CostTracker:
 
         Priority:
         1. Explicit enable context variable (set by either cost_tracking_ctx or enable_cost_tracking)
-        2. If context variable is not set or False, check Environment variable SHOULD_TRACK_COST
+        2. If context variable is not set, check Environment variable SHOULD_TRACK_COST
         """
         explicit_value = self._enabled.get()
-        if explicit_value:
+        if explicit_value is not None:
             return explicit_value
         return os.environ.get(SHOULD_TRACK_COST, "false").lower() == "true"
 
