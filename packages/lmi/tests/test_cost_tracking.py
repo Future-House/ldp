@@ -202,7 +202,6 @@ class TestCostTrackerCallback:
             with (
                 cost_tracking_ctx(enabled=True),
                 patch("litellm.cost_calculator.completion_cost", return_value=0.01),
-                patch("litellm.cost_calculator.completion_cost", return_value=0.01),
             ):
                 GLOBAL_COST_TRACKER.record(mock_response)
 
