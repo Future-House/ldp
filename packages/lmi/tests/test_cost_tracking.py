@@ -175,7 +175,7 @@ class TestCostTrackerCallback:
 
         try:
             with (
-                cost_tracking_ctx(enabled=True),
+                cost_tracking_ctx(),
                 patch("litellm.cost_calculator.completion_cost", return_value=0.01),
             ):
                 GLOBAL_COST_TRACKER.record(mock_response)
@@ -200,7 +200,7 @@ class TestCostTrackerCallback:
 
         try:
             with (
-                cost_tracking_ctx(enabled=True),
+                cost_tracking_ctx(),
                 patch("litellm.cost_calculator.completion_cost", return_value=0.01),
             ):
                 GLOBAL_COST_TRACKER.record(mock_response)
@@ -228,7 +228,7 @@ class TestCostTrackerCallback:
 
         try:
             with (
-                cost_tracking_ctx(enabled=True),
+                cost_tracking_ctx(),
                 patch("litellm.cost_calculator.completion_cost", return_value=0.01),
             ):
                 GLOBAL_COST_TRACKER.record(mock_response)
