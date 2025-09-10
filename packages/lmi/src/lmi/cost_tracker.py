@@ -18,6 +18,18 @@ class CostTracker:
         self.enabled = contextvars.ContextVar[bool]("track_costs", default=False)
         # Not a contextvar because I can't imagine a scenario where you'd want more fine-grained control
         self.report_every_usd = 1.0
+        self.callbacks: list[
+            Callable[
+                [
+                    (
+                        litellm.ModelResponse
+                        | litellm.types.utils.EmbeddingResponse
+                        | litellm.types.utils.ModelResponseStream
+                    )
+                ],
+                None,
+            ]
+        ] = []
 
     def record(
         self,
@@ -34,6 +46,15 @@ class CostTracker:
         if self.lifetime_cost_usd - self.last_report > self.report_every_usd:
             logger.info(f"Cumulative lmi API call cost: ${self.lifetime_cost_usd:.8f}")
             self.last_report = self.lifetime_cost_usd
+
+        # execute callbacks, only for remote job event reporting for now
+        for callback in self.callbacks:
+            try:
+                callback(response)
+            except Exception as e:
+                logger.warning(
+                    f"Callback failed during cost tracking: {e}", exc_info=True
+                )
 
 
 GLOBAL_COST_TRACKER = CostTracker()
