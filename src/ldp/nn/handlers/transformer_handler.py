@@ -7,7 +7,7 @@ import os
 import socket
 import sys
 from abc import ABC, abstractmethod
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable
 from enum import StrEnum, auto
 from functools import cache, partial, wraps
 from pathlib import Path
@@ -195,7 +195,7 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
     async def __call__(  # type: ignore[override]
         self,
         inputs: str | BatchEncoding | list[dict],
-        tools_json: list[dict] | None = None,
+        tools_json: list[dict[Any, Any] | Callable[..., Any]] | None = None,
         **kwargs,
     ) -> tuple[str, torch.Tensor]:
         """Call the transformer on a single input, which may be encoded."""
@@ -314,7 +314,7 @@ class AsyncTransformer(TransformerHandler, AsyncTransformerInterface):
     async def __call__(
         self,
         inputs: str | BatchEncoding | dict | list[dict] | None = None,
-        tools_json: list[dict] | None = None,
+        tools_json: list[dict[Any, Any] | Callable[..., Any]] | None = None,
         input_ids: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
         **kwargs,
@@ -607,7 +607,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
     async def __call__(
         self,
         inputs: str | BatchEncoding | dict | list[dict] | None = None,
-        tools_json: list[dict] | None = None,
+        tools_json: list[dict[Any, Any] | Callable[..., Any]] | None = None,
         input_ids: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
         **kwargs,
@@ -1012,7 +1012,7 @@ def _get_data_device() -> torch.device:
 def _get_tokenized_inputs(
     tokenizer: PreTrainedTokenizer,
     inputs: str | dict | BatchEncoding | list[dict],
-    tools_json: Sequence[dict | Callable[..., Any]] | None = None,
+    tools_json: list[dict[Any, Any] | Callable[..., Any]] | None = None,
 ) -> BatchEncoding:
     if isinstance(inputs, BatchEncoding):
         return inputs
@@ -1023,7 +1023,7 @@ def _get_tokenized_inputs(
     if is_conversation(inputs):
         result = tokenizer.apply_chat_template(
             inputs,
-            tools=(list(tools_json) if tools_json is not None else None),
+            tools=tools_json,
             return_tensors="pt",
             return_dict=True,
             add_generation_prompt=True,
