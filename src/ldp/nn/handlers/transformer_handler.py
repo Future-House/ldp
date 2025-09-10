@@ -950,18 +950,15 @@ def decollate_fn_transformer_decoder(
     """Decollates a batched output from a huggingface transformer decoder."""
     batch_size = len(batched_output.sequences)
 
-    def _ensure_long(x: torch.Tensor) -> torch.LongTensor:
-        return x.to(dtype=torch.long)  # type: ignore[return-value]
-
-    def _ensure_float(x: torch.Tensor) -> torch.FloatTensor:
-        return x.to(dtype=torch.float32)  # type: ignore[return-value]
-
     outputs: list[GenerateDecoderOnlyOutput] = []
     for i in range(batch_size):
-        sequences_i = _ensure_long(batched_output.sequences[i][None, :])
+        sequences_i = cast(
+            torch.LongTensor,
+            batched_output.sequences[i][None, :].to(dtype=torch.long),
+        )
         if batched_output.scores:
             float_tensors = tuple(
-                _ensure_float(score[i][None, :])
+                cast(torch.FloatTensor, score[i][None, :].to(dtype=torch.float32))
                 for score in batched_output.scores
                 if (score[i] is not None)
             )
