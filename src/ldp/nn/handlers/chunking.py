@@ -1,6 +1,7 @@
 from typing import TypeVar, cast
 
 import torch
+from torch.nn.utils.rnn import pad_sequence
 from transformers.generation.utils import GenerateDecoderOnlyOutput
 
 TOutputType = TypeVar("TOutputType", torch.Tensor, GenerateDecoderOnlyOutput)
@@ -85,6 +86,8 @@ class TensorChunker:
     def dechunkify(
         outputs_list: list[TOutputType],
         dummy_chunk_flags: list[bool],
+        padding_sequence_value: float = 0,
+        padding_score_value: float = 0,
     ) -> TOutputType:
         """Reassembles the outputs from the handlers, removing outputs corresponding to dummy chunks.
 
@@ -116,37 +119,50 @@ class TensorChunker:
             sequences: list[torch.Tensor] = [
                 output.sequences for output in real_outputs
             ]
-            scores: list[list[torch.Tensor | None]] | None = None
+            scores: list[torch.FloatTensor] = []
             if real_outputs[0].scores is not None:
-                assert all(output.scores is not None for output in real_outputs)
+                batch_size, vocab_size = real_outputs[0].scores[0].shape
+                device = real_outputs[0].scores[0].device
+                dtype = real_outputs[0].scores[0].dtype
+
                 # `output.scores` is a tuple (one el per decoded token), with each tensor of shape
                 # (batch_size, vocab_size).
                 # To get the scores for the `i`-th batch element, we'd do `[score[i] for score in output.scores]`.
                 # `output.scores` will have different lengths across workers, so we cannot simply concatenate them.
-                # Adding dummy scores is error-prone and loses info. Instead, we create a merged `scores` with the
-                # same access semantics. `score[i]` will be a tensor if it exists for batch element `i` and `None`
-                # otherwise.
-                scores = []
-                max_output_len = max(
-                    len(output.scores or ()) for output in real_outputs
-                )
+                # We need to add dummy scores because GenerateDecoderOnlyOutput expects a tuple of tensors.
+
+                max_output_len = 0
+                for output in real_outputs:
+                    assert output.scores is not None
+                    max_output_len = max(max_output_len, len(output.scores))
+
                 for i in range(max_output_len):
-                    scores_step_i: list[torch.Tensor | None] = []
+                    scores_step_i: list[torch.Tensor] = []
                     for output in real_outputs:
                         if output.scores and i < len(output.scores):
                             scores_step_i.extend(list(output.scores[i]))
                         else:
-                            # Add bsz Nones for this worker, since it did not reach token `i`.
-                            scores_step_i.extend([None] * output.sequences.shape[0])
+                            # Add dummy values for this worker, since it did not reach token `i`.
+                            scores_step_i.extend(
+                                torch.ones(
+                                    (batch_size, vocab_size), device=device, dtype=dtype
+                                )
+                                * padding_score_value
+                            )
+                    scores.append(cast(torch.FloatTensor, torch.stack(scores_step_i)))
 
-                    scores.append(scores_step_i)
-
-            sequences_cat = torch.cat(sequences, dim=0)
-            return GenerateDecoderOnlyOutput(
-                sequences=cast(torch.LongTensor, sequences_cat),
-                scores=tuple(cast(torch.FloatTensor, scores)) if scores else None,
+            padded_sequences = pad_sequence(
+                sequences, batch_first=True, padding_value=padding_sequence_value
+            ).to(torch.long)
+            scores_tuple = (
+                cast(tuple[torch.FloatTensor], tuple(scores))
+                if len(scores) > 0
+                else None
             )
-
+            return GenerateDecoderOnlyOutput(
+                sequences=cast(torch.LongTensor, padded_sequences),
+                scores=scores_tuple,
+            )
         raise ValueError("Unsupported output type")
 
     def _split_value(self, value):
