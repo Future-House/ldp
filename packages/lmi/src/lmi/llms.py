@@ -53,10 +53,7 @@ from lmi.constants import (
     DEFAULT_VERTEX_SAFETY_SETTINGS,
     IS_PYTHON_BELOW_312,
 )
-from lmi.cost_tracker import (
-    track_costs,
-    track_costs_iter,
-)
+from lmi.cost_tracker import track_costs, track_costs_iter
 from lmi.exceptions import JSONSchemaValidationError
 from lmi.rate_limiter import GLOBAL_LIMITER
 from lmi.types import LLMResult
@@ -388,8 +385,7 @@ class LLMModel(ABC, BaseModel):
             result.seconds_to_last_token = (
                 asyncio.get_running_loop().time() - start_clock
             )
-            result.name = name
-            
+            result.name = name            
             if self.llm_result_callback:
                 possibly_awaitable_result = self.llm_result_callback(result)
                 if isawaitable(possibly_awaitable_result):
