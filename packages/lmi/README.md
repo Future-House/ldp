@@ -25,6 +25,8 @@ pip install fhlmi
     - [LLMModel](#llmmodel)
     - [LiteLLMModel](#litellmmodel)
   - [Cost tracking](#cost-tracking)
+    - [Enabling Cost Tracking](#enabling-cost-tracking)
+    - [Remote Cost Tracking](#remote-cost-tracking)
   - [Rate limiting](#rate-limiting)
     - [Basic Usage](#basic-usage)
     - [Rate Limit Format](#rate-limit-format)
@@ -144,12 +146,79 @@ llm = LiteLLMModel(config=config)
 
 ### Cost tracking
 
-Cost tracking is supported in two different ways:
+Cost tracking is supported in multiple ways:
 
 1. Calls to the LLM return the token usage for each call in `LLMResult.prompt_count` and `LLMResult.completion_count`.
    Additionally, `LLMResult.cost` can be used to get a cost estimate for the call in USD.
 2. A global cost tracker is maintained in `GLOBAL_COST_TRACKER`
-   and can be enabled or disabled using `enable_cost_tracking()` and `cost_tracking_ctx()`.
+   and can be enabled or disabled using `enable_cost_tracking()`, `cost_tracking_ctx()`,
+   or through environment variable `SHOULD_TRACK_COST`.
+
+3. Costs can be automatically reported to FutureHouse platform for monitoring and analysis.
+
+#### Enabling Cost Tracking
+
+Cost tracking can be enabled in several ways:
+
+**Programmatic control:**
+
+```python
+from lmi import enable_cost_tracking, cost_tracking_ctx
+
+# Enable globally
+enable_cost_tracking(True)
+
+# Or use a context manager for temporary enabling
+with cost_tracking_ctx(enabled=True):
+    # Cost tracking is enabled within this block
+    result = await llm.call_single("Hello, world!")
+```
+
+**Environment variable:**
+
+```bash
+export SHOULD_TRACK_COST=true
+```
+
+**Priority order:**
+
+1. Explicit programmatic control (`enable_cost_tracking()` or `cost_tracking_ctx()`)
+2. Environment variable `SHOULD_TRACK_COST`
+3. Default: disabled
+
+#### Remote Cost Tracking
+
+For more detailed cost monitoring, you can enable remote cost tracking to report costs to the FutureHouse API.
+
+**Environment variables for remote tracking:**
+
+```bash
+# Required: API key for the FutureHouse platform
+export FUTUREHOUSE_API_KEY="your-api-key" # pragma: allowlist secret
+
+# Required: Execution id and type for grouping related costs
+# An execution is either a trajectory or an Edison Assistant session
+export FUTUREHOUSE_EXECUTION_ID="unique-execution-id"
+export FUTUREHOUSE_EXECUTION_TYPE="trajectory"  # or "session"
+```
+
+**Example usage:**
+
+```python
+import os
+from lmi import LiteLLMModel, cost_tracking_ctx
+
+# Set up remote tracking
+os.environ["FUTUREHOUSE_API_KEY"] = "your-api-key"  # pragma: allowlist secret
+os.environ["FUTUREHOUSE_EXECUTION_ID"] = "exec-123"
+os.environ["FUTUREHOUSE_EXECUTION_TYPE"] = "trajectory"
+os.environ["SHOULD_TRACK_COST"] = "true"
+
+# Enable cost tracking
+llm = LiteLLMModel(name="gpt-4o")
+result = await llm.call_single("What is the capital of France?")
+# Costs will be automatically tracked and reported through the FutureHouse API
+```
 
 ### Rate limiting
 
