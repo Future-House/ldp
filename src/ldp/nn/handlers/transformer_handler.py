@@ -230,9 +230,6 @@ class TransformerHandler(ModuleHandler):
         # Use local_rank to resolve model location only in the main process *for each node*
         config.lm_config.resolve_model_location(is_main_process=self.local_rank == 0)
 
-        tokenizer: PreTrainedTokenizer
-        model: PreTrainedModel
-
         match config.lm_type:
             case LMType.GENERATION:
                 tokenizer, model = cast(
@@ -316,21 +313,17 @@ class AsyncTransformer(TransformerHandler, AsyncTransformerInterface):
 
     async def __call__(
         self,
-        inputs: str | BatchEncoding | list[dict] | None = None,
+        inputs: str | BatchEncoding | dict | list[dict] | None = None,
         tools_json: list[dict] | None = None,
         input_ids: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
         **kwargs,
     ) -> tuple[str, torch.Tensor]:
-        inputs_to_tokenize: str | dict | BatchEncoding | list[dict]
-        inputs_to_tokenize = (
-            {"input_ids": input_ids, "attention_mask": attention_mask}
-            if inputs is None
-            else inputs
+        if inputs is None:
+            inputs = {"input_ids": input_ids, "attention_mask": attention_mask}
+        inputs_tokenized = _get_tokenized_inputs(self.tokenizer, inputs, tools_json).to(
+            device=_get_data_device()
         )
-        inputs_tokenized = _get_tokenized_inputs(
-            self.tokenizer, inputs_to_tokenize, tools_json
-        ).to(device=_get_data_device())
         inputs_len = inputs_tokenized["input_ids"].shape[1]
         self.module.eval()
         outputs = await AsyncTorchModule.__call__(self, **inputs_tokenized, **kwargs)
@@ -613,21 +606,15 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
     async def __call__(
         self,
-        inputs: str | BatchEncoding | list[dict] | None = None,
+        inputs: str | BatchEncoding | dict | list[dict] | None = None,
         tools_json: list[dict] | None = None,
         input_ids: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
         **kwargs,
     ) -> tuple[str, torch.Tensor]:
-        inputs_to_tokenize: str | dict | BatchEncoding | list[dict]
-        inputs_to_tokenize = (
-            {"input_ids": input_ids, "attention_mask": attention_mask}
-            if inputs is None
-            else inputs
-        )
-        inputs_tokenized = _get_tokenized_inputs(
-            self.tokenizer, inputs_to_tokenize, tools_json
-        )
+        if inputs is None:
+            inputs = {"input_ids": input_ids, "attention_mask": attention_mask}
+        inputs_tokenized = _get_tokenized_inputs(self.tokenizer, inputs, tools_json)
         inputs_len = inputs_tokenized["input_ids"].shape[1]
         outputs = await AsyncBufferedWorker.__call__(self, **inputs_tokenized, **kwargs)
         AsyncTransformer._maybe_finalize_logits_processors(
