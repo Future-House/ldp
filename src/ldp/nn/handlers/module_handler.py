@@ -106,10 +106,7 @@ class ModuleHandler(ModuleExecutionInterface):
     """
 
     def __init__(self, module: nn.Module):
-        # mypy in tests passes `module.device` positionally into Tensor.to(), whose
-        # stub overload expects a Tensor for the first positional argument.
-        # Annotate as Any to avoid false positives while keeping runtime type.
-        self.module: Any = module
+        self.module: nn.Module = module
 
         # A container for objects that are local to the current process.
         # Can be used for something like an optimizer, if self.module is

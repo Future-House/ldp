@@ -4,7 +4,6 @@ from itertools import starmap
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
-from typing import cast
 
 import pytest
 import torch
@@ -95,9 +94,7 @@ class TestTensorChunker:
         # Simulate outputs from handlers
         outputs_list = []
         for i in range(num_chunks):
-            sequences = cast(
-                torch.LongTensor, torch.tensor([[2 * i], [2 * i + 1]], dtype=torch.long)
-            )
+            sequences = torch.LongTensor([[2 * i], [2 * i + 1]])
             scores = None  # Simplify the test by not including scores
             output = GenerateDecoderOnlyOutput(sequences=sequences, scores=scores)
             outputs_list.append(output)
@@ -110,10 +107,10 @@ class TestTensorChunker:
 
         # Since the last chunk was a dummy, it should be excluded
         expected_sequences = [
-            torch.tensor([0], dtype=torch.long),
-            torch.tensor([1], dtype=torch.long),
-            torch.tensor([2], dtype=torch.long),
-            torch.tensor([3], dtype=torch.long),
+            torch.tensor([0]),
+            torch.tensor([1]),
+            torch.tensor([2]),
+            torch.tensor([3]),
         ]  # Sequences from first two outputs
         assert all(
             starmap(
@@ -271,7 +268,8 @@ class TestHandlers:
         def update_model(handler: ldp.nn.TransformerHandler) -> float:
             parameters = list(handler.module.parameters())
             opt = SGD(parameters, lr=0.1)
-            x = torch.ones((2, 2), dtype=torch.long).to(handler.module.device)
+            param_device = next(handler.module.parameters()).device
+            x = torch.ones((2, 2), dtype=torch.long).to(device=param_device)
             loss = handler.module(x, labels=x).loss
             loss.backward()
             opt.step()
