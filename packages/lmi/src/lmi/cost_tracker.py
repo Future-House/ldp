@@ -1,15 +1,17 @@
 import asyncio
+import contextvars
 import datetime
 import logging
 import os
 from collections.abc import Awaitable, Callable
+from contextlib import contextmanager
 from functools import wraps
 from typing import ParamSpec, TypeVar
 from uuid import UUID
 
 import litellm
 
-from lmi.utils import FUTUREHOUSE_API_KEY, SHOULD_TRACK_COST
+from lmi.external import FUTUREHOUSE_API_KEY, SHOULD_TRACK_COST
 
 from .external import (
     CostComponent,
@@ -59,12 +61,20 @@ class CostTracker:
         self.last_report = 0.0
         # Not a contextvar because I can't imagine a scenario where you'd want more fine-grained control
         self.report_every_usd = 1.0
-        # REST client for job event reporting
-        self._rest_client: RestClient | None = None
+        self._job_event_client: RestClient | None = None
+        self._enabled = contextvars.ContextVar[bool]("track_costs", default=False)
 
     @property
     def enabled(self) -> bool:
-        """Check if cost tracking should be enabled via environment variable."""
+        """Check if cost tracking should be enabled.
+
+        Priority:
+        1. Explicit enable context variable (set by either cost_tracking_ctx or enable_cost_tracking)
+        2. If context variable is not set or False, check Environment variable SHOULD_TRACK_COST
+        """
+        explicit_value = self._enabled.get()
+        if explicit_value:
+            return explicit_value
         return os.environ.get(SHOULD_TRACK_COST, "false").lower() == "true"
 
     @property
@@ -74,15 +84,15 @@ class CostTracker:
     @property
     def rest_client(self) -> RestClient | None:
         """Get or create the REST client for job event reporting."""
-        if self._rest_client is None and self.future_house_api_platform_key:
+        if self._job_event_client is None and self.future_house_api_platform_key:
             try:
-                self._rest_client = RestClient(
+                self._job_event_client = RestClient(
                     api_key=self.future_house_api_platform_key
                 )
                 logger.debug("REST client configured for job event reporting")
             except ValueError as e:
                 logger.debug(f"Failed to configure REST client: {e}")
-        return self._rest_client
+        return self._job_event_client
 
     def record(
         self,
@@ -193,7 +203,7 @@ class CostTracker:
             )
 
             # Report the job event
-            await self.rest_client.acreate_job_event(request)
+            await self.rest_client.create_job_event(request)
             logger.debug(f"Job event reported for execution {execution_id}")
 
         except Exception as e:
@@ -205,6 +215,20 @@ GLOBAL_COST_TRACKER = CostTracker()
 
 def set_reporting_threshold(threshold_usd: float) -> None:
     GLOBAL_COST_TRACKER.report_every_usd = threshold_usd
+
+
+def enable_cost_tracking(enabled: bool = True) -> None:
+    GLOBAL_COST_TRACKER._enabled.set(enabled)
+
+
+@contextmanager
+def cost_tracking_ctx(enabled: bool = True):
+    prev = GLOBAL_COST_TRACKER._enabled.get()
+    GLOBAL_COST_TRACKER._enabled.set(enabled)
+    try:
+        yield
+    finally:
+        GLOBAL_COST_TRACKER._enabled.set(prev)
 
 
 def get_execution_context() -> tuple[UUID | None, ExecutionType | None]:

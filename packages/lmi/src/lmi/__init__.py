@@ -3,7 +3,12 @@ from .constants import (
     EXTRA_TOKENS_FROM_USER_ROLE,
     MODEL_COST_MAP,
 )
-from .cost_tracker import GLOBAL_COST_TRACKER, get_execution_context
+from .cost_tracker import (
+    GLOBAL_COST_TRACKER,
+    cost_tracking_ctx,
+    enable_cost_tracking,
+    get_execution_context,
+)
 from .embeddings import (
     EmbeddingModel,
     EmbeddingModes,
@@ -49,7 +54,9 @@ __all__ = [
     "SentenceTransformerEmbeddingModel",
     "SparseEmbeddingModel",
     "configure_llm_logs",
+    "cost_tracking_ctx",
     "embedding_model_factory",
+    "enable_cost_tracking",
     "get_execution_context",
     "sum_logprobs",
     "validate_json_completion",

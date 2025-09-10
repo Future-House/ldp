@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from aviary.core import Message
 
-from lmi.cost_tracker import GLOBAL_COST_TRACKER
+from lmi.cost_tracker import GLOBAL_COST_TRACKER, cost_tracking_ctx
 from lmi.embeddings import LiteLLMEmbeddingModel
 from lmi.external.job_event_models import (
     CostComponent,
@@ -25,16 +25,6 @@ def assert_costs_increased():
     initial_cost = GLOBAL_COST_TRACKER.lifetime_cost_usd
     yield
     assert GLOBAL_COST_TRACKER.lifetime_cost_usd > initial_cost
-
-
-@contextmanager
-def cost_tracking_ctx():
-    """Enable cost tracking for tests."""
-    os.environ["SHOULD_TRACK_COST"] = "true"
-    try:
-        yield
-    finally:
-        os.environ.pop("SHOULD_TRACK_COST", None)
 
 
 @contextmanager
@@ -115,7 +105,7 @@ class TestLiteLLMModel:
         async def ac(x) -> None:
             pass
 
-        with cost_tracking_ctx():
+        with cost_tracking_ctx(enabled=True):
             with assert_costs_increased():
                 llm = LiteLLMModel(name=CommonLLMNames.GPT_4O.value)
                 image = np.zeros((32, 32, 3), dtype=np.uint8)
@@ -169,7 +159,7 @@ class TestLiteLLMModel:
     )
     @pytest.mark.asyncio
     async def test_cost_call_single(self, config: dict[str, Any]) -> None:
-        with cost_tracking_ctx(), assert_costs_increased():
+        with cost_tracking_ctx(enabled=True), assert_costs_increased():
             llm = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value, config=config)
 
             outputs = []
@@ -199,7 +189,7 @@ class TestRemoteCostTracking:
 
         # Mock the rest client
         mock_rest_client = AsyncMock()
-        mock_rest_client.acreate_job_event = AsyncMock()
+        mock_rest_client.create_job_event = AsyncMock()
 
         # Mock the litellm response
         mock_response = MagicMock()
@@ -209,9 +199,12 @@ class TestRemoteCostTracking:
         mock_response.usage.prompt_tokens = 10
         mock_response.usage.completion_tokens = 5
 
-        with cost_tracking_ctx(), remote_tracking_ctx(execution_id=execution_id):
+        with (
+            cost_tracking_ctx(enabled=True),
+            remote_tracking_ctx(execution_id=execution_id),
+        ):
             # Set the rest client directly
-            GLOBAL_COST_TRACKER._rest_client = mock_rest_client
+            GLOBAL_COST_TRACKER._job_event_client = mock_rest_client
             try:
                 # Mock the cost calculation
                 with patch(
@@ -223,11 +216,11 @@ class TestRemoteCostTracking:
                     )
             finally:
                 # Clean up
-                GLOBAL_COST_TRACKER._rest_client = None
+                GLOBAL_COST_TRACKER._job_event_client = None
 
-        assert mock_rest_client.acreate_job_event.called
+        assert mock_rest_client.create_job_event.called
 
-        call_args = mock_rest_client.acreate_job_event.call_args
+        call_args = mock_rest_client.create_job_event.call_args
         job_event_request = call_args[0][0]
 
         assert isinstance(job_event_request, JobEventCreateRequest)
@@ -244,10 +237,10 @@ class TestRemoteCostTracking:
     async def test_remote_cost_tracking_no_execution_id(self) -> None:
         """Test that remote tracking is not called when execution ID is missing."""
         mock_rest_client = AsyncMock()
-        mock_rest_client.acreate_job_event = AsyncMock()
+        mock_rest_client.create_job_event = AsyncMock()
 
         with (
-            cost_tracking_ctx(),
+            cost_tracking_ctx(enabled=True),
             remote_tracking_ctx(),
             patch.object(GLOBAL_COST_TRACKER, "_rest_client", mock_rest_client),
             patch("litellm.cost_calculator.completion_cost", return_value=0.001),
@@ -256,12 +249,12 @@ class TestRemoteCostTracking:
             GLOBAL_COST_TRACKER._record_remote(MagicMock())
 
             # Verify the endpoint was NOT called (no execution ID)
-            assert not mock_rest_client.acreate_job_event.called
+            assert not mock_rest_client.create_job_event.called
 
     @pytest.mark.asyncio
     async def test_remote_cost_tracking_no_api_key(self) -> None:
         """Test that remote tracking is not enabled when API key is missing."""
-        with cost_tracking_ctx():
+        with cost_tracking_ctx(enabled=True):
             # Should not have rest client without API key
             assert GLOBAL_COST_TRACKER.rest_client is None
 
@@ -276,8 +269,11 @@ class TestRemoteCostTracking:
             side_effect=Exception("API Error")
         )
 
-        with cost_tracking_ctx(), remote_tracking_ctx(execution_id=execution_id):
-            GLOBAL_COST_TRACKER._rest_client = mock_rest_client
+        with (
+            cost_tracking_ctx(enabled=True),
+            remote_tracking_ctx(execution_id=execution_id),
+        ):
+            GLOBAL_COST_TRACKER._job_event_client = mock_rest_client
             try:
                 # Mock the cost calculation
                 with patch(
@@ -296,7 +292,7 @@ class TestRemoteCostTracking:
                         mock_response, UUID(execution_id), ExecutionType.TRAJECTORY
                     )
             finally:
-                GLOBAL_COST_TRACKER._rest_client = None
+                GLOBAL_COST_TRACKER._job_event_client = None
 
             # Verify the endpoint was called (and failed)
-            assert mock_rest_client.acreate_job_event.called
+            assert mock_rest_client.create_job_event.called

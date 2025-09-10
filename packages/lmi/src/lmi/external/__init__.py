@@ -15,8 +15,14 @@ from .rest_client import (
     RestClientError,
     Stage,
 )
+from .utils import (
+    FUTUREHOUSE_API_KEY,
+    SHOULD_TRACK_COST,
+)
 
 __all__ = [
+    "FUTUREHOUSE_API_KEY",
+    "SHOULD_TRACK_COST",
     "CostComponent",
     "ExecutionType",
     "JobEventClientError",

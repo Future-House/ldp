@@ -3,10 +3,9 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import StrEnum, auto
-from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, JsonValue, field_validator
 
 
 class ExecutionType(StrEnum):
@@ -28,12 +27,8 @@ class JobEventCreateRequest(BaseModel):
     """Request model for creating a job event matching crow-service schema."""
 
     execution_id: UUID = Field(description="UUID for trajectory_id or session_id")
-    execution_type: ExecutionType = Field(
-        description="Either 'TRAJECTORY' or 'SESSION'"
-    )
-    cost_component: CostComponent = Field(
-        description="Cost component: 'LLM_USAGE', 'EXTERNAL_SERVICE', or 'STEP'"
-    )
+    execution_type: ExecutionType = Field()
+    cost_component: CostComponent = Field()
     started_at: datetime = Field(description="Start time of the cost period")
     ended_at: datetime = Field(description="End time of the cost period")
     crow: str | None = Field(
@@ -48,7 +43,7 @@ class JobEventCreateRequest(BaseModel):
     completion_token_count: int | None = Field(
         default=None, description="Completion token count for LLM calls"
     )
-    metadata: dict[str, Any] | None = Field(
+    metadata: dict[str, JsonValue] | None = Field(
         default=None, description="Additional metadata"
     )
 
@@ -73,7 +68,7 @@ class JobEventUpdateRequest(BaseModel):
     completion_token_count: int | None = Field(
         default=None, description="Completion token count for LLM calls"
     )
-    metadata: dict[str, Any] | None = Field(
+    metadata: dict[str, JsonValue] | None = Field(
         default=None, description="Additional metadata"
     )
     started_at: datetime | None = Field(
