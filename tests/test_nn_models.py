@@ -1,6 +1,5 @@
 import asyncio
 from functools import partial
-from itertools import starmap
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
@@ -93,9 +92,12 @@ class TestTensorChunker:
 
         # Simulate outputs from handlers
         outputs_list = []
+        from typing import cast
+
         for i in range(num_chunks):
             sequences = torch.LongTensor([[2 * i], [2 * i + 1]])
-            scores = None  # Simplify the test by not including scores
+            score = torch.full((batch_size, 1), float(i + 1), dtype=torch.float32)
+            scores = cast(tuple[torch.FloatTensor], (score,))
             output = GenerateDecoderOnlyOutput(sequences=sequences, scores=scores)
             outputs_list.append(output)
         dummy_chunk_flags = [i >= batch_size for i in range(num_chunks)]
@@ -104,21 +106,19 @@ class TestTensorChunker:
         combined_output = ldp.nn.TensorChunker.dechunkify(
             outputs_list, dummy_chunk_flags
         )
-
-        # Since the last chunk was a dummy, it should be excluded
-        expected_sequences = [
-            torch.tensor([0]),
-            torch.tensor([1]),
-            torch.tensor([2]),
-            torch.tensor([3]),
-        ]  # Sequences from first two outputs
-        assert all(
-            starmap(
-                torch.equal,
-                zip(combined_output.sequences, expected_sequences, strict=True),
-            )
+        assert torch.equal(
+            combined_output.sequences.reshape(-1),
+            torch.tensor([0, 1, 2, 3], dtype=torch.long),
         )
-        assert combined_output.scores is None
+        # Scores should be present, with one step stacked across real chunks
+        assert combined_output.scores is not None
+        assert len(combined_output.scores) == 1
+        step0 = combined_output.scores[0]
+        assert step0.shape == (batch_size * (num_chunks - 1), 1)
+        assert torch.allclose(step0[0], torch.tensor([1.0]))
+        assert torch.allclose(step0[1], torch.tensor([1.0]))
+        assert torch.allclose(step0[2], torch.tensor([2.0]))
+        assert torch.allclose(step0[3], torch.tensor([2.0]))
 
 
 def randomize_port(
