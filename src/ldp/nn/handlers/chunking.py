@@ -155,9 +155,7 @@ class TensorChunker:
                 sequences, batch_first=True, padding_value=padding_sequence_value
             ).to(torch.long)
             scores_tuple = (
-                cast(tuple[torch.FloatTensor], tuple(scores))
-                if len(scores) > 0
-                else None
+                cast(tuple[torch.FloatTensor], tuple(scores)) if scores else None
             )
             return GenerateDecoderOnlyOutput(
                 sequences=cast(torch.LongTensor, padded_sequences),
