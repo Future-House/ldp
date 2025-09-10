@@ -385,7 +385,7 @@ class LLMModel(ABC, BaseModel):
             result.seconds_to_last_token = (
                 asyncio.get_running_loop().time() - start_clock
             )
-            result.name = name            
+            result.name = name
             if self.llm_result_callback:
                 possibly_awaitable_result = self.llm_result_callback(result)
                 if isawaitable(possibly_awaitable_result):
