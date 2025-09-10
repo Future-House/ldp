@@ -113,9 +113,9 @@ class TensorChunker:
             return torch.cat(real_outputs, dim=0)
 
         if isinstance(real_outputs[0], GenerateDecoderOnlyOutput):
-            sequences: list[torch.Tensor] = []
-            for output in real_outputs:
-                sequences.extend(output.sequences)
+            sequences: list[torch.Tensor] = [
+                output.sequences for output in real_outputs
+            ]
             scores: list[list[torch.Tensor | None]] | None = None
             if real_outputs[0].scores is not None:
                 assert all(output.scores is not None for output in real_outputs)
@@ -141,8 +141,11 @@ class TensorChunker:
 
                     scores.append(scores_step_i)
 
+            # sequences is a list of tensors with shape (bsz_i, seq_len)
+            # Concatenate along batch dimension to preserve 2D shape
+            sequences_cat = torch.cat(sequences, dim=0)
             return GenerateDecoderOnlyOutput(
-                sequences=cast(torch.LongTensor, torch.cat(sequences, dim=0)),
+                sequences=cast(torch.LongTensor, sequences_cat),
                 scores=tuple(cast(torch.FloatTensor, scores)) if scores else None,
             )
 
