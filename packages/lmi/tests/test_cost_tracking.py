@@ -1,3 +1,4 @@
+import os
 from contextlib import contextmanager
 from typing import Any
 
@@ -5,7 +6,6 @@ import numpy as np
 import pytest
 from aviary.core import Message
 
-from lmi import cost_tracking_ctx
 from lmi.cost_tracker import GLOBAL_COST_TRACKER
 from lmi.embeddings import LiteLLMEmbeddingModel
 from lmi.llms import CommonLLMNames, LiteLLMModel
@@ -18,6 +18,16 @@ def assert_costs_increased():
     initial_cost = GLOBAL_COST_TRACKER.lifetime_cost_usd
     yield
     assert GLOBAL_COST_TRACKER.lifetime_cost_usd > initial_cost
+
+
+@contextmanager
+def cost_tracking_ctx():
+    """Enable cost tracking for tests."""
+    os.environ['SHOULD_TRACK_COST'] = 'true'
+    try:
+        yield
+    finally:
+        os.environ.pop('SHOULD_TRACK_COST', None)
 
 
 class TestLiteLLMEmbeddingCosts:

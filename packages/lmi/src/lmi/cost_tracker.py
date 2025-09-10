@@ -1,15 +1,14 @@
 import asyncio
-import contextvars
 import logging
 import os
 from collections.abc import Awaitable, Callable
-from contextlib import contextmanager
 from datetime import datetime, timedelta
 from functools import wraps
 from typing import ParamSpec, TypeVar
 from uuid import UUID
 
 import litellm
+from lmi.utils import FUTUREHOUSE_API_KEY, SHOULD_TRACK_COST
 
 from .external import (
     CostComponent,
@@ -20,7 +19,6 @@ from .external import (
 from .types import LLMResult
 
 logger = logging.getLogger(__name__)
-
 
 
 def get_execution_id_from_env() -> UUID | None:
@@ -67,11 +65,11 @@ class CostTracker:
     @property
     def enabled(self) -> bool:
         """Check if cost tracking should be enabled via environment variable."""
-        return os.environ.get("SHOULD_TRACK_COST", "false").lower() == "true"
+        return os.environ.get(SHOULD_TRACK_COST, "false").lower() == "true"
 
     @property
     def future_house_api_platform_key(self) -> str | None:
-        return os.environ.get("FUTURE_HOUSE_PLATFORM_API_KEY", None)
+        return os.environ.get(FUTUREHOUSE_API_KEY, None)
 
     @property
     def rest_client(self) -> RestClient | None:
@@ -186,18 +184,6 @@ def set_reporting_threshold(threshold_usd: float) -> None:
     GLOBAL_COST_TRACKER.report_every_usd = threshold_usd
 
 
-def enable_cost_tracking(enabled: bool = True) -> None:
-    GLOBAL_COST_TRACKER.enabled.set(enabled)
-
-
-@contextmanager
-def cost_tracking_ctx(enabled: bool = True):
-    prev = GLOBAL_COST_TRACKER.enabled.get()
-    GLOBAL_COST_TRACKER.enabled.set(enabled)
-    try:
-        yield
-    finally:
-        GLOBAL_COST_TRACKER.enabled.set(prev)
 
 
 
@@ -245,7 +231,7 @@ def track_costs(
 
     async def wrapped_func(*args, **kwargs):
         response = await func(*args, **kwargs)
-        if GLOBAL_COST_TRACKER.enabled.get():
+        if GLOBAL_COST_TRACKER.enabled:
             GLOBAL_COST_TRACKER.record(response)
         return response
 
@@ -288,13 +274,13 @@ class TrackedStreamWrapper:
 
     def __next__(self):
         response = next(self.stream)
-        if GLOBAL_COST_TRACKER.enabled.get():
+        if GLOBAL_COST_TRACKER.enabled:
             GLOBAL_COST_TRACKER.record(response)
         return response
 
     async def __anext__(self):
         response = await self.stream.__anext__()
-        if GLOBAL_COST_TRACKER.enabled.get():
+        if GLOBAL_COST_TRACKER.enabled:
             GLOBAL_COST_TRACKER.record(response)
         return response
 
