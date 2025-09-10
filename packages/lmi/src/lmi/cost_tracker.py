@@ -18,18 +18,10 @@ class CostTracker:
         self.enabled = contextvars.ContextVar[bool]("track_costs", default=False)
         # Not a contextvar because I can't imagine a scenario where you'd want more fine-grained control
         self.report_every_usd = 1.0
-        self.callbacks: list[
-            Callable[
-                [
-                    (
-                        litellm.ModelResponse
-                        | litellm.types.utils.EmbeddingResponse
-                        | litellm.types.utils.ModelResponseStream
-                    )
-                ],
-                None,
-            ]
-        ] = []
+        self.callbacks: list[Callable[..., None]] = []
+
+    def add_callback(self, callback: Callable[..., None]) -> None:
+        self.callbacks.append(callback)
 
     def record(
         self,
@@ -55,6 +47,7 @@ class CostTracker:
                 logger.warning(
                     f"Callback failed during cost tracking: {e}", exc_info=True
                 )
+        self.callbacks.clear()
 
 
 GLOBAL_COST_TRACKER = CostTracker()

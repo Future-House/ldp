@@ -171,22 +171,18 @@ class TestCostTrackerCallback:
         def test_callback(response):
             callback_calls.append(response)
 
-        GLOBAL_COST_TRACKER.callbacks.append(test_callback)
+        GLOBAL_COST_TRACKER.add_callback(test_callback)
 
-        try:
-            with (
-                cost_tracking_ctx(),
-                patch("litellm.cost_calculator.completion_cost", return_value=0.01),
-            ):
-                GLOBAL_COST_TRACKER.record(mock_response)
+        with (
+            cost_tracking_ctx(),
+            patch("litellm.cost_calculator.completion_cost", return_value=0.01),
+        ):
+            GLOBAL_COST_TRACKER.record(mock_response)
 
-                assert len(callback_calls) == 1
-                assert callback_calls[0] == mock_response
+            assert len(callback_calls) == 1
+            assert callback_calls[0] == mock_response
 
-                assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
-
-        finally:
-            GLOBAL_COST_TRACKER.callbacks.remove(test_callback)
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
 
     @pytest.mark.asyncio
     async def test_callback_failure_does_not_break_tracker(self, caplog):
@@ -196,24 +192,19 @@ class TestCostTrackerCallback:
 
         failing_callback = MagicMock(side_effect=Exception("Callback failed"))
 
-        GLOBAL_COST_TRACKER.callbacks.append(failing_callback)
+        GLOBAL_COST_TRACKER.add_callback(failing_callback)
 
-        try:
-            with (
-                cost_tracking_ctx(),
-                patch("litellm.cost_calculator.completion_cost", return_value=0.01),
-            ):
-                GLOBAL_COST_TRACKER.record(mock_response)
+        with (
+            cost_tracking_ctx(),
+            patch("litellm.cost_calculator.completion_cost", return_value=0.01),
+        ):
+            GLOBAL_COST_TRACKER.record(mock_response)
 
-                failing_callback.assert_called_once_with(mock_response)
+            failing_callback.assert_called_once_with(mock_response)
 
-                assert "Callback failed during cost tracking" in caplog.text
-                assert "Callback failed" in caplog.text
-
-                assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
-
-        finally:
-            GLOBAL_COST_TRACKER.callbacks.remove(failing_callback)
+            assert "Callback failed during cost tracking" in caplog.text
+            assert "Callback failed" in caplog.text
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
 
     @pytest.mark.asyncio
     async def test_multiple_callbacks_with_one_failing(self, caplog):
@@ -224,21 +215,17 @@ class TestCostTrackerCallback:
         failing_callback = MagicMock(side_effect=Exception("Callback failed"))
         succeeding_callback = MagicMock()
 
-        GLOBAL_COST_TRACKER.callbacks.extend([failing_callback, succeeding_callback])
+        GLOBAL_COST_TRACKER.add_callback(failing_callback)
+        GLOBAL_COST_TRACKER.add_callback(succeeding_callback)
 
-        try:
-            with (
-                cost_tracking_ctx(),
-                patch("litellm.cost_calculator.completion_cost", return_value=0.01),
-            ):
-                GLOBAL_COST_TRACKER.record(mock_response)
+        with (
+            cost_tracking_ctx(),
+            patch("litellm.cost_calculator.completion_cost", return_value=0.01),
+        ):
+            GLOBAL_COST_TRACKER.record(mock_response)
 
-                failing_callback.assert_called_once_with(mock_response)
-                succeeding_callback.assert_called_once_with(mock_response)
+            failing_callback.assert_called_once_with(mock_response)
+            succeeding_callback.assert_called_once_with(mock_response)
 
-                assert "Callback failed during cost tracking" in caplog.text
-                assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
-
-        finally:
-            GLOBAL_COST_TRACKER.callbacks.remove(failing_callback)
-            GLOBAL_COST_TRACKER.callbacks.remove(succeeding_callback)
+            assert "Callback failed during cost tracking" in caplog.text
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
