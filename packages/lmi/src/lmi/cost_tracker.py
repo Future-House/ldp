@@ -198,7 +198,6 @@ class CostTracker:
                 metadata={
                     "model": model_name,
                     "response_type": type(response).__name__,
-                    "model_config": getattr(response, "model_config", None),
                 },
             )
 
