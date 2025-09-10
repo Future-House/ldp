@@ -141,8 +141,6 @@ class TensorChunker:
 
                     scores.append(scores_step_i)
 
-            # sequences is a list of tensors with shape (bsz_i, seq_len)
-            # Concatenate along batch dimension to preserve 2D shape
             sequences_cat = torch.cat(sequences, dim=0)
             return GenerateDecoderOnlyOutput(
                 sequences=cast(torch.LongTensor, sequences_cat),
