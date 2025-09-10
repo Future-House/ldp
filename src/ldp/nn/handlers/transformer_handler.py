@@ -7,7 +7,7 @@ import os
 import socket
 import sys
 from abc import ABC, abstractmethod
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from enum import StrEnum, auto
 from functools import cache, partial, wraps
 from pathlib import Path
@@ -210,7 +210,10 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
                 f"model.generate() input_ids shape: {kwargs['input_ids'].shape}, rank"
                 f" {os.environ.get('RANK')}"
             )
-            return model.generate(
+            generate_fn = getattr(model, "generate", None)
+            if not callable(generate_fn):
+                raise TypeError("Model does not implement generate()")
+            return generate_fn(
                 *args,
                 **kwargs,
                 pad_token_id=model.config.pad_token_id,  # not always set properly by .generate()
@@ -442,9 +445,9 @@ class ParallelTransformerHandler(TransformerHandler):
         kwargs = tree.map_structure(to_device, kwargs)
 
         try:
-            with torch.autocast(
-                device_type=self.module.device.type, dtype=self.module.dtype
-            ):
+            device_type: str = str(self.module.device.type)
+            dtype: torch.dtype | None = getattr(self.module, "dtype", None)
+            with torch.autocast(device_type=device_type, dtype=dtype):
                 res = (
                     getattr(self, func)(*args, **kwargs)
                     if isinstance(func, str)
@@ -947,24 +950,33 @@ def decollate_fn_transformer_decoder(
     """Decollates a batched output from a huggingface transformer decoder."""
     batch_size = len(batched_output.sequences)
 
-    return [
-        GenerateDecoderOnlyOutput(
-            sequences=batched_output.sequences[i][None, :],
-            scores=cast(
-                tuple[torch.Tensor] | None,
-                (
-                    tuple(
-                        score[i][None, :]
-                        for score in batched_output.scores
-                        if (score[i] is not None)
-                    )
-                    if batched_output.scores
-                    else None
-                ),
-            ),
+    def _ensure_long(x: torch.Tensor) -> torch.LongTensor:
+        return x.to(dtype=torch.long)  # type: ignore[return-value]
+
+    def _ensure_float(x: torch.Tensor) -> torch.FloatTensor:
+        return x.to(dtype=torch.float32)  # type: ignore[return-value]
+
+    outputs: list[GenerateDecoderOnlyOutput] = []
+    for i in range(batch_size):
+        sequences_i = _ensure_long(batched_output.sequences[i][None, :])
+        if batched_output.scores:
+            float_tensors = tuple(
+                _ensure_float(score[i][None, :])
+                for score in batched_output.scores
+                if (score[i] is not None)
+            )
+            scores_i = cast(tuple[torch.FloatTensor], float_tensors)
+        else:
+            scores_i = None
+
+        outputs.append(
+            GenerateDecoderOnlyOutput(
+                sequences=sequences_i,
+                scores=scores_i,
+            )
         )
-        for i in range(batch_size)
-    ]
+
+    return outputs
 
 
 # From: https://github.com/pytorch/torchtune/blob/c5db813ce0473db090a4f1f6b450f559acac58e5/torchtune/training/_distributed.py#L207
@@ -1016,7 +1028,7 @@ def _get_data_device() -> torch.device:
 def _get_tokenized_inputs(
     tokenizer: PreTrainedTokenizer,
     inputs: str | dict | BatchEncoding | list[dict],
-    tools_json: list[dict] | None = None,
+    tools_json: Sequence[dict | Callable[..., Any]] | None = None,
 ) -> BatchEncoding:
     if isinstance(inputs, BatchEncoding):
         return inputs
@@ -1025,18 +1037,18 @@ def _get_tokenized_inputs(
     if isinstance(inputs, str):
         return tokenizer(inputs, return_tensors="pt")
     if is_conversation(inputs):
-        return cast(
-            BatchEncoding,
-            tokenizer.apply_chat_template(
-                inputs,
-                tools=cast(
-                    list[dict[str, Any] | Callable[..., Any]] | None, tools_json
-                ),
-                return_tensors="pt",
-                return_dict=True,
-                add_generation_prompt=True,
-            ),
+        result = tokenizer.apply_chat_template(
+            inputs,
+            tools=(list(tools_json) if tools_json is not None else None),
+            return_tensors="pt",
+            return_dict=True,
+            add_generation_prompt=True,
         )
+        if not isinstance(result, BatchEncoding):
+            raise TypeError(
+                f"Expected BatchEncoding from apply_chat_template, got {type(result)}"
+            )
+        return result
     raise ValueError(
         f"inputs must be a str, BatchEncoding, or Conversation, but got {type(inputs)}"
     )
