@@ -690,7 +690,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
         results = self._client_gather(futures)
 
         if split_data:
-            return chunker.dechunkify(cast(list[TOutputType], results), dummy_flags)
+            return chunker.dechunkify(results, dummy_flags)
         return results
 
     def wrap_afunc(
