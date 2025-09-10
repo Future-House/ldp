@@ -91,14 +91,14 @@ class RestClient:
     @property
     def client(self) -> Client:
         """Authenticated HTTP client for regular API calls."""
-        return cast(Client, self.get_client("application/json", authenticated=True))
+        return cast(Client, self.get_client())
 
     @property
     def async_client(self) -> AsyncClient:
         """Authenticated async HTTP client for regular API calls."""
         return cast(
             AsyncClient,
-            self.get_client("application/json", authenticated=True, async_client=True),
+            self.get_client(async_client=True),
         )
 
     def get_client(
