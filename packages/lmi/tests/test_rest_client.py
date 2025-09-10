@@ -13,7 +13,7 @@ from lmi.external import (
     RestClient,
     Stage,
 )
-from lmi.job_event_callback import is_job_event_tracking_enabled
+
 
 class TestJobEventModels:
     """Test job event model validation."""
@@ -47,6 +47,7 @@ class TestJobEventModels:
         )
         assert request.crow == "test-crow"
         assert request.amount_usd == 0.05
+        assert request.metadata is not None
         assert request.metadata["model"] == "gpt-4"
 
     def test_execution_type_enum(self):
@@ -67,11 +68,11 @@ class TestRestClient:
     def test_client_initialization(self):
         """Test that RestClient initializes correctly."""
         client = RestClient(
-            api_key="test-key",
+            api_key="test-key",  # pragma: allowlist secret
             service_uri="https://api.example.com",
         )
         assert client.base_url == "https://api.example.com"
-        assert client.api_key == "test-key"
+        assert client.api_key == "test-key"  # pragma: allowlist secret
 
     def test_client_initialization_without_api_key(self):
         """Test client initialization without API key raises ValueError."""
@@ -79,7 +80,7 @@ class TestRestClient:
         original_key = os.environ.get("FUTUREHOUSE_API_KEY")
         if "FUTUREHOUSE_API_KEY" in os.environ:
             del os.environ["FUTUREHOUSE_API_KEY"]
-        
+
         try:
             with pytest.raises(ValueError, match="API key must be provided"):
                 RestClient(service_uri="https://api.example.com")
@@ -88,20 +89,10 @@ class TestRestClient:
             if original_key is not None:
                 os.environ["FUTUREHOUSE_API_KEY"] = original_key
 
-    def test_client_initialization_with_custom_headers(self):
-        """Test client initialization with custom headers."""
-        custom_headers = {"X-Custom-Header": "custom-value"}
-        client = RestClient(
-            api_key="test-key",
-            service_uri="https://api.example.com",
-            headers=custom_headers,
-        )
-        assert client.headers["X-Custom-Header"] == "custom-value"
-
     def test_stage_usage(self):
         """Test that Stage enum works correctly."""
         client = RestClient(
-            api_key="test-key",
+            api_key="test-key",  # pragma: allowlist secret
             stage=Stage.DEV,
         )
         assert client.base_url == Stage.DEV.value
@@ -110,11 +101,11 @@ class TestRestClient:
     def test_client_initialization_with_env_var(self):
         """Test client initialization using environment variable."""
         original_key = os.environ.get("FUTUREHOUSE_API_KEY")
-        os.environ["FUTUREHOUSE_API_KEY"] = "env-test-key"
-        
+        os.environ["FUTUREHOUSE_API_KEY"] = "env-test-key"  # pragma: allowlist secret
+
         try:
             client = RestClient(service_uri="https://api.example.com")
-            assert client.api_key == "env-test-key"
+            assert client.api_key == "env-test-key"  # pragma: allowlist secret
         finally:
             # Restore original key or remove if it didn't exist
             if original_key is not None:

@@ -4,7 +4,7 @@ import copy
 import logging
 import os
 from enum import StrEnum
-from typing import Any, ClassVar, cast
+from typing import ClassVar, cast
 from uuid import UUID
 
 from httpx import AsyncClient, Client, HTTPStatusError, codes
@@ -14,6 +14,8 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+
+from lmi.utils import FUTUREHOUSE_API_KEY
 
 from .job_event_models import (
     JobEventCreateRequest,
@@ -26,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 class Stage(StrEnum):
     """Available deployment stages."""
+
     DEV = "https://dev-api.platform.futurehouse.org"
     PROD = "https://api.platform.futurehouse.org"
 
@@ -48,7 +51,7 @@ class JobEventUpdateError(JobEventClientError):
 
 class RestClient:
     """REST client for FutureHouse platform API operations."""
-    
+
     REQUEST_TIMEOUT: ClassVar[float] = 30.0  # sec - for general API calls
     MAX_RETRY_ATTEMPTS: ClassVar[int] = 3
     RETRY_MULTIPLIER: ClassVar[int] = 1
@@ -63,7 +66,7 @@ class RestClient:
         verbose_logging: bool = False,
     ):
         """Initialize the REST client.
-        
+
         Args:
             stage: Deployment stage (DEV or PROD)
             service_uri: Custom service URI (overrides stage)
@@ -78,13 +81,13 @@ class RestClient:
 
         self.base_url = service_uri or stage.value
         self.stage = stage
-        self.api_key = api_key or os.environ.get("FUTUREHOUSE_API_KEY")
-        
+        self.api_key = api_key or os.environ.get(FUTUREHOUSE_API_KEY)
+
         if self.api_key is None:
             raise ValueError(
                 "API key must be provided either as parameter or via FUTUREHOUSE_API_KEY environment variable"
             )
-        
+
         self._clients: dict[str, Client | AsyncClient] = {}
         self.headers = headers or {}
 
@@ -120,7 +123,9 @@ class RestClient:
             An HTTP client configured with the appropriate headers.
         """
         client_timeout = timeout or self.REQUEST_TIMEOUT
-        key = f"{content_type or 'none'}_{authenticated}_{async_client}_{client_timeout}"
+        key = (
+            f"{content_type or 'none'}_{authenticated}_{async_client}_{client_timeout}"
+        )
 
         if key not in self._clients:
             headers = copy.deepcopy(self.headers)
@@ -154,15 +159,17 @@ class RestClient:
         wait=wait_exponential(multiplier=RETRY_MULTIPLIER, max=MAX_RETRY_WAIT),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
-    def create_job_event(self, request: JobEventCreateRequest) -> JobEventCreateResponse:
+    def create_job_event(
+        self, request: JobEventCreateRequest
+    ) -> JobEventCreateResponse:
         """Create a new job event.
-        
+
         Args:
             request: Job event creation request
-            
+
         Returns:
             Job event creation response
-            
+
         Raises:
             JobEventCreationError: If the API call fails
         """
@@ -195,15 +202,17 @@ class RestClient:
         wait=wait_exponential(multiplier=RETRY_MULTIPLIER, max=MAX_RETRY_WAIT),
         before_sleep=before_sleep_log(logger, logging.WARNING),
     )
-    async def acreate_job_event(self, request: JobEventCreateRequest) -> JobEventCreateResponse:
+    async def acreate_job_event(
+        self, request: JobEventCreateRequest
+    ) -> JobEventCreateResponse:
         """Asynchronously create a new job event.
-        
+
         Args:
             request: Job event creation request
-            
+
         Returns:
             Job event creation response
-            
+
         Raises:
             JobEventCreationError: If the API call fails
         """
@@ -240,14 +249,11 @@ class RestClient:
         self, job_event_id: UUID, request: JobEventUpdateRequest
     ) -> None:
         """Update an existing job event.
-        
+
         Args:
             job_event_id: ID of the job event to update
             request: Job event update request
-            
-        Returns:
-            Job event update response
-            
+
         Raises:
             JobEventUpdateError: If the API call fails
         """
@@ -283,14 +289,11 @@ class RestClient:
         self, job_event_id: UUID, request: JobEventUpdateRequest
     ) -> None:
         """Asynchronously update an existing job event.
-        
+
         Args:
             job_event_id: ID of the job event to update
             request: Job event update request
-            
-        Returns:
-            Job event update response
-            
+
         Raises:
             JobEventUpdateError: If the API call fails
         """

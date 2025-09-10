@@ -8,24 +8,24 @@ from .job_event_models import (
     JobEventUpdateRequest,
 )
 from .rest_client import (
-    RestClient,
-    RestClientError,
     JobEventClientError,
     JobEventCreationError,
     JobEventUpdateError,
+    RestClient,
+    RestClientError,
     Stage,
 )
 
 __all__ = [
     "CostComponent",
-    "ExecutionType", 
+    "ExecutionType",
+    "JobEventClientError",
     "JobEventCreateRequest",
     "JobEventCreateResponse",
+    "JobEventCreationError",
+    "JobEventUpdateError",
     "JobEventUpdateRequest",
     "RestClient",
     "RestClientError",
-    "JobEventClientError",
-    "JobEventCreationError",
-    "JobEventUpdateError",
     "Stage",
 ]

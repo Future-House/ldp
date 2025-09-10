@@ -128,5 +128,6 @@ def update_litellm_max_callbacks(value: int = 1000) -> None:
     """
     litellm.litellm_core_utils.logging_callback_manager.LoggingCallbackManager.MAX_CALLBACKS = value
 
-FUTUREHOUSE_API_KEY = "FUTUREHOUSE_API_KEY"
+
+FUTUREHOUSE_API_KEY = "FUTUREHOUSE_API_KEY"  # pragma: allowlist secret
 SHOULD_TRACK_COST = "SHOULD_TRACK_COST"

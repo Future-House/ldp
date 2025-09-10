@@ -1,6 +1,8 @@
 import os
 from contextlib import contextmanager
 from typing import Any
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import UUID, uuid4
 
 import numpy as np
 import pytest
@@ -8,6 +10,11 @@ from aviary.core import Message
 
 from lmi.cost_tracker import GLOBAL_COST_TRACKER
 from lmi.embeddings import LiteLLMEmbeddingModel
+from lmi.external.job_event_models import (
+    CostComponent,
+    ExecutionType,
+    JobEventCreateRequest,
+)
 from lmi.llms import CommonLLMNames, LiteLLMModel
 from lmi.utils import VCR_DEFAULT_MATCH_ON
 
@@ -23,11 +30,26 @@ def assert_costs_increased():
 @contextmanager
 def cost_tracking_ctx():
     """Enable cost tracking for tests."""
-    os.environ['SHOULD_TRACK_COST'] = 'true'
+    os.environ["SHOULD_TRACK_COST"] = "true"
     try:
         yield
     finally:
-        os.environ.pop('SHOULD_TRACK_COST', None)
+        os.environ.pop("SHOULD_TRACK_COST", None)
+
+
+@contextmanager
+def remote_tracking_ctx(api_key: str = "test-api-key", execution_id: str | None = None):
+    """Enable remote cost tracking for tests."""
+    os.environ["FUTUREHOUSE_API_KEY"] = api_key
+    if execution_id:
+        os.environ["FUTUREHOUSE_EXECUTION_ID"] = execution_id
+        os.environ["FUTUREHOUSE_EXECUTION_TYPE"] = "TRAJECTORY"
+    try:
+        yield
+    finally:
+        os.environ.pop("FUTUREHOUSE_API_KEY", None)
+        os.environ.pop("FUTUREHOUSE_EXECUTION_ID", None)
+        os.environ.pop("FUTUREHOUSE_EXECUTION_TYPE", None)
 
 
 class TestLiteLLMEmbeddingCosts:
@@ -167,3 +189,114 @@ class TestLiteLLMModel:
                 messages=messages,
                 callbacks=[accum],
             )
+
+
+class TestRemoteCostTracking:
+    @pytest.mark.asyncio
+    async def test_remote_cost_tracking_unit_test(self) -> None:
+        """Unit test for remote cost tracking without making real API calls."""
+        execution_id = str(uuid4())
+
+        # Mock the rest client
+        mock_rest_client = AsyncMock()
+        mock_rest_client.acreate_job_event = AsyncMock()
+
+        # Mock the litellm response
+        mock_response = MagicMock()
+        mock_response.created = 1234567890
+        mock_response.model = "gpt-4o-mini"
+        mock_response.usage = MagicMock()
+        mock_response.usage.prompt_tokens = 10
+        mock_response.usage.completion_tokens = 5
+
+        with cost_tracking_ctx(), remote_tracking_ctx(execution_id=execution_id):
+            # Set the rest client directly
+            GLOBAL_COST_TRACKER._rest_client = mock_rest_client
+            try:
+                # Mock the cost calculation
+                with patch(
+                    "litellm.cost_calculator.completion_cost", return_value=0.001
+                ):
+                    # Call the _report_job_event method directly
+                    await GLOBAL_COST_TRACKER._report_job_event(
+                        mock_response, UUID(execution_id), ExecutionType.TRAJECTORY
+                    )
+            finally:
+                # Clean up
+                GLOBAL_COST_TRACKER._rest_client = None
+
+        assert mock_rest_client.acreate_job_event.called
+
+        call_args = mock_rest_client.acreate_job_event.call_args
+        job_event_request = call_args[0][0]
+
+        assert isinstance(job_event_request, JobEventCreateRequest)
+        assert job_event_request.execution_id == UUID(execution_id)
+        assert job_event_request.execution_type == ExecutionType.TRAJECTORY
+        assert job_event_request.cost_component == CostComponent.LLM_USAGE
+        assert job_event_request.amount_usd == 0.001
+        assert job_event_request.input_token_count == 10
+        assert job_event_request.completion_token_count == 5
+        assert job_event_request.metadata is not None
+        assert job_event_request.metadata["model"] == "gpt-4o-mini"
+
+    @pytest.mark.asyncio
+    async def test_remote_cost_tracking_no_execution_id(self) -> None:
+        """Test that remote tracking is not called when execution ID is missing."""
+        mock_rest_client = AsyncMock()
+        mock_rest_client.acreate_job_event = AsyncMock()
+
+        with (
+            cost_tracking_ctx(),
+            remote_tracking_ctx(),
+            patch.object(GLOBAL_COST_TRACKER, "_rest_client", mock_rest_client),
+            patch("litellm.cost_calculator.completion_cost", return_value=0.001),
+        ):
+            # Call _record_remote directly with no execution ID
+            GLOBAL_COST_TRACKER._record_remote(MagicMock())
+
+            # Verify the endpoint was NOT called (no execution ID)
+            assert not mock_rest_client.acreate_job_event.called
+
+    @pytest.mark.asyncio
+    async def test_remote_cost_tracking_no_api_key(self) -> None:
+        """Test that remote tracking is not enabled when API key is missing."""
+        with cost_tracking_ctx():
+            # Should not have rest client without API key
+            assert GLOBAL_COST_TRACKER.rest_client is None
+
+    @pytest.mark.asyncio
+    async def test_remote_cost_tracking_error_handling(self) -> None:
+        """Test that errors in remote tracking don't affect the main operation."""
+        execution_id = str(uuid4())
+
+        # Mock the rest client to raise an exception
+        mock_rest_client = AsyncMock()
+        mock_rest_client.acreate_job_event = AsyncMock(
+            side_effect=Exception("API Error")
+        )
+
+        with cost_tracking_ctx(), remote_tracking_ctx(execution_id=execution_id):
+            GLOBAL_COST_TRACKER._rest_client = mock_rest_client
+            try:
+                # Mock the cost calculation
+                with patch(
+                    "litellm.cost_calculator.completion_cost", return_value=0.001
+                ):
+                    # Create a proper mock response
+                    mock_response = MagicMock()
+                    mock_response.created = 1234567890
+                    mock_response.model = "gpt-4o-mini"
+                    mock_response.usage = MagicMock()
+                    mock_response.usage.prompt_tokens = 10
+                    mock_response.usage.completion_tokens = 5
+
+                    # Call the _report_job_event method directly
+                    await GLOBAL_COST_TRACKER._report_job_event(
+                        mock_response, UUID(execution_id), ExecutionType.TRAJECTORY
+                    )
+            finally:
+                GLOBAL_COST_TRACKER._rest_client = None
+
+            # Verify the endpoint was called (and failed)
+            assert mock_rest_client.acreate_job_event.called

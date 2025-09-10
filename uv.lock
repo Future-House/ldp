@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation != 'PyPy' and sys_platform == 'linux'",
@@ -680,6 +680,9 @@ local = [
 progress = [
     { name = "tqdm" },
 ]
+remote-tracking = [
+    { name = "httpx" },
+]
 typing = [
     { name = "types-tqdm" },
 ]
@@ -697,8 +700,8 @@ requires-dist = [
     { name = "coredis" },
     { name = "fhaviary", specifier = ">=0.14.0" },
     { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'" },
-    { name = "fhlmi", extras = ["local", "progress", "typing", "vcr"], marker = "extra == 'dev'", editable = "packages/lmi" },
-    { name = "httpx", marker = "extra == 'dev'" },
+    { name = "fhlmi", extras = ["local", "progress", "remote-tracking", "typing", "vcr"], marker = "extra == 'dev'", editable = "packages/lmi" },
+    { name = "httpx", marker = "extra == 'remote-tracking'" },
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "limits", specifier = ">=4.8" },
     { name = "litellm", specifier = ">=1.63.5,<1.75" },
@@ -726,7 +729,7 @@ requires-dist = [
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
     { name = "vcrpy", marker = "extra == 'vcr'", specifier = ">=6" },
 ]
-provides-extras = ["dev", "local", "progress", "typing", "vcr"]
+provides-extras = ["dev", "local", "progress", "typing", "vcr", "remote-tracking"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "fhlmi", extras = ["dev"], editable = "packages/lmi" }]

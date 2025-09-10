@@ -1,13 +1,14 @@
 import asyncio
+import datetime
 import logging
 import os
 from collections.abc import Awaitable, Callable
-from datetime import datetime, timedelta
 from functools import wraps
 from typing import ParamSpec, TypeVar
 from uuid import UUID
 
 import litellm
+
 from lmi.utils import FUTUREHOUSE_API_KEY, SHOULD_TRACK_COST
 
 from .external import (
@@ -16,41 +17,40 @@ from .external import (
     JobEventCreateRequest,
     RestClient,
 )
-from .types import LLMResult
 
 logger = logging.getLogger(__name__)
 
 
 def get_execution_id_from_env() -> UUID | None:
     """Get execution ID from environment variable.
-    
+
     Returns:
-        UUID if FUTURE_HOUSE_EXECUTION_ID is set, None otherwise
+        UUID if FUTUREHOUSE_EXECUTION_ID is set, None otherwise
     """
-    execution_id_str = os.environ.get("FUTURE_HOUSE_EXECUTION_ID")
+    execution_id_str = os.environ.get("FUTUREHOUSE_EXECUTION_ID")
     if execution_id_str:
         try:
             return UUID(execution_id_str)
         except ValueError:
-            logger.warning(f"Invalid FUTURE_HOUSE_EXECUTION_ID format: {execution_id_str}")
+            logger.warning(
+                f"Invalid FUTUREHOUSE_EXECUTION_ID format: {execution_id_str}"
+            )
     return None
 
 
 def get_execution_type_from_env() -> ExecutionType | None:
     """Get execution type from environment variable.
-    
+
     Returns:
-        ExecutionType if FUTURE_HOUSE_EXECUTION_TYPE is set, None otherwise
+        ExecutionType if FUTUREHOUSE_EXECUTION_TYPE is set, None otherwise
     """
-    execution_type_str = os.environ.get("FUTURE_HOUSE_EXECUTION_TYPE")
+    execution_type_str = os.environ.get("FUTUREHOUSE_EXECUTION_TYPE")
     if execution_type_str:
         try:
             return ExecutionType(execution_type_str.lower())
         except ValueError:
-            logger.warning(f"Invalid FUTURE_HOUSE_EXECUTION_TYPE: {execution_type_str}")
+            logger.warning(f"Invalid FUTUREHOUSE_EXECUTION_TYPE: {execution_type_str}")
     return None
-
-
 
 
 class CostTracker:
@@ -91,7 +91,7 @@ class CostTracker:
             | litellm.types.utils.EmbeddingResponse
             | litellm.types.utils.ModelResponseStream
         ),
-    ) -> None:        
+    ) -> None:
         self.lifetime_cost_usd += litellm.cost_calculator.completion_cost(
             completion_response=response
         )
@@ -99,7 +99,7 @@ class CostTracker:
         if self.lifetime_cost_usd - self.last_report > self.report_every_usd:
             logger.info(f"Cumulative lmi API call cost: ${self.lifetime_cost_usd:.8f}")
             self.last_report = self.lifetime_cost_usd
-        
+
         # Record for remote tracking if enabled
         if self.future_house_api_platform_key:
             self._record_remote(response)
@@ -113,66 +113,89 @@ class CostTracker:
         ),
     ) -> None:
         """Record response for remote tracking (job event reporting).
-        
+
         Args:
             response: The litellm response to record
         """
         # Get execution context from environment variables
         execution_id = get_execution_id_from_env()
         execution_type = get_execution_type_from_env()
-        
+
         if execution_id and execution_type and self.rest_client:
-            asyncio.create_task(self._report_job_event(response, execution_id, execution_type))
+            # need to store a reference to the task to avoid it being garbage collected
+            task = asyncio.create_task(
+                self._report_job_event(response, execution_id, execution_type)
+            )
+            task.add_done_callback(
+                lambda _: logger.debug("Job event reported: %s", response)
+            )
 
     async def _report_job_event(
-        self, 
+        self,
         response: (
             litellm.ModelResponse
             | litellm.types.utils.EmbeddingResponse
             | litellm.types.utils.ModelResponseStream
         ),
-        execution_id: UUID, 
-        execution_type: ExecutionType
+        execution_id: UUID,
+        execution_type: ExecutionType,
     ) -> None:
         """Asynchronously report job event to external tracking system."""
         try:
             if not self.rest_client:
                 return
-            
-            # Extract cost information
+
+            # TODO: can avoid this call by taking the cost as a parameter
             cost = litellm.cost_calculator.completion_cost(completion_response=response)
 
             # Extract token counts
             prompt_tokens = 0
             completion_tokens = 0
-            if hasattr(response, 'usage') and response.usage:
-                prompt_tokens = getattr(response.usage, 'prompt_tokens', 0) or 0
-                completion_tokens = getattr(response.usage, 'completion_tokens', 0) or 0
-            
-            # Create job event request
+            if hasattr(response, "usage") and response.usage:
+                prompt_tokens = getattr(response.usage, "prompt_tokens", None) or 0
+                completion_tokens = (
+                    getattr(response.usage, "completion_tokens", None) or 0
+                )
+
+            ended_at = None
+            model_name = "unknown"
+
+            if hasattr(response, "created"):
+                ended_at = response.created
+
+            if (
+                hasattr(response, "model")
+                and response.model
+                and isinstance(response.model, str)
+            ):
+                model_name = response.model
+
             request = JobEventCreateRequest(
                 execution_id=execution_id,
                 execution_type=execution_type,
                 cost_component=CostComponent.LLM_USAGE,
-                started_at=None,
-                ended_at=response.created,
+                # TODO: update to use the actual start time from the response
+                started_at=datetime.datetime.now(),
+                ended_at=ended_at,
                 crow=None,
                 amount_usd=cost if cost >= 0 else None,
                 amount_acu=cost if cost >= 0 else None,
                 rate=None,
                 input_token_count=prompt_tokens if prompt_tokens > 0 else None,
-                completion_token_count=completion_tokens if completion_tokens > 0 else None,
+                completion_token_count=completion_tokens
+                if completion_tokens > 0
+                else None,
                 metadata={
-                    "model": response.model.name | "unknown",
+                    "model": model_name,
                     "response_type": type(response).__name__,
-                    "model_config": response.model_config,
+                    "model_config": getattr(response, "model_config", None),
                 },
             )
-            
+
             # Report the job event
             await self.rest_client.acreate_job_event(request)
             logger.debug(f"Job event reported for execution {execution_id}")
-            
+
         except Exception as e:
             logger.debug(f"Failed to report job event: {e}")
 
@@ -184,13 +207,9 @@ def set_reporting_threshold(threshold_usd: float) -> None:
     GLOBAL_COST_TRACKER.report_every_usd = threshold_usd
 
 
-
-
-
-
 def get_execution_context() -> tuple[UUID | None, ExecutionType | None]:
     """Get the current execution context from environment variables.
-    
+
     Returns:
         Tuple of (execution_id, execution_type)
     """

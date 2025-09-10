@@ -24,7 +24,6 @@ classifiers = [
 dependencies = [
     "coredis",
     "fhaviary>=0.14.0",  # For multi-image support
-    "httpx",  # For job event client HTTP requests
     "limits>=4.8",  # Pin for RedisBridge.key_prefix
     "litellm>=1.63.5,<1.75",  # Lower pin for reasoning + streaming fix, upper-pin for https://github.com/BerriAI/litellm/issues/13081
     "pydantic~=2.0,>=2.10.1",
@@ -41,8 +40,7 @@ requires-python = ">=3.11"
 [project.optional-dependencies]
 dev = [
     "fhaviary[xml]",
-    "fhlmi[local,progress,typing,vcr]",
-    "httpx",
+    "fhlmi[local,progress,typing,vcr,remote-tracking]",
     "ipython>=8",  # Pin to keep recent
     "litellm>=1.68,<1.71",  # Lower pin for PydanticDeprecatedSince20 fixes, upper pin for VCR cassette breaks (https://github.com/BerriAI/litellm/issues/11724)
     "mypy>=1.8",  # Pin for mutable-override
@@ -65,6 +63,7 @@ local = [
     "sentence-transformers",
 ]
 progress = ["tqdm"]
+remote-tracking = ["httpx"]
 typing = ["types-tqdm"]
 vcr = [
     "vcrpy>=6",  # Pin for https://github.com/kevin1024/vcrpy/issues/884
