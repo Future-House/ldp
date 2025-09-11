@@ -142,7 +142,8 @@ class TensorChunker:
                         if output.scores and i < len(output.scores):
                             scores_step_i.extend(list(output.scores[i]))
                         else:
-                            # Add dummy values for this worker, since it did not reach token `i`.
+                            # Add dummy values by padding the scores for this step for this worker,
+                            # since it did not reach token `i`.
                             scores_step_i.extend(
                                 torch.ones(
                                     (batch_size, vocab_size), device=device, dtype=dtype

@@ -954,6 +954,8 @@ def decollate_fn_transformer_decoder(
         )
         for i in range(batch_size)
     ]
+    # There are other fields in the batched output that we can add here,
+    # but no calling code is using them, so ignore for now.
     return outputs
 
 

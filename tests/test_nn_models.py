@@ -3,6 +3,7 @@ from functools import partial
 from pathlib import Path
 from shutil import rmtree
 from tempfile import mkdtemp
+from typing import cast
 
 import pytest
 import torch
@@ -92,7 +93,6 @@ class TestTensorChunker:
 
         # Simulate outputs from handlers
         outputs_list = []
-        from typing import cast
 
         for i in range(num_chunks):
             sequences = torch.LongTensor([[2 * i], [2 * i + 1]])
