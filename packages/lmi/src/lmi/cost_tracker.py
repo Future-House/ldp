@@ -7,6 +7,8 @@ from typing import Any, ParamSpec, TypeVar
 
 import litellm
 
+from lmi.types import LLMResponse
+
 logger = logging.getLogger(__name__)
 
 
@@ -18,37 +20,14 @@ class CostTracker:
         self.enabled = contextvars.ContextVar[bool]("track_costs", default=False)
         # Not a contextvar because I can't imagine a scenario where you'd want more fine-grained control
         self.report_every_usd = 1.0
-        self._callbacks: list[
-            Callable[
-                [
-                    litellm.ModelResponse
-                    | litellm.types.utils.EmbeddingResponse
-                    | litellm.types.utils.ModelResponseStream
-                ],
-                Any,
-            ],
-        ] = []
+        self._callbacks: list[Callable[[LLMResponse], Any]] = []
 
-    def add_callback(
-        self,
-        callback: Callable[
-            [
-                litellm.ModelResponse
-                | litellm.types.utils.EmbeddingResponse
-                | litellm.types.utils.ModelResponseStream
-            ],
-            Any,
-        ],
-    ) -> None:
+    def add_callback(self, callback: Callable[[LLMResponse], Any]) -> None:
         self._callbacks.append(callback)
 
     def record(
         self,
-        response: (
-            litellm.ModelResponse
-            | litellm.types.utils.EmbeddingResponse
-            | litellm.types.utils.ModelResponseStream
-        ),
+        response: LLMResponse,
     ) -> None:
         self.lifetime_cost_usd += litellm.cost_calculator.completion_cost(
             completion_response=response

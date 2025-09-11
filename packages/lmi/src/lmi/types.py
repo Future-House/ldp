@@ -18,6 +18,13 @@ logger = logging.getLogger(__name__)
 # A context var that will be unique to threads/processes
 cvar_session_id = contextvars.ContextVar[UUID | None]("session_id", default=None)
 
+# Type alias for LLM response types that can be tracked for cost
+LLMResponse = (
+    litellm.ModelResponse
+    | litellm.types.utils.EmbeddingResponse
+    | litellm.types.utils.ModelResponseStream
+)
+
 
 @contextmanager
 def set_llm_session_ids(session_id: UUID):
