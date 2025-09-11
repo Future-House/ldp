@@ -2,6 +2,7 @@ import contextvars
 import logging
 from contextlib import contextmanager
 from datetime import datetime
+from typing import TypeAlias
 from uuid import UUID, uuid4
 
 import litellm
@@ -17,6 +18,11 @@ logger = logging.getLogger(__name__)
 
 # A context var that will be unique to threads/processes
 cvar_session_id = contextvars.ContextVar[UUID | None]("session_id", default=None)
+
+# Type alias for LLM response types that can be tracked for cost
+LLMResponse: TypeAlias = (
+    litellm.ModelResponse | litellm.EmbeddingResponse | litellm.ModelResponseStream
+)
 
 
 @contextmanager
