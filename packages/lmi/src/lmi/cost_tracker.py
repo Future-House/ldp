@@ -39,7 +39,6 @@ class CostTracker:
             logger.info(f"Cumulative lmi API call cost: ${self.lifetime_cost_usd:.8f}")
             self.last_report = self.lifetime_cost_usd
 
-        # execute callbacks, only for remote job event reporting for now
         for callback in self.callbacks:
             try:
                 callback(response)
