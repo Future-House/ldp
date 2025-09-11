@@ -210,10 +210,9 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
                 f"model.generate() input_ids shape: {kwargs['input_ids'].shape}, rank"
                 f" {os.environ.get('RANK')}"
             )
-            generate_fn = getattr(model, "generate", None)
-            if not callable(generate_fn):
-                raise TypeError("Model does not implement generate()")
-            return generate_fn(
+           if not isinstance(model, GenerationMixin):
+                raise TypeError("model_generate only supports models that inherit from GenerationMixin")
+            return model.generate(
                 *args,
                 **kwargs,
                 pad_token_id=model.config.pad_token_id,  # not always set properly by .generate()
