@@ -3,7 +3,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from contextlib import contextmanager
 from functools import wraps
-from typing import ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar
 
 import litellm
 
@@ -18,9 +18,28 @@ class CostTracker:
         self.enabled = contextvars.ContextVar[bool]("track_costs", default=False)
         # Not a contextvar because I can't imagine a scenario where you'd want more fine-grained control
         self.report_every_usd = 1.0
-        self.callbacks: list[Callable[..., None]] = []
+        self.callbacks: list[
+            Callable[
+                [
+                    litellm.ModelResponse
+                    | litellm.types.utils.EmbeddingResponse
+                    | litellm.types.utils.ModelResponseStream
+                ],
+                Any,
+            ],
+        ] = []
 
-    def add_callback(self, callback: Callable[..., None]) -> None:
+    def add_callback(
+        self,
+        callback: Callable[
+            [
+                litellm.ModelResponse
+                | litellm.types.utils.EmbeddingResponse
+                | litellm.types.utils.ModelResponseStream
+            ],
+            Any,
+        ],
+    ) -> None:
         self.callbacks.append(callback)
 
     def record(

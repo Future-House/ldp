@@ -165,7 +165,7 @@ class TestCostTrackerCallback:
     async def test_callback_succeeds(self):
         mock_response = MagicMock(cost=0.01)
 
-        callback_calls = []
+        callback_calls: list[Any] = []
         GLOBAL_COST_TRACKER.add_callback(callback_calls.append)
 
         with (
