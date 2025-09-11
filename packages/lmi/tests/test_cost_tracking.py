@@ -166,11 +166,7 @@ class TestCostTrackerCallback:
         mock_response = MagicMock(cost=0.01)
 
         callback_calls = []
-
-        def test_callback(response):
-            callback_calls.append(response)
-
-        GLOBAL_COST_TRACKER.add_callback(test_callback)
+        GLOBAL_COST_TRACKER.add_callback(callback_calls.append)
 
         with (
             cost_tracking_ctx(),
