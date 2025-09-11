@@ -87,13 +87,15 @@ class LocalLLMCallOp(Op[Message]):
         return result
 
     @staticmethod
-    def prep_tools_for_tokenizer(tools: list[Tool] | None) -> list[dict] | None:
+    def prep_tools_for_tokenizer(
+        tools: list[Tool] | None,
+    ) -> list[dict[Any, Any]] | None:
         """Prepare tools for the tokenizer by transforming them into a JSON schema."""
         if not tools:
             return None
 
         # TODO: should be able to switch to tool.info.model_dump() here
-        tools_list = []
+        tools_list: list[dict[Any, Any]] = []
         for tool in tools:
             if tool.info.parameters is None:
                 raise NotImplementedError(

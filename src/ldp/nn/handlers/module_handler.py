@@ -106,7 +106,7 @@ class ModuleHandler(ModuleExecutionInterface):
     """
 
     def __init__(self, module: nn.Module):
-        self.module = module
+        self.module: nn.Module = module
 
         # A container for objects that are local to the current process.
         # Can be used for something like an optimizer, if self.module is
