@@ -182,11 +182,8 @@ class TestCostTrackerCallback:
     @pytest.mark.asyncio
     async def test_callback_failure_does_not_break_tracker(self, caplog):
         """Test that a failing callback doesn't break the cost tracker."""
-        mock_response = MagicMock()
-        mock_response.cost = 0.01
-
+        mock_response = MagicMock(cost=0.01)
         failing_callback = MagicMock(side_effect=Exception("Callback failed"))
-
         GLOBAL_COST_TRACKER.add_callback(failing_callback)
 
         with (
@@ -204,9 +201,7 @@ class TestCostTrackerCallback:
     @pytest.mark.asyncio
     async def test_multiple_callbacks_with_one_failing(self, caplog):
         """Test that one failing callback doesn't prevent other callbacks from running."""
-        mock_response = MagicMock()
-        mock_response.cost = 0.01
-
+        mock_response = MagicMock(cost=0.01)
         failing_callback = MagicMock(side_effect=Exception("Callback failed"))
         succeeding_callback = MagicMock()
 
