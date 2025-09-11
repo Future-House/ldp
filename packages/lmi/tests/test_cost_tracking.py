@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from typing import Any
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -157,3 +158,64 @@ class TestLiteLLMModel:
                 messages=messages,
                 callbacks=[accum],
             )
+
+
+class TestCostTrackerCallback:
+    @pytest.mark.asyncio
+    async def test_callback_succeeds(self):
+        mock_response = MagicMock(cost=0.01)
+
+        callback_calls: list[Any] = []
+        GLOBAL_COST_TRACKER.add_callback(callback_calls.append)
+
+        with (
+            cost_tracking_ctx(),
+            patch("litellm.cost_calculator.completion_cost", return_value=0.01),
+        ):
+            GLOBAL_COST_TRACKER.record(mock_response)
+
+            assert len(callback_calls) == 1
+            assert callback_calls[0] == mock_response
+
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
+
+    @pytest.mark.asyncio
+    async def test_callback_failure_does_not_break_tracker(self, caplog):
+        """Test that a failing callback doesn't break the cost tracker."""
+        mock_response = MagicMock(cost=0.01)
+        failing_callback = MagicMock(side_effect=Exception("Callback failed"))
+        GLOBAL_COST_TRACKER.add_callback(failing_callback)
+
+        with (
+            cost_tracking_ctx(),
+            patch("litellm.cost_calculator.completion_cost", return_value=0.01),
+        ):
+            GLOBAL_COST_TRACKER.record(mock_response)
+
+            failing_callback.assert_called_once_with(mock_response)
+
+            assert "Callback failed during cost tracking" in caplog.text
+            assert "Callback failed" in caplog.text
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
+
+    @pytest.mark.asyncio
+    async def test_multiple_callbacks_with_one_failing(self, caplog):
+        """Test that one failing callback doesn't prevent other callbacks from running."""
+        mock_response = MagicMock(cost=0.01)
+        failing_callback = MagicMock(side_effect=Exception("Callback failed"))
+        succeeding_callback = MagicMock()
+
+        GLOBAL_COST_TRACKER.add_callback(failing_callback)
+        GLOBAL_COST_TRACKER.add_callback(succeeding_callback)
+
+        with (
+            cost_tracking_ctx(),
+            patch("litellm.cost_calculator.completion_cost", return_value=0.01),
+        ):
+            GLOBAL_COST_TRACKER.record(mock_response)
+
+            failing_callback.assert_called_once_with(mock_response)
+            succeeding_callback.assert_called_once_with(mock_response)
+
+            assert "Callback failed during cost tracking" in caplog.text
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0

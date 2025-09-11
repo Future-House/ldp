@@ -3,7 +3,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from contextlib import contextmanager
 from functools import wraps
-from typing import ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar
 
 import litellm
 
@@ -18,6 +18,29 @@ class CostTracker:
         self.enabled = contextvars.ContextVar[bool]("track_costs", default=False)
         # Not a contextvar because I can't imagine a scenario where you'd want more fine-grained control
         self.report_every_usd = 1.0
+        self._callbacks: list[
+            Callable[
+                [
+                    litellm.ModelResponse
+                    | litellm.types.utils.EmbeddingResponse
+                    | litellm.types.utils.ModelResponseStream
+                ],
+                Any,
+            ],
+        ] = []
+
+    def add_callback(
+        self,
+        callback: Callable[
+            [
+                litellm.ModelResponse
+                | litellm.types.utils.EmbeddingResponse
+                | litellm.types.utils.ModelResponseStream
+            ],
+            Any,
+        ],
+    ) -> None:
+        self._callbacks.append(callback)
 
     def record(
         self,
@@ -34,6 +57,14 @@ class CostTracker:
         if self.lifetime_cost_usd - self.last_report > self.report_every_usd:
             logger.info(f"Cumulative lmi API call cost: ${self.lifetime_cost_usd:.8f}")
             self.last_report = self.lifetime_cost_usd
+
+        for callback in self._callbacks:
+            try:
+                callback(response)
+            except Exception as e:
+                logger.warning(
+                    f"Callback failed during cost tracking: {e}", exc_info=True
+                )
 
 
 GLOBAL_COST_TRACKER = CostTracker()
