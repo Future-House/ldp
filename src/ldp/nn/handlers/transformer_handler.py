@@ -41,7 +41,7 @@ from torch.distributed.fsdp import (
     StateDictType,
 )
 from torch.nn.functional import pad
-from transformers import PreTrainedModel, PreTrainedTokenizer
+from transformers import GenerationMixin, PreTrainedModel, PreTrainedTokenizer
 from transformers.generation.utils import GenerateDecoderOnlyOutput, LogitsProcessorList
 from transformers.tokenization_utils_base import BatchEncoding
 
@@ -195,7 +195,7 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
     async def __call__(  # type: ignore[override]
         self,
         inputs: str | BatchEncoding | list[dict],
-        tools_json: list[dict[Any, Any] | Callable[..., Any]] | None = None,
+        tools_json: list[dict[Any, Any]] | None = None,
         **kwargs,
     ) -> tuple[str, torch.Tensor]:
         """Call the transformer on a single input, which may be encoded."""
@@ -210,9 +210,11 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
                 f"model.generate() input_ids shape: {kwargs['input_ids'].shape}, rank"
                 f" {os.environ.get('RANK')}"
             )
-           if not isinstance(model, GenerationMixin):
-                raise TypeError("model_generate only supports models that inherit from GenerationMixin")
-            return model.generate(
+            if not isinstance(model, GenerationMixin):  # type: ignore[unreachable]
+                raise TypeError(
+                    "model_generate only supports models that inherit from GenerationMixin"
+                )
+            return model.generate(  # type: ignore[unreachable]
                 *args,
                 **kwargs,
                 pad_token_id=model.config.pad_token_id,  # not always set properly by .generate()
@@ -231,19 +233,13 @@ class TransformerHandler(ModuleHandler):
 
         match config.lm_type:
             case LMType.GENERATION:
-                tokenizer, model = cast(
-                    tuple[PreTrainedTokenizer, PreTrainedModel],
-                    config.lm_config.get_causal_lm(),
-                )
+                tokenizer, model = config.lm_config.get_causal_lm()
                 # On left for https://github.com/huggingface/transformers/pull/7552
                 # ^ that seems to work for most HF models w/ absolute position embeddings
                 # Left padding always works for relative position embeddings
                 tokenizer.padding_side = "left"
             case LMType.REGRESSION:
-                tokenizer, model = cast(
-                    tuple[PreTrainedTokenizer, PreTrainedModel],
-                    config.lm_config.get_regression_lm(),
-                )
+                tokenizer, model = config.lm_config.get_regression_lm()
             case _:
                 assert_never(config.lm_type)
         super().__init__(model)
@@ -313,7 +309,7 @@ class AsyncTransformer(TransformerHandler, AsyncTransformerInterface):
     async def __call__(
         self,
         inputs: str | BatchEncoding | dict | list[dict] | None = None,
-        tools_json: list[dict[Any, Any] | Callable[..., Any]] | None = None,
+        tools_json: list[dict[Any, Any]] | None = None,
         input_ids: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
         **kwargs,
@@ -438,7 +434,8 @@ class ParallelTransformerHandler(TransformerHandler):
 
         try:
             device_type: str = str(self.module.device.type)
-            dtype: torch.dtype | None = getattr(self.module, "dtype", None)
+            assert self.module.dtype is not None
+            dtype: torch.dtype = self.module.dtype  # type: ignore[assignment]
             with torch.autocast(device_type=device_type, dtype=dtype):
                 res = (
                     getattr(self, func)(*args, **kwargs)
@@ -606,7 +603,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
     async def __call__(
         self,
         inputs: str | BatchEncoding | dict | list[dict] | None = None,
-        tools_json: list[dict[Any, Any] | Callable[..., Any]] | None = None,
+        tools_json: list[dict[Any, Any]] | None = None,
         input_ids: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
         **kwargs,
@@ -935,21 +932,16 @@ def decollate_fn_transformer_decoder(
 ) -> list[GenerateDecoderOnlyOutput]:
     """Decollates a batched output from a huggingface transformer decoder."""
     batch_size = len(batched_output.sequences)
-    assert batched_output.scores is not None
     outputs: list[GenerateDecoderOnlyOutput] = [
         GenerateDecoderOnlyOutput(
-            sequences=cast(
-                torch.LongTensor,
-                batched_output.sequences[i][None, :].to(dtype=torch.long),
-            ),
-            scores=cast(
-                tuple[torch.FloatTensor],
-                [
-                    score[i][None, :].to(dtype=torch.float32)
-                    for score in batched_output.scores
-                    if (score[i] is not None)
-                ],
-            ),
+            sequences=batched_output.sequences[i][None, :],  # type: ignore[arg-type]
+            scores=[
+                score[i][None, :]
+                for score in batched_output.scores
+                if (score[i] is not None)
+            ]
+            if batched_output.scores
+            else None,  # type: ignore[arg-type]
         )
         for i in range(batch_size)
     ]
@@ -1007,7 +999,7 @@ def _get_data_device() -> torch.device:
 def _get_tokenized_inputs(
     tokenizer: PreTrainedTokenizer,
     inputs: str | dict | BatchEncoding | list[dict],
-    tools_json: list[dict[Any, Any] | Callable[..., Any]] | None = None,
+    tools_json: list[dict[Any, Any]] | None = None,
 ) -> BatchEncoding:
     if isinstance(inputs, BatchEncoding):
         return inputs
@@ -1018,16 +1010,12 @@ def _get_tokenized_inputs(
     if is_conversation(inputs):
         result = tokenizer.apply_chat_template(
             inputs,
-            tools=tools_json,
+            tools=tools_json,  # type: ignore[arg-type]
             return_tensors="pt",
             return_dict=True,
             add_generation_prompt=True,
         )
-        if not isinstance(result, BatchEncoding):
-            raise TypeError(
-                f"Expected BatchEncoding from apply_chat_template, got {type(result)}"
-            )
-        return result
+        return cast(BatchEncoding, result)
     raise ValueError(
         f"inputs must be a str, BatchEncoding, or Conversation, but got {type(inputs)}"
     )
