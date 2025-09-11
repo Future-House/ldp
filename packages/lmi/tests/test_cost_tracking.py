@@ -163,8 +163,7 @@ class TestLiteLLMModel:
 class TestCostTrackerCallback:
     @pytest.mark.asyncio
     async def test_callback_succeeds(self):
-        mock_response = MagicMock()
-        mock_response.cost = 0.01
+        mock_response = MagicMock(cost=0.01)
 
         callback_calls = []
 
