@@ -25,6 +25,7 @@ from .llms import (
 )
 from .types import (
     Embeddable,
+    LLMResponse,
     LLMResult,
 )
 from .utils import (
@@ -43,6 +44,7 @@ __all__ = [
     "HybridEmbeddingModel",
     "JSONSchemaValidationError",
     "LLMModel",
+    "LLMResponse",
     "LLMResult",
     "LiteLLMEmbeddingModel",
     "LiteLLMModel",
