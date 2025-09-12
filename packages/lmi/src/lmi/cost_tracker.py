@@ -1,3 +1,4 @@
+import asyncio
 import contextvars
 import logging
 from collections.abc import Awaitable, Callable
@@ -20,12 +21,13 @@ class CostTracker:
         self.enabled = contextvars.ContextVar[bool]("track_costs", default=False)
         # Not a contextvar because I can't imagine a scenario where you'd want more fine-grained control
         self.report_every_usd = 1.0
-        self._callbacks: list[Callable[[LLMResponse], Any]] = []
+        # Support async callbacks only
+        self._callbacks: list[Callable[[LLMResponse], Awaitable[Any]]] = []
 
-    def add_callback(self, callback: Callable[[LLMResponse], Any]) -> None:
+    def add_callback(self, callback: Callable[[LLMResponse], Awaitable[Any]]) -> None:
         self._callbacks.append(callback)
 
-    def record(
+    async def record(
         self,
         response: LLMResponse,
     ) -> None:
@@ -37,9 +39,10 @@ class CostTracker:
             logger.info(f"Cumulative lmi API call cost: ${self.lifetime_cost_usd:.8f}")
             self.last_report = self.lifetime_cost_usd
 
+        # Execute async callbacks
         for callback in self._callbacks:
             try:
-                callback(response)
+                await callback(response)
             except Exception as e:
                 logger.warning(
                     f"Callback failed during cost tracking: {e}", exc_info=True
@@ -100,7 +103,7 @@ def track_costs(
     async def wrapped_func(*args, **kwargs):
         response = await func(*args, **kwargs)
         if GLOBAL_COST_TRACKER.enabled.get():
-            GLOBAL_COST_TRACKER.record(response)
+            await GLOBAL_COST_TRACKER.record(response)
         return response
 
     return wrapped_func
@@ -143,13 +146,30 @@ class TrackedStreamWrapper:
     def __next__(self):
         response = next(self.stream)
         if GLOBAL_COST_TRACKER.enabled.get():
-            GLOBAL_COST_TRACKER.record(response)
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                # No running loop: run to completion (blocking)
+                asyncio.run(GLOBAL_COST_TRACKER.record(response))
+            else:
+                # Running loop: schedule the coroutine
+                task = loop.create_task(GLOBAL_COST_TRACKER.record(response))
+
+                # Surface unexpected exceptions from record()/callbacks
+
+                def _log_task_err(t: asyncio.Task) -> None:
+                    try:
+                        t.result()
+                    except Exception:
+                        logger.exception("Cost tracking task failed")
+
+                task.add_done_callback(_log_task_err)
         return response
 
     async def __anext__(self):
         response = await self.stream.__anext__()
         if GLOBAL_COST_TRACKER.enabled.get():
-            GLOBAL_COST_TRACKER.record(response)
+            await GLOBAL_COST_TRACKER.record(response)
         return response
 
 
