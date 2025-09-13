@@ -1,14 +1,14 @@
 import asyncio
 from contextlib import contextmanager
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import pytest
 from aviary.core import Message
 
 from lmi import cost_tracking_ctx
-from lmi.cost_tracker import GLOBAL_COST_TRACKER
+from lmi.cost_tracker import GLOBAL_COST_TRACKER, TrackedStreamWrapper
 from lmi.embeddings import LiteLLMEmbeddingModel
 from lmi.llms import CommonLLMNames, LiteLLMModel
 from lmi.utils import VCR_DEFAULT_MATCH_ON
@@ -173,7 +173,7 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            await GLOBAL_COST_TRACKER.record(mock_response)
+            await GLOBAL_COST_TRACKER.record_with_callbacks(mock_response)
 
             failing_callback.assert_called_once_with(mock_response)
 
@@ -195,7 +195,7 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            await GLOBAL_COST_TRACKER.record(mock_response)
+            await GLOBAL_COST_TRACKER.record_with_callbacks(mock_response)
 
             failing_callback.assert_called_once_with(mock_response)
             succeeding_callback.assert_called_once_with(mock_response)
@@ -206,15 +206,9 @@ class TestCostTrackerCallback:
     @pytest.mark.asyncio
     async def test_async_context_with_stream_wrapper(self):
         """Test that callbacks work with TrackedStreamWrapper in async context."""
-        from unittest.mock import AsyncMock, MagicMock
-
-        # Create a mock stream
         mock_stream = MagicMock()
         mock_response = MagicMock(cost=0.01)
         mock_stream.__anext__ = AsyncMock(return_value=mock_response)
-
-        # Create TrackedStreamWrapper
-        from lmi.cost_tracker import TrackedStreamWrapper
 
         wrapper = TrackedStreamWrapper(mock_stream)
 
@@ -230,7 +224,6 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            # Test async iteration
             result = await anext(wrapper)
 
             assert result == mock_response
@@ -239,16 +232,13 @@ class TestCostTrackerCallback:
             assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
 
     def test_sync_context_with_stream_wrapper(self):
-        """Test that callbacks work with TrackedStreamWrapper in sync context."""
+        """Test that cost tracking works in sync context, but callbacks are not executed without event loop."""
         from unittest.mock import MagicMock
 
         # Create a mock stream
         mock_stream = MagicMock()
         mock_response = MagicMock(cost=0.01)
         mock_stream.__next__ = MagicMock(return_value=mock_response)
-
-        # Create TrackedStreamWrapper
-        from lmi.cost_tracker import TrackedStreamWrapper
 
         wrapper = TrackedStreamWrapper(mock_stream)
 
@@ -264,11 +254,56 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            # Test sync iteration - this will run callbacks synchronously via asyncio.run()
             result = next(wrapper)
 
             assert result == mock_response
-            # The callback should have been called synchronously
+            # In sync context without event loop, callbacks are not executed
+            assert len(callback_calls) == 0
+            # But cost tracking still works
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
+
+    @pytest.mark.asyncio
+    async def test_sync_context_with_event_loop(self):
+        """Test that callbacks work in sync context when event loop is running."""
+        mock_stream = MagicMock()
+        mock_response = MagicMock(cost=0.01)
+        mock_stream.__next__ = MagicMock(return_value=mock_response)
+
+        wrapper = TrackedStreamWrapper(mock_stream)
+
+        callback_calls: list[Any] = []
+
+        async def async_callback(response):
+            await asyncio.sleep(0.1)  # Short delay for testing
+            callback_calls.append(response)
+
+        GLOBAL_COST_TRACKER.add_callback(async_callback)
+
+        mock_loop = MagicMock()
+        real_task = None
+
+        def mock_create_task(coro):
+            nonlocal real_task
+            real_task = asyncio.create_task(coro)
+            return real_task
+
+        mock_loop.create_task = mock_create_task
+
+        with (
+            cost_tracking_ctx(),
+            patch("litellm.cost_calculator.completion_cost", return_value=0.01),
+            patch("asyncio.get_running_loop", return_value=mock_loop),
+        ):
+            result = next(wrapper)
+            assert result == mock_response
+
+            # Callback should not have completed yet (fire-and-forget)
+            assert len(callback_calls) == 0
+
+            # Wait for the callback to complete
+            if real_task:
+                await real_task
+
+            # Now callback should have completed
             assert len(callback_calls) == 1
             assert callback_calls[0] == mock_response
-            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
