@@ -1,4 +1,3 @@
-import asyncio
 from contextlib import contextmanager
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -163,6 +162,27 @@ class TestLiteLLMModel:
 
 class TestCostTrackerCallback:
     @pytest.mark.asyncio
+    async def test_callback_succeeds(self):
+        """Test that the record method handles both cost tracking and callbacks."""
+        mock_response = MagicMock(cost=0.01)
+        callback_calls: list[Any] = []
+
+        async def async_callback(response):  # noqa: RUF029
+            callback_calls.append(response)
+
+        GLOBAL_COST_TRACKER.add_callback(async_callback)
+
+        with (
+            cost_tracking_ctx(),
+            patch("litellm.cost_calculator.completion_cost", return_value=0.01),
+        ):
+            await GLOBAL_COST_TRACKER.record(mock_response)
+
+            assert len(callback_calls) == 1
+            assert callback_calls[0] == mock_response
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
+
+    @pytest.mark.asyncio
     async def test_callback_failure_does_not_break_tracker(self, caplog):
         """Test that a failing callback doesn't break the cost tracker."""
         mock_response = MagicMock(cost=0.01)
@@ -214,8 +234,7 @@ class TestCostTrackerCallback:
 
         callback_calls: list[Any] = []
 
-        async def async_callback(response):
-            await asyncio.sleep(1)
+        async def async_callback(response):  # noqa: RUF029
             callback_calls.append(response)
 
         GLOBAL_COST_TRACKER.add_callback(async_callback)
@@ -227,28 +246,6 @@ class TestCostTrackerCallback:
             result = await anext(wrapper)
 
             assert result == mock_response
-            assert len(callback_calls) == 1
-            assert callback_calls[0] == mock_response
-            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
-
-    @pytest.mark.asyncio
-    async def test_record_method_with_callbacks(self):
-        """Test that the record method handles both cost tracking and callbacks."""
-        mock_response = MagicMock(cost=0.01)
-        callback_calls: list[Any] = []
-
-        async def async_callback(response):
-            await asyncio.sleep(0.1)
-            callback_calls.append(response)
-
-        GLOBAL_COST_TRACKER.add_callback(async_callback)
-
-        with (
-            cost_tracking_ctx(),
-            patch("litellm.cost_calculator.completion_cost", return_value=0.01),
-        ):
-            await GLOBAL_COST_TRACKER.record(mock_response)
-
             assert len(callback_calls) == 1
             assert callback_calls[0] == mock_response
             assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
