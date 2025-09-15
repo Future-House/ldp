@@ -163,7 +163,6 @@ class TestLiteLLMModel:
 class TestCostTrackerCallback:
     @pytest.mark.asyncio
     async def test_callback_succeeds(self):
-        """Test that the record method handles both cost tracking and callbacks."""
         mock_response = MagicMock(cost=0.01)
         callback_calls: list[Any] = []
 
@@ -184,7 +183,6 @@ class TestCostTrackerCallback:
 
     @pytest.mark.asyncio
     async def test_callback_failure_does_not_break_tracker(self, caplog):
-        """Test that a failing callback doesn't break the cost tracker."""
         mock_response = MagicMock(cost=0.01)
         failing_callback = MagicMock(side_effect=Exception("Callback failed"))
         GLOBAL_COST_TRACKER.add_callback(failing_callback)
@@ -203,7 +201,6 @@ class TestCostTrackerCallback:
 
     @pytest.mark.asyncio
     async def test_multiple_callbacks_with_one_failing(self, caplog):
-        """Test that one failing callback doesn't prevent other callbacks from running."""
         mock_response = MagicMock(cost=0.01)
         failing_callback = MagicMock(side_effect=Exception("Callback failed"))
         succeeding_callback = MagicMock()
@@ -225,7 +222,6 @@ class TestCostTrackerCallback:
 
     @pytest.mark.asyncio
     async def test_async_context_with_stream_wrapper(self):
-        """Test that callbacks work with TrackedStreamWrapper in async context."""
         mock_stream = MagicMock()
         mock_response = MagicMock(cost=0.01)
         mock_stream.__anext__ = AsyncMock(return_value=mock_response)
