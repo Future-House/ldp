@@ -20,7 +20,6 @@ class CostTracker:
         self.enabled = contextvars.ContextVar[bool]("track_costs", default=False)
         # Not a contextvar because I can't imagine a scenario where you'd want more fine-grained control
         self.report_every_usd = 1.0
-        # Support async callbacks only
         self._callbacks: list[Callable[[LLMResponse], Awaitable]] = []
 
     def add_callback(self, callback: Callable[[LLMResponse], Awaitable]) -> None:
