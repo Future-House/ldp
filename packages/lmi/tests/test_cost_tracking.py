@@ -1,13 +1,13 @@
 from contextlib import contextmanager
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import pytest
 from aviary.core import Message
 
 from lmi import cost_tracking_ctx
-from lmi.cost_tracker import GLOBAL_COST_TRACKER
+from lmi.cost_tracker import GLOBAL_COST_TRACKER, TrackedStreamWrapper
 from lmi.embeddings import LiteLLMEmbeddingModel
 from lmi.llms import CommonLLMNames, LiteLLMModel
 from lmi.utils import VCR_DEFAULT_MATCH_ON
@@ -164,24 +164,25 @@ class TestCostTrackerCallback:
     @pytest.mark.asyncio
     async def test_callback_succeeds(self):
         mock_response = MagicMock(cost=0.01)
+        callback_calls = []
 
-        callback_calls: list[Any] = []
-        GLOBAL_COST_TRACKER.add_callback(callback_calls.append)
+        async def async_callback(response):  # noqa: RUF029
+            callback_calls.append(response)
+
+        GLOBAL_COST_TRACKER.add_callback(async_callback)
 
         with (
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            GLOBAL_COST_TRACKER.record(mock_response)
+            await GLOBAL_COST_TRACKER.record(mock_response)
 
             assert len(callback_calls) == 1
             assert callback_calls[0] == mock_response
-
             assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
 
     @pytest.mark.asyncio
     async def test_callback_failure_does_not_break_tracker(self, caplog):
-        """Test that a failing callback doesn't break the cost tracker."""
         mock_response = MagicMock(cost=0.01)
         failing_callback = MagicMock(side_effect=Exception("Callback failed"))
         GLOBAL_COST_TRACKER.add_callback(failing_callback)
@@ -190,7 +191,7 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            GLOBAL_COST_TRACKER.record(mock_response)
+            await GLOBAL_COST_TRACKER.record(mock_response)
 
             failing_callback.assert_called_once_with(mock_response)
 
@@ -200,7 +201,6 @@ class TestCostTrackerCallback:
 
     @pytest.mark.asyncio
     async def test_multiple_callbacks_with_one_failing(self, caplog):
-        """Test that one failing callback doesn't prevent other callbacks from running."""
         mock_response = MagicMock(cost=0.01)
         failing_callback = MagicMock(side_effect=Exception("Callback failed"))
         succeeding_callback = MagicMock()
@@ -212,10 +212,36 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            GLOBAL_COST_TRACKER.record(mock_response)
+            await GLOBAL_COST_TRACKER.record(mock_response)
 
             failing_callback.assert_called_once_with(mock_response)
             succeeding_callback.assert_called_once_with(mock_response)
 
             assert "Callback failed during cost tracking" in caplog.text
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
+
+    @pytest.mark.asyncio
+    async def test_async_context_with_stream_wrapper(self):
+        mock_stream = MagicMock()
+        mock_response = MagicMock(cost=0.01)
+        mock_stream.__anext__ = AsyncMock(return_value=mock_response)
+
+        wrapper = TrackedStreamWrapper(mock_stream)
+
+        callback_calls = []
+
+        async def async_callback(response):  # noqa: RUF029
+            callback_calls.append(response)
+
+        GLOBAL_COST_TRACKER.add_callback(async_callback)
+
+        with (
+            cost_tracking_ctx(),
+            patch("litellm.cost_calculator.completion_cost", return_value=0.01),
+        ):
+            result = await anext(wrapper)
+
+            assert result == mock_response
+            assert len(callback_calls) == 1
+            assert callback_calls[0] == mock_response
             assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
