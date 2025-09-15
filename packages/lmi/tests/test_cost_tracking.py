@@ -173,7 +173,7 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            await GLOBAL_COST_TRACKER.record_with_callbacks(mock_response)
+            await GLOBAL_COST_TRACKER.arecord(mock_response)
 
             failing_callback.assert_called_once_with(mock_response)
 
@@ -195,7 +195,7 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            await GLOBAL_COST_TRACKER.record_with_callbacks(mock_response)
+            await GLOBAL_COST_TRACKER.arecord(mock_response)
 
             failing_callback.assert_called_once_with(mock_response)
             succeeding_callback.assert_called_once_with(mock_response)
@@ -232,9 +232,7 @@ class TestCostTrackerCallback:
             assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
 
     def test_sync_context_with_stream_wrapper(self):
-        """Test that cost tracking works in sync context, but callbacks are not executed without event loop."""
-        from unittest.mock import MagicMock
-
+        """Test that cost tracking works in sync context, but callbacks are not executed (deprecated __next__)."""
         # Create a mock stream
         mock_stream = MagicMock()
         mock_response = MagicMock(cost=0.01)
@@ -254,56 +252,35 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            result = next(wrapper)
+            # Use deprecated __next__ method - should only do cost tracking
+            with pytest.warns(DeprecationWarning, match="Use __anext__ instead"):
+                result = next(wrapper)
 
             assert result == mock_response
-            # In sync context without event loop, callbacks are not executed
+            # Deprecated __next__ method only does cost tracking, no callbacks
             assert len(callback_calls) == 0
             # But cost tracking still works
             assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
 
-    @pytest.mark.asyncio
-    async def test_sync_context_with_event_loop(self):
-        """Test that callbacks work in sync context when event loop is running."""
-        mock_stream = MagicMock()
+    def test_record_method_cost_tracking_only(self):
+        """Test that the record method only does cost tracking, no callbacks."""
         mock_response = MagicMock(cost=0.01)
-        mock_stream.__next__ = MagicMock(return_value=mock_response)
-
-        wrapper = TrackedStreamWrapper(mock_stream)
-
         callback_calls: list[Any] = []
 
         async def async_callback(response):
-            await asyncio.sleep(0.1)  # Short delay for testing
+            await asyncio.sleep(0.1)
             callback_calls.append(response)
 
         GLOBAL_COST_TRACKER.add_callback(async_callback)
 
-        mock_loop = MagicMock()
-        real_task = None
-
-        def mock_create_task(coro):
-            nonlocal real_task
-            real_task = asyncio.create_task(coro)
-            return real_task
-
-        mock_loop.create_task = mock_create_task
-
         with (
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
-            patch("asyncio.get_running_loop", return_value=mock_loop),
         ):
-            result = next(wrapper)
-            assert result == mock_response
+            # Use record method directly - should only do cost tracking
+            GLOBAL_COST_TRACKER.record(mock_response)
 
-            # Callback should not have completed yet (fire-and-forget)
+            # Callbacks should not be executed
             assert len(callback_calls) == 0
-
-            # Wait for the callback to complete
-            if real_task:
-                await real_task
-
-            # Now callback should have completed
-            assert len(callback_calls) == 1
-            assert callback_calls[0] == mock_response
+            # But cost tracking should work
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
