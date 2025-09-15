@@ -228,7 +228,7 @@ class TestCostTrackerCallback:
 
         wrapper = TrackedStreamWrapper(mock_stream)
 
-        callback_calls: list[Any] = []
+        callback_calls = []
 
         async def async_callback(response):  # noqa: RUF029
             callback_calls.append(response)
