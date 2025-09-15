@@ -233,7 +233,6 @@ class TestCostTrackerCallback:
 
     def test_sync_context_with_stream_wrapper(self):
         """Test that cost tracking works in sync context, but callbacks are not executed (deprecated __next__)."""
-        # Create a mock stream
         mock_stream = MagicMock()
         mock_response = MagicMock(cost=0.01)
         mock_stream.__next__ = MagicMock(return_value=mock_response)
@@ -252,14 +251,11 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            # Use deprecated __next__ method - should only do cost tracking
             with pytest.warns(DeprecationWarning, match="Use __anext__ instead"):
                 result = next(wrapper)
 
             assert result == mock_response
-            # Deprecated __next__ method only does cost tracking, no callbacks
-            assert len(callback_calls) == 0
-            # But cost tracking still works
+            assert not callback_calls
             assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
 
     def test_record_method_cost_tracking_only(self):
@@ -277,10 +273,7 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            # Use record method directly - should only do cost tracking
             GLOBAL_COST_TRACKER.record(mock_response)
 
-            # Callbacks should not be executed
-            assert len(callback_calls) == 0
-            # But cost tracking should work
+            assert not callback_calls
             assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
