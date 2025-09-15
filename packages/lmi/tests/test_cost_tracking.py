@@ -173,7 +173,7 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            await GLOBAL_COST_TRACKER.arecord(mock_response)
+            await GLOBAL_COST_TRACKER.record(mock_response)
 
             failing_callback.assert_called_once_with(mock_response)
 
@@ -195,7 +195,7 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            await GLOBAL_COST_TRACKER.arecord(mock_response)
+            await GLOBAL_COST_TRACKER.record(mock_response)
 
             failing_callback.assert_called_once_with(mock_response)
             succeeding_callback.assert_called_once_with(mock_response)
@@ -231,35 +231,9 @@ class TestCostTrackerCallback:
             assert callback_calls[0] == mock_response
             assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
 
-    def test_sync_context_with_stream_wrapper(self):
-        """Test that cost tracking works in sync context, but callbacks are not executed (deprecated __next__)."""
-        mock_stream = MagicMock()
-        mock_response = MagicMock(cost=0.01)
-        mock_stream.__next__ = MagicMock(return_value=mock_response)
-
-        wrapper = TrackedStreamWrapper(mock_stream)
-
-        callback_calls: list[Any] = []
-
-        async def async_callback(response):
-            await asyncio.sleep(1)
-            callback_calls.append(response)
-
-        GLOBAL_COST_TRACKER.add_callback(async_callback)
-
-        with (
-            cost_tracking_ctx(),
-            patch("litellm.cost_calculator.completion_cost", return_value=0.01),
-        ):
-            with pytest.warns(DeprecationWarning, match="Use __anext__ instead"):
-                result = next(wrapper)
-
-            assert result == mock_response
-            assert not callback_calls
-            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
-
-    def test_record_method_cost_tracking_only(self):
-        """Test that the record method only does cost tracking, no callbacks."""
+    @pytest.mark.asyncio
+    async def test_record_method_with_callbacks(self):
+        """Test that the record method handles both cost tracking and callbacks."""
         mock_response = MagicMock(cost=0.01)
         callback_calls: list[Any] = []
 
@@ -273,7 +247,8 @@ class TestCostTrackerCallback:
             cost_tracking_ctx(),
             patch("litellm.cost_calculator.completion_cost", return_value=0.01),
         ):
-            GLOBAL_COST_TRACKER.record(mock_response)
+            await GLOBAL_COST_TRACKER.record(mock_response)
 
-            assert not callback_calls
+            assert len(callback_calls) == 1
+            assert callback_calls[0] == mock_response
             assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0

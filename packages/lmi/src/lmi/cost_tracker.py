@@ -3,10 +3,9 @@ import logging
 from collections.abc import Awaitable, Callable
 from contextlib import contextmanager
 from functools import wraps
-from typing import Any, ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar
 
 import litellm
-from typing_extensions import deprecated
 
 from lmi.types import LLMResponse
 
@@ -22,19 +21,12 @@ class CostTracker:
         # Not a contextvar because I can't imagine a scenario where you'd want more fine-grained control
         self.report_every_usd = 1.0
         # Support async callbacks only
-        self._callbacks: list[Callable[[LLMResponse], Awaitable[Any]]] = []
+        self._callbacks: list[Callable[[LLMResponse], Awaitable]] = []
 
-    def add_callback(self, callback: Callable[[LLMResponse], Awaitable[Any]]) -> None:
+    def add_callback(self, callback: Callable[[LLMResponse], Awaitable]) -> None:
         self._callbacks.append(callback)
 
-    def record(self, response: LLMResponse) -> None:
-        """Record cost without executing callbacks.
-
-        This method only handles cost tracking and reporting. It does not execute
-        callbacks, making it safe to use in any context without race conditions.
-
-        Note that this method is not async-friendly. Use `arecord` instead if you need to execute callbacks.
-        """
+    async def record(self, response: LLMResponse) -> None:
         self.lifetime_cost_usd += litellm.cost_calculator.completion_cost(
             completion_response=response
         )
@@ -43,16 +35,6 @@ class CostTracker:
             logger.info(f"Cumulative lmi API call cost: ${self.lifetime_cost_usd:.8f}")
             self.last_report = self.lifetime_cost_usd
 
-    async def arecord(self, response: LLMResponse) -> None:
-        """Record cost and execute all registered callbacks.
-
-        This method handles both cost tracking and callback execution. Use this
-        when you need callbacks to be executed in an async nature.
-        """
-        # First record the cost
-        self.record(response)
-
-        # Then execute callbacks
         for callback in self._callbacks:
             try:
                 await callback(response)
@@ -116,7 +98,7 @@ def track_costs(
     async def wrapped_func(*args, **kwargs):
         response = await func(*args, **kwargs)
         if GLOBAL_COST_TRACKER.enabled.get():
-            await GLOBAL_COST_TRACKER.arecord(response)
+            await GLOBAL_COST_TRACKER.record(response)
         return response
 
     return wrapped_func
@@ -156,17 +138,10 @@ class TrackedStreamWrapper:
     def __aiter__(self):
         return self
 
-    @deprecated("Use __anext__ instead")
-    def __next__(self):
-        response = next(self.stream)
-        if GLOBAL_COST_TRACKER.enabled.get():
-            GLOBAL_COST_TRACKER.record(response)
-        return response
-
     async def __anext__(self):
         response = await self.stream.__anext__()
         if GLOBAL_COST_TRACKER.enabled.get():
-            await GLOBAL_COST_TRACKER.arecord(response)
+            await GLOBAL_COST_TRACKER.record(response)
         return response
 
 
