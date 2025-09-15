@@ -164,7 +164,7 @@ class TestCostTrackerCallback:
     @pytest.mark.asyncio
     async def test_callback_succeeds(self):
         mock_response = MagicMock(cost=0.01)
-        callback_calls: list[Any] = []
+        callback_calls = []
 
         async def async_callback(response):  # noqa: RUF029
             callback_calls.append(response)
