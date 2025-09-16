@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from itertools import chain
 from typing import Any, Self, cast
 
 from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
@@ -10,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.graph import ConfigOp, FxnOp, LLMCallOp, OpResult, compute_graph
 from ldp.llms import prepend_sys
+from ldp.utils import split_message_transitions
 
 from . import DEFAULT_LLM_COMPLETION_TIMEOUT
 from .agent import Agent
@@ -39,6 +41,10 @@ class SimpleAgentState(BaseModel):
     hide_old_action_content: bool = Field(
         default=False,
         description="If True, will hide the content of old ToolRequestMessages.",
+    )
+    sliding_window: int | None = Field(
+        default=None,
+        description="Number of previous trajectory transitions to keep. None means all previous transitions.",
     )
 
     def get_next_state(
@@ -71,6 +77,16 @@ class SimpleAgentState(BaseModel):
             if hide_old_env_states is not None
             else self.hide_old_env_states
         )
+        if self.sliding_window is not None and self.sliding_window > 0:
+            msg_blocks = split_message_transitions(old_messages)
+            old_messages = (
+                msg_blocks[0]  # keep system messages + user message
+                + [
+                    Message(content="[Previous messages - hidden]")
+                ]  # hide intermediate transitions
+                + list(chain.from_iterable(msg_blocks[1:][-self.sliding_window :]))
+            )
+
         if hide_old_env_states:
             old_messages = [
                 HiddenEnvStateMessage() if isinstance(m, EnvStateMessage) else m
@@ -125,6 +141,11 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
         description="See SimpleAgentState.hide_old_action_content.",
     )
 
+    sliding_window: int | None = Field(
+        default=None,
+        description="See SimpleAgentState.sliding_window.",
+    )
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._config_op = ConfigOp[dict](config=self.llm_model)
@@ -135,6 +156,7 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
             tools=tools,
             hide_old_env_states=self.hide_old_env_states,
             hide_old_action_content=self.hide_old_action_content,
+            sliding_window=self.sliding_window,
         )
 
     @compute_graph()
