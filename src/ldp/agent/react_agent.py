@@ -124,7 +124,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
 
     sliding_window: int | None = Field(
         default=None,
-        description=SimpleAgentState.model_fields["sliding_window"].description,
+        description="See SimpleAgentState.sliding_window.",
     )
 
     @classmethod
