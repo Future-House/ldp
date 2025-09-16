@@ -117,7 +117,7 @@ def format_error_details(error: Exception) -> str:
 
 def split_message_transitions(list_of_messages: list[Message]) -> list[list[Message]]:
     """
-    Break down messages into transitions: (system, (user, assistant, tool), ...).
+    Break down messages into transitions: [(system, user), (tool request, tool response, env state), ...].
 
     Args:
         list_of_messages: The list of messages to break down.
@@ -138,7 +138,7 @@ def split_message_transitions(list_of_messages: list[Message]) -> list[list[Mess
         i += 1
     filtered_messages.append(system_block)
 
-    # Process remaining messages, breaking on (EnvStateMessage, ToolRequestMessage, ToolResponseMessage) blocks
+    # Process remaining messages in (ToolRequestMessage's, ToolResponseMessage's, EnvStateMessage) blocks
     current_block: list[Message] = []
     for j in range(i, len(list_of_messages)):
         msg = list_of_messages[j]
@@ -148,7 +148,6 @@ def split_message_transitions(list_of_messages: list[Message]) -> list[list[Mess
             and isinstance(msg, ToolRequestMessage)
             and current_block
         ):
-            # End current block and start a new one
             filtered_messages.append(current_block)
             current_block = [msg]
         else:
