@@ -74,27 +74,26 @@ def test_split_message_transitions():
 
     result = split_message_transitions(messages)
 
-    # Should have 4 blocks total
     assert len(result) == 4
 
-    # Block 1: System messages + initial user message
+    # Block 1:
     assert len(result[0]) == 2
     assert result[0][0].role == "system"
     assert result[0][1].role == "user"
 
-    # Block 2: First sequence ending with EnvStateMessage
+    # Block 2:
     assert len(result[1]) == 3
     assert isinstance(result[1][0], ToolRequestMessage)
     assert isinstance(result[1][1], ToolResponseMessage)
     assert isinstance(result[1][2], EnvStateMessage)
 
-    # Block 3: Second sequence ending with EnvStateMessage
+    # Block 3:
     assert len(result[2]) == 3
     assert isinstance(result[2][0], ToolRequestMessage)
     assert isinstance(result[2][1], ToolResponseMessage)
     assert isinstance(result[2][2], EnvStateMessage)
 
-    # Block 4: Third sequence (no EnvStateMessage→ToolRequestMessage after it)
+    # Block 4:
     assert len(result[3]) == 2
     assert isinstance(result[3][0], ToolRequestMessage)
     assert isinstance(result[3][1], ToolResponseMessage)
