@@ -843,8 +843,16 @@ async def test_sliding_window():
 
     # Check that old messages are hidden
     messages = state.get_next_state(obs).messages
-    assert len(messages) == 4
-    assert messages[0].role == "user"
-    assert messages[1].content == "[Previous messages - hidden]"
-    assert isinstance(messages[2], ToolRequestMessage)
-    assert isinstance(messages[3], ToolResponseMessage)
+    assert len(messages) == 4, (
+        "Expected 4 messages: block 1 (user query + hidden), block 2 (tool request + tool response)"
+    )
+    assert messages[0].role == "user", "Expected a user message in first position"
+    assert messages[1].content == "[Previous messages - hidden]", (
+        "Expected a hidden message in second position"
+    )
+    assert isinstance(messages[2], ToolRequestMessage), (
+        "Expected a tool request message in third position"
+    )
+    assert isinstance(messages[3], ToolResponseMessage), (
+        "Expected a tool response message in fourth position"
+    )
