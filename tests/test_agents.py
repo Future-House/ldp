@@ -9,7 +9,14 @@ from unittest.mock import Mock, patch
 
 import networkx as nx
 import pytest
-from aviary.core import DummyEnv, Message, Tool, ToolCall, ToolRequestMessage
+from aviary.core import (
+    DummyEnv,
+    Message,
+    Tool,
+    ToolCall,
+    ToolRequestMessage,
+    ToolResponseMessage,
+)
 from aviary.message import EnvStateMessage
 from httpx import ASGITransport, AsyncClient
 from lmi import CommonLLMNames
@@ -817,3 +824,35 @@ async def test_interactive(dummy_env: DummyEnv, mocker):
     next_obs, _, done, _ = await dummy_env.step(action.value)  # noqa: RUF059
 
     assert mock_input.call_count >= 2
+
+
+@pytest.mark.asyncio
+async def test_sliding_window():
+    """Test that sliding window limits message history."""
+    # Create a simple agent with sliding_window=1
+    agent = SimpleAgent(sliding_window=1)
+    env = DummyEnv()
+
+    # Initialize
+    obs, tools = await env.reset()
+    state = await agent.init_state(tools)
+
+    for _ in range(5):
+        action, state, _ = await agent.get_asv(state, obs)
+        obs, _, _, _ = await env.step(action.value)
+
+    # Check that old messages are hidden
+    messages = state.get_next_state(obs).messages
+    assert len(messages) == 4, (
+        "Expected 4 messages: block 1 (user query + hidden), block 2 (tool request + tool response)"
+    )
+    assert messages[0].role == "user", "Expected a user message in first position"
+    assert messages[1].content == "[Previous messages - hidden]", (
+        "Expected a hidden message in second position"
+    )
+    assert isinstance(messages[2], ToolRequestMessage), (
+        "Expected a tool request message in third position"
+    )
+    assert isinstance(messages[3], ToolResponseMessage), (
+        "Expected a tool response message in fourth position"
+    )
