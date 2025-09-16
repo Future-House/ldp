@@ -76,11 +76,7 @@ class SimpleAgentState(BaseModel):
             if hide_old_env_states is not None
             else self.hide_old_env_states
         )
-        if (
-            self.sliding_window is not None
-            and self.sliding_window > 0
-            and len(old_messages) > 0
-        ):
+        if self.sliding_window is not None and self.sliding_window > 0 and old_messages:
             hide_message = "[Previous messages - hidden]"
             msg_blocks = split_message_transitions(old_messages)
 
