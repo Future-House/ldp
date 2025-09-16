@@ -143,7 +143,7 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
 
     sliding_window: int | None = Field(
         default=None,
-        description="Number of previous trajectory transitions to keep. None means all previous transitions.",
+        description="See SimpleAgentState.sliding_window.",
     )
 
     def __init__(self, **kwargs):
