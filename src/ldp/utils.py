@@ -120,8 +120,8 @@ def split_message_transitions(list_of_messages: list[Message]) -> list[list[Mess
     Break down messages into transitions: [(system, user), (tool request, tool response, env state), ...].
 
     Blocks end when either:
-    - EnvStateMessage → ToolRequestMessage transition occurs
-    - ToolResponseMessage → ToolRequestMessage transition occurs
+    - an EnvStateMessage to ToolRequestMessage transition occurs
+    - a ToolResponseMessage to ToolRequestMessage transition occurs
 
     Args:
         list_of_messages: The list of messages to break down.
