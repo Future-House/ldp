@@ -77,7 +77,11 @@ class SimpleAgentState(BaseModel):
             if hide_old_env_states is not None
             else self.hide_old_env_states
         )
-        if self.sliding_window is not None and self.sliding_window > 0:
+        if (
+            self.sliding_window is not None
+            and self.sliding_window > 0
+            and len(old_messages) > 0
+        ):
             msg_blocks = split_message_transitions(old_messages)
             old_messages = (
                 msg_blocks[0]  # keep system messages + user message
@@ -103,6 +107,7 @@ class SimpleAgentState(BaseModel):
             messages=old_messages + (obs or []),
             hide_old_env_states=hide_old_env_states,
             hide_old_action_content=self.hide_old_action_content,
+            sliding_window=self.sliding_window,
             **kwargs,
         )
 
