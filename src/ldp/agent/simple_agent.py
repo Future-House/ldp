@@ -21,10 +21,6 @@ class HiddenEnvStateMessage(EnvStateMessage):
     content: str = "[Previous environment state - hidden]"
 
 
-class HiddenTransitionsMessage(Message):
-    content: str = "[Previous transitions - hidden]"
-
-
 def hide_action_content(msg: ToolRequestMessage) -> ToolRequestMessage:
     return msg.model_copy(update={"content": None})
 
@@ -46,9 +42,9 @@ class SimpleAgentState(BaseModel):
         default=False,
         description="If True, will hide the content of old ToolRequestMessages.",
     )
-    sliding_window: int = Field(
-        default=-1,
-        description="Number of previous trajectory transitions to keep. -1 means all previous transitions.",
+    sliding_window: int | None = Field(
+        default=None,
+        description="Number of previous trajectory transitions to keep. None means all previous transitions.",
     )
 
     def get_next_state(
@@ -81,11 +77,13 @@ class SimpleAgentState(BaseModel):
             if hide_old_env_states is not None
             else self.hide_old_env_states
         )
-        if self.sliding_window > 0:
+        if self.sliding_window is not None and self.sliding_window > 0:
             msg_blocks = split_message_transitions(old_messages)
             old_messages = (
                 msg_blocks[0]  # keep system messages + user message
-                + [HiddenTransitionsMessage()]  # hide intermediate transitions
+                + [
+                    Message(content="[Previous messages - hidden]")
+                ]  # hide intermediate transitions
                 + list(chain.from_iterable(msg_blocks[1:][-self.sliding_window :]))
             )
 
@@ -143,9 +141,9 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
         description="See SimpleAgentState.hide_old_action_content.",
     )
 
-    sliding_window: int = Field(
-        default=-1,
-        description="Number of previous trajectory transitions to keep. -1 means all previous transitions.",
+    sliding_window: int | None = Field(
+        default=None,
+        description="Number of previous trajectory transitions to keep. None means all previous transitions.",
     )
 
     def __init__(self, **kwargs):

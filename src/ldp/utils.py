@@ -2,8 +2,7 @@ import logging
 import logging.config
 from typing import Any
 
-from aviary.core import Message, ToolRequestMessage, ToolResponseMessage
-from aviary.message import EnvStateMessage
+from aviary.core import Message, ToolRequestMessage
 
 logger = logging.getLogger(__name__)
 
@@ -119,9 +118,7 @@ def split_message_transitions(list_of_messages: list[Message]) -> list[list[Mess
     """
     Break down messages into transitions: [(system, user), (tool request, tool response, env state), ...].
 
-    Blocks end when either:
-    - an EnvStateMessage to ToolRequestMessage transition occurs
-    - a ToolResponseMessage to ToolRequestMessage transition occurs
+    A block starts with a ToolRequestMessage and ends when a new ToolRequestMessage is encountered.
 
     Args:
         list_of_messages: The list of messages to break down.
@@ -133,28 +130,21 @@ def split_message_transitions(list_of_messages: list[Message]) -> list[list[Mess
         return []
 
     filtered_messages: list[list[Message]] = []
-    i = 0
 
     # First block: collect all system messages + user message
     system_block: list[Message] = []
-    while i < len(list_of_messages) and list_of_messages[i].role in {"system", "user"}:
-        system_block.append(list_of_messages[i])
-        i += 1
+    for msg in list_of_messages:
+        if msg.role not in {"system", "user"}:
+            break
+        system_block.append(msg)
     filtered_messages.append(system_block)
 
     # Process all remaining messages in
-    # (ToolRequestMessage's, ToolResponseMessage's, EnvStateMessage (optional)) blocks
+    # (ToolRequestMessage, ...) blocks
     current_block: list[Message] = []
-    for j in range(i, len(list_of_messages)):
+    for j in range(len(system_block), len(list_of_messages)):
         msg = list_of_messages[j]
-        if (
-            j > 0
-            and isinstance(msg, ToolRequestMessage)
-            and isinstance(
-                list_of_messages[j - 1], (EnvStateMessage, ToolResponseMessage)
-            )
-            and current_block
-        ):
+        if isinstance(msg, ToolRequestMessage) and current_block:
             filtered_messages.append(current_block)
             current_block = [msg]
         else:

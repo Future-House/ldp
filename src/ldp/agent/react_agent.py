@@ -122,8 +122,8 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         description="See SimpleAgentState.hide_old_action_content.",
     )
 
-    sliding_window: int = Field(
-        default=-1,
+    sliding_window: int | None = Field(
+        default=None,
         description=SimpleAgentState.model_fields["sliding_window"].description,
     )
 
