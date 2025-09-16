@@ -142,7 +142,7 @@ class TestSimpleAgent:
             "hide_old_action_content": False,
             "llm_model": {"name": model_name, "temperature": 0.1},
             "sys_prompt": None,
-            "sliding_window": -1,
+            "sliding_window": None,
         }
 
         # Check we can get the LLM results to sum cost and count tokens
