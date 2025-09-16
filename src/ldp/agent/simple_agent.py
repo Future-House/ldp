@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from itertools import chain
 from typing import Any, Self, cast
 
 from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
@@ -85,11 +86,7 @@ class SimpleAgentState(BaseModel):
             old_messages = (
                 msg_blocks[0]  # keep system messages + user message
                 + [HiddenTransitionsMessage()]  # hide intermediate transitions
-                + [
-                    msg
-                    for sublist in msg_blocks[1:][-self.sliding_window :]
-                    for msg in sublist
-                ]
+                + list(chain.from_iterable(msg_blocks[1:][-self.sliding_window :]))
             )
 
         if hide_old_env_states:
