@@ -117,6 +117,16 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         description="See SimpleAgentState.hide_old_env_states.",
     )
 
+    hide_old_action_content: bool = Field(
+        default=False,
+        description="See SimpleAgentState.hide_old_action_content.",
+    )
+
+    sliding_window: int = Field(
+        default=0,
+        description="Number of previous trajectory transitions to keep in the state. 0 means all previous transitions.",
+    )
+
     @classmethod
     def make_act_agent(cls, **kwargs) -> Self:
         single_prompt = kwargs.pop("single_prompt", False)
@@ -151,7 +161,10 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:
         return SimpleAgentState(
-            tools=tools, hide_old_env_states=self.hide_old_env_states
+            tools=tools,
+            hide_old_env_states=self.hide_old_env_states,
+            hide_old_action_content=self.hide_old_action_content,
+            sliding_window=self.sliding_window,
         )
 
     @staticmethod

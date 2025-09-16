@@ -2,6 +2,9 @@ import logging
 import logging.config
 from typing import Any
 
+from aviary.core import Message, ToolRequestMessage
+from aviary.message import EnvStateMessage
+
 logger = logging.getLogger(__name__)
 
 
@@ -110,3 +113,48 @@ def format_error_details(error: Exception) -> str:
             error_details += f"\nResponse body: {error.response.text}"
 
     return error_details
+
+
+def split_message_transitions(list_of_messages: list[Message]) -> list[list[Message]]:
+    """
+    Break down messages into transitions: (system, (user, assistant, tool), ...).
+
+    Args:
+        list_of_messages: The list of messages to break down.
+
+    Returns:
+        A list of transitions blocks, corresponding to trajectory transition.
+    """
+    if not list_of_messages:
+        return []
+
+    filtered_messages: list[list[Message]] = []
+    i = 0
+
+    # First block: collect all system messages + user message
+    system_block: list[Message] = []
+    while i < len(list_of_messages) and list_of_messages[i].role in {"system", "user"}:
+        system_block.append(list_of_messages[i])
+        i += 1
+    filtered_messages.append(system_block)
+
+    # Process remaining messages, breaking on (EnvStateMessage, ToolRequestMessage, ToolResponseMessage) blocks
+    current_block: list[Message] = []
+    for j in range(i, len(list_of_messages)):
+        msg = list_of_messages[j]
+        if (
+            j > 0
+            and isinstance(list_of_messages[j - 1], EnvStateMessage)
+            and isinstance(msg, ToolRequestMessage)
+            and current_block
+        ):
+            # End current block and start a new one
+            filtered_messages.append(current_block)
+            current_block = [msg]
+        else:
+            current_block.append(msg)
+
+    if current_block:
+        filtered_messages.append(current_block)
+
+    return filtered_messages

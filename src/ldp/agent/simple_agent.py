@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.graph import ConfigOp, FxnOp, LLMCallOp, OpResult, compute_graph
 from ldp.llms import prepend_sys
+from ldp.utils import split_message_transitions
 
 from . import DEFAULT_LLM_COMPLETION_TIMEOUT
 from .agent import Agent
@@ -17,6 +18,10 @@ from .agent import Agent
 
 class HiddenEnvStateMessage(EnvStateMessage):
     content: str = "[Previous environment state - hidden]"
+
+
+class HiddenTransitionsMessage(Message):
+    content: str = "[Previous transitions - hidden]"
 
 
 def hide_action_content(msg: ToolRequestMessage) -> ToolRequestMessage:
@@ -39,6 +44,10 @@ class SimpleAgentState(BaseModel):
     hide_old_action_content: bool = Field(
         default=False,
         description="If True, will hide the content of old ToolRequestMessages.",
+    )
+    sliding_window: int = Field(
+        default=0,
+        description="Number of previous trajectory transitions to keep in the state. 0 means all previous transitions.",
     )
 
     def get_next_state(
@@ -71,6 +80,18 @@ class SimpleAgentState(BaseModel):
             if hide_old_env_states is not None
             else self.hide_old_env_states
         )
+        if self.sliding_window > 0:
+            msg_blocks = split_message_transitions(old_messages)
+            old_messages = (
+                msg_blocks[0]  # keep system messages + user message
+                + [HiddenTransitionsMessage()]  # hide intermediate transitions
+                + [
+                    msg
+                    for sublist in msg_blocks[1:][-self.sliding_window :]
+                    for msg in sublist
+                ]
+            )
+
         if hide_old_env_states:
             old_messages = [
                 HiddenEnvStateMessage() if isinstance(m, EnvStateMessage) else m
@@ -125,6 +146,11 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
         description="See SimpleAgentState.hide_old_action_content.",
     )
 
+    sliding_window: int = Field(
+        default=0,
+        description="Number of previous trajectory transitions to keep in the state. 0 means all previous transitions.",
+    )
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._config_op = ConfigOp[dict](config=self.llm_model)
@@ -135,6 +161,7 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
             tools=tools,
             hide_old_env_states=self.hide_old_env_states,
             hide_old_action_content=self.hide_old_action_content,
+            sliding_window=self.sliding_window,
         )
 
     @compute_graph()
