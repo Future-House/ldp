@@ -2,7 +2,7 @@ import logging
 import logging.config
 from typing import Any
 
-from aviary.core import Message, ToolRequestMessage
+from aviary.core import Message, ToolRequestMessage, ToolResponseMessage
 from aviary.message import EnvStateMessage
 
 logger = logging.getLogger(__name__)
@@ -119,6 +119,10 @@ def split_message_transitions(list_of_messages: list[Message]) -> list[list[Mess
     """
     Break down messages into transitions: [(system, user), (tool request, tool response, env state), ...].
 
+    Blocks end when either:
+    - EnvStateMessage → ToolRequestMessage transition occurs
+    - ToolResponseMessage → ToolRequestMessage transition occurs (when EnvStateMessage is skipped)
+
     Args:
         list_of_messages: The list of messages to break down.
 
@@ -138,14 +142,17 @@ def split_message_transitions(list_of_messages: list[Message]) -> list[list[Mess
         i += 1
     filtered_messages.append(system_block)
 
-    # Process remaining messages in (ToolRequestMessage's, ToolResponseMessage's, EnvStateMessage) blocks
+    # Process all remaining messages in
+    # (ToolRequestMessage's, ToolResponseMessage's, EnvStateMessage (optional)) blocks
     current_block: list[Message] = []
     for j in range(i, len(list_of_messages)):
         msg = list_of_messages[j]
         if (
             j > 0
-            and isinstance(list_of_messages[j - 1], EnvStateMessage)
             and isinstance(msg, ToolRequestMessage)
+            and isinstance(
+                list_of_messages[j - 1], (EnvStateMessage, ToolResponseMessage)
+            )
             and current_block
         ):
             filtered_messages.append(current_block)
