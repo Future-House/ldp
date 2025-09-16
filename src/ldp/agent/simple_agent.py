@@ -71,7 +71,6 @@ class SimpleAgentState(BaseModel):
             The next agent state (which is not an in-place change to self).
         """
         old_messages = self.messages
-
         hide_old_env_states = (
             hide_old_env_states
             if hide_old_env_states is not None
@@ -82,12 +81,15 @@ class SimpleAgentState(BaseModel):
             and self.sliding_window > 0
             and len(old_messages) > 0
         ):
+            hide_message = "[Previous messages - hidden]"
             msg_blocks = split_message_transitions(old_messages)
+
+            # Do not duplicate hide_message if it's already in the first block
+            if msg_blocks[0][-1].content != hide_message:
+                msg_blocks[0].append(Message(content=hide_message))
+
             old_messages = (
-                msg_blocks[0]  # keep system messages + user message
-                + [
-                    Message(content="[Previous messages - hidden]")
-                ]  # hide intermediate transitions
+                msg_blocks[0]  # keep system messages + user message + hide_message
                 + list(chain.from_iterable(msg_blocks[1:][-self.sliding_window :]))
             )
 
