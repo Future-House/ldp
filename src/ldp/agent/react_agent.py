@@ -123,8 +123,8 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
     )
 
     sliding_window: int = Field(
-        default=0,
-        description="Number of previous trajectory transitions to keep in the state. 0 means all previous transitions.",
+        default=-1,
+        description=SimpleAgentState.model_fields["sliding_window"].description,
     )
 
     @classmethod

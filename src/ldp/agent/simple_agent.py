@@ -47,8 +47,8 @@ class SimpleAgentState(BaseModel):
         description="If True, will hide the content of old ToolRequestMessages.",
     )
     sliding_window: int = Field(
-        default=0,
-        description="Number of previous trajectory transitions to keep in the state. 0 means all previous transitions.",
+        default=-1,
+        description="Number of previous trajectory transitions to keep. -1 means all previous transitions.",
     )
 
     def get_next_state(
@@ -144,8 +144,8 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
     )
 
     sliding_window: int = Field(
-        default=0,
-        description="Number of previous trajectory transitions to keep in the state. 0 means all previous transitions.",
+        default=-1,
+        description="Number of previous trajectory transitions to keep. -1 means all previous transitions.",
     )
 
     def __init__(self, **kwargs):
