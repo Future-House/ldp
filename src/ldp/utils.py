@@ -121,7 +121,7 @@ def split_message_transitions(list_of_messages: list[Message]) -> list[list[Mess
 
     Blocks end when either:
     - EnvStateMessage → ToolRequestMessage transition occurs
-    - ToolResponseMessage → ToolRequestMessage transition occurs (when EnvStateMessage is skipped)
+    - ToolResponseMessage → ToolRequestMessage transition occurs
 
     Args:
         list_of_messages: The list of messages to break down.
