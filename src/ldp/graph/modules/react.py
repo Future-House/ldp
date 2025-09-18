@@ -316,11 +316,7 @@ def postprocess_and_concat_resoning_msg(
     return [
         *msgs,
         Message(
-            content=(
-                f"Thought: {reasoning}."
-                " Based on this reasoning, let's select the appropriate tool!"
-                "\nAction: "
-            ),
+            content=(f"Thought: {reasoning}.\nAction: "),
             # Role is 'assistant' here (normally 'user') since we use the model's reasoning to ask for an action.
             role="assistant",
         ),
