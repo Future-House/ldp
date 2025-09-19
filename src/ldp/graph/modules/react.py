@@ -312,16 +312,9 @@ class ReActModuleSinglePrompt:
 def postprocess_and_concat_resoning_msg(
     msgs: Iterable[Message], react_message: Message
 ) -> Messages:
-    reasoning = (react_message.content or "").removeprefix("Thought: ")
-    if reasoning and not reasoning.rstrip().endswith("."):
-        reasoning = reasoning.rstrip() + "."
     return [
         *msgs,
-        Message(
-            content=(f"Thought: {reasoning}\nAction: "),
-            # Role is 'assistant' here (normally 'user') since we use the model's reasoning to ask for an action.
-            role="assistant",
-        ),
+        react_message,
         # We interleave a user message as required by Anthropic's API
         Message(content="Continue..."),
     ]
