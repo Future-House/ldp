@@ -199,4 +199,304 @@ interactions:
       status:
         code: 200
         message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"stop_sequences":["Observation:","Action:"],"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"system":[{"type":"text","text":"Answer the
+        following questions as best you can, using the provided tools.\n\nUse the following
+        format:\n\nThought: you should always think about what to do\nAction: the action
+        to take, should be one of the provided tools with necessary arguments\nObservation:
+        the result of the action\n... (this Thought/Action/Observation can repeat N
+        times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction: get_weather(\"New
+        York\", 7)\nObservation: The 7 day forecast for New York is [...]"}],"max_tokens":4096}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "1447"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.70.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//dE9NSwMxEP0rYS5esrLdth5y86BU6LEHQSTEZNiE7mbWZFItZf+77Jai
+          VTwN72tm3gmCAwV9bnW92GwfNuyDu/eHzVvsw/bZ7x4JJPBxwMmFOZsWQUKibiJMziGziQwSenLY
+          gQLbmeKwWlbrypuwL1VTN6tF3TQgwVJkjAzq5XTZyfg5peehYOeptJ6VeLrpOmETGkZhhKVoQ0ax
+          rj4oOZGZ0lGUHGIr2KMYUoiszywTdbcwvkrITINOaDJFUGeU8b1gtFODa6zg3nKgqEBCmTuqE4Q4
+          FNZMe4wZ1N1qKcEa61HPfwWK+tpRX/SExv2nXbLTARw89phMp9f9X/+3uvC/1VECFf5JNSsJGdMh
+          WNQcMM2VTXQmORjHLwAAAP//AwCXW/D+5wEAAA==
+      headers:
+        CF-RAY:
+          - 9814e665b84a50a1-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 19 Sep 2025 00:17:26 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-09-19T00:17:25Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-09-19T00:17:26Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-09-19T00:17:25Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-09-19T00:17:25Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CTGoFypd2WT9VNTSfMkMx
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        via:
+          - 1.1 google
+        x-envoy-upstream-service-time:
+          - "889"
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]},{"role":"assistant","content":[{"type":"text","text":"Thought:
+        I''ll create a concise 5-word story using the print_story tool."}]},{"role":"user","content":[{"type":"text","text":"Continue..."}]}],"temperature":0.1,"stop_sequences":["Observation:","Action:"],"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"},"system":[{"type":"text","text":"Answer
+        the following questions as best you can, using the provided tools.\n\nUse the
+        following format:\n\nThought: you should always think about what to do\nAction:
+        the action to take, should be one of the provided tools with necessary arguments\nObservation:
+        the result of the action\n... (this Thought/Action/Observation can repeat N
+        times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction: get_weather(\"New
+        York\", 7)\nObservation: The 7 day forecast for New York is [...]"}],"max_tokens":4096}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "1671"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.70.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAAwAAAP//dJFbSwMxEIX/yjLPWdndXrR5U0RBqigFqRUJMRm7sdlkm0tpWfa/S1qK
+          VvFxznfOzDDTgZJAofFLVpTXV9jK++pxtLitL+9K9TIbL5+3QCDsWkwu9J4vEQg4q5PAvVc+cBOA
+          QGMlaqAgNI8S80E+ymuuVjGvimpYFlUFBIQ1AU0A+todewZrNYs+Nd1vkurIinKiNhd8upjMnsr1
+          /KG6mZeuVZ9AwPAm5VqnTGA+WLdLUdPGALSDg0BhajeYvWtrG5QZ/wjosmhw26IIKDM0wkYT0J1B
+          37+RlGqZQ+6tOV1pDzyuIxqBQE3UmkDcH4F2h6ks2BUaD/R8PCAguKiRCYc8KGvYqaM4codc/seO
+          2TQA2xobdFyzUfPX/03L+jftCdgYfkrDAQGPbqMEsqDQAYX0OsmdhL7/AgAA//8DAAQreQ8IAgAA
+      headers:
+        CF-RAY:
+          - 9814e66befa550a1-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 19 Sep 2025 00:17:27 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-09-19T00:17:27Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-09-19T00:17:27Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-09-19T00:17:26Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-09-19T00:17:27Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CTGoG45r9995wQAUyvhXE
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        via:
+          - 1.1 google
+        x-envoy-upstream-service-time:
+          - "1244"
+      status:
+        code: 200
+        message: OK
+  - request:
+      body:
+        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]},{"role":"assistant","content":[{"type":"text","text":"Thought:
+        I''ll create a concise 5-word story and use the print_story tool to display
+        it."}]},{"role":"user","content":[{"type":"text","text":"Continue..."}]}],"temperature":0.1,"stop_sequences":["Observation:","Action:"],"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"},"system":[{"type":"text","text":"Answer
+        the following questions as best you can, using the provided tools.\n\nUse the
+        following format:\n\nThought: you should always think about what to do\nAction:
+        the action to take, should be one of the provided tools with necessary arguments\nObservation:
+        the result of the action\n... (this Thought/Action/Observation can repeat N
+        times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction: get_weather(\"New
+        York\", 7)\nObservation: The 7 day forecast for New York is [...]"}],"max_tokens":4096}'
+      headers:
+        accept:
+          - application/json
+        accept-encoding:
+          - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
+        connection:
+          - keep-alive
+        content-length:
+          - "1687"
+        content-type:
+          - application/json
+        host:
+          - api.anthropic.com
+        user-agent:
+          - litellm/1.70.4
+      method: POST
+      uri: https://api.anthropic.com/v1/messages
+    response:
+      body:
+        string: !!binary |
+          H4sIAAAAAAAAA3SQ3UvDMBTF/5Vyn1Ppx2ZZ3kSdwkT0ZaAiIUvu1rI06fLRMUr/d8nG0Ck+5vzO
+          uffcDNBIoNC6DcvyZV68Libz5510i/xtVvYvj+vlDAj4Q4fRhc7xDQIBa1QUuHON81x7INAaiQoo
+          CMWDxLRMp2nNm21Ii6yY5FlRAAFhtEftgX4M55neGMWCi0OPTeI7sCyfh9twJw7rrpvd8PeHqs+n
+          1f0eCGjexlxnG+2Z88YeYlR3wQMd4CRQeDI9JitlTIsyWaHfI+pEnsomznPrrmAcP0kMdMwid0Zf
+          tjkCh7uAWiBQHZQiEI730+G0kHmzRe2AVtcVAcFFjUxY5L4xml06sjO3yOV/7JyNC7CrsUXLFZu2
+          f/3fNK9/05GACf6nNCkJOLR9I5D5Bi1QiB8huZUwjl8AAAD//wMA2esOXgMCAAA=
+      headers:
+        CF-RAY:
+          - 981506397a96ed39-SJC
+        Connection:
+          - keep-alive
+        Content-Encoding:
+          - gzip
+        Content-Type:
+          - application/json
+        Date:
+          - Fri, 19 Sep 2025 00:39:10 GMT
+        Server:
+          - cloudflare
+        Transfer-Encoding:
+          - chunked
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+        anthropic-ratelimit-input-tokens-limit:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "5000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2025-09-19T00:39:10Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "1000000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2025-09-19T00:39:10Z"
+        anthropic-ratelimit-requests-limit:
+          - "5000"
+        anthropic-ratelimit-requests-remaining:
+          - "4999"
+        anthropic-ratelimit-requests-reset:
+          - "2025-09-19T00:39:09Z"
+        anthropic-ratelimit-tokens-limit:
+          - "6000000"
+        anthropic-ratelimit-tokens-remaining:
+          - "6000000"
+        anthropic-ratelimit-tokens-reset:
+          - "2025-09-19T00:39:10Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CTGpv5S8hLGwszWuF5NsX
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        via:
+          - 1.1 google
+        x-envoy-upstream-service-time:
+          - "1258"
+      status:
+        code: 200
+        message: OK
 version: 1
