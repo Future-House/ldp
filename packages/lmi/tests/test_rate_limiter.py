@@ -4,7 +4,7 @@ from itertools import product
 from typing import Any
 from unittest.mock import patch
 
-import httpx
+import httpx_aiohttp
 import pytest
 from aviary.core import Message
 from limits import RateLimitItemPerSecond
@@ -396,7 +396,9 @@ class TestGlobalRateLimiter:
     @pytest.mark.asyncio
     async def test_parsing_namespace(self) -> None:
         limiter = GlobalRateLimiter()
-        async with httpx.AsyncClient() as client:  # Throwaway client to build a request
+        async with (  # Throwaway client to build a request
+            httpx_aiohttp.HttpxAiohttpClient() as client
+        ):
             req = client.build_request(method="GET", url=f"{CROSSREF_BASE_URL}/stub")
         with patch.object(
             limiter.rate_limiter,

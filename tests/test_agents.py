@@ -760,6 +760,9 @@ class TestHTTPAgentClient:
             server_url=base_server_url,
             request_headers={"Authorization": "Bearer stub"},
         )
+        # Use httpx.AsyncClient over httpx_aiohttp.HttpxAiohttpClient in tests here,
+        # as httpx_aiohttp.AiohttpTransport doesn't support an app argument
+        # as of httpx-aiohttp==0.1.8
         async with AsyncClient(
             transport=ASGITransport(app=make_simple_agent_server(agent=remote_agent)),
             base_url=base_server_url,
