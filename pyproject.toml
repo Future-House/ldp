@@ -25,7 +25,7 @@ dependencies = [
     "aiofiles",
     "fhaviary>=0.20.0",  # For Environment.get_id
     "fhlmi",  # For new LLM client interface
-    "httpx",
+    "httpx-aiohttp",
     "numpy>=1.20",  # For numpy.typing
     "pydantic~=2.0",
     "tenacity",
@@ -44,6 +44,7 @@ requires-python = ">=3.11"
 dev = [
     "fhaviary[xml]>=0.19",  # For not line-wrapping tool descriptions
     "fhlmi[dev]",
+    "httpx",
     "ipython>=8",  # Pin to keep recent
     "ldp[monitor,nn,rich,server,typing,visualization]",
     "litellm",  # Version ranges are enforced by lmi
@@ -92,6 +93,7 @@ server = [
     "fastapi>=0.109",  # For Python 3.12 support
 ]
 typing = [
+    "httpx",
     "types-aiofiles",
     "types-tqdm",
 ]
