@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import logging
 import shutil
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 from typing import Any
 
+import httpx_aiohttp
+import litellm.llms.custom_httpx.aiohttp_transport
 import pytest
+import vcr.stubs.httpx_stubs
 from dotenv import load_dotenv
 
 from lmi.utils import (
@@ -79,3 +82,38 @@ def fixture_reset_log_levels(caplog) -> Iterator[None]:
         logger = logging.getLogger(name)
         logger.setLevel(logging.NOTSET)
         logger.propagate = True
+
+
+class PreReadCompatibleAiohttpResponseStream(
+    httpx_aiohttp.transport.AiohttpResponseStream
+):
+    """aiohttp-backed response stream that works if the response was pre-read."""
+
+    async def __aiter__(self) -> AsyncIterator[bytes]:
+        with httpx_aiohttp.transport.map_aiohttp_exceptions():
+            if self._aiohttp_response._body is not None:
+                # Happens if some intermediary called `await _aiohttp_response.read()`
+                # TODO: take into account chunk size
+                yield self._aiohttp_response._body
+            else:
+                async for chunk in self._aiohttp_response.content.iter_chunked(
+                    self.CHUNK_SIZE
+                ):
+                    yield chunk
+
+
+async def _async_vcr_send(cassette, real_send, *args, **kwargs):  # noqa: ARG001
+    """VCR send that only sends, not possibly recording or playing back responses."""
+    return await real_send(*args, **kwargs)
+
+
+# Permanently patch the original response stream,
+# to work around https://github.com/karpetrosyan/httpx-aiohttp/issues/23
+# and https://github.com/BerriAI/litellm/issues/11724
+httpx_aiohttp.transport.AiohttpResponseStream = (  # type: ignore[misc]
+    litellm.llms.custom_httpx.aiohttp_transport.AiohttpResponseStream  # type: ignore[misc]
+) = PreReadCompatibleAiohttpResponseStream  # type: ignore[assignment]
+
+# Permanently patch vcrpy's async VCR recording functionality,
+# to work around https://github.com/kevin1024/vcrpy/issues/944
+vcr.stubs.httpx_stubs._async_vcr_send = _async_vcr_send
