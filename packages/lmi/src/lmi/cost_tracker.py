@@ -26,6 +26,13 @@ class CostTracker:
         self._callbacks.append(callback)
 
     async def record(self, response: LLMResponse) -> None:
+        # Only record on responses with usage information (final chunk in streaming)
+        # We check for usage presence rather than cost > 0 because:
+        # - Free models, unknown models, or custom pricing can have cost = 0
+        # - We still want to fire callbacks for these to maintain visibility
+        if not getattr(response, "usage", None):
+            return
+
         self.lifetime_cost_usd += litellm.cost_calculator.completion_cost(
             completion_response=response
         )
