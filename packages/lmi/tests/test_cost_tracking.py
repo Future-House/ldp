@@ -222,10 +222,8 @@ class TestCostTrackerCallback:
 
     @pytest.mark.asyncio
     async def test_async_context_with_stream_wrapper(self):
-        mock_stream = MagicMock()
         mock_response = MagicMock(cost=0.01)
-        mock_stream.__anext__ = AsyncMock(return_value=mock_response)
-
+        mock_stream = MagicMock(__anext__=AsyncMock(return_value=mock_response))
         wrapper = TrackedStreamWrapper(mock_stream)
 
         callback_calls = []
@@ -245,3 +243,129 @@ class TestCostTrackerCallback:
             assert len(callback_calls) == 1
             assert callback_calls[0] == mock_response
             assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
+
+    @pytest.mark.asyncio
+    async def test_stream_wrapper_only_records_final_chunk(self):
+        """Test that cost callbacks are only fired on the final chunk with usage info."""
+        # Create mock stream that yields 3 chunks: 2 intermediate, 1 final
+        intermediate_chunk_1 = MagicMock(usage=None)
+        intermediate_chunk_2 = MagicMock(usage=None)
+        final_chunk = MagicMock(usage=MagicMock(prompt_tokens=10, completion_tokens=20))
+
+        mock_stream = MagicMock(
+            __anext__=AsyncMock(
+                side_effect=[
+                    intermediate_chunk_1,
+                    intermediate_chunk_2,
+                    final_chunk,
+                    StopAsyncIteration,
+                ]
+            )
+        )
+
+        wrapper = TrackedStreamWrapper(mock_stream)
+
+        callback_calls = []
+
+        async def async_callback(response):  # noqa: RUF029
+            callback_calls.append(response)
+
+        GLOBAL_COST_TRACKER.add_callback(async_callback)
+
+        with (
+            cost_tracking_ctx(),
+            patch("litellm.cost_calculator.completion_cost", return_value=0.01),
+        ):
+            # Consume all chunks
+            chunks = [chunk async for chunk in wrapper]
+
+            # Should have received 3 chunks
+            assert len(chunks) == 3
+            assert chunks[0] == intermediate_chunk_1
+            assert chunks[1] == intermediate_chunk_2
+            assert chunks[2] == final_chunk
+
+            # But callback should only have been called once (for final chunk)
+            assert len(callback_calls) == 1
+            assert callback_calls[0] == final_chunk
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
+
+    @pytest.mark.vcr(match_on=VCR_DEFAULT_MATCH_ON)
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("model_name", "stream"),
+        [
+            (CommonLLMNames.OPENAI_TEST, False),
+            (CommonLLMNames.OPENAI_TEST, True),
+            (CommonLLMNames.ANTHROPIC_TEST, False),
+            (CommonLLMNames.ANTHROPIC_TEST, True),
+        ],
+    )
+    async def test_cost_tracking_with_streaming_modes(self, model_name, stream):
+        """Test cost tracking works for both streaming and non-streaming completions."""
+        model = LiteLLMModel(name=model_name)
+        callback_calls = []
+
+        async def track_callback(response):  # noqa: RUF029
+            callback_calls.append(response)
+
+        GLOBAL_COST_TRACKER.add_callback(track_callback)
+
+        with cost_tracking_ctx():
+            initial_cost = GLOBAL_COST_TRACKER.lifetime_cost_usd
+
+            if stream:
+                # Test streaming via callbacks
+                chunks: list[str] = []
+                await model.call_single(
+                    messages=[Message(content="Say hello")],
+                    callbacks=[chunks.append],
+                )
+                assert chunks  # Should have received streaming chunks
+            else:
+                # Test non-streaming
+                result = await model.call_single(
+                    messages=[Message(content="Say hello")],
+                )
+                assert result.text
+
+            # Cost should have increased
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > initial_cost
+
+            # Callback should have been called exactly once (on final result with cost)
+            assert len(callback_calls) == 1
+            response = callback_calls[0]
+            assert response.usage is not None
+            assert response.usage.prompt_tokens > 0
+            assert response.usage.completion_tokens > 0
+
+    @pytest.mark.vcr(match_on=VCR_DEFAULT_MATCH_ON)
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "text-embedding-3-small",
+            # Note: Most embedding APIs don't support streaming
+        ],
+    )
+    async def test_cost_tracking_embeddings(self, model_name):
+        """Test cost tracking works for embedding models."""
+        model = LiteLLMEmbeddingModel(name=model_name)
+        callback_calls = []
+
+        async def track_callback(response):  # noqa: RUF029
+            callback_calls.append(response)
+
+        GLOBAL_COST_TRACKER.add_callback(track_callback)
+
+        with cost_tracking_ctx():
+            initial_cost = GLOBAL_COST_TRACKER.lifetime_cost_usd
+
+            embeddings = await model.embed_documents(["Hello world", "Test"])
+            assert len(embeddings) == 2
+
+            # Cost should have increased
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd > initial_cost
+
+            # Callback should have been called exactly once
+            assert len(callback_calls) == 1
