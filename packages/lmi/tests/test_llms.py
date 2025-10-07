@@ -229,41 +229,37 @@ class TestLiteLLMModel:
                 images=image,
             ),
         ]
-        results = await llm.call(messages)
-        assert isinstance(results, list)
-        for result in results:
-            assert isinstance(result, LLMResult)
-            assert isinstance(result.prompt, list)
-            assert all(isinstance(msg, Message) for msg in result.prompt)
-            assert isinstance(result.prompt[1], Message)
-            assert len(result.prompt) == 2
-            assert result.prompt[1].content
-            assert isinstance(result.text, str)
-            assert "red" in result.text.lower()
-            assert result.seconds_to_last_token > 0
-            assert result.prompt_count > 0
-            assert result.completion_count > 0
-            assert result.cost > 0
+        (result,) = await llm.call(messages)
+        assert isinstance(result, LLMResult)
+        assert isinstance(result.prompt, list)
+        assert all(isinstance(msg, Message) for msg in result.prompt)
+        assert isinstance(result.prompt[1], Message)
+        assert len(result.prompt) == 2
+        assert result.prompt[1].content
+        assert isinstance(result.text, str)
+        assert "red" in result.text.lower()
+        assert result.seconds_to_last_token > 0
+        assert result.prompt_count > 0
+        assert result.completion_count > 0
+        assert result.cost > 0
 
         # Also test with a callback
         async def ac(x) -> None:
             pass
 
-        results = await llm.call(messages, [ac])
-        assert isinstance(results, list)
-        for result in results:
-            assert isinstance(result, LLMResult)
-            assert isinstance(result.prompt, list)
-            assert all(isinstance(msg, Message) for msg in result.prompt)
-            assert isinstance(result.prompt[1], Message)
-            assert len(result.prompt) == 2
-            assert result.prompt[1].content
-            assert isinstance(result.text, str)
-            assert "red" in result.text.lower()
-            assert result.seconds_to_last_token > 0
-            assert result.prompt_count > 0
-            assert result.completion_count > 0
-            assert result.cost > 0
+        (result,) = await llm.call(messages, [ac])
+        assert isinstance(result, LLMResult)
+        assert isinstance(result.prompt, list)
+        assert all(isinstance(msg, Message) for msg in result.prompt)
+        assert isinstance(result.prompt[1], Message)
+        assert len(result.prompt) == 2
+        assert result.prompt[1].content
+        assert isinstance(result.text, str)
+        assert "red" in result.text.lower()
+        assert result.seconds_to_last_token > 0
+        assert result.prompt_count > 0
+        assert result.completion_count > 0
+        assert result.cost > 0
 
     @pytest.mark.parametrize(
         "config",
