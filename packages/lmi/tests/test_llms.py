@@ -217,53 +217,66 @@ class TestLiteLLMModel:
     @pytest.mark.asyncio
     async def test_call_w_figure(self) -> None:
         llm = LiteLLMModel(name=CommonLLMNames.GPT_4O.value)
+        sys_message = Message(
+            role="system", content="You are a detective who investigates colors"
+        )
+
+        # First let's get baseline prompt tokens and cost
+        (result,) = await llm.call([
+            sys_message,
+            Message(
+                content="What color is this square? Show me your chain of reasoning."
+            ),
+        ])
+        assert isinstance(result, LLMResult)
+        assert result.prompt_count > 0
+        assert result.cost > 0
+        no_image_prompt_count = result.prompt_count
+        no_image_cost = result.cost
+
+        # Now let's prompt an image and confirm its used and incorporated into cost
         image = np.zeros((32, 32, 3), dtype=np.uint8)
         image[:] = [255, 0, 0]
         messages = [
-            Message(
-                role="system", content="You are a detective who investigate colors"
-            ),
+            sys_message,
             Message.create_message(
-                role="user",
                 text="What color is this square? Show me your chain of reasoning.",
                 images=image,
             ),
         ]
-        results = await llm.call(messages)
-        assert isinstance(results, list)
-        for result in results:
-            assert isinstance(result, LLMResult)
-            assert isinstance(result.prompt, list)
-            assert all(isinstance(msg, Message) for msg in result.prompt)
-            assert isinstance(result.prompt[1], Message)
-            assert len(result.prompt) == 2
-            assert result.prompt[1].content
-            assert isinstance(result.text, str)
-            assert "red" in result.text.lower()
-            assert result.seconds_to_last_token > 0
-            assert result.prompt_count > 0
-            assert result.completion_count > 0
-            assert result.cost > 0
+        (result,) = await llm.call(messages)
+        assert isinstance(result, LLMResult)
+        assert isinstance(result.prompt, list)
+        assert all(isinstance(msg, Message) for msg in result.prompt)
+        assert isinstance(result.prompt[1], Message)
+        assert len(result.prompt) == 2
+        assert result.prompt[1].content
+        assert isinstance(result.text, str)
+        assert "red" in result.text.lower()
+        assert result.seconds_to_last_token > 0
+        assert result.prompt_count > 1.25 * no_image_prompt_count, (
+            "Image should require more prompt tokens"
+        )
+        assert result.completion_count > 0
+        assert result.cost > 1.25 * no_image_cost, "Image should require higher cost"
 
         # Also test with a callback
         async def ac(x) -> None:
             pass
 
-        results = await llm.call(messages, [ac])
-        assert isinstance(results, list)
-        for result in results:
-            assert isinstance(result, LLMResult)
-            assert isinstance(result.prompt, list)
-            assert all(isinstance(msg, Message) for msg in result.prompt)
-            assert isinstance(result.prompt[1], Message)
-            assert len(result.prompt) == 2
-            assert result.prompt[1].content
-            assert isinstance(result.text, str)
-            assert "red" in result.text.lower()
-            assert result.seconds_to_last_token > 0
-            assert result.prompt_count > 0
-            assert result.completion_count > 0
-            assert result.cost > 0
+        (result,) = await llm.call(messages, [ac])
+        assert isinstance(result, LLMResult)
+        assert isinstance(result.prompt, list)
+        assert all(isinstance(msg, Message) for msg in result.prompt)
+        assert isinstance(result.prompt[1], Message)
+        assert len(result.prompt) == 2
+        assert result.prompt[1].content
+        assert isinstance(result.text, str)
+        assert "red" in result.text.lower()
+        assert result.seconds_to_last_token > 0
+        assert result.prompt_count > 0
+        assert result.completion_count > 0
+        assert result.cost > 0
 
     @pytest.mark.parametrize(
         "config",
