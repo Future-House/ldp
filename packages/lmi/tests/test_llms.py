@@ -259,13 +259,12 @@ class TestLiteLLMModel:
             "Image usage should require more prompt tokens"
         )
         assert result.completion_count > 0
-        if result.completion_count >= 0.8 * no_image_completion_count:
-            # If the completion wasn't much smaller, it also makes sense to check cost
-            assert result.cost > 1.25 * no_image_cost, (
-                f"Image usage should require higher cost. For reference,"
-                f" {result.prompt_count=}, {result.completion_count=},"
-                f" {no_image_prompt_count=}, and {no_image_completion_count=}."
-            )
+        assert result.cost > 1.25 * no_image_cost, (
+            f"Image usage should require higher cost. For reference,"
+            f" {result.prompt_count=}, {result.completion_count=},"
+            f" {result.cost=}, {no_image_prompt_count=},"
+            f" {no_image_completion_count=}, and {no_image_cost=}."
+        )
 
         # Also test with a callback
         async def ac(x) -> None:
