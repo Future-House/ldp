@@ -225,12 +225,16 @@ class TestLiteLLMModel:
         (result,) = await llm.call([
             sys_message,
             Message(
-                content="What color is this square? Show me your chain of reasoning."
+                content=(
+                    "What color is this square? Show me your chain of reasoning."
+                    " Alternately, if there is no square, just answer 'no square'."
+                )
             ),
         ])
         assert isinstance(result, LLMResult)
         assert result.prompt_count > 0
         assert result.cost > 0
+        assert (result.text or "").strip().rstrip(".").lower() == "no square"
         no_image_prompt_count = result.prompt_count
         no_image_completion_count = result.completion_count
         no_image_cost = result.cost
@@ -241,7 +245,10 @@ class TestLiteLLMModel:
         messages = [
             sys_message,
             Message.create_message(
-                text="What color is this square? Show me your chain of reasoning.",
+                text=(
+                    "What color is this square? Show me your chain of reasoning."
+                    " Alternately, if there is no square, just answer 'no square'."
+                ),
                 images=image,
             ),
         ]
