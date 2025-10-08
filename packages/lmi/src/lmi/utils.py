@@ -15,7 +15,10 @@ except ImportError:
     tqdm = None  # type: ignore[assignment,misc]
 
 if TYPE_CHECKING:
+    from typing import IO
+
     import vcr.request
+    from PIL._typing import StrOrBytesPath
 
 
 def configure_llm_logs() -> None:
@@ -127,3 +130,22 @@ def update_litellm_max_callbacks(value: int = 1000) -> None:
     SEE: https://github.com/BerriAI/litellm/issues/9792
     """
     litellm.litellm_core_utils.logging_callback_manager.LoggingCallbackManager.MAX_CALLBACKS = value
+
+
+def validate_image(path: "StrOrBytesPath | IO[bytes]") -> None:
+    """
+    Validate that the file at the given path is a valid image.
+
+    Raises:
+        OSError: If the image file is truncated.
+    """  # noqa: DOC502
+    try:
+        from PIL import Image
+    except ImportError as exc:
+        raise ImportError(
+            "Image validation requires the 'image' extra for 'pillow'. Please:"
+            " `pip install fhlmi[image]`."
+        ) from exc
+
+    with Image.open(path) as img:
+        img.load()

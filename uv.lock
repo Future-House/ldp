@@ -727,6 +727,7 @@ dev = [
     { name = "litellm" },
     { name = "mypy" },
     { name = "numpy" },
+    { name = "pillow" },
     { name = "pre-commit" },
     { name = "pylint-pydantic" },
     { name = "pytest" },
@@ -744,6 +745,9 @@ dev = [
     { name = "typeguard" },
     { name = "types-tqdm" },
     { name = "vcrpy" },
+]
+image = [
+    { name = "pillow" },
 ]
 local = [
     { name = "numpy" },
@@ -769,7 +773,7 @@ requires-dist = [
     { name = "coredis" },
     { name = "fhaviary", specifier = ">=0.14.0" },
     { name = "fhaviary", extras = ["xml"], marker = "extra == 'dev'" },
-    { name = "fhlmi", extras = ["local", "progress", "typing", "vcr"], marker = "extra == 'dev'", editable = "packages/lmi" },
+    { name = "fhlmi", extras = ["image", "local", "progress", "typing", "vcr"], marker = "extra == 'dev'", editable = "packages/lmi" },
     { name = "httpx-aiohttp", marker = "extra == 'dev'" },
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "limits", specifier = ">=4.8" },
@@ -777,6 +781,7 @@ requires-dist = [
     { name = "litellm", marker = "extra == 'dev'", specifier = ">=1.71" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
     { name = "numpy", marker = "extra == 'local'" },
+    { name = "pillow", marker = "extra == 'image'", specifier = ">=10.3.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.4" },
     { name = "pydantic", specifier = "~=2.0,>=2.10.1" },
     { name = "pylint-pydantic", marker = "extra == 'dev'" },
@@ -798,7 +803,7 @@ requires-dist = [
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
     { name = "vcrpy", marker = "extra == 'vcr'", specifier = ">=6" },
 ]
-provides-extras = ["dev", "local", "progress", "typing", "vcr"]
+provides-extras = ["dev", "image", "local", "progress", "typing", "vcr"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "fhlmi", extras = ["dev"], editable = "packages/lmi" }]
