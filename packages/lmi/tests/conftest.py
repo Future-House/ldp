@@ -23,6 +23,7 @@ from lmi.utils import (
 
 TESTS_DIR = Path(__file__).parent
 CASSETTES_DIR = TESTS_DIR / "cassettes"
+STUB_DATA_DIR = TESTS_DIR / "stub_data"
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -82,6 +83,12 @@ def fixture_reset_log_levels(caplog) -> Iterator[None]:
         logger = logging.getLogger(name)
         logger.setLevel(logging.NOTSET)
         logger.propagate = True
+
+
+@pytest.fixture(name="png_image", scope="session")
+def fixture_png_image() -> bytes:
+    with (STUB_DATA_DIR / "sf_districts.png").open("rb") as f:
+        return f.read()
 
 
 class PreReadCompatibleAiohttpResponseStream(
