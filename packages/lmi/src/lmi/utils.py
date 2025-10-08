@@ -165,3 +165,17 @@ def validate_image(path: "StrOrBytesPath | IO[bytes]") -> None:
 
     with Image.open(path) as img:
         img.load()
+
+
+def encode_image_as_url(image_type: str, image_data: bytes | str) -> str:
+    """Convert image data to an RFC 2397 data URL format."""
+    if isinstance(image_data, bytes):
+        image_data = bytes_to_string(image_data)
+    return f"data:image/{image_type};base64,{image_data}"
+
+
+def is_encoded_image(image: str) -> bool:
+    """Check if the given image is a GCS URL or a RFC 2397 data URL."""
+    return image.startswith("gs://") or (
+        image.startswith("data:image/") and ";base64," in image
+    )
