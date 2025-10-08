@@ -225,13 +225,18 @@ class TestLiteLLMModel:
         (result,) = await llm.call([
             sys_message,
             Message(
-                content="What color is this square? Show me your chain of reasoning."
+                content=(
+                    "What color is this square? Show me your chain of reasoning."
+                    " Alternately, if there is no square, just answer 'no square'."
+                )
             ),
         ])
         assert isinstance(result, LLMResult)
         assert result.prompt_count > 0
         assert result.cost > 0
+        assert (result.text or "").strip().rstrip(".").lower() == "no square"
         no_image_prompt_count = result.prompt_count
+        no_image_completion_count = result.completion_count
         no_image_cost = result.cost
 
         # Now let's prompt an image and confirm its used and incorporated into cost
@@ -240,7 +245,10 @@ class TestLiteLLMModel:
         messages = [
             sys_message,
             Message.create_message(
-                text="What color is this square? Show me your chain of reasoning.",
+                text=(
+                    "What color is this square? Show me your chain of reasoning."
+                    " Alternately, if there is no square, just answer 'no square'."
+                ),
                 images=image,
             ),
         ]
@@ -255,10 +263,15 @@ class TestLiteLLMModel:
         assert "red" in result.text.lower()
         assert result.seconds_to_last_token > 0
         assert result.prompt_count > 1.25 * no_image_prompt_count, (
-            "Image should require more prompt tokens"
+            "Image usage should require more prompt tokens"
         )
         assert result.completion_count > 0
-        assert result.cost > 1.25 * no_image_cost, "Image should require higher cost"
+        assert result.cost > 1.25 * no_image_cost, (
+            f"Image usage should require higher cost. For reference,"
+            f" {result.prompt_count=}, {result.completion_count=},"
+            f" {result.cost=}, {no_image_prompt_count=},"
+            f" {no_image_completion_count=}, and {no_image_cost=}."
+        )
 
         # Also test with a callback
         async def ac(x) -> None:
