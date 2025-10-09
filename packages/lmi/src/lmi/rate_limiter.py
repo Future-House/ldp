@@ -209,7 +209,7 @@ class GlobalRateLimiter:
 
         # strip off the machine_id, and replace it with the MATCH_MACHINE_ID placeholder
         if namespace.startswith("get"):
-            machine_id = namespace.split("|")[-1]
+            machine_id = namespace.rsplit("|", maxsplit=1)[-1]
             if machine_id != "get":
                 namespace_w_stub_machine_id = namespace.replace(
                     machine_id, MATCH_MACHINE_ID, 1
