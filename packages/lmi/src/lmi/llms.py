@@ -39,6 +39,7 @@ from aviary.core import (
     ToolSelector,
     is_coroutine_callable,
 )
+from aviary.message import MalformedMessageError
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -722,34 +723,45 @@ class LiteLLMModel(LLMModel):
 
         # We are not streaming here, so we can cast to list[litellm.utils.Choices]
         choices = cast("list[litellm.utils.Choices]", completions.choices)
-        for completion in choices:
+        for choice in choices:
+            msg_type = (
+                ToolRequestMessage
+                if choice.finish_reason == "tool_calls"
+                or getattr(choice.message, "tool_calls", None) is not None
+                else Message
+            )
+            serialized_message = choice.message.model_dump()
             if (
-                tools is not None  # Allows for empty tools list
-                or completion.finish_reason == "tool_calls"
-                or (getattr(completion.message, "tool_calls", None) is not None)
+                tools is not None  # Check for empty tools list
+                and not tools
+                and not serialized_message.get("tool_calls")
             ):
-                serialized_message = completion.message.model_dump()
-                serialized_message["tool_calls"] = (
-                    serialized_message.get("tool_calls") or []
-                )
-                output_messages: list[Message | ToolRequestMessage] = [
-                    ToolRequestMessage(**serialized_message)
-                ]
-            else:
-                output_messages = [Message(**completion.message.model_dump())]
+                # Account for gpt-4o returning null tool_calls if tools is empty
+                serialized_message["tool_calls"] = []
+                msg_type = ToolRequestMessage
+            try:
+                output_messages = [msg_type(**serialized_message)]
+            except ValidationError as exc:
+                raise MalformedMessageError(
+                    f"Failed to convert model response's message {choice.message}"
+                    f" into a {msg_type.__name__}."
+                    f" Got finish reason {choice.finish_reason!r},"
+                    f" full response was {completions},"
+                    f" and tool choice was {kwargs.get('tool_choice')!r}."
+                ) from exc
 
             reasoning_content = None
-            if hasattr(completion.message, "reasoning_content"):
-                reasoning_content = completion.message.reasoning_content
+            if hasattr(choice.message, "reasoning_content"):
+                reasoning_content = choice.message.reasoning_content
 
             results.append(
                 LLMResult(
                     model=used_model,
-                    text=completion.message.content,
+                    text=choice.message.content,
                     prompt=messages,
                     messages=output_messages,
-                    logprob=sum_logprobs(completion),
-                    top_logprobs=extract_top_logprobs(completion),
+                    logprob=sum_logprobs(choice),
+                    top_logprobs=extract_top_logprobs(choice),
                     prompt_count=completions.usage.prompt_tokens,  # type: ignore[attr-defined]
                     completion_count=completions.usage.completion_tokens,  # type: ignore[attr-defined]
                     system_fingerprint=completions.system_fingerprint,
