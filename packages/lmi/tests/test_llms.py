@@ -742,11 +742,10 @@ class TestMultipleCompletion:
         ]
         result = await model.call_single(messages)
         assert isinstance(result, LLMResult)
-
-        assert isinstance(result, LLMResult)
         assert result.messages
         assert len(result.messages) == 1
         assert result.messages[0].content
+        assert not hasattr(result.messages[0], "tool_calls"), "Expected normal message"
 
         model = self.MODEL_CLS(name=model_name, config={"n": 2})
         result = await model.call_single(messages)
@@ -754,6 +753,7 @@ class TestMultipleCompletion:
         assert result.messages
         assert len(result.messages) == 1
         assert result.messages[0].content
+        assert not hasattr(result.messages[0], "tool_calls"), "Expected normal message"
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
