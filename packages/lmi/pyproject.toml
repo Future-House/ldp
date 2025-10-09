@@ -40,7 +40,9 @@ requires-python = ">=3.11"
 [project.optional-dependencies]
 dev = [
     "fhaviary[xml]",
-    "fhlmi[local,progress,typing,vcr]",
+    "fhlmi[image,local,progress,typing,vcr]",
+    "google-auth>=2",  # Pin to keep recent
+    "google-cloud-storage>=3",  # Pin to keep recent
     "httpx-aiohttp",
     "ipython>=8",  # Pin to keep recent
     "litellm>=1.71",  # Lower pin for aiohttp transport adoption
@@ -58,6 +60,9 @@ dev = [
     "python-dotenv",
     "refurb>=2",  # Pin to keep recent
     "typeguard",
+]
+image = [
+    "pillow>=10.3.0",  # Pin for py.typed
 ]
 local = [
     "numpy",
