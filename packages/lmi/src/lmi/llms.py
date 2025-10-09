@@ -732,7 +732,7 @@ class LiteLLMModel(LLMModel):
             )
             serialized_message = choice.message.model_dump()
             if (
-                # Confirm tools were there, so we don't unnecessarily
+                # Confirm we explicitly received an empty tool list, so we don't unnecessarily
                 # make a tool request message over a normal message
                 tools is not None
                 and not tools  # Confirm it's the empty tools special case
