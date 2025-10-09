@@ -732,11 +732,19 @@ class LiteLLMModel(LLMModel):
             )
             serialized_message = choice.message.model_dump()
             if (
-                tools is not None  # Check for empty tools list
-                and not tools
-                and not serialized_message.get("tool_calls")
+                # Confirm tools were there, so we don't unnecessarily
+                # make a tool request message over a normal message
+                tools is not None
+                and not tools  # Confirm it's the empty tools special case
+                and not serialized_message.get("tool_calls")  # Don't clobber anything
             ):
-                # Account for gpt-4o returning null tool_calls if tools is empty
+                # This is a design decision made to simplify
+                # downstream language agent logic, where:
+                # 1. We wanted the presence of tools, even if the list is empty,
+                #    to lead to a ToolRequestMessage
+                # 2. However, OpenAI gpt-4o returns null tool_calls if tools is empty,
+                #    not empty tool_calls, which leads to a plain Message
+                # 3. So, we add this special case to make a ToolRequestMessage
                 serialized_message["tool_calls"] = []
                 msg_type = ToolRequestMessage
             try:
