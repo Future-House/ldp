@@ -706,7 +706,7 @@ class LiteLLMModel(LLMModel):
     async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:
         tools = kwargs.get("tools")
         if not tools:
-            # OpenAI, Anthropic and pottentially other LLM providers
+            # OpenAI, Anthropic and potentially other LLM providers
             # don't allow empty tool_calls lists, so remove empty
             kwargs.pop("tools", None)
 
