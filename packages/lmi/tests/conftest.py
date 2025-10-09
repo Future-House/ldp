@@ -11,6 +11,7 @@ import litellm.llms.custom_httpx.aiohttp_transport
 import pytest
 import vcr.stubs.httpx_stubs
 from dotenv import load_dotenv
+from google.cloud.storage import Client
 
 from lmi.utils import (
     ANTHROPIC_API_KEY_HEADER,
@@ -89,6 +90,23 @@ def fixture_reset_log_levels(caplog) -> Iterator[None]:
 def fixture_png_image() -> bytes:
     with (STUB_DATA_DIR / "sf_districts.png").open("rb") as f:
         return f.read()
+
+
+TMP_LMI_TEST_GCS_BUCKET = "tmp-lmi-test"
+
+
+@pytest.fixture(name="png_image_gcs", scope="session")
+def fixture_png_image_gcs(png_image: bytes) -> str:
+    """Get or create a temporary GCS bucket, upload test image, and return GCS URL."""
+    client = Client()
+    bucket = client.bucket(TMP_LMI_TEST_GCS_BUCKET)
+    if not bucket.exists():  # Get or create the bucket
+        bucket = client.create_bucket(bucket)
+    blob_name = "sf_districts.png"
+    blob = bucket.blob(blob_name)
+    if not blob.exists(client):
+        blob.upload_from_string(png_image, content_type="image/png")
+    return f"gs://{TMP_LMI_TEST_GCS_BUCKET}/{blob_name}"
 
 
 class PreReadCompatibleAiohttpResponseStream(
