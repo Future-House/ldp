@@ -226,8 +226,9 @@ disable = [
     "arguments-differ",  # Ops intentionally differ arguments
     "attribute-defined-outside-init",  # Disagrees with reset pattern
     "bare-except",  # Rely on ruff E722 for this
-    "broad-exception-caught",  # Don't care to enforce this
+    "broad-exception-caught",  # Rely on ruff BLE001 for this
     "broad-exception-raised",  # Rely on ruff TRY002 for this
+    "consider-using-in",  # Rely on ruff PLR1714 for this
     "cyclic-import",  # Let Python blow up
     "dangerous-default-value",  # Rely on ruff W0102 for this
     "empty-docstring",  # Let pep257 take care of docstrings
@@ -323,6 +324,7 @@ enable_all = true
 ignore = [
     "FURB101",  # Rely on ruff FURB101 for this
     "FURB103",  # Rely on ruff FURB103 for this
+    "FURB108",  # Rely on ruff PLR1714 for this
     "FURB118",  # We often use inspect.signature in FxnOp. In 3.11, this doesn't work on operator.itemgetter.
     "FURB141",  # Rely on ruff PTH110 for this
     "FURB144",  # Rely on ruff PTH107 for this
@@ -347,15 +349,13 @@ preview = true
 [tool.ruff.lint]
 explicit-preview-rules = true
 extend-select = [
-    "AIR002",
-    "AIR301",
-    "AIR302",
-    "AIR311",
-    "AIR312",
-    "ASYNC116",
+    "ASYNC212",
+    "ASYNC240",
+    "ASYNC250",
     "B901",
     "B903",
     "B909",
+    "B912",
     "CPY001",
     "DOC201",
     "DOC202",
@@ -408,11 +408,8 @@ extend-select = [
     "FURB103",
     "FURB110",
     "FURB113",
-    "FURB116",
     "FURB118",
-    "FURB122",
     "FURB131",
-    "FURB132",
     "FURB140",
     "FURB142",
     "FURB145",
@@ -420,17 +417,13 @@ extend-select = [
     "FURB152",
     "FURB154",
     "FURB156",
-    "FURB157",
-    "FURB162",
     "FURB164",
-    "FURB166",
     "FURB171",
     "FURB180",
     "FURB189",
     "FURB192",
     "LOG004",
-    "LOG014",
-    "PLC0415",
+    "PLC0207",
     "PLC1901",
     "PLC2701",
     "PLC2801",
@@ -444,49 +437,35 @@ extend-select = [
     "PLR0916",
     "PLR0917",
     "PLR1702",
-    "PLR1733",
     "PLR6104",
     "PLR6201",
     "PLR6301",
     "PLW0108",
-    "PLW0177",
     "PLW0244",
     "PLW1514",
-    "PLW1641",
     "PLW3201",
-    "PT028",
     "PT029",
-    "PT030",
-    "PT031",
-    "PYI059",
-    "PYI061",
     "RUF027",
-    "RUF028",
     "RUF029",
     "RUF031",
     "RUF036",
     "RUF037",
     "RUF038",
     "RUF039",
-    "RUF043",
     "RUF045",
     "RUF047",
-    "RUF049",
     "RUF052",
-    "RUF053",
     "RUF054",
     "RUF055",
     "RUF056",
-    "RUF057",
-    "RUF058",
-    "RUF059",
+    "RUF060",
+    "RUF061",
+    "RUF063",
+    "RUF064",
+    "RUF065",
     "RUF102",
     "TC008",
     "UP042",
-    "UP045",
-    "UP046",
-    "UP047",
-    "UP049",
     "W391",
 ]
 external = [
@@ -566,6 +545,7 @@ unfixable = [
     "ERA001",  # While debugging, temporarily commenting code can be useful
     "F401",  # While debugging, unused imports can be useful
     "F841",  # While debugging, unused locals can be useful
+    "PIE794",  # Autoremoving the latter of two fields is dangerous
     "RUF059",  # While debugging, unused locals can be useful
     "TC004",  # While debugging, it can be nice to keep TYPE_CHECKING in-tact
 ]
