@@ -1,5 +1,7 @@
 # Language Decision Processes (LDP)
 
+<!-- pyml disable-num-lines 10 line-length -->
+
 [![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Future-House/ldp)
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
@@ -75,8 +77,11 @@ If you plan to export Graphviz visualizations, the `graphviz` library is require
 
 ## Tutorial Notebooks
 
-1. [Creating a Simple Language Agent](https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb)
-2. [Evaluating a Llama Agent on GSM8K](https://github.com/Future-House/ldp/blob/main/tutorials/evaluating_a_llama_agent.ipynb)
+1. [Creating a Simple Language Agent][1]
+2. [Evaluating a Llama Agent on GSM8K][2]
+
+[1]: https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb
+[2]: https://github.com/Future-House/ldp/blob/main/tutorials/evaluating_a_llama_agent.ipynb
 
 ## Running an Agent on an Aviary Environment
 
