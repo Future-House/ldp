@@ -4,6 +4,7 @@ from unittest.mock import Mock, call, patch
 
 import litellm
 import pytest
+import tiktoken
 from litellm.caching import Cache, InMemoryCache
 from pytest_subtests import SubTests
 
@@ -15,8 +16,34 @@ from lmi.embeddings import (
     SentenceTransformerEmbeddingModel,
     SparseEmbeddingModel,
     embedding_model_factory,
+    estimate_tokens,
 )
-from lmi.utils import VCR_DEFAULT_MATCH_ON
+from lmi.utils import VCR_DEFAULT_MATCH_ON, encode_image_as_url
+
+
+def test_estimate_tokens(subtests: SubTests, png_image: bytes) -> None:
+    with subtests.test(msg="text only"):
+        text_only = "Hello world"
+        text_only_estimated_token_count = estimate_tokens(text_only)
+        assert text_only_estimated_token_count == 2.75, (
+            "Expected a reasonable token estimate"
+        )
+        text_only_actual_token_count = len(
+            tiktoken.get_encoding("cl100k_base").encode(text_only)
+        )
+        assert text_only_estimated_token_count == pytest.approx(
+            text_only_actual_token_count, abs=1
+        ), "Estimation should be within one token of what tiktoken"
+
+    # Test multimodal (text + image)
+    with subtests.test(msg="multimodal"):  # Text + image
+        multimodal = [
+            "What is in this image?",
+            encode_image_as_url(image_type="png", image_data=png_image),
+        ]
+        assert estimate_tokens(multimodal) == 90.5, (
+            "Expected a reasonable token estimate"
+        )
 
 
 class TestLiteLLMEmbeddingModel:
@@ -230,6 +257,53 @@ class TestLiteLLMEmbeddingModel:
         mock_aembedding.assert_awaited_once()
         # Confirm use of the sentinel timeout in the Router's model_list or pass through
         assert mock_aembedding.call_args.kwargs["timeout"] == self.SENTINEL_TIMEOUT
+
+    @pytest.mark.asyncio
+    async def test_multimodal_embedding(
+        self, subtests: SubTests, png_image_gcs: str
+    ) -> None:
+        multimodal_model = LiteLLMEmbeddingModel(
+            name=f"{litellm.LlmProviders.VERTEX_AI.value}/multimodalembedding@001"
+        )
+
+        with subtests.test(msg="text or image only"):
+            embedding_text_only = await multimodal_model.embed_document("Some text")
+            assert len(embedding_text_only) == 1408
+            assert all(isinstance(x, float) for x in embedding_text_only)
+
+            embedding_image_only = await multimodal_model.embed_document(png_image_gcs)
+            assert len(embedding_image_only) == 1408
+            assert all(isinstance(x, float) for x in embedding_image_only)
+
+            assert embedding_image_only != embedding_text_only
+
+        with subtests.test(msg="text and image mixing"):
+            (embedding_image_text,) = await multimodal_model.embed_documents([
+                "What is in this image?",
+                png_image_gcs,
+            ])
+            assert len(embedding_image_text) == 1408
+            assert all(isinstance(x, float) for x in embedding_image_text)
+
+            (embedding_two_images,) = await multimodal_model.embed_documents([
+                png_image_gcs,
+                png_image_gcs,
+            ])
+            assert len(embedding_two_images) == 1408
+            assert all(isinstance(x, float) for x in embedding_two_images)
+
+            assert embedding_image_text != embedding_two_images
+
+        with subtests.test(msg="batching"):
+            multimodal_model.config["batch_size"] = 1
+            embeddings = await multimodal_model.embed_documents([
+                "Some text",
+                png_image_gcs,
+            ])
+            assert len(embeddings) == 2
+            for embedding in embeddings:
+                assert len(embedding) == 1408
+                assert all(isinstance(x, float) for x in embedding)
 
 
 @pytest.mark.asyncio
