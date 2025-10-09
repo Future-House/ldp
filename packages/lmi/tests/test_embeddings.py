@@ -277,6 +277,14 @@ class TestLiteLLMEmbeddingModel:
 
             assert embedding_image_only != embedding_text_only
 
+        with (
+            subtests.test(msg="denies two texts"),
+            pytest.raises(litellm.BadRequestError, match="one instance"),
+        ):
+            # This is more of a confirmation/demonstration that Vertex AI denies any
+            # embedding request containing >1 text or >1 image
+            await multimodal_model.embed_documents(["A", "B"])
+
         with subtests.test(msg="text and image mixing"):
             (embedding_image_text,) = await multimodal_model.embed_documents([
                 "What is in this image?",
