@@ -40,8 +40,6 @@ jobs:
           enable-cache: true
           cache-local-path: /tmp/baipp-uv_cache_dir # Work around https://github.com/hynek/build-and-inspect-python-package/issues/181
           python-version: ${{ matrix.python-version }}
-      - name: Unset UV_PYTHON for BAIPP # SEE: https://github.com/hynek/build-and-inspect-python-package/issues/180
-        run: echo "UV_PYTHON=" >> "$GITHUB_ENV"
       - name: Check ldp build
         id: build-ldp
         if: matrix.python-version == '3.11'
@@ -61,8 +59,6 @@ jobs:
       - name: Clean up aviary.fhlmi build # Work around https://github.com/hynek/build-and-inspect-python-package/issues/174
         if: matrix.python-version == '3.11'
         run: rm -r ${{ steps.build-fhlmi.outputs.dist }}
-      - name: Reset UV_PYTHON after BAIPP # SEE: https://github.com/hynek/build-and-inspect-python-package/issues/180
-        run: echo "UV_PYTHON=${{ matrix.python-version }}" >> "$GITHUB_ENV"
       - run: uv sync
       - run: uv run refurb .
       - if: matrix.python-version == '3.11' # Only need to run this on one version
