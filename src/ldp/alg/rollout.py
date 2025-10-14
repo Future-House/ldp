@@ -7,7 +7,8 @@ import uuid
 from collections import Counter
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager, nullcontext
-from typing import Any, TypeVar, overload
+from types import TracebackType
+from typing import Any, Literal, Self, TypeVar, overload
 
 from aviary.core import Environment, Message
 from tqdm.asyncio import tqdm
@@ -80,11 +81,16 @@ class _Timer:
             self.timer = timer
             self.name = name
 
-        def __enter__(self):
+        def __enter__(self) -> Self:
             self.start_time = time.monotonic()
             return self
 
-        def __exit__(self, exc_type, exc_val, exc_tb):
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: TracebackType | None,
+        ) -> Literal[False]:
             self.timer.info[f"time_elapsed_{self.name}"] = (
                 time.monotonic() - self.start_time
             )
