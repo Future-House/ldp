@@ -7,8 +7,7 @@ import uuid
 from collections import Counter
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager, nullcontext
-from types import TracebackType
-from typing import Any, Literal, Self, TypeVar, overload
+from typing import Any, TypeVar, overload
 
 from aviary.core import Environment, Message
 from tqdm.asyncio import tqdm
@@ -67,34 +66,19 @@ def reraise_exc_as(reraise: type[CaughtError], enabled: bool) -> Iterator[None]:
         raise
 
 
-class _Timer:
+class Timer:
     """Tracks time spent in named operations."""
 
     def __init__(self):
         self.info: dict[str, float] = {}
 
+    @contextmanager
     def __call__(self, name: str):
-        return self._TimerContext(self, name)
-
-    class _TimerContext:
-        def __init__(self, timer: "_Timer", name: str):
-            self.timer = timer
-            self.name = name
-
-        def __enter__(self) -> Self:
-            self.start_time = time.monotonic()
-            return self
-
-        def __exit__(
-            self,
-            exc_type: type[BaseException] | None,
-            exc_val: BaseException | None,
-            exc_tb: TracebackType | None,
-        ) -> Literal[False]:
-            self.timer.info[f"time_elapsed_{self.name}"] = (
-                time.monotonic() - self.start_time
-            )
-            return False
+        start_time = time.monotonic()
+        try:
+            yield
+        finally:
+            self.info[f"time_elapsed_{name}"] = time.monotonic() - start_time
 
 
 class RolloutManager:
@@ -345,6 +329,7 @@ class RolloutManager:
         summarize_exceptions: bool = False,
     ) -> Trajectory:
         trajectory = await Trajectory.from_env(env, traj_id=traj_id)
+        timer = Timer()
 
         async def store_step(step: Transition):
             await asyncio.gather(*[
@@ -375,7 +360,9 @@ class RolloutManager:
             ])
 
             for timestep in itertools.count():
-                step = await self._take_step(timestep, traj_id, env, agent_state, obs)
+                step = await self._take_step(
+                    timestep, traj_id, env, agent_state, obs, timer
+                )
 
                 if timestep + 1 == max_steps and not step.done:
                     # Mark as truncated if we hit max_steps and the state is not terminal.
@@ -408,7 +395,7 @@ class RolloutManager:
                     next_observation=[],
                     action=None,
                     done=True,
-                    metadata={"exception": repr(e.original_exc)},
+                    metadata={"exception": repr(e.original_exc)} | timer.info,
                 )
             )
 
@@ -422,10 +409,11 @@ class RolloutManager:
         env: Environment,
         agent_state: Any,
         obs: list[Message],
+        timer: Timer | None = None,
     ) -> Transition:
-        async with self.concurrency_limiter:
-            timer = _Timer()
+        timer = timer or Timer()
 
+        async with self.concurrency_limiter:
             with timer("before_transition"):
                 await asyncio.gather(*[
                     callback.before_transition(
