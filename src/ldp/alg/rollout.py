@@ -1,6 +1,7 @@
 import asyncio
 import itertools
 import logging
+import time
 import traceback
 import uuid
 from collections import Counter
@@ -63,6 +64,21 @@ def reraise_exc_as(reraise: type[CaughtError], enabled: bool) -> Iterator[None]:
             logger.info(f"Reraising {reraise.exc_type} exception.")
             raise reraise(e) from None
         raise
+
+
+class Timer:
+    """Tracks time spent in named operations."""
+
+    def __init__(self):
+        self.info: dict[str, float] = {}
+
+    @contextmanager
+    def __call__(self, name: str):
+        start_time = time.monotonic()
+        try:
+            yield
+        finally:
+            self.info[f"time_elapsed_{name}"] = time.monotonic() - start_time
 
 
 class RolloutManager:
@@ -313,6 +329,7 @@ class RolloutManager:
         summarize_exceptions: bool = False,
     ) -> Trajectory:
         trajectory = await Trajectory.from_env(env, traj_id=traj_id)
+        timer = Timer()
 
         async def store_step(step: Transition):
             await asyncio.gather(*[
@@ -343,7 +360,9 @@ class RolloutManager:
             ])
 
             for timestep in itertools.count():
-                step = await self._take_step(timestep, traj_id, env, agent_state, obs)
+                step = await self._take_step(
+                    timestep, traj_id, env, agent_state, obs, timer
+                )
 
                 if timestep + 1 == max_steps and not step.done:
                     # Mark as truncated if we hit max_steps and the state is not terminal.
@@ -376,7 +395,7 @@ class RolloutManager:
                     next_observation=[],
                     action=None,
                     done=True,
-                    metadata={"exception": repr(e.original_exc)},
+                    metadata={"exception": repr(e.original_exc)} | timer.info,
                 )
             )
 
@@ -390,30 +409,47 @@ class RolloutManager:
         env: Environment,
         agent_state: Any,
         obs: list[Message],
+        timer: Timer | None = None,
     ) -> Transition:
-        async with self.concurrency_limiter:
-            await asyncio.gather(*[
-                callback.before_transition(traj_id, self.agent, env, agent_state, obs)
-                for callback in self.callbacks
-            ])
+        timer = timer or Timer()
 
-            with reraise_exc_as(AgentError, enabled=self.catch_agent_failures):
+        async with self.concurrency_limiter:
+            with timer("before_transition"):
+                await asyncio.gather(*[
+                    callback.before_transition(
+                        traj_id, self.agent, env, agent_state, obs
+                    )
+                    for callback in self.callbacks
+                ])
+
+            with (
+                timer("agent_get_asv"),
+                reraise_exc_as(AgentError, enabled=self.catch_agent_failures),
+            ):
                 (
                     action,
                     next_agent_state,
                     value,
                 ) = await self.agent.get_asv(agent_state, obs)
-            await asyncio.gather(*[
-                callback.after_agent_get_asv(traj_id, action, next_agent_state, value)
-                for callback in self.callbacks
-            ])
 
-            with reraise_exc_as(EnvError, enabled=self.catch_env_failures):
+            with timer("after_agent_get_asv"):
+                await asyncio.gather(*[
+                    callback.after_agent_get_asv(
+                        traj_id, action, next_agent_state, value
+                    )
+                    for callback in self.callbacks
+                ])
+
+            with (
+                timer("env_step"),
+                reraise_exc_as(EnvError, enabled=self.catch_env_failures),
+            ):
                 next_obs, reward, done, trunc = await env.step(action.value)
-            await asyncio.gather(*[
-                callback.after_env_step(traj_id, next_obs, reward, done, trunc)
-                for callback in self.callbacks
-            ])
+            with timer("after_env_step"):
+                await asyncio.gather(*[
+                    callback.after_env_step(traj_id, next_obs, reward, done, trunc)
+                    for callback in self.callbacks
+                ])
 
             return Transition(
                 timestep=timestep,
@@ -426,4 +462,5 @@ class RolloutManager:
                 next_observation=next_obs,
                 done=done,
                 truncated=trunc,
+                metadata=timer.info,
             )

@@ -92,6 +92,19 @@ async def test_rollout(training: bool) -> None:
     )
     assert second_traj.metadata.get("env_id") is None
 
+    assert all(
+        tx.metadata.get(f"time_elapsed_{fn}") is not None
+        for fn in (
+            "before_transition",
+            "agent_get_asv",
+            "after_agent_get_asv",
+            "env_step",
+            "after_env_step",
+        )
+        for traj in trajs
+        for tx in traj.steps
+    ), "All transitions should have timing metadata"
+
     # Let's check we can serialize and deserialize the trajectories
     for traj in trajs:
         assert traj.traj_id
