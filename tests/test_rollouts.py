@@ -99,6 +99,7 @@ async def test_rollout(training: bool) -> None:
             "agent_get_asv",
             "after_agent_get_asv",
             "env_step",
+            "after_env_step",
         )
         for traj in trajs
         for tx in traj.steps
