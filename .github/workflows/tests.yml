@@ -63,6 +63,15 @@ jobs:
       - run: uv run refurb .
       - if: matrix.python-version == '3.11' # Only need to run this on one version
         uses: suzuki-shunsuke/github-action-renovate-config-validator@v1.1.1
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Confirm dependency compilation
+        run: uv sync
   test-ldp:
     runs-on: ubuntu-latest
     steps:
