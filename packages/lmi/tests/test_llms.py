@@ -927,35 +927,49 @@ class TestReasoning:
             assert result.reasoning_content
             assert outputs[i] == result.text
 
-    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.vcr
     @pytest.mark.asyncio
-    async def test_anthropic_model(self) -> None:
+    @pytest.mark.parametrize(
+        "model", [CommonLLMNames.GPT_5, CommonLLMNames.CLAUDE_45_SONNET]
+    )
+    @pytest.mark.parametrize(
+        ("reasoning_effort", "expected_len"),
+        [("low", (200, 2_500)), ("high", (900, 10_000))],
+    )
+    async def test_reasoning_effort(
+        self,
+        model: CommonLLMNames,
+        reasoning_effort: str,
+        expected_len: tuple[int, int],
+    ) -> None:
         llm = LiteLLMModel(
-            # Using 3.7 sonnet for its reasoning capabilities
-            name=CommonLLMNames.CLAUDE_37_SONNET.value,
+            name=model.value,
             config={
                 "model_list": [
                     {
-                        "model_name": CommonLLMNames.CLAUDE_37_SONNET.value,
+                        "model_name": model.value,
                         "litellm_params": {
-                            "model": CommonLLMNames.CLAUDE_37_SONNET.value,
-                            "reasoning_effort": "low",
+                            "model": model.value,
+                            "reasoning_effort": reasoning_effort,
                         },
                     }
                 ]
             },
         )
-        messages = [
+
+        result = await llm.call_single([
             Message(
                 role="system",
                 content="Think deeply about the following question and answer it.",
             ),
             Message(content="What is the meaning of life?"),
-        ]
-        results = await llm.call(messages)
-        for result in results:
-            assert result.reasoning_content is not None, "Should have reasoning content"
-            assert result.text is not None
+        ])
+        assert result.text
+        assert expected_len[0] <= len(result.text) <= expected_len[1]
+        assert result.prompt_count > 0
+        assert result.completion_count > 0
+        if litellm.get_llm_provider(model=model.value)[1] == "anthropic":
+            assert result.reasoning_content
 
 
 def test_json_schema_validation() -> None:
