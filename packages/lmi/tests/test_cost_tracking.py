@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import contextmanager
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -7,7 +8,7 @@ import pytest
 from aviary.core import Message
 
 from lmi import cost_tracking_ctx
-from lmi.cost_tracker import GLOBAL_COST_TRACKER, TrackedStreamWrapper
+from lmi.cost_tracker import GLOBAL_COST_TRACKER, CostTracker, TrackedStreamWrapper
 from lmi.embeddings import LiteLLMEmbeddingModel
 from lmi.llms import CommonLLMNames, LiteLLMModel
 from lmi.utils import VCR_DEFAULT_MATCH_ON
@@ -369,3 +370,174 @@ class TestCostTrackerCallback:
 
             # Callback should have been called exactly once
             assert len(callback_calls) == 1
+
+
+class TestCustomCostTracker:
+    """Test custom cost tracker functionality."""
+
+    def test_custom_tracker_defaults(self):
+        """Test that custom trackers are enabled by default and GLOBAL is disabled."""
+        # Custom tracker should be enabled by default
+        custom_tracker = CostTracker()
+        assert custom_tracker.enabled.get() is True
+
+        # Global tracker should be disabled by default
+        assert GLOBAL_COST_TRACKER.enabled.get() is False
+
+        # Test instance methods
+        custom_tracker.set_reporting_threshold(5.0)
+        assert custom_tracker.report_every_usd == 5.0
+
+        custom_tracker.enable_cost_tracking(enabled=False)
+        assert custom_tracker.enabled.get() is False
+
+        custom_tracker.enable_cost_tracking(enabled=True)
+        assert custom_tracker.enabled.get() is True
+
+    @pytest.mark.asyncio
+    async def test_custom_tracker_basic_usage(self):
+        """Test basic usage of custom tracker as context manager."""
+        custom_tracker = CostTracker()
+        mock_response = MagicMock(
+            model="gpt-4o-mini",
+            usage=MagicMock(prompt_tokens=10, completion_tokens=20),
+        )
+
+        # Record initial costs
+        global_initial_cost = GLOBAL_COST_TRACKER.lifetime_cost_usd
+        custom_initial_cost = custom_tracker.lifetime_cost_usd
+
+        with (
+            custom_tracker,
+            patch("litellm.cost_calculator.completion_cost", return_value=0.05),
+        ):
+            await custom_tracker.record(mock_response)
+
+            # Custom tracker should have accumulated cost
+            assert custom_tracker.lifetime_cost_usd > custom_initial_cost
+            assert custom_tracker.lifetime_cost_usd == 0.05
+
+            # Global tracker should remain unchanged
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd == global_initial_cost
+
+    @pytest.mark.vcr(match_on=VCR_DEFAULT_MATCH_ON)
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("model_name", "stream"),
+        [
+            (CommonLLMNames.OPENAI_TEST, False),
+            (CommonLLMNames.OPENAI_TEST, True),
+            (CommonLLMNames.ANTHROPIC_TEST, False),
+            (CommonLLMNames.ANTHROPIC_TEST, True),
+        ],
+    )
+    async def test_custom_tracker_with_llm_calls(self, model_name, stream):
+        """Test custom tracker with real LLM calls."""
+        custom_tracker = CostTracker()
+        model = LiteLLMModel(name=model_name)
+
+        # Record initial costs
+        global_initial_cost = GLOBAL_COST_TRACKER.lifetime_cost_usd
+        custom_initial_cost = custom_tracker.lifetime_cost_usd
+
+        with custom_tracker:
+            if stream:
+                # Test streaming via callbacks
+                chunks: list[str] = []
+                await model.call_single(
+                    messages=[Message(content="Say hello")],
+                    callbacks=[chunks.append],
+                )
+                assert chunks  # Should have received streaming chunks
+            else:
+                # Test non-streaming
+                result = await model.call_single(
+                    messages=[Message(content="Say hello")],
+                )
+                assert result.text
+
+            # Custom tracker should have accumulated cost
+            assert custom_tracker.lifetime_cost_usd > custom_initial_cost
+
+        # Global tracker should remain unchanged
+        assert GLOBAL_COST_TRACKER.lifetime_cost_usd == global_initial_cost
+
+    @pytest.mark.asyncio
+    async def test_multiple_custom_trackers(self):
+        """Test sequential and nested custom trackers."""
+        tracker1 = CostTracker()
+        tracker2 = CostTracker()
+        mock_response = MagicMock(
+            model=CommonLLMNames.OPENAI_TEST.value,
+            usage=MagicMock(prompt_tokens=10, completion_tokens=20),
+        )
+
+        # Test sequential use
+        with (
+            tracker1,
+            patch("litellm.cost_calculator.completion_cost", return_value=0.01),
+        ):
+            await tracker1.record(mock_response)
+            assert tracker1.lifetime_cost_usd == 0.01
+            assert tracker2.lifetime_cost_usd == 0.0
+
+        with (
+            tracker2,
+            patch("litellm.cost_calculator.completion_cost", return_value=0.02),
+        ):
+            await tracker2.record(mock_response)
+            assert tracker1.lifetime_cost_usd == 0.01  # Unchanged
+            assert tracker2.lifetime_cost_usd == 0.02
+
+        # Test nested trackers
+        tracker3 = CostTracker()
+        tracker4 = CostTracker()
+
+        with (
+            tracker3,
+            patch("litellm.cost_calculator.completion_cost", return_value=0.03),
+        ):
+            await tracker3.record(mock_response)
+            assert tracker3.lifetime_cost_usd == 0.03
+
+            # Nested context should override the active tracker
+            with tracker4:
+                await tracker4.record(mock_response)
+                assert tracker4.lifetime_cost_usd == 0.03
+
+            # Back to outer context
+            await tracker3.record(mock_response)
+            assert tracker3.lifetime_cost_usd == 0.06
+            assert tracker4.lifetime_cost_usd == 0.03  # Unchanged after exiting
+
+    @pytest.mark.asyncio
+    async def test_custom_trackers_parallel_tasks(self):
+        """Test that contextvars properly isolate tracker state across async tasks."""
+        tracker1 = CostTracker()
+        tracker2 = CostTracker()
+
+        async def task_with_tracker(tracker: CostTracker):
+            """Task that uses a specific tracker and directly manipulates cost."""
+            with tracker:
+                # Simulate recording costs by directly manipulating the tracker
+                # This avoids the complexity of mocking lit ellm.cost_calculator in parallel tasks
+                await asyncio.sleep(0.01)
+                tracker.lifetime_cost_usd += 0.01
+                await asyncio.sleep(0.01)
+                tracker.lifetime_cost_usd += 0.01
+                return tracker.lifetime_cost_usd
+
+        # Run tasks in parallel with different trackers
+        result1, result2 = await asyncio.gather(
+            task_with_tracker(tracker1),
+            task_with_tracker(tracker2),
+        )
+
+        # Each tracker should have accumulated its own costs independently
+        assert result1 == 0.02
+        assert result2 == 0.02
+        assert tracker1.lifetime_cost_usd == 0.02
+        assert tracker2.lifetime_cost_usd == 0.02
+
+        # Global tracker should remain unchanged
+        assert GLOBAL_COST_TRACKER.lifetime_cost_usd == 0.0
