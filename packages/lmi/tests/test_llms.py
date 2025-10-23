@@ -930,7 +930,7 @@ class TestReasoning:
     @pytest.mark.vcr
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        "model", [CommonLLMNames.GPT_5, CommonLLMNames.CLAUDE_37_SONNET]
+        "model", [CommonLLMNames.GPT_5, CommonLLMNames.CLAUDE_45_SONNET]
     )
     @pytest.mark.parametrize(
         ("reasoning_effort", "expected_len"),
