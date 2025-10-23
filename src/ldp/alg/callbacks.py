@@ -4,7 +4,8 @@ import logging
 import os
 import time
 from collections import defaultdict
-from collections.abc import Callable, Collection, Iterable, Sequence
+from collections.abc import AsyncIterator, Callable, Collection, Iterable, Sequence
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -46,9 +47,11 @@ class Callback:
         callback.after_agent_init_state() *
         while not done:
             callback.before_transition() *
-            agent.get_asv()
+            async with callback.during_get_asv():
+                agent.get_asv()
             callback.after_agent_get_asv() *
-            env.step()
+            async with callback.during_env_step():
+                env.step()
             callback.after_env_step() *
             callback.after_transition() *
 
@@ -85,6 +88,13 @@ class Callback:
     async def after_agent_init_state(self, traj_id: str, init_state: Any) -> None:
         """Invoked by runners after agent.init_state()."""
 
+    @asynccontextmanager
+    async def during_get_asv(
+        self, traj_id: str, agent: Agent, agent_state: Any
+    ) -> AsyncIterator[None]:
+        """Context used by runners during agent.get_asv()."""
+        yield
+
     async def after_agent_get_asv(
         self,
         traj_id: str,
@@ -93,6 +103,13 @@ class Callback:
         value: float,
     ) -> None:
         """Invoked by runners after agent.get_asv()."""
+
+    @asynccontextmanager
+    async def during_env_step(
+        self, traj_id: str, env: Environment
+    ) -> AsyncIterator[None]:
+        """Context used by runners during env.step()."""
+        yield
 
     async def after_env_reset(
         self, traj_id: str, obs: list[Message], tools: list[Tool]
