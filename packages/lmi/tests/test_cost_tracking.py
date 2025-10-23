@@ -520,7 +520,7 @@ class TestCustomCostTracker:
             """Task that uses a specific tracker and directly manipulates cost."""
             with tracker:
                 # Simulate recording costs by directly manipulating the tracker
-                # This avoids the complexity of mocking lit ellm.cost_calculator in parallel tasks
+                # This avoids the complexity of mocking litellm.cost_calculator in parallel tasks
                 await asyncio.sleep(0.01)
                 tracker.lifetime_cost_usd += 0.01
                 await asyncio.sleep(0.01)
