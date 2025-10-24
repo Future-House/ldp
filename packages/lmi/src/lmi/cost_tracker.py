@@ -11,19 +11,46 @@ from lmi.types import LLMResponse
 
 logger = logging.getLogger(__name__)
 
+# Module-level context variable to track the currently active cost tracker
+_active_tracker: contextvars.ContextVar["CostTracker | None"] = contextvars.ContextVar(
+    "active_cost_tracker", default=None
+)
+
+
+def _get_active_tracker() -> "CostTracker":
+    """Get the currently active cost tracker, defaulting to GLOBAL_COST_TRACKER."""
+    return _active_tracker.get() or GLOBAL_COST_TRACKER
+
 
 class CostTracker:
-    def __init__(self):
+    def __init__(self, enabled: bool = True):
         self.lifetime_cost_usd = 0.0
         self.last_report = 0.0
         # A contextvar so that different coroutines don't affect each other's cost tracking
-        self.enabled = contextvars.ContextVar[bool]("track_costs", default=False)
+        self.enabled = contextvars.ContextVar[bool]("track_costs", default=enabled)
         # Not a contextvar because I can't imagine a scenario where you'd want more fine-grained control
         self.report_every_usd = 1.0
         self._callbacks: list[Callable[[LLMResponse], Awaitable]] = []
 
     def add_callback(self, callback: Callable[[LLMResponse], Awaitable]) -> None:
         self._callbacks.append(callback)
+
+    def set_reporting_threshold(self, threshold_usd: float) -> None:
+        """Set the threshold for cost reporting."""
+        self.report_every_usd = threshold_usd
+
+    def enable_cost_tracking(self, enabled: bool = True) -> None:
+        """Enable or disable cost tracking for this tracker."""
+        self.enabled.set(enabled)
+
+    def __enter__(self):
+        """Enter the context manager, making this the active tracker."""
+        self._token = _active_tracker.set(self)
+        return self
+
+    def __exit__(self, *args):
+        """Exit the context manager, restoring the previous active tracker."""
+        _active_tracker.reset(self._token)
 
     async def record(self, response: LLMResponse) -> None:
         # Only record on responses with usage information (final chunk in streaming)
@@ -50,15 +77,17 @@ class CostTracker:
                 )
 
 
-GLOBAL_COST_TRACKER = CostTracker()
+GLOBAL_COST_TRACKER = CostTracker(enabled=False)
 
 
 def set_reporting_threshold(threshold_usd: float) -> None:
-    GLOBAL_COST_TRACKER.report_every_usd = threshold_usd
+    """Set the reporting threshold for the global cost tracker."""
+    GLOBAL_COST_TRACKER.set_reporting_threshold(threshold_usd)
 
 
 def enable_cost_tracking(enabled: bool = True) -> None:
-    GLOBAL_COST_TRACKER.enabled.set(enabled)
+    """Enable or disable cost tracking for the global cost tracker."""
+    GLOBAL_COST_TRACKER.enable_cost_tracking(enabled)
 
 
 @contextmanager
@@ -85,7 +114,8 @@ def track_costs(
     """Automatically track API costs of a coroutine call.
 
     Note that the costs will only be recorded if `enable_cost_tracking()` is called,
-    or if in a `cost_tracking_ctx()` context.
+    or if in a `cost_tracking_ctx()` context, or if using a custom CostTracker
+    as a context manager.
 
     Usage:
     ```
@@ -103,8 +133,9 @@ def track_costs(
 
     async def wrapped_func(*args, **kwargs):
         response = await func(*args, **kwargs)
-        if GLOBAL_COST_TRACKER.enabled.get():
-            await GLOBAL_COST_TRACKER.record(response)
+        tracker = _get_active_tracker()
+        if tracker.enabled.get():
+            await tracker.record(response)
         return response
 
     return wrapped_func
@@ -146,8 +177,9 @@ class TrackedStreamWrapper:
 
     async def __anext__(self):
         response = await self.stream.__anext__()
-        if GLOBAL_COST_TRACKER.enabled.get():
-            await GLOBAL_COST_TRACKER.record(response)
+        tracker = _get_active_tracker()
+        if tracker.enabled.get():
+            await tracker.record(response)
         return response
 
 
@@ -161,7 +193,8 @@ def track_costs_iter(
     `TrackedStreamWrapper.stream`.
 
     Note that the costs will only be recorded if `enable_cost_tracking()` is called,
-    or if in a `cost_tracking_ctx()` context.
+    or if in a `cost_tracking_ctx()` context, or if using a custom CostTracker
+    as a context manager.
 
     Usage:
     ```
