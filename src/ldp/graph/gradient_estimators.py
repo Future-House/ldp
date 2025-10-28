@@ -1,7 +1,5 @@
 """This module defines various gradient estimators that can be patched in during backward passes."""
 
-from __future__ import annotations
-
 import logging
 from functools import partial
 from typing import Any
