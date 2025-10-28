@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 import atexit
 import logging
@@ -182,7 +180,7 @@ class TransformerHandlerConfig(BaseModel):
         ),
     )
 
-    def make_async_module(self, **kwargs) -> AsyncTransformerInterface:
+    def make_async_module(self, **kwargs) -> "AsyncTransformerInterface":
         if self.parallel_mode_config:
             return ParallelAsyncTransformer(config=self, **kwargs)
         return AsyncTransformer(config=self, **kwargs)

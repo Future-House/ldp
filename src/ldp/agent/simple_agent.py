@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections.abc import Awaitable, Callable
 from itertools import chain
 from typing import Any, Self, cast

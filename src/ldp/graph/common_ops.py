@@ -1,7 +1,5 @@
 """This module contains commonly-used Op implementations."""
 
-from __future__ import annotations
-
 import asyncio
 import functools
 import inspect
@@ -59,7 +57,7 @@ class IdentityOp(Op[TOutput_co]):
         ctx: OpCtx,
         input_args: list[ResultOrValue],
         input_kwargs: dict[str, ResultOrValue],
-        grad_output: tree.Structure,
+        grad_output: "tree.Structure",
         call_id: CallID,
     ) -> GradInType:
         return [], {"value": grad_output}
@@ -74,7 +72,7 @@ class StopGradOp(IdentityOp[TOutput_co]):
         ctx: OpCtx,
         input_args: list[ResultOrValue],
         input_kwargs: dict[str, ResultOrValue],
-        grad_output: tree.Structure,
+        grad_output: "tree.Structure",
         call_id: CallID,
     ) -> GradInType:
         from .gradient_estimators import assign_constant_grads
@@ -100,7 +98,7 @@ class ConfigOp(Op[TConfig], Generic[TConfig]):
         ctx: OpCtx,
         input_args: list[ResultOrValue],
         input_kwargs: dict[str, ResultOrValue],
-        grad_output: tree.Structure,
+        grad_output: "tree.Structure",
         call_id: CallID,
     ) -> GradInType:
         # Check that the grad_output structure is consistent with our config
@@ -186,7 +184,7 @@ class FxnOp(Op[TOutput_co]):
         ctx: OpCtx,
         input_args: list[ResultOrValue],
         input_kwargs: dict[str, ResultOrValue],
-        grad_output: tree.Structure,
+        grad_output: "tree.Structure",
         call_id: CallID,
     ) -> GradInType:
         from .gradient_estimators import assign_constant_grads
@@ -394,7 +392,7 @@ class LLMCallOp(Op[Message]):
         ctx: OpCtx,
         input_args: list[ResultOrValue],
         input_kwargs: dict[str, ResultOrValue],
-        grad_output: tree.Structure,
+        grad_output: "tree.Structure",
         call_id: CallID,
     ) -> GradInType:
         # By default, we want to descend into config, but not msgs/tools/tool_choice
@@ -475,7 +473,7 @@ class MemoryOp(Op[list[Memory]]):
         ctx: OpCtx,
         input_args: list[ResultOrValue],
         input_kwargs: dict[str, ResultOrValue],
-        grad_output: tree.Structure,
+        grad_output: "tree.Structure",
         call_id: CallID,
     ) -> GradInType:
         """Backward pass for memory retrieval - goes back to item."""
@@ -519,7 +517,7 @@ class EmbeddingOp(Op):
         ctx: OpCtx,
         input_args,
         input_kwargs,
-        grad_output: tree.Structure,
+        grad_output: "tree.Structure",
         call_id: CallID,
     ) -> GradInType:
         return [], {"string_input": None}

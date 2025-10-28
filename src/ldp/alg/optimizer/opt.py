@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
@@ -11,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 # Registry for all optimizers
-_OPTIMIZER_REGISTRY: dict[str, type[Optimizer]] = {}
+_OPTIMIZER_REGISTRY: "dict[str, type[Optimizer]]" = {}
 
 
 class Optimizer(ABC):

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import logging
 import os
@@ -131,7 +129,7 @@ class Trajectory(BaseModel):
                 await f.write(s.model_dump_json() + "\n")
 
     @classmethod
-    async def from_env(cls, env: Environment, **kwargs) -> Self:
+    async def from_env(cls, env: "Environment", **kwargs) -> Self:
         """Create a Trajectory while propagating environment ID."""
         traj_metadata = kwargs.pop("metadata", {})
         with suppress(NotImplementedError, ValueError):
@@ -358,7 +356,7 @@ class TransitionTree:
             # See docstring for explanation.
             # step.metadata["advantage"] = step.value - state_values[parent_id]
 
-    def remove_nonterminal_branches(self) -> TransitionTree:
+    def remove_nonterminal_branches(self) -> "TransitionTree":
         """Creates a new tree with only branches that end in terminal states (done=True).
 
         TODO: refactor this to not use trajectories. See the note in merge_identical_nodes
@@ -394,7 +392,7 @@ class TransitionTree:
         next_observation_hash_fn: Callable[
             [list[ToolResponseMessage | Message]], Hashable
         ] = join,
-    ) -> TransitionTree:
+    ) -> "TransitionTree":
         """Merge nodes with identical (state, observation, action)s. Returns a new tree.
 
         NOTE: the step IDs of nodes will lose their lineage after merging nodes. For example,
