@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 import logging
 import random
@@ -69,7 +67,7 @@ class ReplayBuffer(UserList[dict]):
         """Optional method for the buffer to prepare itself before sampling."""
 
     @staticmethod
-    def sample_from(*buffers: ReplayBuffer, **kwargs) -> Iterator[dict]:
+    def sample_from(*buffers: "ReplayBuffer", **kwargs) -> Iterator[dict]:
         """Helper method to uniformly sample from multiple buffers."""
         if any(isinstance(b, PrioritizedReplayBuffer) for b in buffers):
             # This is because PrioritizedReplayBuffer determines samples inside

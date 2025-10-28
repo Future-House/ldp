@@ -1,7 +1,5 @@
 """This module defines the Op class and its helper classes."""
 
-from __future__ import annotations
-
 import inspect
 import itertools
 import logging
@@ -78,7 +76,7 @@ class OpResult(Generic[TOutput_co]):
     @classmethod
     def from_dict(
         cls, t_output: type[TOutput_co], dump: dict[str, Any]
-    ) -> OpResult[TOutput_co]:
+    ) -> "OpResult[TOutput_co]":
         value = dump.pop("value")
         if issubclass(t_output, BaseModel):
             value = t_output.model_validate(value)
@@ -93,7 +91,7 @@ class OpResult(Generic[TOutput_co]):
 
     def compute_grads(
         self,
-        grad_output: tree.Structure | None = None,
+        grad_output: "tree.Structure | None" = None,
         backward_fns: Mapping[str | type, BackwardsType] | None = None,
     ) -> None:
         """
@@ -169,9 +167,9 @@ class OpResult(Generic[TOutput_co]):
 
     def _run_backward(
         self,
-        input_args: list[ResultOrValue],
-        input_kwargs: dict[str, ResultOrValue],
-        grad_output: tree.Structure,
+        input_args: "list[ResultOrValue]",
+        input_kwargs: "dict[str, ResultOrValue]",
+        grad_output: "tree.Structure",
         backward_fn: BackwardsType,
     ) -> GradInType:
         self._update_ctx("grad_output", grad_output)
@@ -190,11 +188,11 @@ class OpResult(Generic[TOutput_co]):
         return input_grads
 
     @property
-    def op_class(self) -> type[Op]:
+    def op_class(self) -> "type[Op]":
         return _OP_CLASS_REGISTRY[self.op_class_name]
 
     @property
-    def ctx(self) -> OpCtx:
+    def ctx(self) -> "OpCtx":
         # This is a property to avoid serialization of the context. There are two reasons:
         # 1. Contexts have their own persist() mechanism for serialization
         # 2. We'd prefer contexts to be created via get_or_create(). Allowing for arbitrary
@@ -202,10 +200,10 @@ class OpResult(Generic[TOutput_co]):
         return OpCtx.get_or_create(self.op_name)
 
     @property
-    def op(self) -> Op:
+    def op(self) -> "Op":
         return _OP_REGISTRY[self.op_name]
 
-    def get_compute_graph(self, backward: bool = True) -> nx.DiGraph:
+    def get_compute_graph(self, backward: bool = True) -> "nx.DiGraph":
         """Construct a directed graph of the compute graph that led to this OpResult.
 
         Args:
@@ -217,7 +215,7 @@ class OpResult(Generic[TOutput_co]):
             A digraph in which nodes are OpResults.
         """
 
-        def add_edges(graph: nx.DiGraph, node: OpResult) -> None:
+        def add_edges(graph: "nx.DiGraph", node: OpResult) -> None:
             """Recursively add edges to the input graph."""
             input_args, input_kwargs = node.inputs
             for x in itertools.chain(input_args, input_kwargs.values()):
@@ -232,7 +230,7 @@ class OpResult(Generic[TOutput_co]):
 
         return graph
 
-    def get_upstream_results(self, op: str | Op) -> Iterator[OpResult]:
+    def get_upstream_results(self, op: "str | Op") -> "Iterator[OpResult]":
         """Get all OpResults upstream of this node that were produced by the given Op.
 
         Args:
@@ -247,8 +245,8 @@ class OpResult(Generic[TOutput_co]):
     def traverse(
         self,
         topological_order: bool = True,
-        filter_fn: Callable[[OpResult], bool] = lambda _: True,
-    ) -> Iterator[OpResult]:
+        filter_fn: "Callable[[OpResult], bool]" = lambda _: True,
+    ) -> "Iterator[OpResult]":
         """Traverse the compute graph that led to this OpResult.
 
         Args:
@@ -282,7 +280,7 @@ class OpResult(Generic[TOutput_co]):
                     yield from a.traverse(topological_order=False)
 
     @property
-    def inputs(self) -> tuple[list[ResultOrValue], dict[str, ResultOrValue]]:
+    def inputs(self) -> "tuple[list[ResultOrValue], dict[str, ResultOrValue]]":
         return self._get_from_ctx("input")
 
     @property
@@ -290,7 +288,7 @@ class OpResult(Generic[TOutput_co]):
         return self._get_from_ctx("logprob", default=None)
 
     @property
-    def grad(self) -> tree.Structure | None:
+    def grad(self) -> "tree.Structure | None":
         """Returns `d ln(P_{compute_graph}) / d self` or None if gradients have not been computed."""
         return self._get_from_ctx("grad_output")
 
@@ -299,7 +297,7 @@ class OpResult(Generic[TOutput_co]):
         return self.call_id.run_id
 
     @staticmethod
-    def unwrap_value(result: ResultOrValue[TOutput_co]) -> TOutput_co:
+    def unwrap_value(result: "ResultOrValue[TOutput_co]") -> TOutput_co:
         if isinstance(result, OpResult):
             return result.value
         return result
@@ -342,7 +340,7 @@ class OpCtx(BaseModel):
     # A global registry of contexts. We'd prefer to use an existing context
     # for an Op if it already has been created. Also useful for persist_all()
     # NOTE: see the comment on _OP_REGISTRY below on a potential memory leak.
-    _CTX_REGISTRY: ClassVar[dict[str, OpCtx]] = {}
+    _CTX_REGISTRY: "ClassVar[dict[str, OpCtx]]" = {}
 
     op_name: str
 
@@ -364,7 +362,7 @@ class OpCtx(BaseModel):
         self._CTX_REGISTRY[self.op_name] = self
 
     @classmethod
-    def get_or_create(cls, op_name: str) -> OpCtx:
+    def get_or_create(cls, op_name: str) -> "OpCtx":
         """Return an OpCtx corresponding to the Op with the given name."""
         try:
             return cls._CTX_REGISTRY[op_name]  # Get
@@ -409,13 +407,13 @@ def resolve_fully_qualified_name(cls: type) -> str:
 
 # A global registry of Op classes, so we can look up backward() implementations
 # without needing an instantiated Op.
-_OP_CLASS_REGISTRY: dict[str, type[Op]] = {}
+_OP_CLASS_REGISTRY: "dict[str, type[Op]]" = {}
 
 # A global registry of Op instances, so that OpResults can trace back their provenance
 # TODO: this can leak memory if we are frequently deleting Ops. We should add a custom
 # garbage collection hook to remove Ops from the registry once the reference count
 # drops to 1 (i.e. just the registry).
-_OP_REGISTRY: dict[str, Op] = {}
+_OP_REGISTRY: "dict[str, Op]" = {}
 
 
 class Op(ABC, Generic[TOutput_co]):
@@ -497,7 +495,7 @@ class Op(ABC, Generic[TOutput_co]):
         ctx: OpCtx,
         input_args: list[ResultOrValue],
         input_kwargs,
-        grad_output: tree.Structure,
+        grad_output: "tree.Structure",
         call_id: CallID,
     ) -> GradInType:
         """

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -192,7 +190,7 @@ class LocalLLMCallOp(Op[Message]):
         ctx: OpCtx,
         input_args: list[ResultOrValue],
         input_kwargs: dict[str, ResultOrValue],
-        grad_output: tree.Structure,
+        grad_output: "tree.Structure",
         call_id: CallID,
     ) -> GradInType:
         return assign_constant_grads(input_args, input_kwargs, 0.0, descend=False)

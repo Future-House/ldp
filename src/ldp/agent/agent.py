@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Iterable, Mapping, Sequence
@@ -23,7 +21,7 @@ TAgentState = TypeVar("TAgentState")
 
 
 # A global registry of all Agent subclasses, so we can look them up by name
-_AGENT_REGISTRY: dict[str, type[Agent]] = {}
+_AGENT_REGISTRY: "dict[str, type[Agent]]" = {}
 
 
 class Agent(ABC, Generic[TAgentState]):
@@ -81,7 +79,7 @@ class Agent(ABC, Generic[TAgentState]):
         return _find_ops(self)
 
     @classmethod
-    def from_name(cls, name: str, **kwargs) -> Agent:
+    def from_name(cls, name: str, **kwargs) -> "Agent":
         return _AGENT_REGISTRY[name](**kwargs)
 
     @classmethod
