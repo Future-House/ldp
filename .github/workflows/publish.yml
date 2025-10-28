@@ -15,7 +15,7 @@ jobs:
         with:
           upload-name-suffix: -ldp
       - name: Download built artifact to dist/
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: ${{ steps.build-ldp.outputs.artifact-name }}
           path: dist_ldp
@@ -27,7 +27,7 @@ jobs:
           path: packages/lmi
           upload-name-suffix: -fhlmi
       - name: Download built artifact to dist/
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: ${{ steps.build-fhlmi.outputs.artifact-name }}
           path: dist_fhlmi
