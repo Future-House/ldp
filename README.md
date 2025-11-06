@@ -13,7 +13,7 @@
 [![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue?style=flat&logo=python&logoColor=white)](https://www.python.org)
 
 <p align="center">
-  <a href="https://arxiv.org/abs/2212.04450">
+  <a href="https://arxiv.org/abs/2412.21154">
     <img src="docs/assets/ldp_chessboard.png" width="300" alt="row playing chess" />
   </a>
 </p>
@@ -25,7 +25,7 @@ where actions and observations consist of natural language.
 The full definition from the Aviary paper [^1] is:
 
 <p align="left">
-  <a href="https://arxiv.org/abs/2212.04450">
+  <a href="https://arxiv.org/abs/2412.21154">
     <img src="docs/assets/ldp_definition.png" width="600" alt="LDP definition from paper" />
   </a>
 </p>
@@ -48,7 +48,7 @@ for an example of how to run an LDP agent.
 ## Overview
 
 <p align="left">
-  <a href="https://arxiv.org/abs/2212.04450">
+  <a href="https://arxiv.org/abs/2412.21154">
     <img src="docs/assets/Aviary.png" width="800" alt="Aviary and LDP overview from paper" />
   </a>
 </p>
