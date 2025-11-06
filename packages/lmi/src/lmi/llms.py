@@ -82,7 +82,6 @@ class CommonLLMNames(StrEnum):
     GPT_41 = "gpt-4.1-2025-04-14"
     GPT_4O = "gpt-4o-2024-11-20"
     GPT_35_TURBO = "gpt-3.5-turbo-0125"
-    CLAUDE_35_SONNET = "claude-3-5-sonnet-20241022"
     CLAUDE_37_SONNET = "claude-3-7-sonnet-20250219"
     CLAUDE_45_SONNET = "claude-sonnet-4-5-20250929"
 
