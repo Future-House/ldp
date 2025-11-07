@@ -62,6 +62,9 @@ from lmi.utils import get_litellm_retrying_config
 
 logger = logging.getLogger(__name__)
 
+#List of possible refusal flags in finish_reason
+REFUSAL_REASON = ["refusal"]
+
 if not IS_PYTHON_BELOW_312:
     _DeploymentTypedDictValidator = TypeAdapter(
         list[litellm.DeploymentTypedDict],
@@ -701,6 +704,46 @@ class LiteLLMModel(LLMModel):
                 **kwargs,
             )
 
+    async def _handle_anthropic_refusal(self,
+        messages: list[Message],
+        kwargs: dict[str, Any]
+    ) -> list[LLMResult]:
+        # Let's remove the current model from the configuration
+        current_model = self.name
+
+        new_model_list = [
+            model for model in self.config["model_list"]
+            if current_model not in model.get("model_name")
+        ]
+        
+        # Let's get any fallback we have defined anywhere and change it
+        new_fallbacks = []
+        for fallback in kwargs.get("fallbacks", []):
+            if current_model not in fallback:
+                new_fallbacks.append(fallback)
+            else:
+                target_model = fallback[current_model][0]
+                new_fallbacks.append({target_model: [fallback[current_model][1:]]})
+        
+        # Now we update the configuration
+        # Here I am resetting all the configuration I think the user needs to set
+        # But it is possible there is a user missconfiguration that I'd be fixing here
+        self.name = new_model_list[0].get("model_name")
+        self.config['model_list'] = new_model_list
+        self.config['fallbacks'] = new_fallbacks
+        if "fallbacks" in kwargs:
+            kwargs['fallbacks'] = new_fallbacks
+        self.config["router_kwargs"] = (
+            self.config["router_kwargs"] | {
+                "set_verbose": True,
+                "fallbacks": new_fallbacks,
+            }
+        )
+        # Killing the router will force lmi to rebuild it
+        self._router = None
+        
+        return await self.acompletion(messages, **kwargs)
+
     # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
@@ -719,6 +762,11 @@ class LiteLLMModel(LLMModel):
         completions = await track_costs(self.router.acompletion)(
             self.name, prompts, **kwargs
         )
+
+        finish_reason = getattr(completions.choices[0], 'finish_reason', None)        
+        if finish_reason in REFUSAL_REASON:
+            return await self._handle_refusal(messages, kwargs)
+
         used_model = completions.model or self.name
         results: list[LLMResult] = []
 
