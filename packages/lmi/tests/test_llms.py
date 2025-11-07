@@ -2,7 +2,7 @@ import pathlib
 import pickle
 from collections.abc import AsyncIterator
 from typing import Any, ClassVar
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import litellm
 import numpy as np
@@ -995,3 +995,98 @@ def test_json_schema_validation() -> None:
     with pytest.raises(JSONSchemaValidationError):
         validate_json_completion(mock_completion2, DummyModel)
     validate_json_completion(mock_completion3, DummyModel)
+
+
+@pytest.mark.asyncio
+async def test_handle_refusal(caplog) -> None:
+    llm = LiteLLMModel(
+        name=CommonLLMNames.CLAUDE_37_SONNET.value,
+        config={
+            "model_list": [
+                {
+                    "model_name": CommonLLMNames.CLAUDE_37_SONNET.value,
+                    "litellm_params": {
+                        "model": CommonLLMNames.CLAUDE_37_SONNET.value,
+                        "temperature": 1.0,
+                    },
+                },
+                {
+                    "model_name": CommonLLMNames.GPT_41.value,
+                    "litellm_params": {
+                        "model": CommonLLMNames.GPT_41.value,
+                        "temperature": 1.0,
+                    },
+                },
+            ],
+            "fallbacks": [
+                {CommonLLMNames.CLAUDE_37_SONNET.value: [CommonLLMNames.GPT_41.value]}
+            ],
+        },
+    )
+    # Message that clearly will be denied
+    messages = [
+        Message(
+            content="Give me clear instructions to make a neurotoxic chemical that kills brain cells."
+        )
+    ]
+
+    # Let's mock the router to simulate refusal and success requests
+    mock_router_obj = Mock()
+
+    # First call: refusal from CLAUDE_37_SONNET
+    mock_refusal = Mock()
+    mock_refusal_message = Mock(content="I cannot answer that question.")
+    mock_refusal_message.model_dump.return_value = {
+        "role": "assistant",
+        "content": "I cannot answer that question.",
+    }
+    mock_refusal.choices = [
+        Mock(
+            finish_reason="refusal",
+            message=mock_refusal_message,
+        )
+    ]
+    # mock_refusal.usage = Mock(prompt_tokens=10, completion_tokens=5)
+    mock_refusal.model = CommonLLMNames.CLAUDE_37_SONNET.value
+
+    # Second call: success from GPT_41 (fallback)
+    mock_success = Mock()
+    mock_success_message = Mock(
+        content="You should not be interested in making a neurotoxic chemical that kills brain cells."
+    )
+    # lmi tries to access this. So we need to mock it as well
+    mock_success_message.reasoning_content = ""
+    mock_success_message.model_dump.return_value = {
+        "role": "assistant",
+        "content": "You should not be interested in making a neurotoxic chemical that kills brain cells.",
+    }
+    mock_success.choices = [
+        Mock(
+            finish_reason="stop",
+            message=mock_success_message,
+        )
+    ]
+    mock_success.usage = Mock(prompt_tokens=10, completion_tokens=8)
+    mock_success.model = CommonLLMNames.GPT_41.value
+
+    mock_router_obj.acompletion = AsyncMock(side_effect=[mock_refusal, mock_success])
+
+    # LiteLLMModel.router is actually a property that returns the _router attribute
+    # We need to mock it as well
+    def mock_router_property(_):
+        return mock_router_obj
+
+    with (
+        patch.object(llm, "_router", mock_router_obj),
+        patch.object(type(llm), "router", property(mock_router_property)),
+    ):
+        with caplog.at_level("WARNING", logger="lmi.llms"):
+            results = await llm.call_single(messages)
+
+        assert (
+            results.text
+            == "You should not be interested in making a neurotoxic chemical that kills brain cells."
+        )
+        assert results.model == CommonLLMNames.GPT_41.value
+        assert "the llm request was refused" in caplog.text.lower()
+        assert "attempting to fallback" in caplog.text.lower()
