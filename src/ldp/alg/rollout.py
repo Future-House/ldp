@@ -398,6 +398,9 @@ class RolloutManager:
                     metadata={"exception": repr(e.original_exc)} | timer.info,
                 )
             )
+        finally:
+            with reraise_exc_as(EnvError, enabled=self.catch_env_failures):
+                await env.close()
 
         self.traj_buffer[traj_id] = trajectory
         return trajectory

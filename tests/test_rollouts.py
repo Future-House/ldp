@@ -3,6 +3,7 @@ import random
 import tempfile
 from copy import deepcopy
 from typing import Any, cast
+from unittest.mock import AsyncMock
 
 import pytest
 from aviary.core import Environment, Frame, Message, Tool, ToolRequestMessage
@@ -25,6 +26,7 @@ class DummyEnv(Environment[None]):
     def __init__(self, instance_id: int | None = None):
         self.tools = [Tool.from_function(self.talk)]
         self._instance_id = instance_id
+        self.close_mock = AsyncMock()
 
     async def get_id(self) -> str:
         if self._instance_id is None:
@@ -57,6 +59,9 @@ class DummyEnv(Environment[None]):
 
     def export_frame(self) -> Frame:
         return Frame()
+
+    async def close(self) -> None:
+        await self.close_mock()
 
 
 async def count_exclamations(traj: Trajectory) -> float:  # noqa: RUF029
@@ -91,6 +96,9 @@ async def test_rollout(training: bool) -> None:
         == await env_storage_callback.traj_id_to_envs[first_traj.traj_id].get_id()
     )
     assert second_traj.metadata.get("env_id") is None
+
+    for env in envs:
+        env.close_mock.assert_awaited_once_with()
 
     assert all(
         tx.metadata.get(f"time_elapsed_{fn}") is not None
@@ -170,15 +178,15 @@ async def test_fallbacks_working(fallback: bool) -> None:
         catch_agent_failures=fallback,
         callbacks=[callback],
     )
+    env = DummyEnv()
     if fallback:
         assert await rollout_manager.sample_trajectories(
-            environments=[DummyEnv()], max_steps=2
+            environments=[env], max_steps=2
         )
     else:
         with pytest.raises(AuthenticationError):
-            await rollout_manager.sample_trajectories(
-                environments=[DummyEnv()], max_steps=2
-            )
+            await rollout_manager.sample_trajectories(environments=[env], max_steps=2)
+    env.close_mock.assert_awaited_once_with()
 
 
 async def adeepcopy(x):  # noqa: RUF029
