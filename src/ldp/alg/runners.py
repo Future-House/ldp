@@ -4,7 +4,6 @@ import asyncio
 import math
 import random
 from collections.abc import Sequence
-from contextlib import suppress
 from typing import Any, cast
 
 from aviary.core import Environment, TaskDataset
@@ -17,7 +16,7 @@ from ldp.graph import OpResult, eval_mode, train_mode
 from ldp.shims import tqdm
 
 from .callbacks import Callback, ClearContextCallback
-from .rollout import EnvError, RolloutManager, reraise_exc_as
+from .rollout import RolloutManager
 
 
 async def _run_eval_loop(
@@ -364,12 +363,3 @@ class OfflineTrainer:
                             for callback in self.callbacks
                         ])
                         pbar.update()
-
-
-async def safe_close_env(env: Environment, catch_env_failures: bool):
-    """Close an environment.
-
-    If catch_env_failures is set, will not raise exceptions.
-    """
-    with suppress(EnvError), reraise_exc_as(EnvError, enabled=catch_env_failures):
-        await env.close()
