@@ -4,7 +4,6 @@ import asyncio
 import math
 import random
 from collections.abc import Sequence
-from contextlib import suppress
 from typing import Any, cast
 
 from aviary.core import Environment, TaskDataset
@@ -17,7 +16,7 @@ from ldp.graph import OpResult, eval_mode, train_mode
 from ldp.shims import tqdm
 
 from .callbacks import Callback, ClearContextCallback
-from .rollout import EnvError, RolloutManager, reraise_exc_as
+from .rollout import RolloutManager
 
 
 async def _run_eval_loop(
@@ -56,10 +55,6 @@ async def _run_eval_loop(
                         environments=batch, max_steps=max_rollout_steps
                     )
                     all_trajectories.extend(trajectories)
-
-                    # Close the environment after we have sampled from it,
-                    # in case it needs to tear down resources.
-                    await _close_envs(batch, rollout_manager.catch_env_failures)
 
                 await asyncio.gather(*[
                     callback.after_eval_step(all_trajectories) for callback in callbacks
@@ -257,9 +252,6 @@ class OnlineTrainer:
                 environments=envs, max_steps=self.config.max_rollout_steps
             )
 
-            # Close the environments after we have sampled from them, in case they need to tear down resources.
-            await _close_envs(envs, self.config.catch_env_failures)
-
             training_batch.extend(traj for traj in trajectories if not traj.failed)
             all_trajectories.extend(trajectories)
 
@@ -371,18 +363,3 @@ class OfflineTrainer:
                             for callback in self.callbacks
                         ])
                         pbar.update()
-
-
-async def _close_envs(envs: Sequence[Environment], catch_env_failures: bool):
-    # Note that the reraise happens per-env, not over the whole batch, so one env failing
-    # to close won't affect the others
-    await asyncio.gather(*[safe_close_env(env, catch_env_failures) for env in envs])
-
-
-async def safe_close_env(env: Environment, catch_env_failures: bool):
-    """Close an environment.
-
-    If catch_env_failures is set, will not raise exceptions.
-    """
-    with suppress(EnvError), reraise_exc_as(EnvError, enabled=catch_env_failures):
-        await env.close()
