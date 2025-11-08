@@ -91,10 +91,10 @@ async def test_evaluator(clear_ctx_at_each_iter) -> None:
         dataset=dataset,
         callbacks=[metrics_callback, count_callback],
     )
-    with patch.object(DummyEnv, "close") as mock_close:
+    with patch.object(DummyEnv, "close", autospec=True) as spy_close:
         await evaluator.evaluate()
 
-    mock_close.assert_awaited_once(), "Env should be closed"
+    spy_close.assert_awaited_once()
     assert isinstance(metrics_callback.eval_means["reward"], float)
     assert "tool_print_story" not in metrics_callback.eval_means
 
@@ -120,12 +120,16 @@ async def test_can_measure_evaluation_failure_rate() -> None:
         dataset=dataset,
         callbacks=[metrics_callback],
     )
-    with patch.object(
-        type(evaluator.agent), "get_asv", side_effect=litellm.APIError
-    ) as mock_get_asv:
+    with (
+        patch.object(
+            type(evaluator.agent), "get_asv", side_effect=litellm.APIError
+        ) as mock_get_asv,
+        patch.object(DummyEnv, "close", autospec=True) as spy_close,
+    ):
         await evaluator.evaluate()  # Confirm this does not crash
     mock_get_asv.assert_awaited_once()
     assert metrics_callback.eval_means["failures"] == 1.0
+    spy_close.assert_awaited_once()
 
 
 @pytest.mark.vcr
