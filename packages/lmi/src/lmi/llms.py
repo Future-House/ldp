@@ -739,7 +739,7 @@ class LiteLLMModel(LLMModel):
             "set_verbose": True,
             "fallbacks": new_fallbacks,
         }
-        # Killing the router will force lmi to rebuild it
+        # Dereferencing the router will force lmi to rebuild it
         self._router = None
 
         return await self.acompletion(messages, **kwargs)
