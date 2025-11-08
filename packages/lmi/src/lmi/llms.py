@@ -728,6 +728,8 @@ class LiteLLMModel(LLMModel):
         # Now we update the configuration
         # Here I am resetting all the configuration I think the user needs to set
         # But it is possible there is a user misconfiguration that I'd be fixing here
+        if not new_model_list:
+            raise ValueError("No fallback models available after refusal")
         self.name = new_model_list[0].get("model_name")
         self.config["model_list"] = new_model_list
         self.config["fallbacks"] = new_fallbacks
