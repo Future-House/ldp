@@ -63,7 +63,9 @@ from lmi.utils import get_litellm_retrying_config
 logger = logging.getLogger(__name__)
 
 # List of possible refusal flags in finish_reason
-REFUSAL_REASON = ["refusal"]
+REFUSAL_REASON = [
+    "refusal",  # Anthropic safety filter
+]
 
 if not IS_PYTHON_BELOW_312:
     _DeploymentTypedDictValidator = TypeAdapter(

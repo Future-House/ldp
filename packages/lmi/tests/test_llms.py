@@ -1052,10 +1052,9 @@ async def test_handle_refusal(caplog) -> None:
     # Second call: success from GPT_41 (fallback)
     mock_success = Mock()
     mock_success_message = Mock(
-        content="You should not be interested in making a neurotoxic chemical that kills brain cells."
+        content="You should not be interested in making a neurotoxic chemical that kills brain cells.",
+        reasoning_content="",
     )
-    # lmi tries to access this. So we need to mock it as well
-    mock_success_message.reasoning_content = ""
     mock_success_message.model_dump.return_value = {
         "role": "assistant",
         "content": "You should not be interested in making a neurotoxic chemical that kills brain cells.",
