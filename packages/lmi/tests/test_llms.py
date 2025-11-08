@@ -1070,12 +1070,14 @@ async def test_handle_refusal_via_fallback(caplog) -> None:
 
     mock_router_obj.acompletion = AsyncMock(side_effect=[mock_refusal, mock_success])
 
-    def mock_router_method(self, override_config=None):
+    def mock_router_method(_self, _override_config=None):
         return mock_router_obj
 
-    with patch.object(LiteLLMModel, "router", new=mock_router_method):
-        with caplog.at_level("WARNING", logger="lmi.llms"):
-            results = await llm.call_single(messages)
+    with (
+        patch.object(LiteLLMModel, "router", new=mock_router_method),
+        caplog.at_level("WARNING", logger="lmi.llms"),
+    ):
+        results = await llm.call_single(messages)
 
     assert results.text == "I'm sorry, but I can't assist with that request."
     assert results.model == CommonLLMNames.GPT_41.value
