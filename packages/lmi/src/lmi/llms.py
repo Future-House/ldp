@@ -761,8 +761,11 @@ class LiteLLMModel(LLMModel):
             self.name, prompts, **kwargs
         )
 
-        finish_reason = getattr(completions.choices[0], "finish_reason", None)
-        if finish_reason in REFUSAL_REASON:
+        finish_reason = (
+            getattr(completions.choices[0], "finish_reason", None)
+            if completions.choices else None
+        )
+        if completions.choices and finish_reason in REFUSAL_REASON:
             logger.warning(
                 f"The LLM request was refused with finish reason '{finish_reason}' "
                 f"for model {self.name}. "
