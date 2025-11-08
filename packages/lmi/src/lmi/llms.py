@@ -723,7 +723,7 @@ class LiteLLMModel(LLMModel):
                 new_fallbacks.append(fallback)
             else:
                 target_model = fallback[current_model][0]
-                new_fallbacks.append({target_model: [fallback[current_model][1:]]})
+                new_fallbacks.append({target_model: fallback[current_model][1:]})
 
         # Now we update the configuration
         # Here I am resetting all the configuration I think the user needs to set
