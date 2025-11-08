@@ -998,7 +998,7 @@ def test_json_schema_validation() -> None:
 
 
 @pytest.mark.asyncio
-async def test_handle_refusal(caplog) -> None:
+async def test_handle_refusal_via_fallback(caplog) -> None:
     llm = LiteLLMModel(
         name=CommonLLMNames.CLAUDE_37_SONNET.value,
         config={
@@ -1052,12 +1052,12 @@ async def test_handle_refusal(caplog) -> None:
     # Second call: success from GPT_41 (fallback)
     mock_success = Mock()
     mock_success_message = Mock(
-        content="You should not be interested in making a neurotoxic chemical that kills brain cells.",
+        content="I'm sorry, but I can't assist with that request.",
         reasoning_content="",
     )
     mock_success_message.model_dump.return_value = {
         "role": "assistant",
-        "content": "You should not be interested in making a neurotoxic chemical that kills brain cells.",
+        "content": "I'm sorry, but I can't assist with that request.",
     }
     mock_success.choices = [
         Mock(
@@ -1073,10 +1073,7 @@ async def test_handle_refusal(caplog) -> None:
     with caplog.at_level("WARNING", logger="lmi.llms"):
         results = await llm.call_single(messages)
 
-    assert (
-        results.text
-        == "You should not be interested in making a neurotoxic chemical that kills brain cells."
-    )
+    assert results.text == "I'm sorry, but I can't assist with that request."
     assert results.model == CommonLLMNames.GPT_41.value
     assert "the llm request was refused" in caplog.text.lower()
     assert "attempting to fallback" in caplog.text.lower()

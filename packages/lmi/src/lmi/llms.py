@@ -736,7 +736,7 @@ class LiteLLMModel(LLMModel):
                 **kwargs,
             )
 
-    async def _handle_refusal(
+    async def _handle_refusal_via_fallback(
         self, messages: list[Message], kwargs: dict[str, Any]
     ) -> list[LLMResult]:
         # Let's remove the current model from the configuration
@@ -765,7 +765,7 @@ class LiteLLMModel(LLMModel):
         # Here I am resetting all the configuration I think the user needs to set
         # But it is possible there is a user misconfiguration that I'd be fixing here
         # We use model name to make the request. Will reset it after the request
-        self.name = new_model_list[0].get("model_name")
+        self.name = new_model_list[0].get("model_name") or ""
         if "fallbacks" in kwargs:
             kwargs["fallbacks"] = new_fallbacks
         kwargs["override_config"] = {
@@ -786,9 +786,9 @@ class LiteLLMModel(LLMModel):
     @request_limited
     @rate_limited
     async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:
-        override_config = cast(
-            OverrideRouterConfig, kwargs.pop("override_config", None)
-        )
+        override_config = kwargs.pop("override_config", None)
+        if override_config:
+            override_config = OverrideRouterConfig(**override_config)
         router = self.router(override_config)
         tools = kwargs.get("tools")
         if not tools:
@@ -805,9 +805,6 @@ class LiteLLMModel(LLMModel):
             self.name, prompts, **kwargs
         )
 
-        # if "claude" in self.name:
-        #     completions.choices[0].finish_reason = "refusal"
-
         finish_reason = (
             getattr(completions.choices[0], "finish_reason", None)
             if completions.choices
@@ -819,13 +816,15 @@ class LiteLLMModel(LLMModel):
                 f"for model {self.name}. "
                 "Attempting to fallback to next model in the list."
             )
-            if self.config.get("model_list") and len(self.config.get("model_list")) > 1:
-                if override_config:
-                    # Case we had a previous refusal
-                    kwargs["model_list"] = override_config.model_list
-                    kwargs["router_kwargs"] = override_config.router_kwargs
-                    kwargs["fallbacks"] = override_config.fallbacks
-                return await self._handle_refusal(messages, kwargs)
+            if override_config is not None:
+                # Case we had a previous refusal
+                kwargs["model_list"] = override_config.model_list
+                kwargs["router_kwargs"] = override_config.router_kwargs
+                kwargs["fallbacks"] = override_config.fallbacks
+
+            model_list = kwargs.get("model_list") or self.config.get("model_list", None)
+            if model_list and len(model_list) > 1:
+                return await self._handle_refusal_via_fallback(messages, kwargs)
             logger.warning(
                 f"No fallback models available after refusal for model {self.name}. "
                 "Will return return a LLMResult with the refusal completion."
@@ -897,7 +896,10 @@ class LiteLLMModel(LLMModel):
     async def acompletion_iter(
         self, messages: list[Message], **kwargs
     ) -> AsyncIterable[LLMResult]:
-        router = self.router(kwargs.pop("override_config", None))
+        override_config = kwargs.pop("override_config", None)
+        if override_config:
+            override_config = OverrideRouterConfig(**override_config)
+        router = self.router(override_config)
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
         prompts = cast(
             "list[litellm.types.llms.openai.AllMessageValues]",
