@@ -715,7 +715,7 @@ class LiteLLMModel(LLMModel):
         new_model_list = [
             model
             for model in self.config["model_list"]
-            if current_model not in model.get("model_name")
+            if model.get("model_name") != current_model
         ]
 
         # Let's get any fallback we have defined anywhere and change it
