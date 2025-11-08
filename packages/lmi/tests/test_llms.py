@@ -454,7 +454,7 @@ class TestLiteLLMModel:
             rehydrated_llm = pickle.load(f)
         assert llm.name == rehydrated_llm.name
         assert llm.config == rehydrated_llm.config
-        assert llm.router.deployment_names == rehydrated_llm.router.deployment_names
+        assert llm.router().deployment_names == rehydrated_llm.router.deployment_names
 
     @pytest.mark.asyncio
     async def test_acompletion_iter_logprobs_edge_cases(self) -> None:
@@ -1046,7 +1046,7 @@ async def test_handle_refusal(caplog) -> None:
             message=mock_refusal_message,
         )
     ]
-    # mock_refusal.usage = Mock(prompt_tokens=10, completion_tokens=5)
+    mock_refusal.usage = Mock(prompt_tokens=10, completion_tokens=5)
     mock_refusal.model = CommonLLMNames.CLAUDE_37_SONNET.value
 
     # Second call: success from GPT_41 (fallback)
@@ -1070,22 +1070,13 @@ async def test_handle_refusal(caplog) -> None:
 
     mock_router_obj.acompletion = AsyncMock(side_effect=[mock_refusal, mock_success])
 
-    # LiteLLMModel.router is actually a property that returns the _router attribute
-    # We need to mock it as well
-    def mock_router_property(_):
-        return mock_router_obj
+    with caplog.at_level("WARNING", logger="lmi.llms"):
+        results = await llm.call_single(messages)
 
-    with (
-        patch.object(llm, "_router", mock_router_obj),
-        patch.object(type(llm), "router", property(mock_router_property)),
-    ):
-        with caplog.at_level("WARNING", logger="lmi.llms"):
-            results = await llm.call_single(messages)
-
-        assert (
-            results.text
-            == "You should not be interested in making a neurotoxic chemical that kills brain cells."
-        )
-        assert results.model == CommonLLMNames.GPT_41.value
-        assert "the llm request was refused" in caplog.text.lower()
-        assert "attempting to fallback" in caplog.text.lower()
+    assert (
+        results.text
+        == "You should not be interested in making a neurotoxic chemical that kills brain cells."
+    )
+    assert results.model == CommonLLMNames.GPT_41.value
+    assert "the llm request was refused" in caplog.text.lower()
+    assert "attempting to fallback" in caplog.text.lower()
