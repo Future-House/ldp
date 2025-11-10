@@ -25,6 +25,7 @@ class TestLiteLLMModel:
         # Test default instantiation
         model1 = LiteLLMModel()
         assert model1.name == CommonLLMNames.GPT_4O.value
+        assert model1.provider == "openai"
         assert isinstance(model1.config, dict)
         assert "model_list" in model1.config
 
@@ -32,6 +33,7 @@ class TestLiteLLMModel:
         name = CommonLLMNames.ANTHROPIC_TEST.value
         model2 = LiteLLMModel(name=name)
         assert model2.name == name
+        assert model2.provider == "anthropic"
         assert model2.config["model_list"][0]["model_name"] == name
 
         # Test config-only instantiation
@@ -42,6 +44,7 @@ class TestLiteLLMModel:
         }
         model3 = LiteLLMModel(config=config)
         assert model3.name == CommonLLMNames.OPENAI_TEST.value
+        assert model3.provider == "openai"
         assert (
             model3.config["model_list"][0]["model_name"]
             == CommonLLMNames.OPENAI_TEST.value
@@ -54,6 +57,7 @@ class TestLiteLLMModel:
         config = {"temperature": 0.5, "max_tokens": 100}
         model4 = LiteLLMModel(name=name, config=config)
         assert model4.name == name
+        assert model4.provider == "openai"
         assert model4.config["model_list"][0]["model_name"] == name
         assert model4.config["model_list"][0]["litellm_params"]["temperature"] == 0.5
         assert model4.config["model_list"][0]["litellm_params"]["max_tokens"] == 100

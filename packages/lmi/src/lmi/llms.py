@@ -847,6 +847,10 @@ class LiteLLMModel(LLMModel):
     def count_tokens(self, text: str) -> int:
         return litellm.token_counter(model=self.name, text=text)
 
+    @property
+    def provider(self) -> str:
+        return litellm.get_llm_provider(self.name)[1]
+
     async def select_tool(
         self, *selection_args, **selection_kwargs
     ) -> ToolRequestMessage:
