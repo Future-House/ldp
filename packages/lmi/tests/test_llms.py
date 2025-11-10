@@ -454,7 +454,10 @@ class TestLiteLLMModel:
             rehydrated_llm = pickle.load(f)
         assert llm.name == rehydrated_llm.name
         assert llm.config == rehydrated_llm.config
-        assert llm.router().deployment_names == rehydrated_llm.router().deployment_names
+        assert (
+            llm.get_router().deployment_names
+            == rehydrated_llm.get_router().deployment_names
+        )
 
     @pytest.mark.asyncio
     async def test_acompletion_iter_logprobs_edge_cases(self) -> None:
