@@ -581,7 +581,7 @@ class LiteLLMModel(LLMModel):
 
     @model_validator(mode="before")
     @classmethod
-    def maybe_set_config_attribute(cls, input_data: dict[str, Any]) -> dict[str, Any]:
+    def maybe_set_config_attribute(cls, input_data: dict[str, Any]) -> dict[str, Any]:  # noqa: C901
         """
         Set the config attribute if it is not provided.
 
@@ -600,7 +600,10 @@ class LiteLLMModel(LLMModel):
         if "name" not in data:
             data["name"] = data["config"].get("name", cls.model_fields["name"].default)
         if "model_list" not in data["config"]:
-            is_openai_model = "openai" in litellm.get_llm_provider(data["name"])
+            try:
+                is_openai_model = "openai" in litellm.get_llm_provider(data["name"])
+            except litellm.BadRequestError:  # LiteLLM doesn't have provider registered
+                is_openai_model = False
             max_tokens = data["config"].get("max_tokens")
             if (
                 "logprobs" in data["config"] or "top_logprobs" in data["config"]
@@ -964,7 +967,9 @@ class LiteLLMModel(LLMModel):
 
     @property
     def provider(self) -> str:
-        return litellm.get_llm_provider(self.name)[1]
+        return litellm.get_llm_provider(
+            self.name, api_base=self.config.get("api_base")
+        )[1]
 
     async def select_tool(
         self, *selection_args, **selection_kwargs
