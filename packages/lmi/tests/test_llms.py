@@ -74,6 +74,15 @@ class TestLiteLLMModel:
         assert model5.config["model_list"][0]["litellm_params"]["top_logprobs"] == 20
         assert model5.config["model_list"][0]["litellm_params"]["temperature"] == 0.7
 
+        model6 = LiteLLMModel(name="nvidia/nemotron-parse")
+        assert (
+            model6.name
+            == model6.config["model_list"][0]["model_name"]
+            == "nvidia/nemotron-parse"
+        )
+        with pytest.raises(litellm.BadRequestError, match="nvidia"):
+            _ = model6.provider
+
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.parametrize(
         "config",
