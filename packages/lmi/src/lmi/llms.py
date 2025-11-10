@@ -681,7 +681,7 @@ class LiteLLMModel(LLMModel):
         state["__dict__"].pop("_router", None)
         return state
 
-    def router(
+    def get_router(
         self, override_config: OverrideRouterConfig | None = None
     ) -> litellm.Router:
         """Get the router, optionally with an override configuration.
@@ -789,7 +789,7 @@ class LiteLLMModel(LLMModel):
         override_config = kwargs.pop("override_config", None)
         if override_config:
             override_config = OverrideRouterConfig(**override_config)
-        router = self.router(override_config)
+        router = self.get_router(override_config)
         tools = kwargs.get("tools")
         if not tools:
             # OpenAI, Anthropic and potentially other LLM providers
@@ -899,7 +899,7 @@ class LiteLLMModel(LLMModel):
         override_config = kwargs.pop("override_config", None)
         if override_config:
             override_config = OverrideRouterConfig(**override_config)
-        router = self.router(override_config)
+        router = self.get_router(override_config)
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
         prompts = cast(
             "list[litellm.types.llms.openai.AllMessageValues]",
@@ -971,6 +971,6 @@ class LiteLLMModel(LLMModel):
     ) -> ToolRequestMessage:
         """Shim to aviary.core.ToolSelector that supports tool schemae."""
         tool_selector = ToolSelector(
-            model_name=self.name, acompletion=track_costs(self.router().acompletion)
+            model_name=self.name, acompletion=track_costs(self.get_router().acompletion)
         )
         return await tool_selector(*selection_args, **selection_kwargs)

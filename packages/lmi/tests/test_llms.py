@@ -458,7 +458,10 @@ class TestLiteLLMModel:
             rehydrated_llm = pickle.load(f)
         assert llm.name == rehydrated_llm.name
         assert llm.config == rehydrated_llm.config
-        assert llm.router().deployment_names == rehydrated_llm.router().deployment_names
+        assert (
+            llm.get_router().deployment_names
+            == rehydrated_llm.get_router().deployment_names
+        )
 
     @pytest.mark.asyncio
     async def test_acompletion_iter_logprobs_edge_cases(self) -> None:
@@ -1078,7 +1081,7 @@ async def test_handle_refusal_via_fallback(caplog) -> None:
         return mock_router_obj
 
     with (
-        patch.object(LiteLLMModel, "router", new=mock_router_method),
+        patch.object(LiteLLMModel, "get_router", new=mock_router_method),
         caplog.at_level("WARNING", logger="lmi.llms"),
     ):
         results = await llm.call_single(messages)
