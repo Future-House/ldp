@@ -967,7 +967,9 @@ class LiteLLMModel(LLMModel):
 
     @property
     def provider(self) -> str:
-        return litellm.get_llm_provider(self.name)[1]
+        return litellm.get_llm_provider(
+            self.name, api_base=self.config.get("api_base")
+        )[1]
 
     async def select_tool(
         self, *selection_args, **selection_kwargs
