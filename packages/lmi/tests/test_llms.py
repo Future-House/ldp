@@ -1077,7 +1077,7 @@ async def test_handle_refusal_via_fallback(caplog) -> None:
         return mock_router_obj
 
     with (
-        patch.object(LiteLLMModel, "router", new=mock_router_method),
+        patch.object(LiteLLMModel, "get_router", new=mock_router_method),
         caplog.at_level("WARNING", logger="lmi.llms"),
     ):
         results = await llm.call_single(messages)
