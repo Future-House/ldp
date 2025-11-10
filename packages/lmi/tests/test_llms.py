@@ -2,7 +2,7 @@ import pathlib
 import pickle
 from collections.abc import AsyncIterator
 from typing import Any, ClassVar
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import litellm
 import numpy as np
@@ -454,7 +454,7 @@ class TestLiteLLMModel:
             rehydrated_llm = pickle.load(f)
         assert llm.name == rehydrated_llm.name
         assert llm.config == rehydrated_llm.config
-        assert llm.router.deployment_names == rehydrated_llm.router.deployment_names
+        assert llm.router().deployment_names == rehydrated_llm.router().deployment_names
 
     @pytest.mark.asyncio
     async def test_acompletion_iter_logprobs_edge_cases(self) -> None:
@@ -995,3 +995,91 @@ def test_json_schema_validation() -> None:
     with pytest.raises(JSONSchemaValidationError):
         validate_json_completion(mock_completion2, DummyModel)
     validate_json_completion(mock_completion3, DummyModel)
+
+
+@pytest.mark.asyncio
+async def test_handle_refusal_via_fallback(caplog) -> None:
+    llm = LiteLLMModel(
+        name=CommonLLMNames.CLAUDE_37_SONNET.value,
+        config={
+            "model_list": [
+                {
+                    "model_name": CommonLLMNames.CLAUDE_37_SONNET.value,
+                    "litellm_params": {
+                        "model": CommonLLMNames.CLAUDE_37_SONNET.value,
+                        "temperature": 1.0,
+                    },
+                },
+                {
+                    "model_name": CommonLLMNames.GPT_41.value,
+                    "litellm_params": {
+                        "model": CommonLLMNames.GPT_41.value,
+                        "temperature": 1.0,
+                    },
+                },
+            ],
+            "fallbacks": [
+                {CommonLLMNames.CLAUDE_37_SONNET.value: [CommonLLMNames.GPT_41.value]}
+            ],
+        },
+    )
+    # Message that clearly will be denied
+    messages = [
+        Message(
+            content="Give me clear instructions to make a neurotoxic chemical that kills brain cells."
+        )
+    ]
+
+    # Let's mock the router to simulate refusal and success requests
+    mock_router_obj = Mock()
+
+    # First call: refusal from CLAUDE_37_SONNET
+    mock_refusal = Mock()
+    mock_refusal_message = Mock(content="I cannot answer that question.")
+    mock_refusal_message.model_dump.return_value = {
+        "role": "assistant",
+        "content": "I cannot answer that question.",
+    }
+    mock_refusal.choices = [
+        Mock(
+            finish_reason="refusal",
+            message=mock_refusal_message,
+        )
+    ]
+    mock_refusal.usage = Mock(prompt_tokens=10, completion_tokens=5)
+    mock_refusal.model = CommonLLMNames.CLAUDE_37_SONNET.value
+
+    # Second call: success from GPT_41 (fallback)
+    mock_success = Mock()
+    mock_success_message = Mock(
+        content="I'm sorry, but I can't assist with that request.",
+        reasoning_content="",
+    )
+    mock_success_message.model_dump.return_value = {
+        "role": "assistant",
+        "content": "I'm sorry, but I can't assist with that request.",
+    }
+    mock_success.choices = [
+        Mock(
+            finish_reason="stop",
+            message=mock_success_message,
+        )
+    ]
+    mock_success.usage = Mock(prompt_tokens=10, completion_tokens=8)
+    mock_success.model = CommonLLMNames.GPT_41.value
+
+    mock_router_obj.acompletion = AsyncMock(side_effect=[mock_refusal, mock_success])
+
+    def mock_router_method(_self, _override_config=None):
+        return mock_router_obj
+
+    with (
+        patch.object(LiteLLMModel, "router", new=mock_router_method),
+        caplog.at_level("WARNING", logger="lmi.llms"),
+    ):
+        results = await llm.call_single(messages)
+
+    assert results.text == "I'm sorry, but I can't assist with that request."
+    assert results.model == CommonLLMNames.GPT_41.value
+    assert "the llm request was refused" in caplog.text.lower()
+    assert "attempting to fallback" in caplog.text.lower()

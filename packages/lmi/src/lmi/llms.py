@@ -62,6 +62,11 @@ from lmi.utils import get_litellm_retrying_config
 
 logger = logging.getLogger(__name__)
 
+# List of possible refusal flags in finish_reason
+REFUSAL_REASON = (
+    "refusal",  # Anthropic safety filter
+)
+
 if not IS_PYTHON_BELOW_312:
     _DeploymentTypedDictValidator = TypeAdapter(
         list[litellm.DeploymentTypedDict],
@@ -93,6 +98,12 @@ class CommonLLMNames(StrEnum):
     ANTHROPIC_TEST = (  # Cheap, fast, and not Anthropic's cutting edge
         "claude-3-5-haiku-20241022"
     )
+
+
+class OverrideRouterConfig(BaseModel):
+    model_list: list[dict[str, Any]]
+    router_kwargs: dict[str, Any]
+    fallbacks: list[dict[str, Any]]
 
 
 def sum_logprobs(choice: litellm.utils.Choices | list[float]) -> float | None:
@@ -670,8 +681,32 @@ class LiteLLMModel(LLMModel):
         state["__dict__"].pop("_router", None)
         return state
 
-    @property
-    def router(self) -> litellm.Router:
+    def router(
+        self, override_config: OverrideRouterConfig | None = None
+    ) -> litellm.Router:
+        """Get the router, optionally with an override configuration.
+
+        Args:
+            override_config: Optional configuration to override the default router settings.
+                Should contain 'model_list' and 'router_kwargs' keys.
+
+        Returns:
+            A litellm.Router instance.
+        """
+        if override_config:
+            override_model_list = override_config.model_list
+            override_router_kwargs = override_config.router_kwargs
+
+            can_override = override_model_list and override_router_kwargs
+            if not can_override:
+                logger.warning(
+                    "Cannot override router with provided config. Will use default config."
+                )
+            else:
+                return litellm.Router(
+                    model_list=override_model_list, **override_router_kwargs
+                )
+
         if self._router is None:
             router_kwargs: dict = self.config.get("router_kwargs", {})
             if self.config.get("pass_through_router"):
@@ -701,10 +736,60 @@ class LiteLLMModel(LLMModel):
                 **kwargs,
             )
 
+    async def _handle_refusal_via_fallback(
+        self, messages: list[Message], kwargs: dict[str, Any]
+    ) -> list[LLMResult]:
+        # Let's remove the current model from the configuration
+        current_model = self.name
+        override_config = OverrideRouterConfig(
+            model_list=kwargs.pop("model_list", self.config["model_list"]),
+            router_kwargs=kwargs.pop("router_kwargs", self.config["router_kwargs"]),
+            fallbacks=kwargs.pop("fallbacks", self.config["fallbacks"]),
+        )
+
+        new_model_list = [
+            model
+            for model in override_config.model_list
+            if model.get("model_name") != current_model
+        ]
+
+        new_fallbacks = []
+        for fallback in override_config.fallbacks:
+            if current_model not in fallback:
+                new_fallbacks.append(fallback)
+            else:
+                target_model = fallback[current_model][0]
+                new_fallbacks.append({target_model: fallback[current_model][1:]})
+
+        # Now we update the configuration
+        # Here I am resetting all the configuration I think the user needs to set
+        # But it is possible there is a user misconfiguration that I'd be fixing here
+        # We use model name to make the request. Will reset it after the request
+        self.name = new_model_list[0].get("model_name") or ""
+        if "fallbacks" in kwargs:
+            kwargs["fallbacks"] = new_fallbacks
+        kwargs["override_config"] = {
+            "model_list": new_model_list,
+            "router_kwargs": override_config.router_kwargs
+            | {
+                "fallbacks": new_fallbacks,
+            },
+            "fallbacks": new_fallbacks,
+        }
+
+        results = await self.acompletion(messages, **kwargs)
+        # Put the object back to the original state
+        self.name = current_model
+        return results
+
     # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
     async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:
+        override_config = kwargs.pop("override_config", None)
+        if override_config:
+            override_config = OverrideRouterConfig(**override_config)
+        router = self.router(override_config)
         tools = kwargs.get("tools")
         if not tools:
             # OpenAI, Anthropic and potentially other LLM providers
@@ -716,9 +801,35 @@ class LiteLLMModel(LLMModel):
             "list[litellm.types.llms.openai.AllMessageValues]",
             [m.model_dump(by_alias=True) for m in messages],
         )
-        completions = await track_costs(self.router.acompletion)(
+        completions = await track_costs(router.acompletion)(
             self.name, prompts, **kwargs
         )
+
+        finish_reason = (
+            getattr(completions.choices[0], "finish_reason", None)
+            if completions.choices
+            else None
+        )
+        if completions.choices and finish_reason in REFUSAL_REASON:
+            logger.warning(
+                f"The LLM request was refused with finish reason '{finish_reason}' "
+                f"for model {self.name}. "
+                "Attempting to fallback to next model in the list."
+            )
+            if override_config is not None:
+                # Case we had a previous refusal
+                kwargs["model_list"] = override_config.model_list
+                kwargs["router_kwargs"] = override_config.router_kwargs
+                kwargs["fallbacks"] = override_config.fallbacks
+
+            model_list = kwargs.get("model_list") or self.config.get("model_list", None)
+            if model_list and len(model_list) > 1:
+                return await self._handle_refusal_via_fallback(messages, kwargs)
+            logger.warning(
+                f"No fallback models available after refusal for model {self.name}. "
+                "Will return return a LLMResult with the refusal completion."
+            )
+
         used_model = completions.model or self.name
         results: list[LLMResult] = []
 
@@ -785,6 +896,10 @@ class LiteLLMModel(LLMModel):
     async def acompletion_iter(
         self, messages: list[Message], **kwargs
     ) -> AsyncIterable[LLMResult]:
+        override_config = kwargs.pop("override_config", None)
+        if override_config:
+            override_config = OverrideRouterConfig(**override_config)
+        router = self.router(override_config)
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
         prompts = cast(
             "list[litellm.types.llms.openai.AllMessageValues]",
@@ -797,7 +912,7 @@ class LiteLLMModel(LLMModel):
         if kwargs.get("include_reasoning"):
             stream_options["include_reasoning"] = True
 
-        stream_completions = await track_costs_iter(self.router.acompletion)(
+        stream_completions = await track_costs_iter(router.acompletion)(
             self.name,
             prompts,
             stream=True,
@@ -852,6 +967,6 @@ class LiteLLMModel(LLMModel):
     ) -> ToolRequestMessage:
         """Shim to aviary.core.ToolSelector that supports tool schemae."""
         tool_selector = ToolSelector(
-            model_name=self.name, acompletion=track_costs(self.router.acompletion)
+            model_name=self.name, acompletion=track_costs(self.router().acompletion)
         )
         return await tool_selector(*selection_args, **selection_kwargs)
