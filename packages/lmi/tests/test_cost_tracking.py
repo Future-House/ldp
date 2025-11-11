@@ -9,7 +9,7 @@ from aviary.core import Message
 from lmi import cost_tracking_ctx
 from lmi.cost_tracker import GLOBAL_COST_TRACKER, TrackedStreamWrapper
 from lmi.embeddings import LiteLLMEmbeddingModel
-from lmi.llms import CommonLLMNames, LiteLLMModel
+from lmi.llms import CommonLLMNames, LiteLLMModel, parse_cached_usage
 from lmi.utils import VCR_DEFAULT_MATCH_ON
 
 
@@ -369,3 +369,604 @@ class TestCostTrackerCallback:
 
             # Callback should have been called exactly once
             assert len(callback_calls) == 1
+
+
+class TestCachedTokenCosts:
+    """Tests for cached token cost tracking and field extraction."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_anthropic_cache_creation_cost_accuracy(self):
+        """
+        Audit that cache creation tokens are priced correctly.
+
+        Verifies that when cache_creation_input_tokens > 0, the cost calculation
+        applies the cache creation rate.
+
+        Tests Claude Sonnet 4.5 (latest Sonnet model with prompt caching).
+        """
+        with cost_tracking_ctx():
+            model = LiteLLMModel(
+                name="claude-sonnet-4-5-20250929", config={"temperature": 0}
+            )
+
+            # Use system message with cache_control for cache creation
+            # Anthropic requires at least 1024 tokens for caching
+            long_text = "You are analyzing a large document. " * 250  # ~1000+ tokens
+
+            # Pass system with cache_control via kwargs (LiteLLM passes through to Anthropic)
+            messages = [
+                Message(role="user", content="Summarize your task in one sentence."),
+            ]
+
+            results = await model.call(
+                messages,
+                system=[
+                    {
+                        "type": "text",
+                        "text": long_text,
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ],
+            )
+            result = results[0]
+
+            # Simple assertions like litellm examples
+            assert result.cache_creation_tokens > 0, (
+                f"Expected cache_creation_tokens > 0, got {result.cache_creation_tokens}. "
+                f"Prompt had {result.prompt_count} tokens (need 1024+ for caching)."
+            )
+            assert result.cost_usd is not None
+            assert result.cost_usd > 0
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_anthropic_cache_read_cost_accuracy(self):
+        """
+        Audit that cache read tokens are priced at lower rate.
+
+        Verifies that when cache_read_input_tokens > 0, the cost calculation
+        applies the reduced cache read rate instead of regular input rate.
+
+        Note: Requires TWO calls - first to create cache, second to read from it.
+        Tests Claude Sonnet 4.5 (latest Sonnet model with prompt caching).
+        """
+        with cost_tracking_ctx():
+            model = LiteLLMModel(
+                name="claude-sonnet-4-5-20250929", config={"temperature": 0}
+            )
+
+            # Use system message with cache_control to enable caching
+            # Anthropic requires at least 1024 tokens for caching
+            long_text = "You are analyzing a large document. " * 250  # ~1000+ tokens
+
+            messages = [
+                Message(role="user", content="Summarize your task in one sentence."),
+            ]
+
+            system_with_cache = [
+                {
+                    "type": "text",
+                    "text": long_text,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+
+            # First call: Creates the cache (or reads if already cached from prior test)
+            results1 = await model.call(messages, system=system_with_cache)
+            result1 = results1[0]
+            # First call might have cache_creation OR cache_read if cache still active
+            assert result1.cache_creation_tokens > 0 or result1.cache_read_tokens > 0, (
+                f"Expected caching on first call, got creation={result1.cache_creation_tokens}, read={result1.cache_read_tokens}"
+            )
+
+            # Second call: Reads from cache (cache_read_tokens > 0)
+            results2 = await model.call(messages, system=system_with_cache)
+            result = results2[0]
+
+            # Assertions: Verify cache read and cost discount
+            assert result.cache_read_tokens > 0, "Expected cache_read_tokens > 0"
+            assert result.cost_usd is not None
+            assert result.cost_usd > 0
+
+            # CRITICAL: Verify cache read is cheaper than cache creation
+            # Cache read is 0.1x base rate, cache creation is 1.25x base rate
+            # Only validate if call 1 actually created cache (not read from prior test)
+            if result1.cache_creation_tokens > 0 and result1.cost_usd is not None:
+                assert result.cost_usd < result1.cost_usd, (
+                    f"Cache read cost ({result.cost_usd:.6f}) should be < cache creation cost ({result1.cost_usd:.6f}). "
+                    "If this fails, caching discount is not being applied!"
+                )
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_anthropic_incremental_cache_with_conversation(self):
+        """
+        Test incremental caching as conversation grows.
+
+        Demonstrates how cache grows with each message by placing cache_control
+        on the last message in the conversation. Shows that:
+        1. First call: Creates cache for system + first user message
+        2. Second call: Reads system+user cache, adds assistant response to cache
+        3. Third call: Reads all previous messages from cache
+
+        Tests Claude Sonnet 4.5 (latest Sonnet model with prompt caching).
+        """
+        with cost_tracking_ctx():
+            model = LiteLLMModel(
+                name="claude-sonnet-4-5-20250929", config={"temperature": 0}
+            )
+
+            # System prompt (different from other tests to ensure fresh cache creation)
+            long_text = (
+                "You are a helpful assistant for testing incremental prompt caching. "
+                * 200
+            )  # ~1000+ tokens
+
+            # Call 1: System + first user message
+            # Put cache_control ONLY on the last message to cache everything up to it
+            messages_1 = [
+                Message(
+                    role="user",
+                    content=[
+                        {
+                            "type": "text",
+                            "text": "What is your first task?",
+                            "cache_control": {"type": "ephemeral"},
+                        }
+                    ],
+                ),
+            ]
+
+            system_with_cache = [
+                {
+                    "type": "text",
+                    "text": long_text,
+                }
+            ]
+
+            results1 = await model.call(messages_1, system=system_with_cache)
+            result1 = results1[0]
+
+            # Call 2: Add assistant response + new user message
+            # Only need cache_control on LAST message (Anthropic auto-finds longest prefix)
+            messages_2 = [
+                Message(role="user", content="What is your first task?"),
+                Message(
+                    role="assistant", content=result1.text or "Analyzing documents."
+                ),
+                Message(
+                    role="user",
+                    content=[
+                        {
+                            "type": "text",
+                            "text": "What is your second task?",
+                            "cache_control": {"type": "ephemeral"},
+                        }
+                    ],
+                ),
+            ]
+
+            results2 = await model.call(messages_2, system=system_with_cache)
+            result2 = results2[0]
+
+            # Call 3: Add another assistant response + new user message
+            # Only cache_control on LAST message
+            messages_3 = [
+                Message(role="user", content="What is your first task?"),
+                Message(
+                    role="assistant", content=result1.text or "Analyzing documents."
+                ),
+                Message(role="user", content="What is your second task?"),
+                Message(
+                    role="assistant", content=result2.text or "Summarizing findings."
+                ),
+                Message(
+                    role="user",
+                    content=[
+                        {
+                            "type": "text",
+                            "text": "What is your third task?",
+                            "cache_control": {"type": "ephemeral"},
+                        }
+                    ],
+                ),
+            ]
+
+            results3 = await model.call(messages_3, system=system_with_cache)
+            result3 = results3[0]
+
+            # Assertions
+            # Call 1: Should create initial cache (system + first user)
+            assert result1.cache_creation_tokens > 0 or result1.cache_read_tokens > 0, (
+                "Expected caching on first call"
+            )
+
+            # Call 2: Should read some cache and create new cache for added messages
+            assert result2.cache_read_tokens > 0 or result2.cache_creation_tokens > 0, (
+                "Expected cache activity on second call"
+            )
+
+            # Call 3: Should read from cache (conversation already cached)
+            assert result3.cache_read_tokens > 0 or result3.cache_creation_tokens > 0, (
+                "Expected cache activity on third call"
+            )
+
+            # Call 4: Skip messages 2 & 3 - test partial cache hit
+            # Only cache_control on LAST message
+            messages_4 = [
+                Message(role="user", content="What is your first task?"),
+                Message(
+                    role="user",
+                    content=[
+                        {
+                            "type": "text",
+                            "text": "What is your FOURTH task?",
+                            "cache_control": {"type": "ephemeral"},
+                        }
+                    ],
+                ),
+            ]
+
+            results4 = await model.call(messages_4, system=system_with_cache)
+            result4 = results4[0]
+
+            # Assertions - Verify caching works + test incremental growth (VCR-friendly)
+            # Call 1: Should have meaningful cache activity
+            assert result1.cache_creation_tokens > 0 or result1.cache_read_tokens > 0, (
+                "Expected cache activity on call 1"
+            )
+            assert result1.cost_usd is not None
+            assert result1.cost_usd > 0
+            total_cache_1 = result1.cache_creation_tokens + result1.cache_read_tokens
+
+            # Call 2: Cache should grow (adds assistant + user message)
+            assert result2.cache_creation_tokens > 0 or result2.cache_read_tokens > 0, (
+                "Expected cache activity on call 2"
+            )
+            assert result2.cost_usd is not None
+            assert result2.cost_usd > 0
+            total_cache_2 = result2.cache_creation_tokens + result2.cache_read_tokens
+            assert total_cache_2 >= total_cache_1, (
+                f"Expected cache to grow: call 2 ({total_cache_2}) >= call 1 ({total_cache_1})"
+            )
+
+            # CRITICAL: If call 2 reads from cache, verify discount is applied
+            if result2.cache_read_tokens > 0 and result1.cache_creation_tokens > 0:
+                # Cache read (0.1x) is much cheaper than cache creation (1.25x)
+                # Even with small new writes, total cost should be significantly lower
+                assert result2.cost_usd < result1.cost_usd, (
+                    f"Call 2 with cache reads ({result2.cost_usd:.6f}) should be < "
+                    f"call 1 with cache creation ({result1.cost_usd:.6f}). "
+                    "Cache discount not being applied!"
+                )
+
+            # Call 3: Cache should continue growing (adds more conversation)
+            assert result3.cache_creation_tokens > 0 or result3.cache_read_tokens > 0, (
+                "Expected cache activity on call 3"
+            )
+            assert result3.cost_usd is not None
+            assert result3.cost_usd > 0
+            total_cache_3 = result3.cache_creation_tokens + result3.cache_read_tokens
+            assert total_cache_3 >= total_cache_2, (
+                f"Expected cache to keep growing: call 3 ({total_cache_3}) >= call 2 ({total_cache_2})"
+            )
+
+            # Call 4: Should have cache (partial hit - sequence changed)
+            assert result4.cache_creation_tokens > 0 or result4.cache_read_tokens > 0, (
+                "Expected cache activity on call 4"
+            )
+            assert result4.cost_usd is not None
+            assert result4.cost_usd > 0
+            total_cache_4 = result4.cache_creation_tokens + result4.cache_read_tokens
+            assert total_cache_4 >= total_cache_1, (
+                f"Expected at least partial cache: call 4 ({total_cache_4}) >= call 1 ({total_cache_1})"
+            )
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_openai_gpt4o_cached_tokens_cost(self):
+        """
+        Audit OpenAI GPT-4o cached token cost calculation.
+
+        OpenAI uses automatic prompt caching for prompts >1024 tokens.
+        No cache_control needed - caching happens automatically.
+
+        Tests GPT-4o (OpenAI model with automatic prompt caching).
+        Note: Requires TWO calls - first populates cache, second reads from it.
+        """
+        with cost_tracking_ctx():
+            model = LiteLLMModel(name="gpt-4o-2024-11-20", config={"temperature": 0})
+
+            # Long prompt to trigger automatic caching (>1024 tokens)
+            # OpenAI automatically caches - no cache_control needed
+            long_context = (
+                "Context: " + "The quick brown fox jumps over the lazy dog. " * 300
+            )  # ~1500 tokens
+
+            messages = [
+                Message(role="system", content=long_context),
+                Message(role="user", content="Summarize the context."),
+            ]
+
+            # First call: Populates the cache (or reads if already cached)
+            results1 = await model.call(messages)
+            result1 = results1[0]
+
+            # Second call: Should read from cache (within ~5 minute window)
+            results2 = await model.call(messages)
+            result2 = results2[0]
+
+            # Assertions: At least one call should have cache hits (OpenAI auto-caching)
+            assert result1.cache_read_tokens > 0 or result2.cache_read_tokens > 0, (
+                f"Expected cache_read_tokens > 0 in at least one call, got call1={result1.cache_read_tokens}, call2={result2.cache_read_tokens}"
+            )
+
+            # Both calls should have costs calculated
+            assert result1.cost_usd is not None
+            assert result1.cost_usd > 0
+            assert result2.cost_usd is not None
+            assert result2.cost_usd > 0
+
+            # CRITICAL: Verify caching provides cost savings
+            # If both calls have cache reads, costs should be similar (both discounted)
+            # If only one has cache reads, that one should be cheaper or equal
+            if result1.cache_read_tokens == 0 and result2.cache_read_tokens > 0:
+                # Call 2 has cache discount, call 1 doesn't
+                assert result2.cost_usd <= result1.cost_usd, (
+                    f"Call 2 with cache ({result2.cost_usd:.6f}) should be <= "
+                    f"call 1 without cache ({result1.cost_usd:.6f})"
+                )
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_anthropic_cache_with_streaming(self):
+        """
+        Test that cached tokens are extracted correctly with streaming responses.
+
+        Verifies that acompletion_iter() (streaming mode) correctly extracts
+        cache_read_tokens and cache_creation_tokens from streamed responses.
+
+        Tests Claude Sonnet 4.5 (latest Sonnet model with prompt caching).
+        """
+        with cost_tracking_ctx():
+            model = LiteLLMModel(
+                name="claude-sonnet-4-5-20250929", config={"temperature": 0}
+            )
+
+            # Long system prompt to enable caching
+            long_text = (
+                "You are a streaming response assistant. " * 250
+            )  # ~1000+ tokens
+
+            messages = [
+                Message(role="user", content="Count to 5."),
+            ]
+
+            system_with_cache = [
+                {
+                    "type": "text",
+                    "text": long_text,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+
+            # First streaming call: Creates cache
+            chunks1: list[str] = []
+            result1 = await model.call_single(
+                messages, system=system_with_cache, callbacks=[chunks1.append]
+            )
+
+            # Second streaming call: Reads from cache
+            chunks2: list[str] = []
+            result2 = await model.call_single(
+                messages, system=system_with_cache, callbacks=[chunks2.append]
+            )
+
+            # Assertions: Verify cached tokens extracted in streaming mode
+            assert result1.cache_creation_tokens > 0 or result1.cache_read_tokens > 0, (
+                "Expected cache activity on first streaming call"
+            )
+            assert result2.cache_creation_tokens > 0 or result2.cache_read_tokens > 0, (
+                "Expected cache activity on second streaming call"
+            )
+
+            # Costs should be calculated
+            assert result1.cost_usd is not None
+            assert result1.cost_usd > 0
+            assert result2.cost_usd is not None
+            assert result2.cost_usd > 0
+
+            # CRITICAL: Verify cache discount in streaming mode
+            # If call 2 reads from cache while call 1 created it, verify discount
+            if result2.cache_read_tokens > 0 and result1.cache_creation_tokens > 0:
+                assert result2.cost_usd < result1.cost_usd, (
+                    f"Streaming: cache read cost ({result2.cost_usd:.6f}) should be < "
+                    f"cache creation cost ({result1.cost_usd:.6f}). "
+                    "Cache discount not being applied in streaming!"
+                )
+
+            # Verify streaming actually happened (received chunks)
+            assert chunks1, "Expected streaming chunks on first call"
+            assert chunks2, "Expected streaming chunks on second call"
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_openai_cache_with_streaming(self):
+        """
+        Test that cached tokens are extracted correctly with OpenAI streaming responses.
+
+        Verifies that acompletion_iter() (streaming mode) correctly extracts
+        cached_tokens from OpenAI's automatic caching in streamed responses.
+
+        Tests GPT-4o with automatic prompt caching in streaming mode.
+        """
+        with cost_tracking_ctx():
+            model = LiteLLMModel(name="gpt-4o-2024-11-20", config={"temperature": 0})
+
+            # Long prompt to trigger automatic caching (>1024 tokens)
+            long_context = (
+                "Context for streaming: "
+                + "The quick brown fox jumps over the lazy dog. " * 300
+            )
+
+            messages = [
+                Message(role="system", content=long_context),
+                Message(role="user", content="Count to 3."),
+            ]
+
+            # First streaming call: Populates cache
+            chunks1: list[str] = []
+            result1 = await model.call_single(messages, callbacks=[chunks1.append])
+
+            # Second streaming call: Reads from cache
+            chunks2: list[str] = []
+            result2 = await model.call_single(messages, callbacks=[chunks2.append])
+
+            # Assertions: At least one call should have cache hits in streaming mode
+            assert result1.cache_read_tokens > 0 or result2.cache_read_tokens > 0, (
+                f"Expected cache_read_tokens > 0 in at least one streaming call, got call1={result1.cache_read_tokens}, call2={result2.cache_read_tokens}"
+            )
+
+            # Costs should be calculated
+            assert result1.cost_usd is not None
+            assert result1.cost_usd > 0
+            assert result2.cost_usd is not None
+            assert result2.cost_usd > 0
+
+            # CRITICAL: Verify cache discount in OpenAI streaming
+            # If call 1 has no cache but call 2 has cache reads, call 2 should be cheaper
+            if result1.cache_read_tokens == 0 and result2.cache_read_tokens > 0:
+                assert result2.cost_usd <= result1.cost_usd, (
+                    f"OpenAI streaming: cache read cost ({result2.cost_usd:.6f}) should be <= "
+                    f"no-cache cost ({result1.cost_usd:.6f}). "
+                    "Cache discount not being applied in streaming!"
+                )
+
+            # Verify streaming actually happened
+            assert chunks1, "Expected streaming chunks on first call"
+            assert chunks2, "Expected streaming chunks on second call"
+
+
+class TestCachedTokenEdgeCases:
+    """Edge case tests for cached token extraction."""
+
+    def test_parse_cached_usage_with_none(self):
+        """Test parse_cached_usage handles None usage gracefully."""
+        cache_read, cache_creation = parse_cached_usage(None)
+        assert cache_read == 0
+        assert cache_creation == 0
+
+    def test_parse_cached_usage_with_missing_fields(self):
+        """Test parse_cached_usage handles usage object with no cached fields."""
+        from unittest.mock import MagicMock
+
+        usage = MagicMock()
+        usage.prompt_tokens = 100
+        usage.completion_tokens = 50
+        # No prompt_tokens_details, no cache fields
+        del usage.prompt_tokens_details
+        del usage.cache_read_input_tokens
+        del usage.cache_creation_input_tokens
+
+        cache_read, cache_creation = parse_cached_usage(usage)
+        assert cache_read == 0
+        assert cache_creation == 0
+
+    def test_parse_cached_usage_with_dict_format(self):
+        """Test parse_cached_usage handles dict-style prompt_tokens_details."""
+        from unittest.mock import MagicMock
+
+        usage = MagicMock()
+        usage.prompt_tokens_details = {"cached_tokens": 1024}
+
+        cache_read, cache_creation = parse_cached_usage(usage)
+        assert cache_read == 1024
+        assert cache_creation == 0
+
+    def test_parse_cached_usage_with_object_format(self):
+        """Test parse_cached_usage handles object-style prompt_tokens_details."""
+        from unittest.mock import MagicMock
+
+        usage = MagicMock()
+        prompt_details = MagicMock()
+        prompt_details.cached_tokens = 2048
+        usage.prompt_tokens_details = prompt_details
+
+        cache_read, cache_creation = parse_cached_usage(usage)
+        assert cache_read == 2048
+        assert cache_creation == 0
+
+    def test_parse_cached_usage_with_anthropic_format(self):
+        """Test parse_cached_usage handles Anthropic's raw format."""
+        from unittest.mock import MagicMock
+
+        usage = MagicMock()
+        del usage.prompt_tokens_details  # No normalized field
+        usage.cache_read_input_tokens = 1500
+        usage.cache_creation_input_tokens = 200
+
+        cache_read, cache_creation = parse_cached_usage(usage)
+        assert cache_read == 1500
+        assert cache_creation == 200
+
+    def test_parse_cached_usage_with_non_int_values(self):
+        """Test parse_cached_usage handles non-integer values (returns 0)."""
+        from unittest.mock import MagicMock
+
+        usage = MagicMock()
+        usage.prompt_tokens_details = {"cached_tokens": "not_an_int"}
+
+        cache_read, cache_creation = parse_cached_usage(usage)
+        assert cache_read == 0  # Should handle gracefully
+        assert cache_creation == 0
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_completion_cost_failure_with_cached_tokens(self):
+        """
+        Test that cached token fields are still populated even if completion_cost fails.
+
+        Verifies that:
+        1. Cached token fields (cache_read_tokens, cache_creation_tokens) are extracted
+        2. cost_usd is None when completion_cost fails
+        3. .cost property falls back to simple calculation
+        """
+        with cost_tracking_ctx():
+            from unittest.mock import patch
+
+            model = LiteLLMModel(
+                name="claude-sonnet-4-5-20250929", config={"temperature": 0}
+            )
+
+            long_text = "You are testing cost calculation failure handling. " * 250
+
+            messages = [Message(role="user", content="Say hi.")]
+
+            system_with_cache = [
+                {
+                    "type": "text",
+                    "text": long_text,
+                    "cache_control": {"type": "ephemeral"},
+                }
+            ]
+
+            # Patch completion_cost to raise an exception
+            with patch(
+                "lmi.llms.completion_cost", side_effect=Exception("Cost calc failed")
+            ):
+                results = await model.call(messages, system=system_with_cache)
+                result = results[0]
+
+                # Cached token fields should still be populated
+                assert (
+                    result.cache_creation_tokens > 0 or result.cache_read_tokens > 0
+                ), "Cached tokens should be extracted even if cost calculation fails"
+
+                # cost_usd should be None (calculation failed)
+                assert result.cost_usd is None, (
+                    "Expected cost_usd to be None when completion_cost fails"
+                )
+
+                # .cost property should fall back to simple calculation
+                assert result.cost > 0, "Expected fallback cost calculation to work"

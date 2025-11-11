@@ -76,6 +76,24 @@ class LLMResult(BaseModel):
     completion_count: int = 0
     model: str
     date: str = Field(default_factory=datetime.now().isoformat)
+
+    # Cached token counts (normalized across providers)
+    # - Anthropic: cache_read_input_tokens, cache_creation_input_tokens
+    # - OpenAI: prompt_tokens_details.cached_tokens (read only)
+    cache_read_tokens: int = Field(
+        default=0,
+        description="Tokens read from cache (Anthropic/OpenAI). Default 0 means no cache hits.",
+    )
+    cache_creation_tokens: int = Field(
+        default=0,
+        description="Tokens written to cache (Anthropic only). Default 0 means no cache creation.",
+    )
+
+    # Store accurate cost from litellm (handles all pricing tiers and provider quirks)
+    cost_usd: float | None = Field(
+        default=None,
+        description="Calculated by litellm.completion_cost(). Accurate for cached tokens.",
+    )
     seconds_to_first_token: float = Field(
         default=0.0, description="Delta time (sec) to first response token's arrival."
     )
@@ -98,7 +116,16 @@ class LLMResult(BaseModel):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def cost(self) -> float:
-        """Return the cost of the result in dollars."""
+        """Return the cost of the result in dollars.
+
+        Uses litellm.completion_cost() result if available (accurate for cached tokens).
+        Falls back to simple calculation (inaccurate for cached tokens).
+        """
+        # Prefer the accurate cost from litellm
+        if self.cost_usd is not None:
+            return self.cost_usd
+
+        # Fallback: simple calculation (DOES NOT account for cached tokens)
         if self.prompt_count and self.completion_count:
             try:
                 pc = litellm.model_cost[self.model]["input_cost_per_token"]

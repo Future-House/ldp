@@ -4,6 +4,7 @@ __all__ = [
     "LiteLLMModel",
     "PassThroughRouter",
     "extract_top_logprobs",
+    "parse_cached_usage",
     "rate_limited",
     "request_limited",
     "sum_logprobs",
@@ -40,6 +41,7 @@ from aviary.core import (
     is_coroutine_callable,
 )
 from aviary.message import MalformedMessageError
+from litellm import completion_cost
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -66,6 +68,52 @@ logger = logging.getLogger(__name__)
 REFUSAL_REASON = (
     "refusal",  # Anthropic safety filter
 )
+
+
+def parse_cached_usage(usage) -> tuple[int, int]:
+    """Parse cached token counts from LiteLLM usage object.
+
+    Args:
+        usage: LiteLLM usage object (from ModelResponse.usage or streaming chunk.usage)
+
+    Returns:
+        Tuple of (cache_read_tokens, cache_creation_tokens)
+
+    Note:
+        - OpenAI: Uses prompt_tokens_details.cached_tokens (read only)
+        - Anthropic: Uses cache_read_input_tokens and cache_creation_input_tokens
+        - Returns (0, 0) if no cached tokens found or usage is None
+    """
+    cache_read = 0
+    cache_creation = 0
+
+    if not usage:
+        return cache_read, cache_creation
+
+    # Cache reads: Try normalized format first, then Anthropic-specific
+    # LiteLLM *usually* normalizes to prompt_tokens_details.cached_tokens,
+    # but Anthropic responses may have cache_read_input_tokens at top level
+    if hasattr(usage, "prompt_tokens_details"):
+        prompt_details = getattr(usage, "prompt_tokens_details", None)
+        if prompt_details:
+            cached_val = (
+                prompt_details.get("cached_tokens", 0)
+                if isinstance(prompt_details, dict)
+                else getattr(prompt_details, "cached_tokens", 0)
+            )
+            cache_read = cached_val if isinstance(cached_val, int) else 0
+
+    # Fallback: Anthropic's raw cache_read_input_tokens (for cases where LiteLLM doesn't normalize)
+    if cache_read == 0:
+        cached_val = getattr(usage, "cache_read_input_tokens", 0)
+        cache_read = cached_val if isinstance(cached_val, int) else 0
+
+    # Cache creation: Anthropic ONLY, at top level (not normalized by LiteLLM)
+    cached_val = getattr(usage, "cache_creation_input_tokens", 0)
+    cache_creation = cached_val if isinstance(cached_val, int) else 0
+
+    return cache_read, cache_creation
+
 
 if not IS_PYTHON_BELOW_312:
     _DeploymentTypedDictValidator = TypeAdapter(
@@ -785,7 +833,9 @@ class LiteLLMModel(LLMModel):
     # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
-    async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:
+    async def acompletion(  # noqa: C901
+        self, messages: list[Message], **kwargs
+    ) -> list[LLMResult]:
         override_config = kwargs.pop("override_config", None)
         if override_config:
             override_config = OverrideRouterConfig(**override_config)
@@ -832,6 +882,18 @@ class LiteLLMModel(LLMModel):
 
         used_model = completions.model or self.name
         results: list[LLMResult] = []
+
+        # Extract cached token fields and calculate cost
+        cache_read, cache_creation = parse_cached_usage(
+            completions.usage  # type: ignore[attr-defined]
+        )
+
+        # Calculate accurate cost using litellm (handles all pricing tiers and provider quirks)
+        cost = None
+        try:
+            cost = completion_cost(completion_response=completions, model=used_model)
+        except Exception as e:
+            logger.warning(f"Failed to calculate cost for {used_model}: {e}")
 
         # We are not streaming here, so we can cast to list[litellm.utils.Choices]
         choices = cast("list[litellm.utils.Choices]", completions.choices)
@@ -884,6 +946,9 @@ class LiteLLMModel(LLMModel):
                     top_logprobs=extract_top_logprobs(choice),
                     prompt_count=completions.usage.prompt_tokens,  # type: ignore[attr-defined]
                     completion_count=completions.usage.completion_tokens,  # type: ignore[attr-defined]
+                    cache_read_tokens=cache_read,
+                    cache_creation_tokens=cache_creation,
+                    cost_usd=cost,
                     system_fingerprint=completions.system_fingerprint,
                     reasoning_content=reasoning_content,
                 )
@@ -956,6 +1021,19 @@ class LiteLLMModel(LLMModel):
         if hasattr(completion, "usage"):
             result.prompt_count = completion.usage.prompt_tokens
             result.completion_count = completion.usage.completion_tokens
+
+            # Extract cached token fields
+            cache_read, cache_creation = parse_cached_usage(completion.usage)
+            result.cache_read_tokens = cache_read
+            result.cache_creation_tokens = cache_creation
+
+            # Calculate accurate cost using litellm
+            try:
+                result.cost_usd = completion_cost(
+                    completion_response=completion, model=used_model
+                )
+            except Exception as e:
+                logger.warning(f"Failed to calculate cost for {used_model}: {e}")
 
         yield result
 
