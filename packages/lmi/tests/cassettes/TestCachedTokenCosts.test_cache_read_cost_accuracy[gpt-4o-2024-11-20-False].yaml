@@ -1,12 +1,7 @@
 interactions:
   - request:
       body:
-        '{"model":"claude-sonnet-4-5-20250929","messages":[{"role":"user","content":[{"type":"text","text":"Summarize
-        your task in one sentence."}]}],"temperature":0,"system":[{"type":"text","text":"You
-        are analyzing a large document. You are analyzing a large document. You are
-        analyzing a large document. You are analyzing a large document. You are analyzing
-        a large document. You are analyzing a large document. You are analyzing a large
-        document. You are analyzing a large document. You are analyzing a large document.
+        '{"messages":[{"role":"system","content":"You are analyzing a large document.
         You are analyzing a large document. You are analyzing a large document. You
         are analyzing a large document. You are analyzing a large document. You are
         analyzing a large document. You are analyzing a large document. You are analyzing
@@ -116,39 +111,65 @@ interactions:
         are analyzing a large document. You are analyzing a large document. You are
         analyzing a large document. You are analyzing a large document. You are analyzing
         a large document. You are analyzing a large document. You are analyzing a large
-        document. You are analyzing a large document. ","cache_control":{"type":"ephemeral"}}],"max_tokens":4096}'
+        document. You are analyzing a large document. You are analyzing a large document.
+        You are analyzing a large document. You are analyzing a large document. You
+        are analyzing a large document. You are analyzing a large document. You are
+        analyzing a large document. You are analyzing a large document. You are analyzing
+        a large document. "},{"role":"user","content":"Summarize your task in one sentence."}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0}'
       headers:
         accept:
           - application/json
         accept-encoding:
           - gzip, deflate
-        anthropic-version:
-          - "2023-06-01"
         connection:
           - keep-alive
         content-length:
-          - "9249"
+          - "9160"
         content-type:
           - application/json
         host:
-          - api.anthropic.com
+          - api.openai.com
         user-agent:
-          - litellm/1.79.3
+          - AsyncOpenAI/Python 2.7.2
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 2.7.2
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "60.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.8
       method: POST
-      uri: https://api.anthropic.com/v1/messages
+      uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA2SR0WrcQAxFf0XoebaMnZiQeSzkIfQD0lKCUTzCnqytcUaaTdJl/714SWi7fRLc
-          c3UvQkdccuQZAw4z1cg7zSJsu+tdt2t92/nb9hYdpogBFx173zzk/Q19PzxMdy9Xhx9Tbr5df7Vn
-          dGjvK28uVqWR0WHJ8yaQalIjMXQ4ZDEWw/Dz+Ok3ftvIeQS8B2GOYBlIaH7/xUAwUxkZYh7qwmJA
-          EmEt+ZAiQxJN42QKuYDWZaGSWOGJlCNkgWQKH5UOXnPZJxnhNdmUBAha7533HizvWeCpxpHtC54e
-          HarltS9MmgUDssTeahH8AMovlWVgDFLn2WE93xuOmGSt1p/jFEPTORxomLgfCpOlLP2/Bv/JC1O8
-          YM1N116ubxW8Trxwobnvlv/j/tBmuqQnh7na39JV61C5HNLAvSUuGHD7U6QS8XT6DQAA//8DAFpf
-          dGQaAgAA
+          H4sIAAAAAAAAA3RSwW7bMAy9+ysInZPCMbImzW1LMbToacDQy1AYjETbWmRRkJiiWZF/H+Skibu1
+          FwPm43t6j+RrAaCsUStQukPRfXDTNe7d+vaHeVzfb+/W8QG/fb1Lt9vvj9vlzwc1yQze/CYtb6wr
+          zX1wJJb9EdaRUCirzhbX1U11My+vB6BnQy7T2iDTOU+rsppPZ7NpVZ6IHVtNSa3gVwEA8Dp8s0Vv
+          6EWtoJy8VXpKCVtSq3MTgIrsckVhSjYJelGTC6jZC/nB9T1gD+jR7f9Y3wJ6AyGyppTyr3QEp2bg
+          BhAcxpbAsN71uSYM9CIRtUAkR8/oBaxvOPaYZwAcwfpk207S1dhApGaXMOf3O+dGAHrPMnCH6E8n
+          5HAO67gNkTfpH6pqrLepqyNhYp+DJeGgBvRQADwNQ929m5MKkfsgtfCWhudmi8XsKKguexzByxMo
+          LOjGtOXN5APF2pCgdWm0GKVRd2RG3LKanzPgzli+YGUxiv6/o4/kj/Gtb0cqn8pfAK0pCJk6RDJW
+          v099aYuUT/2ztvOoB8MqUXy2mmqxFPM6DDW4c8crVGmfhPq6sb6lGKI9nmIT6k25qb405UaTKg7F
+          XwAAAP//AwCBrbzWkwMAAA==
       headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
         CF-RAY:
-          - 99cbd5225e59ebe7-SJC
+          - 99d404552d442832-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -156,54 +177,57 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 11 Nov 2025 06:46:30 GMT
-        Retry-After:
-          - "34"
+          - Wed, 12 Nov 2025 06:36:47 GMT
         Server:
           - cloudflare
+        Set-Cookie:
+          - __cf_bm=x1VzvR3fKE_YAoAG0RRUlR8ztwTSFGUPw1CvaQ4zgA8-1762929407-1.0.1.1-VGhlmj5DwyT7cB.oftD0F7c63GVKKXNzG7swn8p4BHKvgHndJTlME7r.gNqxL7DlN55dXnW6paLfK03FS0aEHqHQcHsXMijKz9f73i8sXtc;
+            path=/; expires=Wed, 12-Nov-25 07:06:47 GMT; domain=.api.openai.com; HttpOnly;
+            Secure; SameSite=None
+          - _cfuvid=0UzhgaRlJNosr8AiRXnKK2v9D2RzzUIRPlEEiApmKV8-1762929407623-0.0.1.1-604800000;
+            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+        Strict-Transport-Security:
+          - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
-        X-Robots-Tag:
-          - none
-        anthropic-organization-id:
-          - f2c99ed9-038a-406f-9cb5-1f840b758a20
-        anthropic-ratelimit-input-tokens-limit:
-          - "50000000"
-        anthropic-ratelimit-input-tokens-remaining:
-          - "50000000"
-        anthropic-ratelimit-input-tokens-reset:
-          - "2025-11-11T06:46:29Z"
-        anthropic-ratelimit-output-tokens-limit:
-          - "10000000"
-        anthropic-ratelimit-output-tokens-remaining:
-          - "10000000"
-        anthropic-ratelimit-output-tokens-reset:
-          - "2025-11-11T06:46:30Z"
-        anthropic-ratelimit-tokens-limit:
-          - "60000000"
-        anthropic-ratelimit-tokens-remaining:
-          - "60000000"
-        anthropic-ratelimit-tokens-reset:
-          - "2025-11-11T06:46:29Z"
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
         cf-cache-status:
           - DYNAMIC
-        request-id:
-          - req_011CV1eo7iq5s4r1nkN6dE8A
-        strict-transport-security:
-          - max-age=31536000; includeSubDomains; preload
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "1215"
+        openai-project:
+          - proj_gjPFWJzxsj6depZLFdKd2Yk4
+        openai-version:
+          - "2020-10-01"
         x-envoy-upstream-service-time:
-          - "3513"
+          - "1229"
+        x-openai-proxy-wasm:
+          - v0.1
+        x-ratelimit-limit-requests:
+          - "10000"
+        x-ratelimit-limit-tokens:
+          - "30000000"
+        x-ratelimit-remaining-requests:
+          - "9999"
+        x-ratelimit-remaining-tokens:
+          - "29997738"
+        x-ratelimit-reset-requests:
+          - 6ms
+        x-ratelimit-reset-tokens:
+          - 4ms
+        x-request-id:
+          - req_d569bb932f8e4b06b186666c29773fcc
       status:
         code: 200
         message: OK
   - request:
       body:
-        '{"model":"claude-sonnet-4-5-20250929","messages":[{"role":"user","content":[{"type":"text","text":"Summarize
-        your task in one sentence."}]}],"temperature":0,"system":[{"type":"text","text":"You
-        are analyzing a large document. You are analyzing a large document. You are
-        analyzing a large document. You are analyzing a large document. You are analyzing
-        a large document. You are analyzing a large document. You are analyzing a large
-        document. You are analyzing a large document. You are analyzing a large document.
+        '{"messages":[{"role":"system","content":"You are analyzing a large document.
         You are analyzing a large document. You are analyzing a large document. You
         are analyzing a large document. You are analyzing a large document. You are
         analyzing a large document. You are analyzing a large document. You are analyzing
@@ -313,39 +337,67 @@ interactions:
         are analyzing a large document. You are analyzing a large document. You are
         analyzing a large document. You are analyzing a large document. You are analyzing
         a large document. You are analyzing a large document. You are analyzing a large
-        document. You are analyzing a large document. ","cache_control":{"type":"ephemeral"}}],"max_tokens":4096}'
+        document. You are analyzing a large document. You are analyzing a large document.
+        You are analyzing a large document. You are analyzing a large document. You
+        are analyzing a large document. You are analyzing a large document. You are
+        analyzing a large document. You are analyzing a large document. You are analyzing
+        a large document. "},{"role":"user","content":"What is your objective?"}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0}'
       headers:
         accept:
           - application/json
         accept-encoding:
           - gzip, deflate
-        anthropic-version:
-          - "2023-06-01"
         connection:
           - keep-alive
         content-length:
-          - "9249"
+          - "9147"
         content-type:
           - application/json
         host:
-          - api.anthropic.com
+          - api.openai.com
         user-agent:
-          - litellm/1.79.3
+          - AsyncOpenAI/Python 2.7.2
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 2.7.2
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "60.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.12.8
       method: POST
-      uri: https://api.anthropic.com/v1/messages
+      uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//ZJFBa9xADIX/itB5Nsw6Ne3OLaQ5pJRceimUYhSPsKexNe5Is+l22f9e
-          vCS03ZwE73t6D6EjzjnyhAH7iWrkjWYRts27TbtpfNP6XbNDhyliwFmHzm9v9+Ph0/XnD7sb+7o0
-          D/UL3338QejQDguvLlalgdFhydMqkGpSIzF02GcxFsPw7fjqN/61kvMIeA/CHMEykNB0+M1AMFEZ
-          GGLu68xiQBJhKXmfIkMSTcNoCrmA1nmmkljhkZQjZIFkCi+VDp5zeUoywHOyMQkQNN477z1YfmKB
-          xxoHtis8fXeolpeuMGkWDMgSO6tF8AUo/6wsPWOQOk0O6/necMQkS7XuHKcYtq3DnvqRu74wWcrS
-          /W/wr7wwxQu2fd82l+trBS8jz1xo6tr5bdxfuh0v6clhrvavdN04VC771HNniQsGXP8UqUQ8nf4A
-          AAD//wMAfubLKhoCAAA=
+          H4sIAAAAAAAAAwAAAP//dFPLbtswELz7K7a89CIHsuBH4mPSS/oAEvQFpAgEmlpJbCguS67suoH/
+          vaDkWEqbXARhZ2c4w10+TgCELsQahKolq8aZ6ZXcm3cf7m7Sr3e3d1/UZ7N4f7X8try8ub5tLkUS
+          GbT5iYqfWGeKGmeQNdkeVh4lY1SdrZbZRXYxT1cd0FCBJtIqx9M5TbM0m09ns2mWHok1aYVBrOHH
+          BADgsftGi7bA32INafJUaTAEWaFYn5oAhCcTK0KGoANLyyIZQEWW0XauP+2hj6C3CDoAE/QUkLYA
+          52mrCwSpVOslYwI1Gle2Julgjwa30jJoW5JvZMwN5CGQaeN/J7en1sOvFkNfIQ8sw0M4g+81co0e
+          NL8NIG3Yode2GloTCG3TSK//xPLoiAQqtOgld/UCZUiibLQWKzvNdXS+MdhMA5mttlUCzR4qkuaY
+          MbTOkedoDrAs+/xm36XCstRKo2WzP4OPyNAgPFjaQU07uAYlbXfUm/GNeizbIONAbWvMCJDWEneu
+          u1neH5HDaXqGqug1/EMVpbY61LlHGcjGSQUmJzr0MAG477akfTZ44Tw1jnOmB+yOm62Wq15QDIs5
+          wIvzI8jE0oxo59kieUExL5ClNmG0aUJJVWMx4i6X81MG2RaaBiydjKL/7+gl+T6+ttVI5VX5AVAK
+          HWORO4+FVs9TD20e4+K/1na66s6wCOi3WmHOGn0cR4GlbE3/rETYB8YmL7Wt0Duv+7dVunyTbrJF
+          mW4Uislh8hcAAP//AwD1oo+UZAQAAA==
       headers:
+        Access-Control-Expose-Headers:
+          - X-Request-ID
         CF-RAY:
-          - 99cbd538fd08ebe7-SJC
+          - 99d4045dd8812832-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -353,43 +405,45 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 11 Nov 2025 06:46:34 GMT
-        Retry-After:
-          - "27"
+          - Wed, 12 Nov 2025 06:36:49 GMT
         Server:
           - cloudflare
+        Strict-Transport-Security:
+          - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
-        X-Robots-Tag:
-          - none
-        anthropic-organization-id:
-          - f2c99ed9-038a-406f-9cb5-1f840b758a20
-        anthropic-ratelimit-input-tokens-limit:
-          - "50000000"
-        anthropic-ratelimit-input-tokens-remaining:
-          - "50000000"
-        anthropic-ratelimit-input-tokens-reset:
-          - "2025-11-11T06:46:33Z"
-        anthropic-ratelimit-output-tokens-limit:
-          - "10000000"
-        anthropic-ratelimit-output-tokens-remaining:
-          - "10000000"
-        anthropic-ratelimit-output-tokens-reset:
-          - "2025-11-11T06:46:34Z"
-        anthropic-ratelimit-tokens-limit:
-          - "60000000"
-        anthropic-ratelimit-tokens-remaining:
-          - "60000000"
-        anthropic-ratelimit-tokens-reset:
-          - "2025-11-11T06:46:33Z"
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
         cf-cache-status:
           - DYNAMIC
-        request-id:
-          - req_011CV1eoPGiFvEfjjsCt7sbZ
-        strict-transport-security:
-          - max-age=31536000; includeSubDomains; preload
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "1430"
+        openai-project:
+          - proj_gjPFWJzxsj6depZLFdKd2Yk4
+        openai-version:
+          - "2020-10-01"
         x-envoy-upstream-service-time:
-          - "3592"
+          - "1444"
+        x-openai-proxy-wasm:
+          - v0.1
+        x-ratelimit-limit-requests:
+          - "10000"
+        x-ratelimit-limit-tokens:
+          - "30000000"
+        x-ratelimit-remaining-requests:
+          - "9999"
+        x-ratelimit-remaining-tokens:
+          - "29997741"
+        x-ratelimit-reset-requests:
+          - 6ms
+        x-ratelimit-reset-tokens:
+          - 4ms
+        x-request-id:
+          - req_0a39496859e84c4fa6678f0653f702ba
       status:
         code: 200
         message: OK

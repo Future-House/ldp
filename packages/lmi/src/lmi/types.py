@@ -11,7 +11,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    computed_field,
 )
 
 logger = logging.getLogger(__name__)
@@ -95,10 +94,9 @@ class LLMResult(BaseModel):
         ),
     )
 
-    # Store accurate cost from litellm (handles all pricing tiers and provider quirks)
-    cost_usd: float | None = Field(
-        default=None,
-        description="Calculated by litellm.completion_cost(). Accurate for cached tokens.",
+    cost: float = Field(
+        default=0.0,
+        description="Cost (USD).",
     )
     seconds_to_first_token: float = Field(
         default=0.0, description="Delta time (sec) to first response token's arrival."
@@ -118,28 +116,6 @@ class LLMResult(BaseModel):
 
     def __str__(self) -> str:
         return self.text or ""
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def cost(self) -> float:
-        """Return the cost of the result in dollars.
-
-        Uses litellm.completion_cost() result if available (accurate for cached tokens).
-        Falls back to simple calculation (inaccurate for cached tokens).
-        """
-        # Prefer the accurate cost from litellm
-        if self.cost_usd is not None:
-            return self.cost_usd
-
-        # Fallback: simple calculation (DOES NOT account for cached tokens)
-        if self.prompt_count and self.completion_count:
-            try:
-                pc = litellm.model_cost[self.model]["input_cost_per_token"]
-                oc = litellm.model_cost[self.model]["output_cost_per_token"]
-                return pc * self.prompt_count + oc * self.completion_count
-            except KeyError:
-                logger.warning(f"Could not find cost for model {self.model}.")
-        return 0.0
 
     # TODO: These two methods were implemented in ldp, but not in pqa.
     # TODO: Check if they're necessary

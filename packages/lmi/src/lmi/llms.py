@@ -75,17 +75,17 @@ def parse_cached_usage(usage: Usage | None) -> tuple[int | None, int | None]:
     """Parse cached token counts from LiteLLM usage object.
 
     Args:
-        usage: LiteLLM usage object (from ModelResponse.usage or streaming chunk.usage)
+        usage: LiteLLM usage object containing token usage metadata.
+            None for streaming intermediate chunks (only final chunk includes usage).
 
     Returns:
-        Tuple of (cache_read_tokens, cache_creation_tokens)
-        - Returns (None, None) if usage is None or no cached token fields present
-        - Returns integer values (including 0) only when LLM actually provides cached token fields
+        Tuple of (cache_read_tokens, cache_creation_tokens):
+        - (None, None) if usage is None or provider doesn't support caching
+        - (int, int) where values can be 0 if caching is supported but had no cache hits/creation
 
-    Note:
-        - OpenAI: Uses prompt_tokens_details.cached_tokens (read only)
-        - Anthropic: Uses cache_read_input_tokens and cache_creation_input_tokens
-        - None means "caching wasn't used", 0 means "caching was used but nothing got cached"
+    Provider support:
+        - OpenAI: cache_read via prompt_tokens_details.cached_tokens (no creation tracking)
+        - Anthropic: cache_read and cache_creation via dedicated fields
     """
     if not usage:
         return None, None
@@ -882,16 +882,17 @@ class LiteLLMModel(LLMModel):
         used_model = completions.model or self.name
         results: list[LLMResult] = []
 
-        # Extract cached token fields and calculate cost
-        cache_read, cache_creation = parse_cached_usage(
-            completions.usage  # type: ignore[attr-defined]
-        )
+        # Use getattr because ModelResponse.usage not in LiteLLM's type hints
+        # In practice, usage always exists in non-streaming responses
+        usage = getattr(completions, "usage", None)
+        prompt_count = usage.prompt_tokens if usage else 0
+        completion_count = usage.completion_tokens if usage else 0
+        cache_read, cache_creation = parse_cached_usage(usage)
 
-        # Calculate accurate cost using litellm (handles all pricing tiers and provider quirks)
-        cost = None
         try:
             cost = completion_cost(completion_response=completions, model=used_model)
         except Exception as e:
+            cost = 0.0
             logger.warning(f"Failed to calculate cost for {used_model}: {e}")
 
         # We are not streaming here, so we can cast to list[litellm.utils.Choices]
@@ -943,11 +944,11 @@ class LiteLLMModel(LLMModel):
                     messages=output_messages,
                     logprob=sum_logprobs(choice),
                     top_logprobs=extract_top_logprobs(choice),
-                    prompt_count=completions.usage.prompt_tokens,  # type: ignore[attr-defined]
-                    completion_count=completions.usage.completion_tokens,  # type: ignore[attr-defined]
+                    prompt_count=prompt_count,
+                    completion_count=completion_count,
                     cache_read_tokens=cache_read,
                     cache_creation_tokens=cache_creation,
-                    cost_usd=cost,
+                    cost=cost,
                     system_fingerprint=completions.system_fingerprint,
                     reasoning_content=reasoning_content,
                 )
@@ -1021,14 +1022,12 @@ class LiteLLMModel(LLMModel):
             result.prompt_count = completion.usage.prompt_tokens
             result.completion_count = completion.usage.completion_tokens
 
-            # Extract cached token fields
             cache_read, cache_creation = parse_cached_usage(completion.usage)
             result.cache_read_tokens = cache_read
             result.cache_creation_tokens = cache_creation
 
-            # Calculate accurate cost using litellm
             try:
-                result.cost_usd = completion_cost(
+                result.cost = completion_cost(
                     completion_response=completion, model=used_model
                 )
             except Exception as e:
