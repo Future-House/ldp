@@ -4,6 +4,7 @@ __all__ = [
     "LiteLLMModel",
     "PassThroughRouter",
     "extract_top_logprobs",
+    "parse_cached_usage",
     "rate_limited",
     "request_limited",
     "sum_logprobs",
@@ -40,6 +41,8 @@ from aviary.core import (
     is_coroutine_callable,
 )
 from aviary.message import MalformedMessageError
+from litellm import completion_cost
+from litellm.types.utils import Usage
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -66,6 +69,50 @@ logger = logging.getLogger(__name__)
 REFUSAL_REASON = (
     "refusal",  # Anthropic safety filter
 )
+
+
+def parse_cached_usage(usage: Usage | None) -> tuple[int | None, int | None]:
+    """Parse cached token counts from LiteLLM usage object.
+
+    Args:
+        usage: LiteLLM usage object containing token usage metadata.
+            None for streaming intermediate chunks (only final chunk includes usage).
+
+    Returns:
+        Tuple of (cache_read_tokens, cache_creation_tokens):
+        - (None, None) if usage is None or provider doesn't support caching
+        - (int, int) where values can be 0 if caching is supported but had no cache hits/creation
+
+    Provider support:
+        - OpenAI: cache_read via prompt_tokens_details.cached_tokens (no creation tracking)
+        - Anthropic: cache_read and cache_creation via dedicated fields
+    """
+    if not usage:
+        return None, None
+
+    cache_read: int | None = None
+    cache_creation: int | None = None
+
+    # Cache reads: Both OpenAI and Anthropic use prompt_tokens_details.cached_tokens
+    if hasattr(usage, "prompt_tokens_details"):
+        prompt_details = getattr(usage, "prompt_tokens_details", None)
+        if prompt_details:
+            cached_val = (
+                prompt_details.get("cached_tokens")
+                if isinstance(prompt_details, dict)
+                else getattr(prompt_details, "cached_tokens", None)
+            )
+            if isinstance(cached_val, int):
+                cache_read = cached_val
+
+    # Cache creation: Anthropic-only field (OpenAI doesn't report cache writes)
+    if hasattr(usage, "cache_creation_input_tokens"):
+        cached_val = getattr(usage, "cache_creation_input_tokens", None)
+        if isinstance(cached_val, int):
+            cache_creation = cached_val
+
+    return cache_read, cache_creation
+
 
 if not IS_PYTHON_BELOW_312:
     _DeploymentTypedDictValidator = TypeAdapter(
@@ -392,8 +439,7 @@ class LLMModel(ABC, BaseModel):
                 results.append(result)
 
         for result in results:
-            usage = result.prompt_count, result.completion_count
-            if not sum(usage):
+            if not result.completion_count:
                 result.completion_count = self.count_tokens(cast("str", result.text))
             result.seconds_to_last_token = (
                 asyncio.get_running_loop().time() - start_clock
@@ -788,7 +834,9 @@ class LiteLLMModel(LLMModel):
     # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
-    async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:
+    async def acompletion(  # noqa: C901
+        self, messages: list[Message], **kwargs
+    ) -> list[LLMResult]:
         override_config = kwargs.pop("override_config", None)
         if override_config:
             override_config = OverrideRouterConfig(**override_config)
@@ -835,6 +883,19 @@ class LiteLLMModel(LLMModel):
 
         used_model = completions.model or self.name
         results: list[LLMResult] = []
+
+        # Use getattr because ModelResponse.usage not in LiteLLM's type hints
+        # In practice, usage always exists in non-streaming responses
+        usage = getattr(completions, "usage", None)
+        prompt_count = usage.prompt_tokens if usage else None
+        completion_count = usage.completion_tokens if usage else None
+        cache_read, cache_creation = parse_cached_usage(usage)
+
+        try:
+            cost = completion_cost(completion_response=completions, model=used_model)
+        except Exception as e:
+            cost = 0.0
+            logger.warning(f"Failed to calculate cost for {used_model}: {e}")
 
         # We are not streaming here, so we can cast to list[litellm.utils.Choices]
         choices = cast("list[litellm.utils.Choices]", completions.choices)
@@ -885,8 +946,11 @@ class LiteLLMModel(LLMModel):
                     messages=output_messages,
                     logprob=sum_logprobs(choice),
                     top_logprobs=extract_top_logprobs(choice),
-                    prompt_count=completions.usage.prompt_tokens,  # type: ignore[attr-defined]
-                    completion_count=completions.usage.completion_tokens,  # type: ignore[attr-defined]
+                    prompt_count=prompt_count,
+                    completion_count=completion_count,
+                    cache_read_tokens=cache_read,
+                    cache_creation_tokens=cache_creation,
+                    cost=cost,
                     system_fingerprint=completions.system_fingerprint,
                     reasoning_content=reasoning_content,
                 )
@@ -942,6 +1006,19 @@ class LiteLLMModel(LLMModel):
             if hasattr(delta, "reasoning_content"):
                 reasoning_content.append(delta.reasoning_content or "")
         text = "".join(outputs)
+
+        # Calculate usage info first so we can pass it during construction
+        cache_read, cache_creation, cost = None, None, 0.0
+        prompt_count, completion_count = None, None
+        if hasattr(completion, "usage"):
+            prompt_count = completion.usage.prompt_tokens
+            completion_count = completion.usage.completion_tokens
+            cache_read, cache_creation = parse_cached_usage(completion.usage)
+            try:
+                cost = completion_cost(completion_response=completion, model=used_model)
+            except Exception as e:
+                logger.warning(f"Failed to calculate cost for {used_model}: {e}")
+
         result = LLMResult(
             model=used_model,
             text=text,
@@ -950,15 +1027,17 @@ class LiteLLMModel(LLMModel):
             logprob=sum_logprobs(logprobs),
             top_logprobs=extract_top_logprobs(completion),
             reasoning_content="".join(reasoning_content),
+            prompt_count=prompt_count,
+            completion_count=completion_count,
+            cache_read_tokens=cache_read,
+            cache_creation_tokens=cache_creation,
+            cost=cost,
         )
 
         if text:
             result.seconds_to_first_token = (
                 asyncio.get_running_loop().time() - start_clock
             )
-        if hasattr(completion, "usage"):
-            result.prompt_count = completion.usage.prompt_tokens
-            result.completion_count = completion.usage.completion_tokens
 
         yield result
 

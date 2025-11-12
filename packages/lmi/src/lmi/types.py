@@ -11,7 +11,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    computed_field,
 )
 
 logger = logging.getLogger(__name__)
@@ -72,15 +71,48 @@ class LLMResult(BaseModel):
     messages: list[Message] | None = Field(
         default=None, description="Messages received from the LLM."
     )
-    prompt_count: int = 0
-    completion_count: int = 0
+    prompt_count: int | None = Field(default=None, ge=0)
+    completion_count: int | None = Field(default=None, ge=0)
     model: str
     date: str = Field(default_factory=datetime.now().isoformat)
+
+    # Cached token counts - extracted from provider-specific usage fields:
+    # - Both providers report cache reads via prompt_tokens_details.cached_tokens
+    # - Only Anthropic reports cache creation via cache_creation_input_tokens
+    cache_read_tokens: int | None = Field(
+        default=None,
+        frozen=True,
+        ge=0,
+        description=(
+            "Tokens read from cache (Anthropic/OpenAI). "
+            "None means caching wasn't used, 0 means caching was used but no cache hits."
+        ),
+    )
+    cache_creation_tokens: int | None = Field(
+        default=None,
+        frozen=True,
+        ge=0,
+        description=(
+            "Tokens written to cache (Anthropic only). "
+            "None means caching wasn't used, 0 means caching was used but no cache creation."
+        ),
+    )
+
+    cost: float = Field(
+        default=0.0,
+        frozen=True,
+        ge=0,
+        description="Cost (USD).",
+    )
     seconds_to_first_token: float = Field(
-        default=0.0, description="Delta time (sec) to first response token's arrival."
+        default=0.0,
+        ge=0,
+        description="Delta time (sec) to first response token's arrival.",
     )
     seconds_to_last_token: float = Field(
-        default=0.0, description="Delta time (sec) to last response token's arrival."
+        default=0.0,
+        ge=0,
+        description="Delta time (sec) to last response token's arrival.",
     )
     logprob: float | None = Field(
         default=None, description="Sum of logprobs in the completion."
@@ -94,19 +126,6 @@ class LLMResult(BaseModel):
 
     def __str__(self) -> str:
         return self.text or ""
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def cost(self) -> float:
-        """Return the cost of the result in dollars."""
-        if self.prompt_count and self.completion_count:
-            try:
-                pc = litellm.model_cost[self.model]["input_cost_per_token"]
-                oc = litellm.model_cost[self.model]["output_cost_per_token"]
-                return pc * self.prompt_count + oc * self.completion_count
-            except KeyError:
-                logger.warning(f"Could not find cost for model {self.model}.")
-        return 0.0
 
     # TODO: These two methods were implemented in ldp, but not in pqa.
     # TODO: Check if they're necessary
