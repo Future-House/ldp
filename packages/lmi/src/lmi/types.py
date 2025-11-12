@@ -71,8 +71,8 @@ class LLMResult(BaseModel):
     messages: list[Message] | None = Field(
         default=None, description="Messages received from the LLM."
     )
-    prompt_count: int = 0
-    completion_count: int = 0
+    prompt_count: int | None = Field(default=None, ge=0)
+    completion_count: int | None = Field(default=None, ge=0)
     model: str
     date: str = Field(default_factory=datetime.now().isoformat)
 
@@ -81,6 +81,8 @@ class LLMResult(BaseModel):
     # - Only Anthropic reports cache creation via cache_creation_input_tokens
     cache_read_tokens: int | None = Field(
         default=None,
+        frozen=True,
+        ge=0,
         description=(
             "Tokens read from cache (Anthropic/OpenAI). "
             "None means caching wasn't used, 0 means caching was used but no cache hits."
@@ -88,6 +90,8 @@ class LLMResult(BaseModel):
     )
     cache_creation_tokens: int | None = Field(
         default=None,
+        frozen=True,
+        ge=0,
         description=(
             "Tokens written to cache (Anthropic only). "
             "None means caching wasn't used, 0 means caching was used but no cache creation."
@@ -96,13 +100,19 @@ class LLMResult(BaseModel):
 
     cost: float = Field(
         default=0.0,
+        frozen=True,
+        ge=0,
         description="Cost (USD).",
     )
     seconds_to_first_token: float = Field(
-        default=0.0, description="Delta time (sec) to first response token's arrival."
+        default=0.0,
+        ge=0,
+        description="Delta time (sec) to first response token's arrival.",
     )
     seconds_to_last_token: float = Field(
-        default=0.0, description="Delta time (sec) to last response token's arrival."
+        default=0.0,
+        ge=0,
+        description="Delta time (sec) to last response token's arrival.",
     )
     logprob: float | None = Field(
         default=None, description="Sum of logprobs in the completion."

@@ -232,6 +232,7 @@ class TestLiteLLMModel:
             ),
         ])
         assert isinstance(result, LLMResult)
+        assert result.prompt_count is not None
         assert result.prompt_count > 0
         assert result.cost > 0
         assert (result.text or "").strip().rstrip(".").lower() == "no square"
@@ -262,9 +263,11 @@ class TestLiteLLMModel:
         assert isinstance(result.text, str)
         assert "red" in result.text.lower()
         assert result.seconds_to_last_token > 0
-        assert result.prompt_count > 1.25 * no_image_prompt_count, (
-            "Image usage should require more prompt tokens"
-        )
+        assert (  # noqa: PT018
+            result.prompt_count is not None
+            and result.prompt_count > 1.25 * no_image_prompt_count
+        ), "Image usage should require more prompt tokens"
+        assert result.completion_count is not None
         assert result.completion_count > 0
         assert result.cost > 1.25 * no_image_cost, (
             f"Image usage should require higher cost. For reference,"
@@ -287,7 +290,9 @@ class TestLiteLLMModel:
         assert isinstance(result.text, str)
         assert "red" in result.text.lower()
         assert result.seconds_to_last_token > 0
+        assert result.prompt_count is not None
         assert result.prompt_count > 0
+        assert result.completion_count is not None
         assert result.completion_count > 0
         assert result.cost > 0
 
@@ -344,7 +349,9 @@ class TestLiteLLMModel:
         )
         assert completion.model == CommonLLMNames.OPENAI_TEST.value
         assert completion.seconds_to_last_token > 0
+        assert completion.prompt_count is not None
         assert completion.prompt_count > 0
+        assert completion.completion_count is not None
         assert completion.completion_count > 0
         assert str(completion) == "".join(outputs)
         assert completion.cost > 0
@@ -371,7 +378,10 @@ class TestLiteLLMModel:
                 max_tokens=1000,
             )
             assert completion.cost > 0
-            assert completion.completion_count > 100, "Expected a long completion"
+            assert (  # noqa: PT018
+                completion.completion_count is not None
+                and completion.completion_count > 100
+            ), "Expected a long completion"
 
         with subtests.test(msg="autowraps message"):
 
@@ -603,7 +613,9 @@ class TestMultipleCompletion:
         assert len(results) == self.NUM_COMPLETIONS
 
         for result in results:
+            assert result.prompt_count is not None
             assert result.prompt_count > 0
+            assert result.completion_count is not None
             assert result.completion_count > 0
             assert result.cost > 0
         if model.config["model_list"][0]["litellm_params"].get("logprobs"):
@@ -966,7 +978,9 @@ class TestReasoning:
         ])
         assert result.text
         assert expected_len[0] <= len(result.text) <= expected_len[1]
+        assert result.prompt_count is not None
         assert result.prompt_count > 0
+        assert result.completion_count is not None
         assert result.completion_count > 0
         if litellm.get_llm_provider(model=model.value)[1] == "anthropic":
             assert result.reasoning_content

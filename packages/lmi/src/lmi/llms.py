@@ -439,8 +439,7 @@ class LLMModel(ABC, BaseModel):
                 results.append(result)
 
         for result in results:
-            usage = result.prompt_count, result.completion_count
-            if not sum(usage):
+            if not result.completion_count:
                 result.completion_count = self.count_tokens(cast("str", result.text))
             result.seconds_to_last_token = (
                 asyncio.get_running_loop().time() - start_clock
@@ -885,8 +884,8 @@ class LiteLLMModel(LLMModel):
         # Use getattr because ModelResponse.usage not in LiteLLM's type hints
         # In practice, usage always exists in non-streaming responses
         usage = getattr(completions, "usage", None)
-        prompt_count = usage.prompt_tokens if usage else 0
-        completion_count = usage.completion_tokens if usage else 0
+        prompt_count = usage.prompt_tokens if usage else None
+        completion_count = usage.completion_tokens if usage else None
         cache_read, cache_creation = parse_cached_usage(usage)
 
         try:
@@ -1004,6 +1003,19 @@ class LiteLLMModel(LLMModel):
             if hasattr(delta, "reasoning_content"):
                 reasoning_content.append(delta.reasoning_content or "")
         text = "".join(outputs)
+
+        # Calculate usage info first so we can pass it during construction
+        cache_read, cache_creation, cost = None, None, 0.0
+        prompt_count, completion_count = None, None
+        if hasattr(completion, "usage"):
+            prompt_count = completion.usage.prompt_tokens
+            completion_count = completion.usage.completion_tokens
+            cache_read, cache_creation = parse_cached_usage(completion.usage)
+            try:
+                cost = completion_cost(completion_response=completion, model=used_model)
+            except Exception as e:
+                logger.warning(f"Failed to calculate cost for {used_model}: {e}")
+
         result = LLMResult(
             model=used_model,
             text=text,
@@ -1012,26 +1024,17 @@ class LiteLLMModel(LLMModel):
             logprob=sum_logprobs(logprobs),
             top_logprobs=extract_top_logprobs(completion),
             reasoning_content="".join(reasoning_content),
+            prompt_count=prompt_count,
+            completion_count=completion_count,
+            cache_read_tokens=cache_read,
+            cache_creation_tokens=cache_creation,
+            cost=cost,
         )
 
         if text:
             result.seconds_to_first_token = (
                 asyncio.get_running_loop().time() - start_clock
             )
-        if hasattr(completion, "usage"):
-            result.prompt_count = completion.usage.prompt_tokens
-            result.completion_count = completion.usage.completion_tokens
-
-            cache_read, cache_creation = parse_cached_usage(completion.usage)
-            result.cache_read_tokens = cache_read
-            result.cache_creation_tokens = cache_creation
-
-            try:
-                result.cost = completion_cost(
-                    completion_response=completion, model=used_model
-                )
-            except Exception as e:
-                logger.warning(f"Failed to calculate cost for {used_model}: {e}")
 
         yield result
 
