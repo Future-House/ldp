@@ -25,6 +25,7 @@ class TestLiteLLMModel:
         # Test default instantiation
         model1 = LiteLLMModel()
         assert model1.name == CommonLLMNames.GPT_4O.value
+        assert model1.provider == "openai"
         assert isinstance(model1.config, dict)
         assert "model_list" in model1.config
 
@@ -32,6 +33,7 @@ class TestLiteLLMModel:
         name = CommonLLMNames.ANTHROPIC_TEST.value
         model2 = LiteLLMModel(name=name)
         assert model2.name == name
+        assert model2.provider == "anthropic"
         assert model2.config["model_list"][0]["model_name"] == name
 
         # Test config-only instantiation
@@ -42,6 +44,7 @@ class TestLiteLLMModel:
         }
         model3 = LiteLLMModel(config=config)
         assert model3.name == CommonLLMNames.OPENAI_TEST.value
+        assert model3.provider == "openai"
         assert (
             model3.config["model_list"][0]["model_name"]
             == CommonLLMNames.OPENAI_TEST.value
@@ -54,6 +57,7 @@ class TestLiteLLMModel:
         config = {"temperature": 0.5, "max_tokens": 100}
         model4 = LiteLLMModel(name=name, config=config)
         assert model4.name == name
+        assert model4.provider == "openai"
         assert model4.config["model_list"][0]["model_name"] == name
         assert model4.config["model_list"][0]["litellm_params"]["temperature"] == 0.5
         assert model4.config["model_list"][0]["litellm_params"]["max_tokens"] == 100
@@ -69,6 +73,26 @@ class TestLiteLLMModel:
         assert model5.config["model_list"][0]["litellm_params"]["logprobs"] is True
         assert model5.config["model_list"][0]["litellm_params"]["top_logprobs"] == 20
         assert model5.config["model_list"][0]["litellm_params"]["temperature"] == 0.7
+
+        model6 = LiteLLMModel(name="definitely/not-a-provider")
+        assert (
+            model6.name
+            == model6.config["model_list"][0]["model_name"]
+            == "definitely/not-a-provider"
+        )
+        with pytest.raises(litellm.BadRequestError, match="definitely"):
+            _ = model6.provider
+
+        model7 = LiteLLMModel(
+            name="nvidia/nemotron-parse",
+            config={"api_base": "https://integrate.api.nvidia.com/v1"},
+        )
+        assert (
+            model7.name
+            == model7.config["model_list"][0]["model_name"]
+            == "nvidia/nemotron-parse"
+        )
+        assert model7.provider == "nvidia_nim"
 
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.parametrize(
@@ -464,7 +488,10 @@ class TestLiteLLMModel:
             rehydrated_llm = pickle.load(f)
         assert llm.name == rehydrated_llm.name
         assert llm.config == rehydrated_llm.config
-        assert llm.router().deployment_names == rehydrated_llm.router().deployment_names
+        assert (
+            llm.get_router().deployment_names
+            == rehydrated_llm.get_router().deployment_names
+        )
 
     @pytest.mark.asyncio
     async def test_acompletion_iter_logprobs_edge_cases(self) -> None:
@@ -1088,7 +1115,7 @@ async def test_handle_refusal_via_fallback(caplog) -> None:
         return mock_router_obj
 
     with (
-        patch.object(LiteLLMModel, "router", new=mock_router_method),
+        patch.object(LiteLLMModel, "get_router", new=mock_router_method),
         caplog.at_level("WARNING", logger="lmi.llms"),
     ):
         results = await llm.call_single(messages)
