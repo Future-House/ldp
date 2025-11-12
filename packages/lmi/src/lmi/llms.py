@@ -42,6 +42,7 @@ from aviary.core import (
 )
 from aviary.message import MalformedMessageError
 from litellm import completion_cost
+from litellm.types.utils import Usage
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -70,7 +71,7 @@ REFUSAL_REASON = (
 )
 
 
-def parse_cached_usage(usage) -> tuple[int, int]:
+def parse_cached_usage(usage: Usage | None) -> tuple[int | None, int | None]:
     """Parse cached token counts from LiteLLM usage object.
 
     Args:
@@ -78,39 +79,37 @@ def parse_cached_usage(usage) -> tuple[int, int]:
 
     Returns:
         Tuple of (cache_read_tokens, cache_creation_tokens)
+        - Returns (None, None) if usage is None or no cached token fields present
+        - Returns integer values (including 0) only when LLM actually provides cached token fields
 
     Note:
         - OpenAI: Uses prompt_tokens_details.cached_tokens (read only)
         - Anthropic: Uses cache_read_input_tokens and cache_creation_input_tokens
-        - Returns (0, 0) if no cached tokens found or usage is None
+        - None means "caching wasn't used", 0 means "caching was used but nothing got cached"
     """
-    cache_read = 0
-    cache_creation = 0
-
     if not usage:
-        return cache_read, cache_creation
+        return None, None
 
-    # Cache reads: Try normalized format first, then Anthropic-specific
-    # LiteLLM *usually* normalizes to prompt_tokens_details.cached_tokens,
-    # but Anthropic responses may have cache_read_input_tokens at top level
+    cache_read: int | None = None
+    cache_creation: int | None = None
+
+    # Cache reads: Both OpenAI and Anthropic use prompt_tokens_details.cached_tokens
     if hasattr(usage, "prompt_tokens_details"):
         prompt_details = getattr(usage, "prompt_tokens_details", None)
         if prompt_details:
             cached_val = (
-                prompt_details.get("cached_tokens", 0)
+                prompt_details.get("cached_tokens")
                 if isinstance(prompt_details, dict)
-                else getattr(prompt_details, "cached_tokens", 0)
+                else getattr(prompt_details, "cached_tokens", None)
             )
-            cache_read = cached_val if isinstance(cached_val, int) else 0
+            if isinstance(cached_val, int):
+                cache_read = cached_val
 
-    # Fallback: Anthropic's raw cache_read_input_tokens (for cases where LiteLLM doesn't normalize)
-    if cache_read == 0:
-        cached_val = getattr(usage, "cache_read_input_tokens", 0)
-        cache_read = cached_val if isinstance(cached_val, int) else 0
-
-    # Cache creation: Anthropic ONLY, at top level (not normalized by LiteLLM)
-    cached_val = getattr(usage, "cache_creation_input_tokens", 0)
-    cache_creation = cached_val if isinstance(cached_val, int) else 0
+    # Cache creation: Anthropic-only field (OpenAI doesn't report cache writes)
+    if hasattr(usage, "cache_creation_input_tokens"):
+        cached_val = getattr(usage, "cache_creation_input_tokens", None)
+        if isinstance(cached_val, int):
+            cache_creation = cached_val
 
     return cache_read, cache_creation
 

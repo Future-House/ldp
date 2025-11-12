@@ -399,7 +399,7 @@ class TestCachedTokenCosts:
                 Message(role="user", content="Summarize your task in one sentence."),
             ]
 
-            results = await model.call(
+            result = await model.call_single(
                 messages,
                 system=[
                     {
@@ -409,10 +409,12 @@ class TestCachedTokenCosts:
                     }
                 ],
             )
-            result = results[0]
 
             # Simple assertions like litellm examples
-            assert result.cache_creation_tokens > 0, (
+            assert (  # noqa: PT018
+                result.cache_creation_tokens is not None
+                and result.cache_creation_tokens > 0
+            ), (
                 f"Expected cache_creation_tokens > 0, got {result.cache_creation_tokens}. "
                 f"Prompt had {result.prompt_count} tokens (need 1024+ for caching)."
             )
@@ -453,26 +455,35 @@ class TestCachedTokenCosts:
             ]
 
             # First call: Creates the cache (or reads if already cached from prior test)
-            results1 = await model.call(messages, system=system_with_cache)
-            result1 = results1[0]
+            result1 = await model.call_single(messages, system=system_with_cache)
             # First call might have cache_creation OR cache_read if cache still active
-            assert result1.cache_creation_tokens > 0 or result1.cache_read_tokens > 0, (
+            assert (
+                result1.cache_creation_tokens is not None
+                and result1.cache_creation_tokens > 0
+            ) or (
+                result1.cache_read_tokens is not None and result1.cache_read_tokens > 0
+            ), (
                 f"Expected caching on first call, got creation={result1.cache_creation_tokens}, read={result1.cache_read_tokens}"
             )
 
             # Second call: Reads from cache (cache_read_tokens > 0)
-            results2 = await model.call(messages, system=system_with_cache)
-            result = results2[0]
+            result = await model.call_single(messages, system=system_with_cache)
 
             # Assertions: Verify cache read and cost discount
-            assert result.cache_read_tokens > 0, "Expected cache_read_tokens > 0"
+            assert (  # noqa: PT018
+                result.cache_read_tokens is not None and result.cache_read_tokens > 0
+            ), "Expected cache_read_tokens > 0"
             assert result.cost_usd is not None
             assert result.cost_usd > 0
 
             # CRITICAL: Verify cache read is cheaper than cache creation
             # Cache read is 0.1x base rate, cache creation is 1.25x base rate
             # Only validate if call 1 actually created cache (not read from prior test)
-            if result1.cache_creation_tokens > 0 and result1.cost_usd is not None:
+            if (
+                result1.cache_creation_tokens is not None
+                and result1.cache_creation_tokens > 0
+                and result1.cost_usd is not None
+            ):
                 assert result.cost_usd < result1.cost_usd, (
                     f"Cache read cost ({result.cost_usd:.6f}) should be < cache creation cost ({result1.cost_usd:.6f}). "
                     "If this fails, caching discount is not being applied!"
@@ -525,8 +536,7 @@ class TestCachedTokenCosts:
                 }
             ]
 
-            results1 = await model.call(messages_1, system=system_with_cache)
-            result1 = results1[0]
+            result1 = await model.call_single(messages_1, system=system_with_cache)
 
             # Call 2: Add assistant response + new user message
             # Only need cache_control on LAST message (Anthropic auto-finds longest prefix)
@@ -547,8 +557,7 @@ class TestCachedTokenCosts:
                 ),
             ]
 
-            results2 = await model.call(messages_2, system=system_with_cache)
-            result2 = results2[0]
+            result2 = await model.call_single(messages_2, system=system_with_cache)
 
             # Call 3: Add another assistant response + new user message
             # Only cache_control on LAST message
@@ -573,24 +582,32 @@ class TestCachedTokenCosts:
                 ),
             ]
 
-            results3 = await model.call(messages_3, system=system_with_cache)
-            result3 = results3[0]
+            result3 = await model.call_single(messages_3, system=system_with_cache)
 
             # Assertions
             # Call 1: Should create initial cache (system + first user)
-            assert result1.cache_creation_tokens > 0 or result1.cache_read_tokens > 0, (
-                "Expected caching on first call"
-            )
+            assert (
+                result1.cache_creation_tokens is not None
+                and result1.cache_creation_tokens > 0
+            ) or (
+                result1.cache_read_tokens is not None and result1.cache_read_tokens > 0
+            ), "Expected caching on first call"
 
             # Call 2: Should read some cache and create new cache for added messages
-            assert result2.cache_read_tokens > 0 or result2.cache_creation_tokens > 0, (
-                "Expected cache activity on second call"
-            )
+            assert (
+                result2.cache_read_tokens is not None and result2.cache_read_tokens > 0
+            ) or (
+                result2.cache_creation_tokens is not None
+                and result2.cache_creation_tokens > 0
+            ), "Expected cache activity on second call"
 
             # Call 3: Should read from cache (conversation already cached)
-            assert result3.cache_read_tokens > 0 or result3.cache_creation_tokens > 0, (
-                "Expected cache activity on third call"
-            )
+            assert (
+                result3.cache_read_tokens is not None and result3.cache_read_tokens > 0
+            ) or (
+                result3.cache_creation_tokens is not None
+                and result3.cache_creation_tokens > 0
+            ), "Expected cache activity on third call"
 
             # Call 4: Skip messages 2 & 3 - test partial cache hit
             # Only cache_control on LAST message
@@ -608,31 +625,45 @@ class TestCachedTokenCosts:
                 ),
             ]
 
-            results4 = await model.call(messages_4, system=system_with_cache)
-            result4 = results4[0]
+            result4 = await model.call_single(messages_4, system=system_with_cache)
 
             # Assertions - Verify caching works + test incremental growth (VCR-friendly)
             # Call 1: Should have meaningful cache activity
-            assert result1.cache_creation_tokens > 0 or result1.cache_read_tokens > 0, (
-                "Expected cache activity on call 1"
-            )
+            assert (
+                result1.cache_creation_tokens is not None
+                and result1.cache_creation_tokens > 0
+            ) or (
+                result1.cache_read_tokens is not None and result1.cache_read_tokens > 0
+            ), "Expected cache activity on call 1"
             assert result1.cost_usd is not None
             assert result1.cost_usd > 0
-            total_cache_1 = result1.cache_creation_tokens + result1.cache_read_tokens
+            total_cache_1 = (result1.cache_creation_tokens or 0) + (
+                result1.cache_read_tokens or 0
+            )
 
             # Call 2: Cache should grow (adds assistant + user message)
-            assert result2.cache_creation_tokens > 0 or result2.cache_read_tokens > 0, (
-                "Expected cache activity on call 2"
-            )
+            assert (
+                result2.cache_creation_tokens is not None
+                and result2.cache_creation_tokens > 0
+            ) or (
+                result2.cache_read_tokens is not None and result2.cache_read_tokens > 0
+            ), "Expected cache activity on call 2"
             assert result2.cost_usd is not None
             assert result2.cost_usd > 0
-            total_cache_2 = result2.cache_creation_tokens + result2.cache_read_tokens
+            total_cache_2 = (result2.cache_creation_tokens or 0) + (
+                result2.cache_read_tokens or 0
+            )
             assert total_cache_2 >= total_cache_1, (
                 f"Expected cache to grow: call 2 ({total_cache_2}) >= call 1 ({total_cache_1})"
             )
 
             # CRITICAL: If call 2 reads from cache, verify discount is applied
-            if result2.cache_read_tokens > 0 and result1.cache_creation_tokens > 0:
+            if (
+                result2.cache_read_tokens is not None
+                and result2.cache_read_tokens > 0
+                and result1.cache_creation_tokens is not None
+                and result1.cache_creation_tokens > 0
+            ):
                 # Cache read (0.1x) is much cheaper than cache creation (1.25x)
                 # Even with small new writes, total cost should be significantly lower
                 assert result2.cost_usd < result1.cost_usd, (
@@ -642,23 +673,33 @@ class TestCachedTokenCosts:
                 )
 
             # Call 3: Cache should continue growing (adds more conversation)
-            assert result3.cache_creation_tokens > 0 or result3.cache_read_tokens > 0, (
-                "Expected cache activity on call 3"
-            )
+            assert (
+                result3.cache_creation_tokens is not None
+                and result3.cache_creation_tokens > 0
+            ) or (
+                result3.cache_read_tokens is not None and result3.cache_read_tokens > 0
+            ), "Expected cache activity on call 3"
             assert result3.cost_usd is not None
             assert result3.cost_usd > 0
-            total_cache_3 = result3.cache_creation_tokens + result3.cache_read_tokens
+            total_cache_3 = (result3.cache_creation_tokens or 0) + (
+                result3.cache_read_tokens or 0
+            )
             assert total_cache_3 >= total_cache_2, (
                 f"Expected cache to keep growing: call 3 ({total_cache_3}) >= call 2 ({total_cache_2})"
             )
 
             # Call 4: Should have cache (partial hit - sequence changed)
-            assert result4.cache_creation_tokens > 0 or result4.cache_read_tokens > 0, (
-                "Expected cache activity on call 4"
-            )
+            assert (
+                result4.cache_creation_tokens is not None
+                and result4.cache_creation_tokens > 0
+            ) or (
+                result4.cache_read_tokens is not None and result4.cache_read_tokens > 0
+            ), "Expected cache activity on call 4"
             assert result4.cost_usd is not None
             assert result4.cost_usd > 0
-            total_cache_4 = result4.cache_creation_tokens + result4.cache_read_tokens
+            total_cache_4 = (result4.cache_creation_tokens or 0) + (
+                result4.cache_read_tokens or 0
+            )
             assert total_cache_4 >= total_cache_1, (
                 f"Expected at least partial cache: call 4 ({total_cache_4}) >= call 1 ({total_cache_1})"
             )
@@ -690,15 +731,17 @@ class TestCachedTokenCosts:
             ]
 
             # First call: Populates the cache (or reads if already cached)
-            results1 = await model.call(messages)
-            result1 = results1[0]
+            result1 = await model.call_single(messages)
 
             # Second call: Should read from cache (within ~5 minute window)
-            results2 = await model.call(messages)
-            result2 = results2[0]
+            result2 = await model.call_single(messages)
 
             # Assertions: At least one call should have cache hits (OpenAI auto-caching)
-            assert result1.cache_read_tokens > 0 or result2.cache_read_tokens > 0, (
+            assert (
+                result1.cache_read_tokens is not None and result1.cache_read_tokens > 0
+            ) or (
+                result2.cache_read_tokens is not None and result2.cache_read_tokens > 0
+            ), (
                 f"Expected cache_read_tokens > 0 in at least one call, got call1={result1.cache_read_tokens}, call2={result2.cache_read_tokens}"
             )
 
@@ -711,7 +754,11 @@ class TestCachedTokenCosts:
             # CRITICAL: Verify caching provides cost savings
             # If both calls have cache reads, costs should be similar (both discounted)
             # If only one has cache reads, that one should be cheaper or equal
-            if result1.cache_read_tokens == 0 and result2.cache_read_tokens > 0:
+            if (
+                (result1.cache_read_tokens is None or result1.cache_read_tokens == 0)
+                and result2.cache_read_tokens is not None
+                and result2.cache_read_tokens > 0
+            ):
                 # Call 2 has cache discount, call 1 doesn't
                 assert result2.cost_usd <= result1.cost_usd, (
                     f"Call 2 with cache ({result2.cost_usd:.6f}) should be <= "
@@ -764,12 +811,18 @@ class TestCachedTokenCosts:
             )
 
             # Assertions: Verify cached tokens extracted in streaming mode
-            assert result1.cache_creation_tokens > 0 or result1.cache_read_tokens > 0, (
-                "Expected cache activity on first streaming call"
-            )
-            assert result2.cache_creation_tokens > 0 or result2.cache_read_tokens > 0, (
-                "Expected cache activity on second streaming call"
-            )
+            assert (
+                result1.cache_creation_tokens is not None
+                and result1.cache_creation_tokens > 0
+            ) or (
+                result1.cache_read_tokens is not None and result1.cache_read_tokens > 0
+            ), "Expected cache activity on first streaming call"
+            assert (
+                result2.cache_creation_tokens is not None
+                and result2.cache_creation_tokens > 0
+            ) or (
+                result2.cache_read_tokens is not None and result2.cache_read_tokens > 0
+            ), "Expected cache activity on second streaming call"
 
             # Costs should be calculated
             assert result1.cost_usd is not None
@@ -779,7 +832,12 @@ class TestCachedTokenCosts:
 
             # CRITICAL: Verify cache discount in streaming mode
             # If call 2 reads from cache while call 1 created it, verify discount
-            if result2.cache_read_tokens > 0 and result1.cache_creation_tokens > 0:
+            if (
+                result2.cache_read_tokens is not None
+                and result2.cache_read_tokens > 0
+                and result1.cache_creation_tokens is not None
+                and result1.cache_creation_tokens > 0
+            ):
                 assert result2.cost_usd < result1.cost_usd, (
                     f"Streaming: cache read cost ({result2.cost_usd:.6f}) should be < "
                     f"cache creation cost ({result1.cost_usd:.6f}). "
@@ -824,7 +882,11 @@ class TestCachedTokenCosts:
             result2 = await model.call_single(messages, callbacks=[chunks2.append])
 
             # Assertions: At least one call should have cache hits in streaming mode
-            assert result1.cache_read_tokens > 0 or result2.cache_read_tokens > 0, (
+            assert (
+                result1.cache_read_tokens is not None and result1.cache_read_tokens > 0
+            ) or (
+                result2.cache_read_tokens is not None and result2.cache_read_tokens > 0
+            ), (
                 f"Expected cache_read_tokens > 0 in at least one streaming call, got call1={result1.cache_read_tokens}, call2={result2.cache_read_tokens}"
             )
 
@@ -836,7 +898,11 @@ class TestCachedTokenCosts:
 
             # CRITICAL: Verify cache discount in OpenAI streaming
             # If call 1 has no cache but call 2 has cache reads, call 2 should be cheaper
-            if result1.cache_read_tokens == 0 and result2.cache_read_tokens > 0:
+            if (
+                (result1.cache_read_tokens is None or result1.cache_read_tokens == 0)
+                and result2.cache_read_tokens is not None
+                and result2.cache_read_tokens > 0
+            ):
                 assert result2.cost_usd <= result1.cost_usd, (
                     f"OpenAI streaming: cache read cost ({result2.cost_usd:.6f}) should be <= "
                     f"no-cache cost ({result1.cost_usd:.6f}). "
@@ -854,8 +920,8 @@ class TestCachedTokenEdgeCases:
     def test_parse_cached_usage_with_none(self):
         """Test parse_cached_usage handles None usage gracefully."""
         cache_read, cache_creation = parse_cached_usage(None)
-        assert cache_read == 0
-        assert cache_creation == 0
+        assert cache_read is None
+        assert cache_creation is None
 
     def test_parse_cached_usage_with_missing_fields(self):
         """Test parse_cached_usage handles usage object with no cached fields."""
@@ -870,8 +936,8 @@ class TestCachedTokenEdgeCases:
         del usage.cache_creation_input_tokens
 
         cache_read, cache_creation = parse_cached_usage(usage)
-        assert cache_read == 0
-        assert cache_creation == 0
+        assert cache_read is None
+        assert cache_creation is None
 
     def test_parse_cached_usage_with_dict_format(self):
         """Test parse_cached_usage handles dict-style prompt_tokens_details."""
@@ -882,7 +948,7 @@ class TestCachedTokenEdgeCases:
 
         cache_read, cache_creation = parse_cached_usage(usage)
         assert cache_read == 1024
-        assert cache_creation == 0
+        assert cache_creation is None
 
     def test_parse_cached_usage_with_object_format(self):
         """Test parse_cached_usage handles object-style prompt_tokens_details."""
@@ -895,15 +961,15 @@ class TestCachedTokenEdgeCases:
 
         cache_read, cache_creation = parse_cached_usage(usage)
         assert cache_read == 2048
-        assert cache_creation == 0
+        assert cache_creation is None
 
-    def test_parse_cached_usage_with_anthropic_format(self):
-        """Test parse_cached_usage handles Anthropic's raw format."""
+    def test_parse_cached_usage_with_anthropic_cache_creation(self):
+        """Test parse_cached_usage extracts Anthropic's cache_creation_input_tokens."""
         from unittest.mock import MagicMock
 
         usage = MagicMock()
-        del usage.prompt_tokens_details  # No normalized field
-        usage.cache_read_input_tokens = 1500
+        # Anthropic responses have both normalized cache_read and top-level cache_creation
+        usage.prompt_tokens_details = {"cached_tokens": 1500}
         usage.cache_creation_input_tokens = 200
 
         cache_read, cache_creation = parse_cached_usage(usage)
@@ -911,15 +977,15 @@ class TestCachedTokenEdgeCases:
         assert cache_creation == 200
 
     def test_parse_cached_usage_with_non_int_values(self):
-        """Test parse_cached_usage handles non-integer values (returns 0)."""
+        """Test parse_cached_usage handles non-integer values (returns None)."""
         from unittest.mock import MagicMock
 
         usage = MagicMock()
         usage.prompt_tokens_details = {"cached_tokens": "not_an_int"}
 
         cache_read, cache_creation = parse_cached_usage(usage)
-        assert cache_read == 0  # Should handle gracefully
-        assert cache_creation == 0
+        assert cache_read is None  # Should handle gracefully by ignoring non-int values
+        assert cache_creation is None
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -955,12 +1021,15 @@ class TestCachedTokenEdgeCases:
             with patch(
                 "lmi.llms.completion_cost", side_effect=Exception("Cost calc failed")
             ):
-                results = await model.call(messages, system=system_with_cache)
-                result = results[0]
+                result = await model.call_single(messages, system=system_with_cache)
 
                 # Cached token fields should still be populated
                 assert (
-                    result.cache_creation_tokens > 0 or result.cache_read_tokens > 0
+                    result.cache_creation_tokens is not None
+                    and result.cache_creation_tokens > 0
+                ) or (
+                    result.cache_read_tokens is not None
+                    and result.cache_read_tokens > 0
                 ), "Cached tokens should be extracted even if cost calculation fails"
 
                 # cost_usd should be None (calculation failed)

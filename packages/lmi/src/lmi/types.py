@@ -77,16 +77,22 @@ class LLMResult(BaseModel):
     model: str
     date: str = Field(default_factory=datetime.now().isoformat)
 
-    # Cached token counts (normalized across providers)
-    # - Anthropic: cache_read_input_tokens, cache_creation_input_tokens
-    # - OpenAI: prompt_tokens_details.cached_tokens (read only)
-    cache_read_tokens: int = Field(
-        default=0,
-        description="Tokens read from cache (Anthropic/OpenAI). Default 0 means no cache hits.",
+    # Cached token counts - extracted from provider-specific usage fields:
+    # - Both providers report cache reads via prompt_tokens_details.cached_tokens
+    # - Only Anthropic reports cache creation via cache_creation_input_tokens
+    cache_read_tokens: int | None = Field(
+        default=None,
+        description=(
+            "Tokens read from cache (Anthropic/OpenAI). "
+            "None means caching wasn't used, 0 means caching was used but no cache hits."
+        ),
     )
-    cache_creation_tokens: int = Field(
-        default=0,
-        description="Tokens written to cache (Anthropic only). Default 0 means no cache creation.",
+    cache_creation_tokens: int | None = Field(
+        default=None,
+        description=(
+            "Tokens written to cache (Anthropic only). "
+            "None means caching wasn't used, 0 means caching was used but no cache creation."
+        ),
     )
 
     # Store accurate cost from litellm (handles all pricing tiers and provider quirks)
