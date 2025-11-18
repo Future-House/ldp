@@ -1042,6 +1042,7 @@ class LiteLLMModel(LLMModel):
         yield result
 
     def count_tokens(self, text: str) -> int:
+        # NOTE: by design text is just str here, as None leads to a ValueError
         return litellm.token_counter(model=self.name, text=text)
 
     @property
