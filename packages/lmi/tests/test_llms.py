@@ -934,7 +934,9 @@ class TestTooling:
     @pytest.mark.asyncio
     @pytest.mark.vcr
     async def test_custom_tool_parser_from_config(self) -> None:
-        def custom_tool_parser(content: str, tools: list[Tool]) -> ToolRequestMessage:  # noqa: ARG001
+        def custom_tool_parser(
+            content: str, tools: list[dict]
+        ) -> ToolRequestMessage | Message:
             tool_calls = []
             matches = re.finditer(
                 r"<tool_call>\s*(.*?)\s*</tool_call>", content, re.DOTALL
@@ -944,10 +946,10 @@ class TestTooling:
                 try:
                     tool_call = json.loads(tool_call_str)
                 except json.JSONDecodeError:
-                    continue
+                    return Message(role="assistant", content="Tool request is wrong.")
 
                 if not isinstance(tool_call, dict):
-                    continue
+                    return Message(role="assistant", content="Tool request is wrong.")
 
                 if (
                     "name" not in tool_call
@@ -958,6 +960,9 @@ class TestTooling:
                     continue
 
                 name = tool_call["name"]
+                # Check if the tool name is in the provided tools list
+                if not any(tool["function"]["name"] == name for tool in tools):
+                    return Message(role="assistant", content="Tool request is wrong.")
                 arguments = tool_call["arguments"]
                 tool_calls.append(ToolCall.from_name(function_name=name, **arguments))
 
