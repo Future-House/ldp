@@ -889,7 +889,14 @@ class LiteLLMModel(LLMModel):
                 if self.tool_parser is None:
                     output_messages = default_tool_parser(choice, tools)
                 else:
-                    output_messages = self.tool_parser(choice.message.content, tools)
+                    sig = signature(self.tool_parser)
+                    first_param = next(iter(sig.parameters.values()))
+                    arg = (
+                        choice.message.content
+                        if first_param.annotation is str
+                        else choice
+                    )
+                    output_messages = self.tool_parser(arg, tools)
                     if not isinstance(output_messages, list):
                         output_messages = [output_messages]
             except ValidationError as exc:
