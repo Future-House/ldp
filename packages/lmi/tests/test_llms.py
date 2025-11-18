@@ -1,5 +1,7 @@
+import json
 import pathlib
 import pickle
+import re
 from collections.abc import AsyncIterator
 from typing import Any, ClassVar
 from unittest.mock import AsyncMock, Mock, patch
@@ -7,7 +9,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import litellm
 import numpy as np
 import pytest
-from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
+from aviary.core import Message, Tool, ToolCall, ToolRequestMessage, ToolResponseMessage
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
 from lmi.exceptions import JSONSchemaValidationError
@@ -896,6 +898,76 @@ class TestTooling:
                     Message(content="What is your name?"),
                 ]
             )
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_custom_tool_parser_from_config(self) -> None:
+        def custom_tool_parser(content: str, tools: list[Tool]) -> ToolRequestMessage:
+            tool_calls = []
+            matches = re.finditer(
+                r"<tool_call>\s*(.*?)\s*</tool_call>", content, re.DOTALL
+            )
+            for match in matches:
+                tool_call_str = match.group(1)
+                try:
+                    tool_call = json.loads(tool_call_str)
+                except json.JSONDecodeError:
+                    continue
+
+                if not isinstance(tool_call, dict):
+                    continue
+
+                if (
+                    "name" not in tool_call
+                    or "arguments" not in tool_call
+                    or not isinstance(tool_call["name"], str)
+                    or not isinstance(tool_call["arguments"], dict)
+                ):
+                    continue
+
+                name = tool_call["name"]
+                arguments = tool_call["arguments"]
+                tool_calls.append(ToolCall.from_name(function_name=name, **arguments))
+
+            return ToolRequestMessage(role="assistant", tool_calls=tool_calls)
+
+        model = LiteLLMModel(
+            name=CommonLLMNames.OPENAI_TEST.value,
+            config={"tool_parser": custom_tool_parser},
+        )
+
+        def my_function(x: int, y: str) -> str:
+            """A test function.
+
+            Args:
+                x: The x parameter.
+                y: The y parameter.
+
+            Returns:
+                A formatted string.
+            """
+            return f"{x}: {y}"
+
+        tools = [Tool.from_function(my_function)]
+
+        messages = [
+            Message(
+                role="system",
+                content='Repeat the same output. Use format:\n<tool_call>\n{"name": "my_function", "arguments": {"x": 1, "y": "foo"}}\n</tool_call>',
+            ),
+            Message(content="Call my_function with x=1, y='foo'"),
+        ]
+
+        result = await model.call_single(messages, tools=tools, tool_choice="auto")
+
+        assert result.messages
+        assert len(result.messages) == 1
+        assert isinstance(result.messages[0], ToolRequestMessage)
+        assert result.messages[0].tool_calls
+        assert len(result.messages[0].tool_calls) == 1
+        assert result.messages[0].tool_calls[0].function.name == "my_function"
+        assert result.messages[0].tool_calls[0].function.arguments["x"] == 1
+        assert result.messages[0].tool_calls[0].function.arguments["y"] == "foo"
 
 
 class TestReasoning:

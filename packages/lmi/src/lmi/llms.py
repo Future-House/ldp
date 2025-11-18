@@ -552,8 +552,10 @@ class PassThroughRouter(litellm.Router):  # TODO: add rate_limited
     async def aembedding(self, *args, **kwargs):
         return await litellm.aembedding(*args, **(self._default_kwargs | kwargs))
 
-# TODO: WIP -> Making a defult tool parser for LiteLLM models
-def default_tool_parser(choice: litellm.utils.Choices, tools: list[Tool] | None) -> list[Message | ToolRequestMessage]:
+
+def default_tool_parser(
+    choice: litellm.utils.Choices, tools: list[Tool] | None
+) -> ToolRequestMessage:
     msg_type = (
         ToolRequestMessage
         if choice.finish_reason == "tool_calls"
@@ -578,14 +580,20 @@ def default_tool_parser(choice: litellm.utils.Choices, tools: list[Tool] | None)
         serialized_message["tool_calls"] = []
         msg_type = ToolRequestMessage
     return [msg_type(**serialized_message)]
+
+
 class LiteLLMModel(LLMModel):
     """A wrapper around the litellm library."""
 
     model_config = ConfigDict(extra="forbid")
 
     name: str = CommonLLMNames.GPT_4O.value
-    
-    tool_parser: Callable[[litellm.utils.Choices], list[Message | ToolRequestMessage]] | None = None
+
+    tool_parser: (
+        Callable[[litellm.utils.Choices, list[Tool] | None], ToolRequestMessage]
+        | Callable[[str, list[Tool] | None], ToolRequestMessage]
+        | None
+    ) = None
     config: dict = Field(
         default_factory=dict,
         description=(
@@ -679,6 +687,9 @@ class LiteLLMModel(LLMModel):
             data["config"]["router_kwargs"] = {"retry_after": 5} | data["config"][
                 "router_kwargs"
             ]
+
+        if "tool_parser" in data["config"]:
+            data["tool_parser"] = data["config"].pop("tool_parser")
 
         # we only support one "model name" for now, here we validate
         model_list = data["config"]["model_list"]
@@ -828,10 +839,17 @@ class LiteLLMModel(LLMModel):
             "list[litellm.types.llms.openai.AllMessageValues]",
             [m.model_dump(by_alias=True) for m in messages],
         )
-        # TODO: vllm model might not be prepared to handle tool_choice and tools, so remove them
-        if self.tool_parser is not None:
-            kwargs.pop("tool_choice", None)
-            kwargs.pop("tools", None)
+        tool_choice = kwargs.get("tool_choice")
+        if self.tool_parser is not None and tool_choice not in {
+            None,
+            self.NO_TOOL_CHOICE,
+        }:
+            logger.warning(
+                f"Custom tool parser was provided."
+                f"Setting tool_choice parameter to {self.NO_TOOL_CHOICE}."
+            )
+            kwargs["tool_choice"] = self.NO_TOOL_CHOICE
+
         completions = await track_costs(router.acompletion)(
             self.name, prompts, **kwargs
         )
@@ -867,14 +885,13 @@ class LiteLLMModel(LLMModel):
         # We are not streaming here, so we can cast to list[litellm.utils.Choices]
         choices = cast("list[litellm.utils.Choices]", completions.choices)
         for choice in choices:
-            # tool_parser : Callable f(choice) -> Message
-            # TODO: tool_parser should receive choice (maybe tools as well) and return a list of messages
-            # This will give users the power to use normal LLMs as tool selectors
             try:
                 if self.tool_parser is None:
                     output_messages = default_tool_parser(choice, tools)
                 else:
-                    output_messages = self.tool_parser(choice, tools)
+                    output_messages = self.tool_parser(choice.message.content, tools)
+                    if not isinstance(output_messages, list):
+                        output_messages = [output_messages]
             except ValidationError as exc:
                 raise MalformedMessageError(
                     f"Failed to convert model response's message {choice.message}"
