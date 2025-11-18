@@ -600,7 +600,7 @@ class PassThroughRouter(litellm.Router):  # TODO: add rate_limited
 
 
 def default_tool_parser(
-    choice: litellm.utils.Choices, tools: list[Tool] | None
+    choice: litellm.utils.Choices, tools: list[dict] | None
 ) -> Message | ToolRequestMessage:
     msg_type = (
         ToolRequestMessage
@@ -637,11 +637,11 @@ class LiteLLMModel(LLMModel):
 
     tool_parser: (
         Callable[
-            [litellm.utils.Choices, list[Tool] | None],
+            [litellm.utils.Choices, list[dict] | None],
             Message | ToolRequestMessage | list[Message] | list[ToolRequestMessage],
         ]
         | Callable[
-            [str, list[Tool] | None],
+            [str, list[dict] | None],
             Message | ToolRequestMessage | list[Message] | list[ToolRequestMessage],
         ]
         | None
