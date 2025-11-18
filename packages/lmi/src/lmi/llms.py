@@ -439,8 +439,8 @@ class LLMModel(ABC, BaseModel):
                 results.append(result)
 
         for result in results:
-            if not result.completion_count:
-                result.completion_count = self.count_tokens(cast("str", result.text))
+            if not result.completion_count and result.text is not None:
+                result.completion_count = self.count_tokens(result.text)
             result.seconds_to_last_token = (
                 asyncio.get_running_loop().time() - start_clock
             )
@@ -1042,6 +1042,7 @@ class LiteLLMModel(LLMModel):
         yield result
 
     def count_tokens(self, text: str) -> int:
+        # NOTE: by design text is just str here, as None leads to a ValueError
         return litellm.token_counter(model=self.name, text=text)
 
     @property
