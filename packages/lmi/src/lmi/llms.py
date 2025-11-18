@@ -36,6 +36,7 @@ from aviary.core import (
     Message,
     Tool,
     ToolRequestMessage,
+    ToolResponseMessage,
     ToolsAdapter,
     ToolSelector,
     is_coroutine_callable,
@@ -305,6 +306,23 @@ class LLMModel(ABC, BaseModel):
     # None means we won't provide a tool_choice to the LLM API
     UNSPECIFIED_TOOL_CHOICE: ClassVar[None] = None
 
+    def _maybe_patch_gemini3_tool_response_messages(
+        self, messages: list[Message]
+    ) -> list[Message]:
+        """As of 2025-11-18, Gemini 3 doesn't accept role="tool" in ToolResponseMessage.
+
+        This function patches it to role="user".
+        """
+        if "gemini-3" not in self.name:
+            return messages
+
+        return [
+            m
+            if not isinstance(m, ToolResponseMessage)
+            else m.model_copy(update={"role": "user"})
+            for m in messages
+        ]
+
     async def call(  # noqa: C901, PLR0915
         self,
         messages: list[Message],
@@ -334,6 +352,7 @@ class LLMModel(ABC, BaseModel):
         Raises:
             ValueError: If the LLM type is unknown.
         """
+        messages = self._maybe_patch_gemini3_tool_response_messages(messages)
         chat_kwargs = copy.deepcopy(kwargs)
         # if using the config for an LLMModel,
         # there may be a nested 'config' key
