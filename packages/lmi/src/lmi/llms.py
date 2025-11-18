@@ -555,7 +555,7 @@ class PassThroughRouter(litellm.Router):  # TODO: add rate_limited
 
 def default_tool_parser(
     choice: litellm.utils.Choices, tools: list[Tool] | None
-) -> ToolRequestMessage:
+) -> Message | ToolRequestMessage:
     msg_type = (
         ToolRequestMessage
         if choice.finish_reason == "tool_calls"
@@ -579,7 +579,7 @@ def default_tool_parser(
         # 3. So, we add this special case to make a ToolRequestMessage
         serialized_message["tool_calls"] = []
         msg_type = ToolRequestMessage
-    return [msg_type(**serialized_message)]
+    return msg_type(**serialized_message)
 
 
 class LiteLLMModel(LLMModel):
@@ -590,8 +590,14 @@ class LiteLLMModel(LLMModel):
     name: str = CommonLLMNames.GPT_4O.value
 
     tool_parser: (
-        Callable[[litellm.utils.Choices, list[Tool] | None], ToolRequestMessage]
-        | Callable[[str, list[Tool] | None], ToolRequestMessage]
+        Callable[
+            [litellm.utils.Choices, list[Tool] | None],
+            Message | ToolRequestMessage | list[Message] | list[ToolRequestMessage],
+        ]
+        | Callable[
+            [str, list[Tool] | None],
+            Message | ToolRequestMessage | list[Message] | list[ToolRequestMessage],
+        ]
         | None
     ) = None
     config: dict = Field(
@@ -616,7 +622,7 @@ class LiteLLMModel(LLMModel):
 
     @model_validator(mode="before")
     @classmethod
-    def maybe_set_config_attribute(cls, input_data: dict[str, Any]) -> dict[str, Any]:
+    def maybe_set_config_attribute(cls, input_data: dict[str, Any]) -> dict[str, Any]:  # noqa: C901
         """
         Set the config attribute if it is not provided.
 
@@ -823,7 +829,7 @@ class LiteLLMModel(LLMModel):
     # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
-    async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:
+    async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:  # noqa: C901
         override_config = kwargs.pop("override_config", None)
         if override_config:
             override_config = OverrideRouterConfig(**override_config)
@@ -887,18 +893,21 @@ class LiteLLMModel(LLMModel):
         for choice in choices:
             try:
                 if self.tool_parser is None:
-                    output_messages = default_tool_parser(choice, tools)
+                    output_messages: (
+                        Message
+                        | ToolRequestMessage
+                        | list[Message]
+                        | list[ToolRequestMessage]
+                    ) = default_tool_parser(choice, tools)
                 else:
                     sig = signature(self.tool_parser)
                     first_param = next(iter(sig.parameters.values()))
-                    arg = (
-                        choice.message.content
+                    arg: str | litellm.utils.Choices = (
+                        choice.message.content or ""
                         if first_param.annotation is str
                         else choice
                     )
-                    output_messages = self.tool_parser(arg, tools)
-                    if not isinstance(output_messages, list):
-                        output_messages = [output_messages]
+                    output_messages = self.tool_parser(arg, tools)  # type: ignore[arg-type]
             except ValidationError as exc:
                 raise MalformedMessageError(
                     f"Failed to convert model response's message {choice.message}"
@@ -906,6 +915,9 @@ class LiteLLMModel(LLMModel):
                     f" full response was {completions},"
                     f" and tool choice was {kwargs.get('tool_choice')!r}."
                 ) from exc
+
+            if not isinstance(output_messages, list):
+                output_messages = [output_messages]
 
             reasoning_content = None
             if hasattr(choice.message, "reasoning_content"):

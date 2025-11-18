@@ -902,7 +902,7 @@ class TestTooling:
     @pytest.mark.asyncio
     @pytest.mark.vcr
     async def test_custom_tool_parser_from_config(self) -> None:
-        def custom_tool_parser(content: str, tools: list[Tool]) -> ToolRequestMessage:
+        def custom_tool_parser(content: str, tools: list[Tool]) -> ToolRequestMessage:  # noqa: ARG001
             tool_calls = []
             matches = re.finditer(
                 r"<tool_call>\s*(.*?)\s*</tool_call>", content, re.DOTALL
