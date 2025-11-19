@@ -125,6 +125,18 @@ class Callback:
         """Invoked by OnlineTrainer after each optimizer.update() call."""
 
 
+class MessageOutputCallback(Callback):
+    """Callback special case callback that outputs a message history for assignment in the parent scope"""
+    def __init__(self):
+        super().__init__()
+
+    # just a single callback point for now, can add more later if we need to amend message history at different points in rollout
+    async def after_env_step(
+            self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
+    ) -> list[Message]:
+        """Invoked by runners after env.step(). Return a (possibly) changed message history for assignment in the parent environment."""
+
+
 class StoreTrajectoriesCallback(Callback):
     """Simple callback that stores train/eval trajectories in an in-memory list."""
 
