@@ -732,17 +732,17 @@ class LiteLLMModel(LLMModel):
             _DeploymentTypedDictValidator.validate_python(model_list)
 
         # HOT FIX for https://github.com/BerriAI/litellm/issues/16808
-        logger.warning("We are applying hotfix to force completion mode from litellm")
-        for m in model_list:
-            model_name = m.get("model_name", "")
-            if model_name and (model_cost_key:=model_name.split("/")[-1]) in litellm.model_cost:
-                if litellm.model_cost[model_cost_key]["mode"] != "completions:
-                    logger.warning("We are applying hotfix to force completion mode from litellm for {model_cost_key}")
-                    litellm.model_cost[model_cost_key]["mode"] = "completions"
-
-        # Also apply to the main model name
-        if data["name"] and data["name"].split("/")[-1] in litellm.model_cost:
-            litellm.model_cost[data["name"].split("/")[-1]]["mode"] = "completions"
+        model_names = [m.get("model_name", "") for m in model_list] + [data["name"]]
+        for m in model_names:
+            if (
+                m
+                and (model_cost_key := m.split("/")[-1]) in litellm.model_cost
+                and litellm.model_cost[model_cost_key]["mode"] != "completions"
+            ):
+                logger.warning(
+                    f"We are applying hotfix to force completion mode from litellm for {model_cost_key}"
+                )
+                litellm.model_cost[model_cost_key]["mode"] = "completions"
         return data
 
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
