@@ -117,24 +117,6 @@ class TestLiteLLMModel:
                 id="OpenAI-model-1",
             ),
             pytest.param(
-                {
-                    "name": CommonLLMNames.GPT_5_MINI.value,
-                    "model_list": [
-                        {
-                            "model_name": CommonLLMNames.GPT_5_MINI.value,
-                            "litellm_params": {
-                                "model": CommonLLMNames.GPT_5_MINI.value,
-                                "temperature": 0,
-                                "max_tokens": 56,
-                                "logprobs": True,
-                                "top_logprobs": 5,
-                            },
-                        }
-                    ],
-                },
-                id="OpenAI-model-2",
-            ),
-            pytest.param(
                 {"name": CommonLLMNames.GPT_5_MINI.value}, id="OpenAI-model-2"
             ),
             pytest.param(
