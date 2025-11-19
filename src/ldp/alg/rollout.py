@@ -16,7 +16,7 @@ from ldp.agent import Agent
 from ldp.data_structures import Trajectory, Transition
 from ldp.utils import format_error_details
 
-from .callbacks import Callback
+from .callbacks import Callback, MessageOutputCallback
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +89,7 @@ class RolloutManager:
         catch_env_failures: bool = True,
         callbacks: Sequence[Callback] | None = None,
         concurrency_limit: int | None = None,
+        message_output_callbacks: Sequence[MessageOutputCallback] | None = None,
     ):
         self.agent = agent
 
@@ -101,6 +102,7 @@ class RolloutManager:
 
         self.traj_buffer: dict[str, Trajectory] = {}
         self.callbacks = callbacks or []
+        self.msg_callbacks = message_output_callbacks or []
 
     @overload
     async def sample_trajectories(  # noqa: D418
@@ -337,6 +339,11 @@ class RolloutManager:
                 for callback in self.callbacks
             ])
             trajectory.steps.append(step)
+
+            # run messaging callbacks and assign message outputs
+            for msg_callback in self.msg_callbacks:
+                # order matters since each subsequent callback will receive the message modifications of all prior
+                env.messages = msg_callback(traj_id, self.agent, env, step)
 
         # Set default values to store in the buffer in case reset/init_state fail
         obs: list[Message] = []

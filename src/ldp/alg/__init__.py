@@ -12,6 +12,7 @@ from .callbacks import (
     ComputeTrajectoryMetricsMixin,
     LoggingCallback,
     MeanMetricsCallback,
+    MessageOutputCallback,
     RolloutDebugDumpCallback,
     StoreEnvironmentsCallback,
     StoreTrajectoriesCallback,

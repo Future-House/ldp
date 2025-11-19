@@ -131,10 +131,13 @@ class MessageOutputCallback(Callback):
         super().__init__()
 
     # just a single callback point for now, can add more later if we need to amend message history at different points in rollout
-    async def after_env_step(
-            self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
-    ) -> list[Message]:
-        """Invoked by runners after env.step(). Return a (possibly) changed message history for assignment in the parent environment."""
+    async def after_transition(
+            self, traj_id: str, agent: Agent, env: Environment, transition: Transition
+    ) -> None:
+        """Invoked by runners after each transition.  Return a (possibly) changed message history for assignment in the parent environment."""
+        # e.g.
+        # env.messages.append(Message.create_message(...))
+        # return env.messages
 
 
 class StoreTrajectoriesCallback(Callback):
