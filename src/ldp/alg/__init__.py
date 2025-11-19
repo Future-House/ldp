@@ -34,6 +34,7 @@ __all__ = [
     "Beam",
     "BeamSearchRollout",
     "Callback",
+    "MessageOutputCallback",
     "ClearContextCallback",
     "ClearOptimizerBuffersCallback",
     "ComputeTrajectoryMetricsMixin",
