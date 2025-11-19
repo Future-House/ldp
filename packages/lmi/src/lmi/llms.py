@@ -730,6 +730,17 @@ class LiteLLMModel(LLMModel):
         else:
             # pylint: disable-next=possibly-used-before-assignment
             _DeploymentTypedDictValidator.validate_python(model_list)
+
+        # HOT FIX ###
+        logger.warning("We are applying hotfix to force completion mode from litellm")
+        for m in [*model_list, data["name"]]:
+            if (
+                "model_name" in m
+                and m["model_name"].split("/")[-1] in litellm.model_cost
+            ):
+                litellm.model_cost[m["model_name"].split("/")[-1]]["mode"] = (
+                    "completions"
+                )
         return data
 
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
