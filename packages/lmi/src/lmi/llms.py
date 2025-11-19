@@ -737,12 +737,12 @@ class LiteLLMModel(LLMModel):
             if (
                 m
                 and (model_cost_key := m.split("/")[-1]) in litellm.model_cost
-                and litellm.model_cost[model_cost_key]["mode"] != "completions"
+                and litellm.model_cost[model_cost_key]["mode"] == "responses"
             ):
                 logger.warning(
                     f"We are applying hotfix to force completion mode from litellm for {model_cost_key}"
                 )
-                litellm.model_cost[model_cost_key]["mode"] = "completions"
+                litellm.model_cost[model_cost_key]["mode"] = "chat"
         return data
 
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
