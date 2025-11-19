@@ -731,7 +731,7 @@ class LiteLLMModel(LLMModel):
             # pylint: disable-next=possibly-used-before-assignment
             _DeploymentTypedDictValidator.validate_python(model_list)
 
-        # HOT FIX ###
+        # HOT FIX for https://github.com/BerriAI/litellm/issues/16808
         logger.warning("We are applying hotfix to force completion mode from litellm")
         for m in [*model_list, data["name"]]:
             if (
