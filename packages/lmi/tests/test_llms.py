@@ -1124,3 +1124,44 @@ async def test_handle_refusal_via_fallback(caplog) -> None:
     assert results.model == CommonLLMNames.GPT_41.value
     assert "the llm request was refused" in caplog.text.lower()
     assert "attempting to fallback" in caplog.text.lower()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("model_name", "expected_tool_role_count"),
+    [
+        ("vertex_ai/gemini-3-pro-preview", 0),
+        (CommonLLMNames.GPT_4O.value, 1),
+    ],
+)
+async def test_gemini3_tool_patch(
+    model_name: str, expected_tool_role_count: int
+) -> None:
+    # Setup
+    model = LiteLLMModel(name=model_name)
+
+    messages = [
+        Message(role="user", content="Hello"),
+        ToolResponseMessage(
+            role="tool", content="Result", tool_call_id="123", name="test_tool"
+        ),
+    ]
+
+    # Execute
+    with patch.object(
+        LiteLLMModel, "acompletion", new_callable=AsyncMock
+    ) as mock_acompletion:
+        mock_acompletion.return_value = []
+        await model.call(messages)
+
+        # Verify
+        call_args = mock_acompletion.call_args
+        assert call_args is not None
+        # call_args[0] are positional args: (messages,)
+        called_messages = call_args[0][0]
+
+        assert len(called_messages) == 2
+        assert called_messages[0].role == "user"
+
+        tool_messages = [m for m in called_messages if m.role == "tool"]
+        assert len(tool_messages) == expected_tool_role_count
