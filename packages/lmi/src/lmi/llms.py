@@ -733,14 +733,14 @@ class LiteLLMModel(LLMModel):
 
         # HOT FIX for https://github.com/BerriAI/litellm/issues/16808
         logger.warning("We are applying hotfix to force completion mode from litellm")
-        for m in [*model_list, data["name"]]:
-            if (
-                "model_name" in m
-                and m["model_name"].split("/")[-1] in litellm.model_cost
-            ):
-                litellm.model_cost[m["model_name"].split("/")[-1]]["mode"] = (
-                    "completions"
-                )
+        for m in model_list:
+            model_name = m.get("model_name", "")
+            if model_name and model_name.split("/")[-1] in litellm.model_cost:
+                litellm.model_cost[model_name.split("/")[-1]]["mode"] = "completions"
+
+        # Also apply to the main model name
+        if data["name"] and data["name"].split("/")[-1] in litellm.model_cost:
+            litellm.model_cost[data["name"].split("/")[-1]]["mode"] = "completions"
         return data
 
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
