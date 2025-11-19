@@ -735,8 +735,10 @@ class LiteLLMModel(LLMModel):
         logger.warning("We are applying hotfix to force completion mode from litellm")
         for m in model_list:
             model_name = m.get("model_name", "")
-            if model_name and model_name.split("/")[-1] in litellm.model_cost:
-                litellm.model_cost[model_name.split("/")[-1]]["mode"] = "completions"
+            if model_name and (model_cost_key:=model_name.split("/")[-1]) in litellm.model_cost:
+                if litellm.model_cost[model_cost_key]["mode"] != "completions:
+                    logger.warning("We are applying hotfix to force completion mode from litellm for {model_cost_key}")
+                    litellm.model_cost[model_cost_key]["mode"] = "completions"
 
         # Also apply to the main model name
         if data["name"] and data["name"].split("/")[-1] in litellm.model_cost:
