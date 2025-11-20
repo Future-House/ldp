@@ -957,7 +957,7 @@ class TestTooling:
                     or not isinstance(tool_call["name"], str)
                     or not isinstance(tool_call["arguments"], dict)
                 ):
-                    return Message(role="assistant", content="Tool request is wrong.")
+                    continue
 
                 name = tool_call["name"]
                 # Check if the tool name is in the provided tools list
@@ -966,6 +966,8 @@ class TestTooling:
                 arguments = tool_call["arguments"]
                 tool_calls.append(ToolCall.from_name(function_name=name, **arguments))
 
+            if not tool_calls:
+                return Message(role="assistant", content="No tools were requested...")
             return ToolRequestMessage(role="assistant", tool_calls=tool_calls)
 
         model = LiteLLMModel(
