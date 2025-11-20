@@ -36,6 +36,7 @@ from aviary.core import (
     Message,
     Tool,
     ToolRequestMessage,
+    ToolResponseMessage,
     ToolsAdapter,
     ToolSelector,
     is_coroutine_callable,
@@ -305,6 +306,23 @@ class LLMModel(ABC, BaseModel):
     # None means we won't provide a tool_choice to the LLM API
     UNSPECIFIED_TOOL_CHOICE: ClassVar[None] = None
 
+    def _maybe_patch_gemini3_tool_response_messages(
+        self, messages: list[Message]
+    ) -> list[Message]:
+        """As of 2025-11-18, Gemini 3 doesn't accept role="tool" in ToolResponseMessage.
+
+        This function patches it to role="user".
+        """
+        if "gemini-3" not in self.name:
+            return messages
+
+        return [
+            m
+            if not isinstance(m, ToolResponseMessage)
+            else m.model_copy(update={"role": "user"})
+            for m in messages
+        ]
+
     async def call(  # noqa: C901, PLR0915
         self,
         messages: list[Message],
@@ -334,6 +352,7 @@ class LLMModel(ABC, BaseModel):
         Raises:
             ValueError: If the LLM type is unknown.
         """
+        messages = self._maybe_patch_gemini3_tool_response_messages(messages)
         chat_kwargs = copy.deepcopy(kwargs)
         # if using the config for an LLMModel,
         # there may be a nested 'config' key
@@ -439,8 +458,8 @@ class LLMModel(ABC, BaseModel):
                 results.append(result)
 
         for result in results:
-            if not result.completion_count:
-                result.completion_count = self.count_tokens(cast("str", result.text))
+            if not result.completion_count and result.text is not None:
+                result.completion_count = self.count_tokens(result.text)
             result.seconds_to_last_token = (
                 asyncio.get_running_loop().time() - start_clock
             )
@@ -755,6 +774,19 @@ class LiteLLMModel(LLMModel):
         else:
             # pylint: disable-next=possibly-used-before-assignment
             _DeploymentTypedDictValidator.validate_python(model_list)
+
+        # HOT FIX for https://github.com/BerriAI/litellm/issues/16808
+        model_names = [m.get("model_name", "") for m in model_list] + [data["name"]]
+        for m in model_names:
+            if (
+                m
+                and (model_cost_key := m.split("/")[-1]) in litellm.model_cost
+                and litellm.model_cost[model_cost_key]["mode"] == "responses"
+            ):
+                logger.warning(
+                    f"We are applying hotfix to force completion mode from litellm for {model_cost_key}"
+                )
+                litellm.model_cost[model_cost_key]["mode"] = "chat"
         return data
 
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
@@ -1089,6 +1121,7 @@ class LiteLLMModel(LLMModel):
         yield result
 
     def count_tokens(self, text: str) -> int:
+        # NOTE: by design text is just str here, as None leads to a ValueError
         return litellm.token_counter(model=self.name, text=text)
 
     @property
