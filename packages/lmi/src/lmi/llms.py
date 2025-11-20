@@ -657,14 +657,22 @@ class LiteLLMModel(LLMModel):
     tool_parser: (
         Callable[
             [litellm.utils.Choices, list[dict] | None],
-            Message | ToolRequestMessage | list[Message] | list[ToolRequestMessage],
+            Message | ToolRequestMessage,
         ]
         | Callable[
             [str, list[dict] | None],
-            Message | ToolRequestMessage | list[Message] | list[ToolRequestMessage],
+            Message | ToolRequestMessage,
         ]
         | None
-    ) = None
+    ) = Field(
+        default=None,
+        description=(
+            "Custom parser for converting LLM completions to tool requests. "
+            "Accepts either `(completion: str, tools: list[dict] | None) -> ToolRequestMessage | Message` "
+            "or `(choice: litellm.utils.Choices, tools: list[dict] | None) -> ToolRequestMessage | Message`. "
+            "Returns `ToolRequestMessage` on successful parsing, `Message` otherwise."
+        ),
+    )
     config: dict = Field(
         default_factory=dict,
         description=(
