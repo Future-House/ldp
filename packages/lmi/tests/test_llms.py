@@ -957,7 +957,7 @@ class TestTooling:
                     or not isinstance(tool_call["name"], str)
                     or not isinstance(tool_call["arguments"], dict)
                 ):
-                    continue
+                    return Message(role="assistant", content="Tool request is wrong.")
 
                 name = tool_call["name"]
                 # Check if the tool name is in the provided tools list
