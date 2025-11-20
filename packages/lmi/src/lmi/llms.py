@@ -670,7 +670,7 @@ class LiteLLMModel(LLMModel):
             "Custom parser for converting LLM completions to tool requests. "
             "Accepts either `(completion: str, tools: list[dict] | None) -> ToolRequestMessage | Message` "
             "or `(choice: litellm.utils.Choices, tools: list[dict] | None) -> ToolRequestMessage | Message`. "
-            "Returns `ToolRequestMessage` on successful parsing, `Message` otherwise."
+            "Returns `aviary.core.ToolRequestMessage` on successful parsing, `aviary.core.Message` otherwise."
         ),
     )
     config: dict = Field(
