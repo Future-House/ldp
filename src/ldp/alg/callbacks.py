@@ -51,6 +51,8 @@ class Callback:
             env.step()
             callback.after_env_step() *
             callback.after_transition() *
+        env.close()
+        callback.after_rollout() *
 
     Evaluator.evaluate / OnlineTrainer._eval_loop():
         callback.before_eval_loop() *
@@ -103,6 +105,9 @@ class Callback:
         self, traj_id: str, obs: list[Message], reward: float, done: bool, trunc: bool
     ) -> None:
         """Invoked by runners after env.step()."""
+
+    async def after_rollout(self, traj_id: str, agent: Agent, env: Environment) -> None:
+        """Invoked by runners after env.close() when rollout completes (even on failure)."""
 
     async def after_transition(
         self, traj_id: str, agent: Agent, env: Environment, transition: Transition

@@ -100,6 +100,9 @@ class TreeSearchRollout(RolloutManager):
                 reraise_exc_as(EnvError, enabled=self.catch_env_failures),
             ):
                 await env.close()
+            await asyncio.gather(*[
+                c.after_rollout(tree.root_id, self.agent, env) for c in self.callbacks
+            ])
 
         await self._descend(
             tree=tree,
