@@ -101,7 +101,7 @@ class TreeSearchRollout(RolloutManager):
             ):
                 await env.close()
             await asyncio.gather(*[
-                c.after_env_close(tree.root_id, env) for c in self.callbacks
+                c.after_rollout(tree.root_id, self.agent, env) for c in self.callbacks
             ])
 
         await self._descend(

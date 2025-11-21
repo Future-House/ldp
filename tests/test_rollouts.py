@@ -221,7 +221,7 @@ async def test_beam_search() -> None:
         if k
         not in {  # TODO: support these callbacks too
             "after_agent_init_state",
-            "after_env_close",
+            "after_rollout",
         }
     )
 
@@ -237,7 +237,7 @@ class DummyCallback(Callback):
             "after_agent_get_asv": 0,
             "after_env_reset": 0,
             "after_env_step": 0,
-            "after_env_close": 0,
+            "after_rollout": 0,
             "after_transition": 0,
         }
 
@@ -281,8 +281,8 @@ class DummyCallback(Callback):
     ):
         self.fn_invocations["after_env_step"] += 1
 
-    async def after_env_close(self, traj_id: str, env: Environment) -> None:
-        self.fn_invocations["after_env_close"] += 1
+    async def after_rollout(self, traj_id: str, agent: Agent, env: Environment) -> None:
+        self.fn_invocations["after_rollout"] += 1
 
     async def after_transition(
         self,
@@ -411,7 +411,7 @@ class TestTreeSearch:
                 "before_rollout",
                 "after_agent_init_state",
                 "after_env_reset",
-                "after_env_close",
+                "after_rollout",
             }:
                 assert num_calls == 1, "These should be invoked once at the start"
             else:

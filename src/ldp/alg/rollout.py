@@ -402,7 +402,7 @@ class RolloutManager:
             with reraise_exc_as(EnvError, enabled=self.catch_env_failures):
                 await env.close()
             await asyncio.gather(*[
-                c.after_env_close(traj_id, env) for c in self.callbacks
+                c.after_rollout(traj_id, self.agent, env) for c in self.callbacks
             ])
 
         self.traj_buffer[traj_id] = trajectory
