@@ -618,12 +618,61 @@ class PassThroughRouter(litellm.Router):  # TODO: add rate_limited
         return await litellm.aembedding(*args, **(self._default_kwargs | kwargs))
 
 
+def default_tool_parser(
+    choice: litellm.utils.Choices, tools: list[dict] | None
+) -> Message | ToolRequestMessage:
+    msg_type = (
+        ToolRequestMessage
+        if choice.finish_reason == "tool_calls"
+        or getattr(choice.message, "tool_calls", None) is not None
+        else Message
+    )
+    serialized_message = choice.message.model_dump()
+    if (
+        # Confirm we explicitly received an empty tool list, so we don't unnecessarily
+        # make a tool request message over a normal message
+        tools is not None
+        and not tools  # Confirm it's the empty tools special case
+        and not serialized_message.get("tool_calls")  # Don't clobber anything
+    ):
+        # This is a design decision made to simplify
+        # downstream language agent logic, where:
+        # 1. We wanted the presence of tools, even if the list is empty,
+        #    to lead to a ToolRequestMessage
+        # 2. However, OpenAI gpt-4o returns null tool_calls if tools is empty,
+        #    not empty tool_calls, which leads to a plain Message
+        # 3. So, we add this special case to make a ToolRequestMessage
+        serialized_message["tool_calls"] = []
+        msg_type = ToolRequestMessage
+    return msg_type(**serialized_message)
+
+
 class LiteLLMModel(LLMModel):
     """A wrapper around the litellm library."""
 
     model_config = ConfigDict(extra="forbid")
 
     name: str = CommonLLMNames.GPT_4O.value
+
+    tool_parser: (
+        Callable[
+            [litellm.utils.Choices, list[dict] | None],
+            Message | ToolRequestMessage,
+        ]
+        | Callable[
+            [str, list[dict] | None],
+            Message | ToolRequestMessage,
+        ]
+        | None
+    ) = Field(
+        default=None,
+        description=(
+            "Custom parser for converting LLM completions to tool requests. "
+            "Accepts either `(completion: str, tools: list[dict] | None) -> ToolRequestMessage | Message` "
+            "or `(choice: litellm.utils.Choices, tools: list[dict] | None) -> ToolRequestMessage | Message`. "
+            "Returns `aviary.core.ToolRequestMessage` on successful parsing, `aviary.core.Message` otherwise."
+        ),
+    )
     config: dict = Field(
         default_factory=dict,
         description=(
@@ -720,6 +769,9 @@ class LiteLLMModel(LLMModel):
             data["config"]["router_kwargs"] = {"retry_after": 5} | data["config"][
                 "router_kwargs"
             ]
+
+        if "tool_parser" in data["config"]:
+            data["tool_parser"] = data["config"].pop("tool_parser")
 
         # we only support one "model name" for now, here we validate
         model_list = data["config"]["model_list"]
@@ -866,9 +918,7 @@ class LiteLLMModel(LLMModel):
     # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
-    async def acompletion(  # noqa: C901
-        self, messages: list[Message], **kwargs
-    ) -> list[LLMResult]:
+    async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:  # noqa: C901, PLR0915
         override_config = kwargs.pop("override_config", None)
         if override_config:
             override_config = OverrideRouterConfig(**override_config)
@@ -884,6 +934,17 @@ class LiteLLMModel(LLMModel):
             "list[litellm.types.llms.openai.AllMessageValues]",
             [m.model_dump(by_alias=True) for m in messages],
         )
+        tool_choice = kwargs.get("tool_choice")
+        if self.tool_parser is not None and tool_choice not in {
+            None,
+            self.NO_TOOL_CHOICE,
+        }:
+            logger.warning(
+                f"Custom tool parser was provided."
+                f"Setting tool_choice parameter to {self.NO_TOOL_CHOICE}."
+            )
+            kwargs["tool_choice"] = self.NO_TOOL_CHOICE
+
         completions = await track_costs(router.acompletion)(
             self.name, prompts, **kwargs
         )
@@ -932,39 +993,33 @@ class LiteLLMModel(LLMModel):
         # We are not streaming here, so we can cast to list[litellm.utils.Choices]
         choices = cast("list[litellm.utils.Choices]", completions.choices)
         for choice in choices:
-            msg_type = (
-                ToolRequestMessage
-                if choice.finish_reason == "tool_calls"
-                or getattr(choice.message, "tool_calls", None) is not None
-                else Message
-            )
-            serialized_message = choice.message.model_dump()
-            if (
-                # Confirm we explicitly received an empty tool list, so we don't unnecessarily
-                # make a tool request message over a normal message
-                tools is not None
-                and not tools  # Confirm it's the empty tools special case
-                and not serialized_message.get("tool_calls")  # Don't clobber anything
-            ):
-                # This is a design decision made to simplify
-                # downstream language agent logic, where:
-                # 1. We wanted the presence of tools, even if the list is empty,
-                #    to lead to a ToolRequestMessage
-                # 2. However, OpenAI gpt-4o returns null tool_calls if tools is empty,
-                #    not empty tool_calls, which leads to a plain Message
-                # 3. So, we add this special case to make a ToolRequestMessage
-                serialized_message["tool_calls"] = []
-                msg_type = ToolRequestMessage
             try:
-                output_messages = [msg_type(**serialized_message)]
+                if self.tool_parser is None:
+                    output_messages: (
+                        Message
+                        | ToolRequestMessage
+                        | list[Message]
+                        | list[ToolRequestMessage]
+                    ) = default_tool_parser(choice, tools)
+                else:
+                    sig = signature(self.tool_parser)
+                    first_param = next(iter(sig.parameters.values()))
+                    arg: str | litellm.utils.Choices = (
+                        choice.message.content or ""
+                        if first_param.annotation is str
+                        else choice
+                    )
+                    output_messages = self.tool_parser(arg, tools)  # type: ignore[arg-type]
             except ValidationError as exc:
                 raise MalformedMessageError(
                     f"Failed to convert model response's message {choice.message}"
-                    f" into a {msg_type.__name__}."
                     f" Got finish reason {choice.finish_reason!r},"
                     f" full response was {completions},"
                     f" and tool choice was {kwargs.get('tool_choice')!r}."
                 ) from exc
+
+            if not isinstance(output_messages, list):
+                output_messages = [output_messages]
 
             reasoning_content = None
             if hasattr(choice.message, "reasoning_content"):
