@@ -20,6 +20,10 @@ pip install fhlmi
 
 <!--TOC-->
 
+---
+
+**Table of Contents**
+
 - [Installation](#installation)
 - [Quick start](#quick-start)
 - [Documentation](#documentation)
@@ -40,6 +44,8 @@ pip install fhlmi
     - [LiteLLMEmbeddingModel](#litellmembeddingmodel)
     - [HybridEmbeddingModel](#hybridembeddingmodel)
     - [SentenceTransformerEmbeddingModel](#sentencetransformerembeddingmodel)
+
+---
 
 <!--TOC-->
 

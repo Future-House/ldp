@@ -114,6 +114,10 @@ check-hidden = true
 ignore-words-list = "astroid,ser"
 skip = "**tests/cassettes/*,**/tests/cassettes/*"
 
+[tool.markdown_toc_creator]
+horizontal-rule-style = "prettier"
+proactive = false
+
 [tool.mypy]
 # Type-checks the interior of functions without type annotations.
 check_untyped_defs = true
@@ -202,6 +206,12 @@ max-attributes = 12
 max-line-length = 88  # Match ruff line-length
 
 [tool.pylint.main]
+# Files or directories matching the regular expression patterns are skipped.
+# The regex matches against base names, not paths. The default value ignores
+# Emacs file locks
+ignore-patterns = [
+    "^version\\.py$",  # Version files made by setuptools_scm
+]
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use, and will cap the count on Windows to
 # avoid hangs.
@@ -359,6 +369,7 @@ extend-select = [
     "B909",
     "B912",
     "CPY001",
+    "DOC102",
     "DOC201",
     "DOC202",
     "DOC402",
@@ -560,6 +571,7 @@ mypy-init-return = true
     "E501",  # Tests can have long strings
     "F841",  # Tests can have unused locals
     "N802",  # Tests function names can match class names
+    "PLC2701",  # Test can import private names if needed
     "PLR2004",  # Tests can have magic values
     "PLR6301",  # Test classes can ignore self
     "S101",  # Tests can have assertions
