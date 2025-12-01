@@ -15,7 +15,7 @@ from ldp.graph import (
     set_training_mode,
     train_mode,
 )
-from ldp.graph.op_utils import _RUN_ID  # noqa: PLC2701
+from ldp.graph.op_utils import _RUN_ID
 
 
 @pytest.mark.asyncio
