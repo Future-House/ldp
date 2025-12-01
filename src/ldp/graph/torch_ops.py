@@ -126,7 +126,7 @@ def store_tensor_inputs(
     # See Op.__call__ for some notes on what this is doing.
     for i_arg, (arg, param) in enumerate(
         # strict=False b/c not all params in _fwd_args will be in args (i.e. defaults and **kwargs)
-        zip(tensor_args, fwd_args, strict=False)
+        zip(tensor_args, fwd_args, strict=False)  # noqa: FURB120
     ):
         if param.kind == inspect.Parameter.VAR_POSITIONAL:
             ctx_args = list(tensor_args[i_arg:])

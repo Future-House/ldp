@@ -78,7 +78,7 @@ def discounted_returns(
     """
     returns = []
     r = 0.0
-    for reward, term in zip(reversed(rewards), reversed(terminated), strict=False):
+    for reward, term in zip(reversed(rewards), reversed(terminated), strict=True):
         # 1 - term is 0 if the episode has terminated
         r = reward + discount * r * (1 - term)
         returns.append(r)
