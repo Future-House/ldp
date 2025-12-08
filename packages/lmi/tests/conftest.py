@@ -9,7 +9,7 @@ from typing import Any
 import httpx_aiohttp
 import litellm.llms.custom_httpx.aiohttp_transport
 import pytest
-import vcr.stubs.httpx_stubs
+import vcr.stubs.httpcore_stubs
 from dotenv import load_dotenv
 from google.cloud.storage import Client
 
@@ -46,6 +46,7 @@ def fixture_vcr_config() -> dict[str, Any]:
         "record_mode": "once",
         "allow_playback_repeats": True,
         "cassette_library_dir": str(CASSETTES_DIR),
+        "drop_unused_requests": True,
     }
 
 
@@ -127,9 +128,14 @@ class PreReadCompatibleAiohttpResponseStream(
                     yield chunk
 
 
-async def _async_vcr_send(cassette, real_send, *args, **kwargs):  # noqa: ARG001
-    """VCR send that only sends, not possibly recording or playing back responses."""
-    return await real_send(*args, **kwargs)
+async def _vcr_handle_async_request(
+    cassette,  # noqa: ARG001
+    real_handle_async_request,
+    self,
+    real_request,
+):
+    """VCR handler that only sends, not possibly recording or playing back responses."""
+    return await real_handle_async_request(self, real_request)
 
 
 # Permanently patch the original response stream,
@@ -141,4 +147,4 @@ httpx_aiohttp.transport.AiohttpResponseStream = (  # type: ignore[misc]
 
 # Permanently patch vcrpy's async VCR recording functionality,
 # to work around https://github.com/kevin1024/vcrpy/issues/944
-vcr.stubs.httpx_stubs._async_vcr_send = _async_vcr_send
+vcr.stubs.httpcore_stubs._vcr_handle_async_request = _vcr_handle_async_request
