@@ -25,7 +25,7 @@ dependencies = [
     "coredis",
     "fhaviary>=0.14.0",  # For multi-image support
     "limits>=4.8",  # Pin for RedisBridge.key_prefix
-    "litellm>=1.75.6",  # Lower pin for OpenAI reasoning effort support
+    "litellm>=1.75.6,<1.80.8",  # Lower pin for OpenAI reasoning effort support, upper pin for https://github.com/BerriAI/litellm/issues/17672
     "pydantic~=2.0,>=2.10.1",
     "tiktoken>=0.4.0",
     "typing-extensions; python_version <= '3.11'",  # for typing.override
