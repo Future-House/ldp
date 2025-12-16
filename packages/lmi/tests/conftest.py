@@ -147,7 +147,4 @@ httpx_aiohttp.transport.AiohttpResponseStream = (  # type: ignore[misc]
 
 # Permanently patch vcrpy's async VCR recording functionality,
 # to work around https://github.com/kevin1024/vcrpy/issues/944
-orig_vcr_handle_async_request = (  # Preserve for tests who need this
-    vcr.stubs.httpcore_stubs._vcr_handle_async_request
-)
 vcr.stubs.httpcore_stubs._vcr_handle_async_request = _vcr_handle_async_request

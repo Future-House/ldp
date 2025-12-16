@@ -25,7 +25,7 @@ dependencies = [
     "coredis",
     "fhaviary>=0.14.0",  # For multi-image support
     "limits>=4.8",  # Pin for RedisBridge.key_prefix
-    "litellm>=1.75.6,<1.80.8",  # Lower pin for OpenAI reasoning effort support, upper pin for https://github.com/BerriAI/litellm/issues/17672
+    "litellm>=1.75.6",  # Lower pin for OpenAI reasoning effort support
     "pydantic~=2.0,>=2.10.1",
     "tiktoken>=0.4.0",
     "typing-extensions; python_version <= '3.11'",  # for typing.override
@@ -45,7 +45,7 @@ dev = [
     "google-cloud-storage>=3",  # Pin to keep recent
     "httpx-aiohttp",
     "ipython>=8",  # Pin to keep recent
-    "litellm>=1.71",  # Lower pin for aiohttp transport adoption
+    "litellm>=1.80.10",  # Lower pin for fixing text completions using optimized HTTP
     "mypy>=1.8",  # Pin for mutable-override
     "pre-commit>=3.4",  # Pin to keep recent
     "pylint-pydantic",

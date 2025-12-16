@@ -21,8 +21,6 @@ from lmi.llms import (
 from lmi.types import LLMResult
 from lmi.utils import VCR_DEFAULT_MATCH_ON
 
-from .conftest import orig_vcr_handle_async_request
-
 
 class TestLiteLLMModel:
     def test_instantiation_methods(self) -> None:
@@ -919,10 +917,6 @@ class TestTooling:
             assert isinstance(result.messages[0], ToolRequestMessage)
             assert not result.messages[0].tool_calls
 
-    @patch(  # Work around https://github.com/BerriAI/litellm/issues/17676
-        "vcr.stubs.httpcore_stubs._vcr_handle_async_request",
-        orig_vcr_handle_async_request,
-    )
     @pytest.mark.asyncio
     @pytest.mark.vcr
     async def test_multi_response_validation(self) -> None:
