@@ -414,7 +414,9 @@ class GlobalRateLimiter:
                 elapsed += self.WAIT_INCREMENT
             if elapsed >= acquire_timeout:
                 raise TimeoutError(
-                    f"Timeout ({elapsed} secs): rate limit for key: {namespace_and_key}"
+                    f"Timeout ({elapsed}-s) waiting for rate limit based on"
+                    f" key={namespace_and_key}, rate_limit={rate_limit},"
+                    f" weight={weight}, and acquire_timeout={acquire_timeout}-s"
                 )
 
             # If the rate limit hit is False, then we're violating the limit, so we
