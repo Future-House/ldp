@@ -1,6 +1,9 @@
+import os
 from sys import version_info
 
 import litellm
+
+USE_RESPONSES_API = os.environ.get("LMI_USE_RESPONSES", "").lower() in {"true", "1"}
 
 # Estimate from OpenAI's FAQ
 # https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them

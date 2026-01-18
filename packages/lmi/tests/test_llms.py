@@ -1,8 +1,10 @@
+import base64
 import json
 import pathlib
 import pickle
 import re
 from collections.abc import AsyncIterator
+from io import BytesIO
 from typing import Any, ClassVar
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -10,6 +12,7 @@ import litellm
 import numpy as np
 import pytest
 from aviary.core import Message, Tool, ToolCall, ToolRequestMessage, ToolResponseMessage
+from PIL import Image
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
 from lmi.exceptions import JSONSchemaValidationError
@@ -1203,6 +1206,194 @@ async def test_handle_refusal_via_fallback(caplog) -> None:
     assert results.model == CommonLLMNames.GPT_41.value
     assert "the llm request was refused" in caplog.text.lower()
     assert "attempting to fallback" in caplog.text.lower()
+
+
+class TestResponses:
+    """Tests for the Responses API backend."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    @pytest.mark.parametrize("model_name", ["gpt-5.2", "gpt-5-mini"])
+    async def test_basic_call(self, model_name: str) -> None:
+        """Test basic text completion via Responses API."""
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name=model_name)
+            messages = [
+                Message(role="system", content="Respond with single words."),
+                Message(role="user", content="What color is the sky?"),
+            ]
+            result = await model.call_single(messages)
+
+            assert isinstance(result, LLMResult)
+            assert result.text is not None
+            assert "blue" in result.text.lower()
+            assert result.prompt_count is not None
+            assert result.prompt_count > 0
+            assert result.completion_count is not None
+            assert result.completion_count > 0
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_tool_calling(self) -> None:
+        """Test tool calling via Responses API."""
+
+        def get_weather(city: str) -> str:
+            """Get the weather for a city.
+
+            Args:
+                city: The city to get weather for.
+
+            Returns:
+                The weather description.
+            """
+            return f"Weather in {city}: sunny"
+
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-5-mini")
+            messages = [
+                Message(role="user", content="What's the weather in Paris?"),
+            ]
+            tools = [Tool.from_function(get_weather)]
+
+            result = await model.call_single(
+                messages, tools=tools, tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL
+            )
+
+            assert isinstance(result, LLMResult)
+            assert result.messages
+            assert isinstance(result.messages[0], ToolRequestMessage)
+            assert result.messages[0].tool_calls
+            assert result.messages[0].tool_calls[0].function.name == "get_weather"
+            assert (
+                "paris"
+                in result.messages[0].tool_calls[0].function.arguments["city"].lower()
+            )
+
+    @pytest.mark.asyncio
+    async def test_callbacks_not_supported(self) -> None:
+        """Test that streaming callbacks raise NotImplementedError."""
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-5-mini")
+            messages = [Message(content="Hello")]
+
+            with pytest.raises(
+                NotImplementedError,
+                match="Streaming callbacks not yet supported with Responses API",
+            ):
+                await model.call(messages, callbacks=[lambda _: None])
+
+    # The below are integration tests; therefore not VCR'd - want to confirm they work live
+
+    @pytest.mark.asyncio
+    async def test_multi_turn_tool_calling(self) -> None:
+        """Test multi-turn conversation with tool calling via Responses API."""
+
+        def get_stock_price(symbol: str) -> str:
+            """Get the current stock price.
+
+            Args:
+                symbol: Stock ticker symbol.
+
+            Returns:
+                The current price.
+            """
+            return f"{symbol}: $142.50"
+
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-5-mini")
+            tools = [Tool.from_function(get_stock_price)]
+
+            # Turn 1: User asks, model should call tool
+            messages: list[Message] = [
+                Message(role="user", content="What is the current price of AAPL?"),
+            ]
+            result = await model.call_single(
+                messages, tools=tools, tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL
+            )
+
+            assert result.messages
+            assert isinstance(result.messages[0], ToolRequestMessage)
+            tool_call = result.messages[0].tool_calls[0]
+            assert tool_call.function.name == "get_stock_price"
+
+            # Turn 2: Provide tool result, model should respond with answer
+            messages.extend((
+                result.messages[0],
+                ToolResponseMessage(
+                    role="tool",
+                    name="get_stock_price",
+                    content="$142.50",
+                    tool_call_id=tool_call.id,
+                ),
+            ))
+
+            result = await model.call_single(messages, tools=tools, tool_choice="auto")
+
+            assert result.text is not None
+            assert "142" in result.text
+
+    @pytest.mark.asyncio
+    async def test_multi_turn_tool_calling_with_images(self) -> None:
+        """Test that images in tool responses are visible to the model.
+
+        This verifies that the Responses API correctly handles images in tool
+        responses, unlike the Chat Completions API which silently drops them
+        for some models like gpt-5.2.
+        """
+        # Create a solid red image
+        img = Image.new("RGB", (100, 100), color=(255, 0, 0))
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        image_b64 = base64.b64encode(buffer.getvalue()).decode()
+        image_url = f"data:image/png;base64,{image_b64}"
+
+        def get_image() -> str:
+            """Retrieve an image for analysis.
+
+            Returns:
+                The image data.
+            """
+            return "Image retrieved"
+
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-5.2")
+            tools = [Tool.from_function(get_image)]
+
+            # Turn 1: User asks for image, model calls tool
+            messages: list[Message] = [
+                Message(role="user", content="Get the image and tell me its color."),
+            ]
+            result = await model.call_single(
+                messages, tools=tools, tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL
+            )
+
+            assert result.messages
+            assert isinstance(result.messages[0], ToolRequestMessage)
+            tool_call = result.messages[0].tool_calls[0]
+            assert tool_call.function.name == "get_image"
+
+            # Turn 2: Provide tool response with image
+            messages.append(result.messages[0])
+
+            # Create tool response with image using aviary's message creation
+            tool_response = Message.create_message(role="tool", images=[image_url])
+            response_kwargs = tool_response.model_dump(
+                exclude={"role", "tool_call_id", "name"},
+                context={"deserialize_content": False},
+            ) | {"content_is_json_str": tool_response.content_is_json_str}
+            tool_response_msg = ToolResponseMessage.from_call(
+                tool_call, **response_kwargs
+            )
+
+            messages.append(tool_response_msg)
+
+            result = await model.call_single(messages, tools=tools, tool_choice="auto")
+
+            assert result.text is not None
+            # The model should identify the red color, proving it can see the image
+            assert "red" in result.text.lower(), (
+                f"Model should identify red color, got: {result.text}"
+            )
 
 
 @pytest.mark.asyncio
