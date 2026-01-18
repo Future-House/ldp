@@ -1395,6 +1395,55 @@ class TestResponses:
                 f"Model should identify red color, got: {result.text}"
             )
 
+    @pytest.mark.asyncio
+    async def test_tool_with_optional_params(self) -> None:
+        """Test that tools with optional parameters work with Responses API strict mode.
+
+        OpenAI's strict mode requires all properties in 'required', so optional
+        params must be converted to nullable types.
+        """
+
+        def search_papers(
+            query: str, min_year: int | None = None, max_year: int | None = None
+        ) -> str:
+            """Search for academic papers.
+
+            Args:
+                query: Search query.
+                min_year: Filter for minimum publication year.
+                max_year: Filter for maximum publication year.
+
+            Returns:
+                Search results.
+            """
+            result = f"Found papers for '{query}'"
+            if min_year:
+                result += f" from {min_year}"
+            if max_year:
+                result += f" to {max_year}"
+            return result
+
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-5-mini")
+            tools = [Tool.from_function(search_papers)]
+
+            messages: list[Message] = [
+                Message(
+                    role="user",
+                    content="Search for papers about machine learning from 2020.",
+                ),
+            ]
+            result = await model.call_single(
+                messages, tools=tools, tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL
+            )
+
+            assert result.messages
+            assert isinstance(result.messages[0], ToolRequestMessage)
+            tool_call = result.messages[0].tool_calls[0]
+            assert tool_call.function.name == "search_papers"
+            # Model should have provided query and possibly min_year
+            assert "query" in tool_call.function.arguments
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
