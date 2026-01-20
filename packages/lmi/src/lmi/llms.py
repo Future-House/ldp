@@ -45,6 +45,7 @@ from aviary.core import (
 )
 from aviary.message import MalformedMessageError
 from litellm import completion_cost
+from litellm.types.llms.openai import ResponsesAPIStreamEvents
 from litellm.types.utils import Usage
 from openai.types.responses import (
     ResponseFunctionToolCall,
@@ -596,16 +597,30 @@ class LLMModel(ABC, BaseModel):
 
         start_clock = asyncio.get_running_loop().time()
         if USE_RESPONSES_API:
+            tools = chat_kwargs.pop("tools", None)
+            router = self.get_router()  # type: ignore[attr-defined]
             if callbacks is not None:
-                raise NotImplementedError(
-                    "Streaming callbacks not yet supported with Responses API"
+                sync_callbacks = [f for f in callbacks if not is_coroutine_callable(f)]
+                async_callbacks = [f for f in callbacks if is_coroutine_callable(f)]
+                stream_results = self._aresponses_iter(  # type: ignore[attr-defined]
+                    messages, router, tools, **chat_kwargs
                 )
-            results = await self._aresponses(  # type: ignore[attr-defined]
-                messages,
-                self.get_router(),  # type: ignore[attr-defined]
-                chat_kwargs.pop("tools", None),
-                **chat_kwargs,
-            )
+                text_result = []
+                async for result in stream_results:
+                    if result.text:
+                        if result.seconds_to_first_token == 0:
+                            result.seconds_to_first_token = (
+                                asyncio.get_running_loop().time() - start_clock
+                            )
+                        text_result.append(result.text)
+                        await do_callbacks(
+                            async_callbacks, sync_callbacks, result.text, name
+                        )
+                    results.append(result)
+            else:
+                results = await self._aresponses(  # type: ignore[attr-defined]
+                    messages, router, tools, **chat_kwargs
+                )
         elif callbacks is None:
             results = await self.acompletion(messages, **chat_kwargs)
         else:
@@ -1351,6 +1366,47 @@ class LiteLLMModel(LLMModel):
                 cost=cost,
             )
         ]
+
+    async def _aresponses_iter(
+        self,
+        messages: list[Message],
+        router: litellm.Router | PassThroughRouter,
+        tools: list[dict] | None,
+        **kwargs,
+    ) -> AsyncIterable[LLMResult]:
+        """Stream results from Responses API."""
+        responses_input = _convert_to_responses_input(messages)
+        responses_tools = _convert_tools_for_responses(tools)
+
+        stream = await track_costs_iter(router.aresponses)(
+            model=self.name,
+            input=responses_input,
+            tools=responses_tools,
+            stream=True,
+            **kwargs,
+        )
+
+        completed_response = None
+        async for event in stream:
+            event_type = getattr(event, "type", None)
+
+            if event_type == ResponsesAPIStreamEvents.OUTPUT_TEXT_DELTA:
+                yield LLMResult(model=self.name, text=event.delta, prompt=messages)
+            elif event_type == ResponsesAPIStreamEvents.RESPONSE_COMPLETED:
+                completed_response = event.response
+
+        # Final yield with complete result
+        if completed_response:
+            text, output_messages = _parse_responses_output(completed_response.output)
+            usage = getattr(completed_response, "usage", None)
+            yield LLMResult(
+                model=completed_response.model or self.name,
+                text=text,
+                messages=output_messages or [Message(role="assistant", content=text)],
+                prompt=messages,
+                prompt_count=usage.input_tokens if usage else None,
+                completion_count=usage.output_tokens if usage else None,
+            )
 
     def count_tokens(self, text: str) -> int:
         # NOTE: by design text is just str here, as None leads to a ValueError

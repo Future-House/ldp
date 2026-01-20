@@ -1269,20 +1269,34 @@ class TestResponses:
                 in result.messages[0].tool_calls[0].function.arguments["city"].lower()
             )
 
+    # The below are integration tests; therefore not VCR'd - want to confirm they work live
+
     @pytest.mark.asyncio
-    async def test_callbacks_not_supported(self) -> None:
-        """Test that streaming callbacks raise NotImplementedError."""
+    async def test_streaming_with_callbacks(self) -> None:
+        """Test that streaming with callbacks works via Responses API."""
+        received_chunks: list[str] = []
+
+        def callback(text: str) -> None:
+            received_chunks.append(text)
+
         with patch("lmi.llms.USE_RESPONSES_API", new=True):
             model = LiteLLMModel(name="gpt-5-mini")
-            messages = [Message(content="Hello")]
+            messages: list[Message] = [
+                Message(role="user", content="Count from 1 to 5, one number per line."),
+            ]
 
-            with pytest.raises(
-                NotImplementedError,
-                match="Streaming callbacks not yet supported with Responses API",
-            ):
-                await model.call(messages, callbacks=[lambda _: None])
+            result = await model.call(messages, callbacks=[callback])
 
-    # The below are integration tests; therefore not VCR'd - want to confirm they work live
+            # Should have received streaming chunks
+            assert len(received_chunks) > 0, "Should have received streaming chunks"
+
+            # Final result should have complete text
+            assert result
+            assert result[0].text is not None
+            # The full text should contain the numbers
+            full_text = "".join(received_chunks)
+            assert "1" in full_text
+            assert "5" in full_text
 
     @pytest.mark.asyncio
     async def test_multi_turn_tool_calling(self) -> None:
