@@ -1290,9 +1290,13 @@ class TestResponses:
             # Should have received streaming chunks
             assert len(received_chunks) > 0, "Should have received streaming chunks"
 
-            # Final result should have complete text
+            # Final result should have complete text and usage info
             assert result
             assert result[0].text is not None
+            assert result[0].prompt_count is not None, "prompt_count should be set"
+            assert result[0].completion_count is not None, (
+                "completion_count should be set"
+            )
             # The full text should contain the numbers
             full_text = "".join(received_chunks)
             assert "1" in full_text

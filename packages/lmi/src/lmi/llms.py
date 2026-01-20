@@ -600,30 +600,35 @@ class LLMModel(ABC, BaseModel):
             tools = chat_kwargs.pop("tools", None)
             router = self.get_router()  # type: ignore[attr-defined]
             if callbacks is not None:
+                # responses backend, streaming
                 sync_callbacks = [f for f in callbacks if not is_coroutine_callable(f)]
                 async_callbacks = [f for f in callbacks if is_coroutine_callable(f)]
                 stream_results = self._aresponses_iter(  # type: ignore[attr-defined]
                     messages, router, tools, **chat_kwargs
                 )
-                text_result = []
+                final_result = None
                 async for result in stream_results:
                     if result.text:
                         if result.seconds_to_first_token == 0:
                             result.seconds_to_first_token = (
                                 asyncio.get_running_loop().time() - start_clock
                             )
-                        text_result.append(result.text)
                         await do_callbacks(
                             async_callbacks, sync_callbacks, result.text, name
                         )
-                    results.append(result)
+                    final_result = result
+                if final_result:
+                    results.append(final_result)
             else:
+                # responses backend, non-streaming
                 results = await self._aresponses(  # type: ignore[attr-defined]
                     messages, router, tools, **chat_kwargs
                 )
         elif callbacks is None:
+            # completions backend, non-streaming
             results = await self.acompletion(messages, **chat_kwargs)
         else:
+            # completions backend, streaming
             if tools:
                 raise NotImplementedError("Using tools with callbacks is not supported")
             n = chat_kwargs.get("n") or self.config.get("n", 1)
