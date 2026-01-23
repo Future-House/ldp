@@ -121,7 +121,7 @@ def _convert_to_responses_input(messages: list[Message]) -> list[dict[str, Any]]
                 "call_id": msg.tool_call_id,
                 "output": _convert_tool_response_content(msg.content),
             })
-        elif isinstance(msg, ToolRequestMessage) and msg.tool_calls:
+        elif isinstance(msg, ToolRequestMessage):
             # Preserve the thought/reasoning content if present
             if msg.content:
                 result.append({
@@ -177,12 +177,12 @@ def _parse_responses_output(
     tool_calls = []
 
     for item in output:
-        if isinstance(item, ResponseOutputMessage):
+        if item.type == "message":
             for c in item.content:
                 if c.type == "output_text":
                     text_content = c.text
 
-        elif isinstance(item, ResponseFunctionToolCall):
+        elif item.type == "function_call":
             arguments = json.loads(item.arguments)
             tool_calls.append(
                 ToolCall(

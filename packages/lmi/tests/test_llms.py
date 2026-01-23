@@ -11,7 +11,14 @@ from unittest.mock import AsyncMock, Mock, patch
 import litellm
 import numpy as np
 import pytest
-from aviary.core import Message, Tool, ToolCall, ToolRequestMessage, ToolResponseMessage
+from aviary.core import (
+    Message,
+    Tool,
+    ToolCall,
+    ToolCallFunction,
+    ToolRequestMessage,
+    ToolResponseMessage,
+)
 from PIL import Image
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
@@ -19,6 +26,7 @@ from lmi.exceptions import JSONSchemaValidationError
 from lmi.llms import (
     CommonLLMNames,
     LiteLLMModel,
+    _convert_to_responses_input,
     validate_json_completion,
 )
 from lmi.types import LLMResult
@@ -1474,9 +1482,6 @@ class TestResponses:
         (in content) and tool calls (in tool_calls) in a single turn, which is a
         common pattern in agentic systems.
         """
-        from lmi.llms import _convert_to_responses_input
-        from aviary.core import ToolCall, ToolCallFunction
-
         # Create a ToolRequestMessage with both content and tool_calls
         # This simulates what an agent generates when it has a "thought" and actions
         tool_request = ToolRequestMessage(
@@ -1503,7 +1508,10 @@ class TestResponses:
         # First item should be the message with the thought/reasoning
         assert result[0]["type"] == "message"
         assert result[0]["role"] == "assistant"
-        assert result[0]["content"] == "Let me search for information about Python design patterns."
+        assert (
+            result[0]["content"]
+            == "Let me search for information about Python design patterns."
+        )
 
         # Second item should be the function call
         assert result[1]["type"] == "function_call"
@@ -1517,9 +1525,6 @@ class TestResponses:
         Some tool calls may not have accompanying content. This test ensures
         the conversion handles this gracefully.
         """
-        from lmi.llms import _convert_to_responses_input
-        from aviary.core import ToolCall, ToolCallFunction
-
         # Create a ToolRequestMessage with NO content, only tool_calls
         tool_request = ToolRequestMessage(
             role="assistant",
@@ -1540,10 +1545,49 @@ class TestResponses:
         result = _convert_to_responses_input([tool_request])
 
         # Should only have the function call, no message item
-        assert len(result) == 1, "Should only have function_call item when content is None"
+        assert len(result) == 1, (
+            "Should only have function_call item when content is None"
+        )
         assert result[0]["type"] == "function_call"
         assert result[0]["call_id"] == "call_456"
         assert result[0]["name"] == "get_weather"
+
+    @pytest.mark.asyncio
+    async def test_tool_call_responses_api(self) -> None:
+        """Integration test for Responses API tool calling."""
+
+        def search_database(query: str) -> str:
+            """Search the database for information.
+
+            Args:
+                query: The search query.
+
+            Returns:
+                Search results.
+            """
+            return f"Results for: {query}"
+
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-5-mini")
+            messages = [
+                Message(
+                    role="user",
+                    content="Please search the database for 'python tutorials'. "
+                    "Explain your reasoning before calling the tool.",
+                ),
+            ]
+            tools = [Tool.from_function(search_database)]
+
+            result = await model.call_single(
+                messages, tools=tools, tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL
+            )
+
+            assert isinstance(result, LLMResult)
+            assert result.messages
+            tool_request = result.messages[0]
+            assert isinstance(tool_request, ToolRequestMessage)
+            assert tool_request.tool_calls
+            assert tool_request.content
 
 
 @pytest.mark.asyncio
