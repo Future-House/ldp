@@ -140,37 +140,6 @@ def _convert_to_responses_input(messages: list[Message]) -> list[dict[str, Any]]
     return result
 
 
-def _make_schema_strict(parameters: dict[str, Any]) -> dict[str, Any]:
-    """Make a JSON schema strict-mode compatible.
-
-    OpenAI's Responses API with strict mode requires ALL properties to be in
-    the `required` array. Optional parameters must use type unions with null
-    (e.g., ["string", "null"]) instead of being omitted from `required`.
-    """
-    parameters = dict(parameters)  # Don't mutate original
-    properties = parameters.get("properties", {})
-    original_required = set(parameters.get("required", []))
-
-    new_properties = {}
-    for prop_name, prop_schema in properties.items():
-        prop_schema = dict(prop_schema)  # Don't mutate original
-        if prop_name not in original_required:
-            # Add null to type for optional properties
-            existing_type = prop_schema.get("type")
-            if existing_type and existing_type != "null":
-                if isinstance(existing_type, list):
-                    if "null" not in existing_type:
-                        prop_schema["type"] = [*existing_type, "null"]
-                else:
-                    prop_schema["type"] = [existing_type, "null"]
-        new_properties[prop_name] = prop_schema
-
-    parameters["properties"] = new_properties
-    parameters["required"] = list(properties.keys())
-    parameters["additionalProperties"] = False
-    return parameters
-
-
 def _convert_tools_for_responses(tools: list[dict] | None) -> list[dict] | None:
     """Convert Chat Completions tools to Responses API format."""
     if not tools:
@@ -180,14 +149,12 @@ def _convert_tools_for_responses(tools: list[dict] | None) -> list[dict] | None:
         if tool["type"] == "function":
             func = tool["function"]
             parameters = func.get("parameters")
-            if parameters is not None:
-                parameters = _make_schema_strict(parameters)
             result.append({
                 "type": "function",
                 "name": func["name"],
                 "description": func.get("description"),
                 "parameters": parameters,
-                "strict": func.get("strict", True),
+                "strict": False,
             })
         else:
             result.append(tool)
