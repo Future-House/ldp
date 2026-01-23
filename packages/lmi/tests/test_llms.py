@@ -1462,6 +1462,89 @@ class TestResponses:
             # Model should have provided query and possibly min_year
             assert "query" in tool_call.function.arguments
 
+    def test_convert_to_responses_preserves_tool_request_content(self) -> None:
+        """Test that ToolRequestMessage content is preserved in Responses API conversion.
+
+        This is a regression test for a critical bug where ToolRequestMessage content
+        (the agent's reasoning/thought) was being dropped during conversion to the
+        Responses API format, causing significant performance degradation in multi-turn
+        agentic workflows.
+
+        The bug affected scenarios where an agent generates both explanatory text
+        (in content) and tool calls (in tool_calls) in a single turn, which is a
+        common pattern in agentic systems.
+        """
+        from lmi.llms import _convert_to_responses_input
+        from aviary.core import ToolCall, ToolCallFunction
+
+        # Create a ToolRequestMessage with both content and tool_calls
+        # This simulates what an agent generates when it has a "thought" and actions
+        tool_request = ToolRequestMessage(
+            role="assistant",
+            content="Let me search for information about Python design patterns.",
+            tool_calls=[
+                ToolCall(
+                    id="call_123",
+                    type="function",
+                    function=ToolCallFunction(
+                        name="search",
+                        arguments={"query": "Python design patterns"},
+                    ),
+                )
+            ],
+        )
+
+        # Convert to Responses API format
+        result = _convert_to_responses_input([tool_request])
+
+        # Verify that BOTH the message content AND the function call are present
+        assert len(result) == 2, "Should have both message and function_call items"
+
+        # First item should be the message with the thought/reasoning
+        assert result[0]["type"] == "message"
+        assert result[0]["role"] == "assistant"
+        assert result[0]["content"] == "Let me search for information about Python design patterns."
+
+        # Second item should be the function call
+        assert result[1]["type"] == "function_call"
+        assert result[1]["call_id"] == "call_123"
+        assert result[1]["name"] == "search"
+        assert '"query": "Python design patterns"' in result[1]["arguments"]
+
+    def test_convert_to_responses_handles_empty_content(self) -> None:
+        """Test that ToolRequestMessage with empty/None content still works.
+
+        Some tool calls may not have accompanying content. This test ensures
+        the conversion handles this gracefully.
+        """
+        from lmi.llms import _convert_to_responses_input
+        from aviary.core import ToolCall, ToolCallFunction
+
+        # Create a ToolRequestMessage with NO content, only tool_calls
+        tool_request = ToolRequestMessage(
+            role="assistant",
+            content=None,  # No thought/reasoning
+            tool_calls=[
+                ToolCall(
+                    id="call_456",
+                    type="function",
+                    function=ToolCallFunction(
+                        name="get_weather",
+                        arguments={"city": "Paris"},
+                    ),
+                )
+            ],
+        )
+
+        # Convert to Responses API format
+        result = _convert_to_responses_input([tool_request])
+
+        # Should only have the function call, no message item
+        assert len(result) == 1, "Should only have function_call item when content is None"
+        assert result[0]["type"] == "function_call"
+        assert result[0]["call_id"] == "call_456"
+        assert result[0]["name"] == "get_weather"
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
