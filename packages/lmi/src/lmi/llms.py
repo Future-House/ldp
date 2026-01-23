@@ -122,6 +122,14 @@ def _convert_to_responses_input(messages: list[Message]) -> list[dict[str, Any]]
                 "output": _convert_tool_response_content(msg.content),
             })
         elif isinstance(msg, ToolRequestMessage) and msg.tool_calls:
+            # Preserve the thought/reasoning content if present
+            if msg.content:
+                result.append({
+                    "type": "message",
+                    "role": msg.role,
+                    "content": msg.content,
+                })
+            # Add the function calls
             result.extend(
                 {
                     "type": "function_call",
