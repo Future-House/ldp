@@ -26,6 +26,7 @@ from lmi.exceptions import JSONSchemaValidationError
 from lmi.llms import (
     CommonLLMNames,
     LiteLLMModel,
+    _convert_multimodal_content_for_responses,
     _convert_to_responses_input,
     validate_json_completion,
 )
@@ -1551,6 +1552,149 @@ class TestResponses:
         assert result[0]["type"] == "function_call"
         assert result[0]["call_id"] == "call_456"
         assert result[0]["name"] == "get_weather"
+
+    @pytest.mark.parametrize(
+        ("input_content", "expected_output"),
+        [
+            pytest.param(
+                [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/png;base64,ABC123"},
+                    }
+                ],
+                [{"type": "input_image", "image_url": "data:image/png;base64,ABC123"}],
+                id="image-only",
+            ),
+            pytest.param(
+                [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/png;base64,ABC123"},
+                    },
+                    {"type": "text", "text": "What color is this?"},
+                ],
+                [
+                    {
+                        "type": "input_image",
+                        "image_url": "data:image/png;base64,ABC123",
+                    },
+                    {"type": "input_text", "text": "What color is this?"},
+                ],
+                id="text-and-image",
+            ),
+            pytest.param(
+                [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/png;base64,IMG1"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/png;base64,IMG2"},
+                    },
+                    {"type": "text", "text": "Compare these images"},
+                ],
+                [
+                    {"type": "input_image", "image_url": "data:image/png;base64,IMG1"},
+                    {"type": "input_image", "image_url": "data:image/png;base64,IMG2"},
+                    {"type": "input_text", "text": "Compare these images"},
+                ],
+                id="multiple-images",
+            ),
+        ],
+    )
+    def test_convert_multimodal_content_for_responses(
+        self, input_content: list[dict], expected_output: list[dict]
+    ) -> None:
+        assert (
+            _convert_multimodal_content_for_responses(json.dumps(input_content))
+            == expected_output
+        )
+
+    def test_convert_to_responses_multimodal_messages(
+        self, subtests: pytest.Subtests
+    ) -> None:
+        with subtests.test(msg="multimodal-message"):
+            image = np.zeros((32, 32, 3), dtype=np.uint8)
+            image[:] = [255, 0, 0]  # Red image
+            multimodal_msg = Message.create_message(
+                text="What color is this square?", images=image
+            )
+            assert multimodal_msg.is_multimodal, (
+                "Message should be detected as multimodal"
+            )
+
+            # Convert to Responses API format and check structure
+            result = _convert_to_responses_input([multimodal_msg])
+            assert len(result) == 1
+            assert result[0]["type"] == "message"
+            assert result[0]["role"] == "user"
+            content = result[0]["content"]
+            assert isinstance(content, list), (
+                "Multimodal content should be a list, not a string"
+            )
+            image_blocks = [c for c in content if c.get("type") == "input_image"]
+            assert len(image_blocks) == 1, "Should have one image block"
+            assert "image_url" in image_blocks[0]
+            assert image_blocks[0]["image_url"].startswith("data:image/")
+            text_blocks = [c for c in content if c.get("type") == "input_text"]
+            assert len(text_blocks) == 1, "Should have one text block"
+            assert text_blocks[0]["text"] == "What color is this square?"
+
+        with subtests.test(msg="non-multimodal-unchanged"):
+            simple_msg = Message(role="user", content="Hello, world!")
+
+            result = _convert_to_responses_input([simple_msg])
+            assert len(result) == 1
+            assert result[0]["type"] == "message"
+            assert result[0]["role"] == "user"
+            assert result[0]["content"] == "Hello, world!", (
+                "Expecting non-multimodal content to be a string"
+            )
+            assert isinstance(result[0]["content"], str)
+
+        with subtests.test(msg="mixed-message-types"):
+            text_msg = Message(role="system", content="You are a helpful assistant.")
+            multimodal_msg = Message.create_message(
+                role="user",
+                text="Describe this image",
+                images=np.zeros((16, 16, 3), dtype=np.uint8),
+            )
+            result = _convert_to_responses_input([text_msg, multimodal_msg])
+            assert len(result) == 2
+            assert result[0]["type"] == "message", "First message should be plain text"
+            assert result[0]["content"] == "You are a helpful assistant."
+            assert isinstance(result[0]["content"], str)
+            assert result[1]["type"] == "message", (
+                "Second message should have converted multimodal content"
+            )
+            assert isinstance(result[1]["content"], list)
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_multimodal_message_responses_api(self) -> None:
+        # Create a red square image
+        image = np.zeros((32, 32, 3), dtype=np.uint8)
+        image[:] = [255, 0, 0]  # Red
+
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-4o-mini")
+            result = await model.call_single([
+                Message.create_message(
+                    text="What color is this square? Answer with just the color name.",
+                    images=image,
+                ),
+            ])
+            assert isinstance(result, LLMResult)
+            assert result.text
+            # The model should identify the red color - this proves it can see the image
+            # If the image were tokenized as text, the model would just see gibberish
+            assert "red" in result.text.lower()
+            assert result.prompt_count
+            assert result.prompt_count > 0
+            assert result.completion_count
+            assert result.completion_count > 0
 
     @pytest.mark.asyncio
     async def test_tool_call_responses_api(self) -> None:
