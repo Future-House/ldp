@@ -28,6 +28,7 @@ from collections.abc import (
     Sequence,
 )
 from enum import StrEnum
+from http import HTTPStatus
 from inspect import isasyncgenfunction, isawaitable, signature
 from typing import Any, ClassVar, ParamSpec, TypeAlias, cast, overload
 
@@ -44,8 +45,15 @@ from aviary.core import (
     is_coroutine_callable,
 )
 from aviary.message import MalformedMessageError
-from litellm import completion_cost
-from litellm.types.llms.openai import ResponsesAPIStreamEvents
+from litellm import LlmProviders, completion_cost
+from litellm.types.llms.openai import (
+    ErrorEvent,
+    OutputTextDeltaEvent,
+    ResponseCompletedEvent,
+    ResponseFailedEvent,
+    ResponseIncompleteEvent,
+    ResponsesAPIResponse,
+)
 from litellm.types.utils import Usage
 from openai.types.responses import (
     ResponseFunctionToolCall,
@@ -1347,6 +1355,21 @@ class LiteLLMModel(LLMModel):
             )
         ]
 
+    def _build_result_from_response(
+        self, response: ResponsesAPIResponse, messages: list[Message]
+    ) -> LLMResult:
+        """Build an LLMResult from a Responses API response object."""
+        text, output_messages = _parse_responses_output(response.output)  # type: ignore[arg-type]
+        usage = response.usage
+        return LLMResult(
+            model=response.model or self.name,
+            text=text,
+            messages=output_messages or [Message(role="assistant", content=text)],
+            prompt=messages,
+            prompt_count=usage.input_tokens if usage else None,
+            completion_count=usage.output_tokens if usage else None,
+        )
+
     async def _aresponses_iter(
         self,
         messages: list[Message],
@@ -1366,26 +1389,56 @@ class LiteLLMModel(LLMModel):
             **kwargs,
         )
 
-        completed_response = None
+        completed_response: ResponsesAPIResponse | None = None
+        incomplete_response: ResponsesAPIResponse | None = None
         async for event in stream:
-            event_type = getattr(event, "type", None)
-
-            if event_type == ResponsesAPIStreamEvents.OUTPUT_TEXT_DELTA:
+            if isinstance(event, OutputTextDeltaEvent):
                 yield LLMResult(model=self.name, text=event.delta, prompt=messages)
-            elif event_type == ResponsesAPIStreamEvents.RESPONSE_COMPLETED:
+            elif isinstance(event, ResponseCompletedEvent):
                 completed_response = event.response
+            elif isinstance(event, ResponseIncompleteEvent):
+                incomplete_response = event.response
+            elif isinstance(event, ResponseFailedEvent):
+                error_dict = event.response.error
+                error_msg = (
+                    error_dict.get("message", "Unknown error")
+                    if error_dict
+                    else "Response failed"
+                )
+                raise litellm.APIError(
+                    message=f"Responses API request failed: {error_msg}",
+                    llm_provider=LlmProviders.OPENAI,
+                    model=self.name,
+                    status_code=error_dict.get("code", HTTPStatus.INTERNAL_SERVER_ERROR)
+                    if error_dict
+                    else HTTPStatus.INTERNAL_SERVER_ERROR,
+                )
+            elif isinstance(event, ErrorEvent):
+                raise litellm.APIError(
+                    message=f"Responses API streaming error: {event.error.message}",
+                    llm_provider=LlmProviders.OPENAI,
+                    model=self.name,
+                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                )
 
         # Final yield with complete result
         if completed_response:
-            text, output_messages = _parse_responses_output(completed_response.output)
-            usage = getattr(completed_response, "usage", None)
-            yield LLMResult(
-                model=completed_response.model or self.name,
-                text=text,
-                messages=output_messages or [Message(role="assistant", content=text)],
-                prompt=messages,
-                prompt_count=usage.input_tokens if usage else None,
-                completion_count=usage.output_tokens if usage else None,
+            yield self._build_result_from_response(completed_response, messages)
+        elif incomplete_response:
+            logger.warning(
+                f"Responses API returned incomplete response for model {self.name}."
+            )
+            yield self._build_result_from_response(incomplete_response, messages)
+        else:
+            logger.error(
+                f"Responses API stream ended without COMPLETED, FAILED, "
+                f"or INCOMPLETE event for model {self.name}."
+            )
+            raise litellm.APIError(
+                message="Responses API stream ended unexpectedly without a terminal event",
+                llm_provider=LlmProviders.OPENAI,
+                model=self.name,
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
             )
 
     def count_tokens(self, text: str) -> int:
