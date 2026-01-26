@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import litellm
+from litellm.litellm_core_utils.logging_callback_manager import LoggingCallbackManager
 
 try:
     from tqdm.asyncio import tqdm
@@ -130,7 +131,9 @@ def update_litellm_max_callbacks(value: int = 1000) -> None:
 
     SEE: https://github.com/BerriAI/litellm/issues/9792
     """
-    litellm.litellm_core_utils.logging_callback_manager.LoggingCallbackManager.MAX_CALLBACKS = value
+    # Can't do full path from litellm package root since
+    # https://github.com/BerriAI/litellm/pull/18396 changed __init__.py
+    LoggingCallbackManager.MAX_CALLBACKS = value
 
 
 def bytes_to_string(value: bytes) -> str:
