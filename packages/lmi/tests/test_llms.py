@@ -1296,7 +1296,7 @@ class TestResponses:
             result = await model.call(messages, callbacks=[callback])
 
             # Should have received streaming chunks
-            assert len(received_chunks) > 0, "Should have received streaming chunks"
+            assert received_chunks, "Should have received streaming chunks"
 
             # Final result should have complete text and usage info
             assert result
