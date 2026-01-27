@@ -200,6 +200,45 @@ class TestCostTrackerCallback:
             assert GLOBAL_COST_TRACKER.lifetime_cost_usd > 0
 
     @pytest.mark.asyncio
+    async def test_unknown_model_does_not_break_tracker(self, caplog):
+        """Test that unknown models (not in LiteLLM's pricing DB) don't break tracking."""
+        import litellm
+
+        mock_response = MagicMock(
+            model="model-that-does-not-exist",
+            usage=MagicMock(prompt_tokens=10, completion_tokens=20),
+        )
+        callback_calls = []
+
+        async def async_callback(response):  # noqa: RUF029
+            callback_calls.append(response)
+
+        GLOBAL_COST_TRACKER.add_callback(async_callback)
+        initial_cost = GLOBAL_COST_TRACKER.lifetime_cost_usd
+
+        with (
+            cost_tracking_ctx(),
+            patch(
+                "litellm.cost_calculator.completion_cost",
+                side_effect=litellm.exceptions.BadRequestError(
+                    model="model-that-does-not-exist",
+                    message="LLM Provider NOT provided",
+                    llm_provider="",
+                ),
+            ),
+        ):
+            await GLOBAL_COST_TRACKER.record(mock_response)
+
+            assert (
+                "Failed to calculate cost for model 'model-that-does-not-exist'"
+                in caplog.text
+            )
+            assert "not be in LiteLLM's pricing database" in caplog.text
+            assert len(callback_calls) == 1
+            assert callback_calls[0] == mock_response
+            assert GLOBAL_COST_TRACKER.lifetime_cost_usd == initial_cost
+
+    @pytest.mark.asyncio
     async def test_multiple_callbacks_with_one_failing(self, caplog):
         mock_response = MagicMock(cost=0.01)
         failing_callback = MagicMock(side_effect=Exception("Callback failed"))

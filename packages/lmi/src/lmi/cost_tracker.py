@@ -33,9 +33,16 @@ class CostTracker:
         if not getattr(response, "usage", None):
             return
 
-        self.lifetime_cost_usd += litellm.cost_calculator.completion_cost(
-            completion_response=response
-        )
+        try:
+            self.lifetime_cost_usd += litellm.cost_calculator.completion_cost(
+                completion_response=response
+            )
+        except Exception:
+            model = getattr(response, "model", "unknown")
+            logger.warning(
+                f"Failed to calculate cost for model '{model}'. "
+                "This model may not be in LiteLLM's pricing database."
+            )
 
         if self.lifetime_cost_usd - self.last_report > self.report_every_usd:
             logger.info(f"Cumulative lmi API call cost: ${self.lifetime_cost_usd:.8f}")
