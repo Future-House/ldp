@@ -119,6 +119,66 @@ def _convert_tool_response_content(content: str | None) -> str | list[dict[str, 
     return content
 
 
+def _convert_multimodal_content_for_responses(
+    content: str | None,
+) -> list[dict[str, Any]]:
+    """Convert multimodal content from Chat Completions format to Responses API format.
+
+    Aviary stores multimodal content as JSON: [{"type": "image_url", "image_url": {"url": "..."}}]
+    Responses API expects: [{"type": "input_image", "image_url": "..."}]
+
+    Args:
+        content: JSON string containing multimodal content blocks.
+
+    Returns:
+        List of content blocks in Responses API format.
+
+    Raises:
+        ValueError: If content is None.
+        NotImplementedError: If an unknown content type is encountered.
+
+    Examples:
+        >>> _convert_multimodal_content_for_responses(
+        ...     '[{"type": "image_url", "image_url": {"url": "data:image/png;base64,ABC"}}]'
+        ... )
+        [{'type': 'input_image', 'image_url': 'data:image/png;base64,ABC'}]
+
+        >>> _convert_multimodal_content_for_responses(
+        ...     '[{"type": "text", "text": "What is this?"}]'
+        ... )
+        [{'type': 'input_text', 'text': 'What is this?'}]
+
+        >>> _convert_multimodal_content_for_responses(
+        ...     '[{"type": "image_url", "image_url": {"url": "https://example.com/img.png"}}, '
+        ...     '{"type": "text", "text": "Describe this image"}]'
+        ... )  # doctest: +NORMALIZE_WHITESPACE
+        [{'type': 'input_image', 'image_url': 'https://example.com/img.png'},
+         {'type': 'input_text', 'text': 'Describe this image'}]
+    """
+    if content is None:
+        raise ValueError("Multimodal content cannot be None.")
+    items = json.loads(content)
+    converted = []
+    for item in items:
+        if item.get("type") == "image_url":
+            # Convert from Chat Completions format to Responses API format
+            image_url = item.get("image_url", {}).get("url", "")
+            converted.append({
+                "type": "input_image",
+                "image_url": image_url,
+            })
+        elif item.get("type") == "text":
+            converted.append({
+                "type": "input_text",
+                "text": item.get("text", ""),
+            })
+        else:
+            raise NotImplementedError(
+                f"Unknown multimodal content type {item.get('type')!r} in item {item!r}."
+            )
+    return converted
+
+
 def _convert_to_responses_input(messages: list[Message]) -> list[dict[str, Any]]:
     """Convert aviary Messages to Responses API input format."""
     result = []
@@ -147,6 +207,12 @@ def _convert_to_responses_input(messages: list[Message]) -> list[dict[str, Any]]
                 }
                 for tc in msg.tool_calls
             )
+        elif msg.is_multimodal:
+            result.append({
+                "type": "message",
+                "role": msg.role,
+                "content": _convert_multimodal_content_for_responses(msg.content),
+            })
         else:
             result.append({
                 "type": "message",
