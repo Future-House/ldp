@@ -1040,6 +1040,7 @@ class LiteLLMModel(LLMModel):
                     cost=cost,
                     system_fingerprint=completions.system_fingerprint,
                     reasoning_content=reasoning_content,
+                    finish_reason=choice.finish_reason,
                 )
             )
         return results
@@ -1079,6 +1080,7 @@ class LiteLLMModel(LLMModel):
         role = None
         reasoning_content = []
         used_model = None
+        choice = None
         async for completion in stream_completions:
             if not used_model:
                 used_model = completion.model or self.name
@@ -1106,6 +1108,11 @@ class LiteLLMModel(LLMModel):
             except Exception as e:
                 logger.warning(f"Failed to calculate cost for {used_model}: {e}")
 
+        # Extract finish_reason from the last completion chunk
+        finish_reason = (
+            getattr(choice, "finish_reason", None) if choice else None
+        )
+
         result = LLMResult(
             model=used_model,
             text=text,
@@ -1119,6 +1126,7 @@ class LiteLLMModel(LLMModel):
             cache_read_tokens=cache_read,
             cache_creation_tokens=cache_creation,
             cost=cost,
+            finish_reason=finish_reason,
         )
 
         if text:
