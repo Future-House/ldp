@@ -1201,8 +1201,73 @@ async def test_handle_refusal_via_fallback(caplog) -> None:
 
     assert results.text == "I'm sorry, but I can't assist with that request."
     assert results.model == CommonLLMNames.GPT_41.value
+    assert results.finish_reason == "stop"
     assert "the llm request was refused" in caplog.text.lower()
     assert "attempting to fallback" in caplog.text.lower()
+
+
+@pytest.mark.asyncio
+async def test_finish_reason_stored_in_result() -> None:
+    """Test that finish_reason is properly stored in LLMResult for different scenarios."""
+    llm = LiteLLMModel(name=CommonLLMNames.GPT_4O.value)
+
+    messages = [Message(content="Say 'hello'")]
+
+    # Mock the router to simulate different finish reasons
+    mock_router_obj = Mock()
+
+    # Test with "stop" finish reason (normal completion)
+    mock_completion = Mock()
+    mock_message = Mock(content="hello", reasoning_content="")
+    mock_message.model_dump.return_value = {
+        "role": "assistant",
+        "content": "hello",
+    }
+    mock_completion.choices = [
+        Mock(
+            finish_reason="stop",
+            message=mock_message,
+        )
+    ]
+    mock_completion.usage = Mock(prompt_tokens=5, completion_tokens=1)
+    mock_completion.model = CommonLLMNames.GPT_4O.value
+    mock_completion.system_fingerprint = None
+
+    mock_router_obj.acompletion = AsyncMock(return_value=mock_completion)
+
+    def mock_router_method(_self, _override_config=None):
+        return mock_router_obj
+
+    with patch.object(LiteLLMModel, "get_router", new=mock_router_method):
+        results = await llm.call_single(messages)
+
+    assert results.finish_reason == "stop"
+    assert results.text == "hello"
+
+    # Test with "length" finish reason (hit token limit)
+    mock_message_length = Mock(content="truncated text", reasoning_content="")
+    mock_message_length.model_dump.return_value = {
+        "role": "assistant",
+        "content": "truncated text",
+    }
+    mock_completion_length = Mock()
+    mock_completion_length.choices = [
+        Mock(
+            finish_reason="length",
+            message=mock_message_length,
+        )
+    ]
+    mock_completion_length.usage = Mock(prompt_tokens=5, completion_tokens=100)
+    mock_completion_length.model = CommonLLMNames.GPT_4O.value
+    mock_completion_length.system_fingerprint = None
+
+    mock_router_obj.acompletion = AsyncMock(return_value=mock_completion_length)
+
+    with patch.object(LiteLLMModel, "get_router", new=mock_router_method):
+        results_length = await llm.call_single(messages)
+
+    assert results_length.finish_reason == "length"
+    assert results_length.text == "truncated text"
 
 
 @pytest.mark.asyncio
