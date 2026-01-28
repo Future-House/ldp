@@ -1271,6 +1271,68 @@ async def test_finish_reason_stored_in_result() -> None:
 
 
 @pytest.mark.asyncio
+async def test_finish_reason_in_streaming() -> None:
+    """Test that finish_reason is properly captured in streaming completions."""
+    model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+    messages = [Message(content="Say hello")]
+
+    def _build_mock_completion(
+        delta_content: str = "",
+        delta_role: str = "assistant",
+        finish_reason: str | None = None,
+        usage: Any = None,
+    ) -> Mock:
+        # Create delta with spec to prevent auto-creation of attributes
+        mock_delta = Mock(spec=['content', 'role'])
+        mock_delta.content = delta_content
+        mock_delta.role = delta_role
+        
+        mock_choice = Mock()
+        mock_choice.finish_reason = finish_reason
+        mock_choice.logprobs = None
+        mock_choice.delta = mock_delta
+        
+        mock_completion = Mock()
+        mock_completion.model = "test-model"
+        mock_completion.choices = [mock_choice]
+        mock_completion.usage = usage
+        
+        return mock_completion
+
+    # Mock the router to simulate streaming with finish_reason
+    with patch.object(model, "_router") as mock_router:
+        # Create mock completions - finish_reason typically only in last chunk
+        mock_chunk1 = _build_mock_completion(delta_content="Hello")
+        mock_chunk2 = _build_mock_completion(delta_content=" world")
+        mock_chunk_final = _build_mock_completion(
+            delta_content="!",
+            finish_reason="stop",
+            usage=Mock(prompt_tokens=5, completion_tokens=3),
+        )
+
+        # Create async generator
+        async def mock_stream():  # noqa: RUF029
+            async def mock_stream_iter():  # noqa: RUF029
+                yield mock_chunk1
+                yield mock_chunk2
+                yield mock_chunk_final
+
+            return mock_stream_iter()
+
+        mock_router.acompletion.return_value = mock_stream()
+
+        # Test streaming
+        async_iterable = await model.acompletion_iter(messages)
+        results = [result async for result in async_iterable]
+
+        # Verify finish_reason is captured
+        assert len(results) == 1
+        result = results[0]
+        assert result.finish_reason == "stop"
+        assert result.text == "Hello world!"
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("model_name", "expected_tool_role_count"),
     [

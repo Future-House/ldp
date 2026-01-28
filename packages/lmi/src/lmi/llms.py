@@ -1080,6 +1080,7 @@ class LiteLLMModel(LLMModel):
         role = None
         reasoning_content = []
         used_model = None
+        choice = None
         async for completion in stream_completions:
             if not used_model:
                 used_model = completion.model or self.name
