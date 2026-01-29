@@ -1,5 +1,7 @@
 # Language Model Interface (LMI)
 
+<!-- pyml disable-num-lines 6 line-length -->
+
 [![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Future-House/ldp/tree/main/packages/lmi)
 [![PyPI version](https://badge.fury.io/py/fhlmi.svg)](https://badge.fury.io/py/fhlmi)
 [![tests](https://github.com/Future-House/ldp/actions/workflows/tests.yml/badge.svg)](https://github.com/Future-House/ldp/tree/main/packages/lmi)
@@ -17,6 +19,10 @@ pip install fhlmi
 ```
 
 <!--TOC-->
+
+---
+
+**Table of Contents**
 
 - [Installation](#installation)
 - [Quick start](#quick-start)
@@ -38,6 +44,8 @@ pip install fhlmi
     - [LiteLLMEmbeddingModel](#litellmembeddingmodel)
     - [HybridEmbeddingModel](#hybridembeddingmodel)
     - [SentenceTransformerEmbeddingModel](#sentencetransformerembeddingmodel)
+
+---
 
 <!--TOC-->
 

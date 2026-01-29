@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 from collections.abc import Collection
-from typing import ClassVar, Literal, TypeAlias, cast
+from typing import ClassVar, Literal, TypeAlias
 from urllib.parse import urlparse
 
 import aiohttp
@@ -209,7 +209,7 @@ class GlobalRateLimiter:
 
         # strip off the machine_id, and replace it with the MATCH_MACHINE_ID placeholder
         if namespace.startswith("get"):
-            machine_id = namespace.split("|")[-1]
+            machine_id = namespace.rsplit("|", maxsplit=1)[-1]
             if machine_id != "get":
                 namespace_w_stub_machine_id = namespace.replace(
                     machine_id, MATCH_MACHINE_ID, 1
@@ -270,7 +270,6 @@ class GlobalRateLimiter:
     ) -> list[tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]]:
         """Returns a list of current RateLimitItems with tuples of namespace and primary key."""
         redis_url = self.redis_url or os.environ.get("REDIS_URL", ":")
-        redis_url = cast("str", redis_url)
         if redis_url is None:
             raise ValueError("Redis URL is not set correctly.")
 
@@ -415,7 +414,9 @@ class GlobalRateLimiter:
                 elapsed += self.WAIT_INCREMENT
             if elapsed >= acquire_timeout:
                 raise TimeoutError(
-                    f"Timeout ({elapsed} secs): rate limit for key: {namespace_and_key}"
+                    f"Timeout ({elapsed}-s) waiting for rate limit based on"
+                    f" key={namespace_and_key}, rate_limit={rate_limit},"
+                    f" weight={weight}, and acquire_timeout={acquire_timeout}-s"
                 )
 
             # If the rate limit hit is False, then we're violating the limit, so we

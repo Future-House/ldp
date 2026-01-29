@@ -558,7 +558,7 @@ class Op(ABC, Generic[TOutput_co]):
             # Map positional arguments to keyword arguments to make backward pass easier
             for i_arg, (arg, param) in enumerate(
                 # strict=False b/c not all params in _fwd_args will be in args (i.e. defaults and **kwargs)
-                zip(args, self._fwd_args, strict=False)
+                zip(args, self._fwd_args, strict=False)  # noqa: FURB120
             ):
                 # Don't need to check for too many args or collisions with kwargs, since forward()
                 # will raise an exception anyway

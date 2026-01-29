@@ -117,6 +117,16 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         description="See SimpleAgentState.hide_old_env_states.",
     )
 
+    hide_old_action_content: bool = Field(
+        default=False,
+        description="See SimpleAgentState.hide_old_action_content.",
+    )
+
+    sliding_window: int | None = Field(
+        default=None,
+        description="See SimpleAgentState.sliding_window.",
+    )
+
     @classmethod
     def make_act_agent(cls, **kwargs) -> Self:
         single_prompt = kwargs.pop("single_prompt", False)
@@ -151,7 +161,10 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:
         return SimpleAgentState(
-            tools=tools, hide_old_env_states=self.hide_old_env_states
+            tools=tools,
+            hide_old_env_states=self.hide_old_env_states,
+            hide_old_action_content=self.hide_old_action_content,
+            sliding_window=self.sliding_window,
         )
 
     @staticmethod
@@ -182,9 +195,10 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         else:
             for i, m in enumerate(obs):
                 if isinstance(m, ToolResponseMessage):
-                    obs[i] = m.model_copy(
-                        update={"content": f"Observation: {m.content}"}
-                    )
+                    # We will break the JSON when we prepend the "Observation: " string
+                    # Let's treat the JSON as a string instead
+                    obs[i].content_is_json_str = False
+                    m.prepend_text("Observation:", delim=" ")
         next_state = agent_state.get_next_state(obs=obs)
         action_selection_result, new_messages = await self._react_module(
             messages=next_state.messages, tools=next_state.tools

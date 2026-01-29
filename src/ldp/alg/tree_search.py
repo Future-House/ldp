@@ -2,6 +2,7 @@ import asyncio
 import logging
 import uuid
 from collections.abc import Awaitable, Callable, Sequence
+from contextlib import suppress
 from typing import Any, TypeAlias
 
 from aviary.core import Message, is_coroutine_callable
@@ -19,7 +20,6 @@ from .rollout import (
     TEnv,
     reraise_exc_as,
 )
-from .runners import safe_close_env
 
 logger = logging.getLogger(__name__)
 
@@ -91,8 +91,18 @@ class TreeSearchRollout(RolloutManager):
         except CaughtError:
             return tree
         finally:
-            # Tear down env resources if necessary
-            await safe_close_env(env, self.catch_env_failures)
+            # We need to close the env here (before descending) to avoid requiring
+            # the resources of this env while making new ones in the next node.
+            # Also, we double-suppress EnvError because a tree search crash here kills
+            # everything and denies us passing the tree to the next step
+            with (
+                suppress(EnvError),
+                reraise_exc_as(EnvError, enabled=self.catch_env_failures),
+            ):
+                await env.close()
+            await asyncio.gather(*[
+                c.after_rollout(tree.root_id, self.agent, env) for c in self.callbacks
+            ])
 
         await self._descend(
             tree=tree,

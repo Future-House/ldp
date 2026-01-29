@@ -1,5 +1,7 @@
 # Language Decision Processes (LDP)
 
+<!-- pyml disable-num-lines 10 line-length -->
+
 [![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Future-House/ldp)
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
@@ -11,7 +13,7 @@
 [![python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue?style=flat&logo=python&logoColor=white)](https://www.python.org)
 
 <p align="center">
-  <a href="https://arxiv.org/abs/2212.04450">
+  <a href="https://arxiv.org/abs/2412.21154">
     <img src="docs/assets/ldp_chessboard.png" width="300" alt="row playing chess" />
   </a>
 </p>
@@ -23,7 +25,7 @@ where actions and observations consist of natural language.
 The full definition from the Aviary paper [^1] is:
 
 <p align="left">
-  <a href="https://arxiv.org/abs/2212.04450">
+  <a href="https://arxiv.org/abs/2412.21154">
     <img src="docs/assets/ldp_definition.png" width="600" alt="LDP definition from paper" />
   </a>
 </p>
@@ -46,7 +48,7 @@ for an example of how to run an LDP agent.
 ## Overview
 
 <p align="left">
-  <a href="https://arxiv.org/abs/2212.04450">
+  <a href="https://arxiv.org/abs/2412.21154">
     <img src="docs/assets/Aviary.png" width="800" alt="Aviary and LDP overview from paper" />
   </a>
 </p>
@@ -75,8 +77,11 @@ If you plan to export Graphviz visualizations, the `graphviz` library is require
 
 ## Tutorial Notebooks
 
-1. [Creating a Simple Language Agent](https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb)
-2. [Evaluating a Llama Agent on GSM8K](https://github.com/Future-House/ldp/blob/main/tutorials/evaluating_a_llama_agent.ipynb)
+1. [Creating a Simple Language Agent][1]
+2. [Evaluating a Llama Agent on GSM8K][2]
+
+[1]: https://github.com/Future-House/ldp/blob/main/tutorials/creating_a_language_agent.ipynb
+[2]: https://github.com/Future-House/ldp/blob/main/tutorials/evaluating_a_llama_agent.ipynb
 
 ## Running an Agent on an Aviary Environment
 

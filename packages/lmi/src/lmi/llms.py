@@ -3,6 +3,8 @@ __all__ = [
     "LLMModel",
     "LiteLLMModel",
     "PassThroughRouter",
+    "extract_top_logprobs",
+    "parse_cached_usage",
     "rate_limited",
     "request_limited",
     "sum_logprobs",
@@ -34,10 +36,14 @@ from aviary.core import (
     Message,
     Tool,
     ToolRequestMessage,
+    ToolResponseMessage,
     ToolsAdapter,
     ToolSelector,
     is_coroutine_callable,
 )
+from aviary.message import MalformedMessageError
+from litellm import completion_cost
+from litellm.types.utils import Usage
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -60,6 +66,55 @@ from lmi.utils import get_litellm_retrying_config
 
 logger = logging.getLogger(__name__)
 
+# List of possible refusal flags in finish_reason
+REFUSAL_REASON = (
+    "refusal",  # Anthropic safety filter
+)
+
+
+def parse_cached_usage(usage: Usage | None) -> tuple[int | None, int | None]:
+    """Parse cached token counts from LiteLLM usage object.
+
+    Args:
+        usage: LiteLLM usage object containing token usage metadata.
+            None for streaming intermediate chunks (only final chunk includes usage).
+
+    Returns:
+        Tuple of (cache_read_tokens, cache_creation_tokens):
+        - (None, None) if usage is None or provider doesn't support caching
+        - (int, int) where values can be 0 if caching is supported but had no cache hits/creation
+
+    Provider support:
+        - OpenAI: cache_read via prompt_tokens_details.cached_tokens (no creation tracking)
+        - Anthropic: cache_read and cache_creation via dedicated fields
+    """
+    if not usage:
+        return None, None
+
+    cache_read: int | None = None
+    cache_creation: int | None = None
+
+    # Cache reads: Both OpenAI and Anthropic use prompt_tokens_details.cached_tokens
+    if hasattr(usage, "prompt_tokens_details"):
+        prompt_details = getattr(usage, "prompt_tokens_details", None)
+        if prompt_details:
+            cached_val = (
+                prompt_details.get("cached_tokens")
+                if isinstance(prompt_details, dict)
+                else getattr(prompt_details, "cached_tokens", None)
+            )
+            if isinstance(cached_val, int):
+                cache_read = cached_val
+
+    # Cache creation: Anthropic-only field (OpenAI doesn't report cache writes)
+    if hasattr(usage, "cache_creation_input_tokens"):
+        cached_val = getattr(usage, "cache_creation_input_tokens", None)
+        if isinstance(cached_val, int):
+            cache_creation = cached_val
+
+    return cache_read, cache_creation
+
+
 if not IS_PYTHON_BELOW_312:
     _DeploymentTypedDictValidator = TypeAdapter(
         list[litellm.DeploymentTypedDict],
@@ -77,10 +132,11 @@ class CommonLLMNames(StrEnum):
     # Use these to avoid thinking about exact versions
     GPT_5 = "gpt-5-2025-08-07"
     GPT_5_MINI = "gpt-5-mini-2025-08-07"
+    GPT_41 = "gpt-4.1-2025-04-14"
     GPT_4O = "gpt-4o-2024-11-20"
     GPT_35_TURBO = "gpt-3.5-turbo-0125"
-    CLAUDE_35_SONNET = "claude-3-5-sonnet-20241022"
     CLAUDE_37_SONNET = "claude-3-7-sonnet-20250219"
+    CLAUDE_45_SONNET = "claude-sonnet-4-5-20250929"
 
     # Use these when trying to think of a somewhat opinionated default
     OPENAI_BASELINE = "gpt-4o-2024-11-20"  # Fast and decent
@@ -90,6 +146,12 @@ class CommonLLMNames(StrEnum):
     ANTHROPIC_TEST = (  # Cheap, fast, and not Anthropic's cutting edge
         "claude-3-5-haiku-20241022"
     )
+
+
+class OverrideRouterConfig(BaseModel):
+    model_list: list[dict[str, Any]]
+    router_kwargs: dict[str, Any]
+    fallbacks: list[dict[str, Any]]
 
 
 def sum_logprobs(choice: litellm.utils.Choices | list[float]) -> float | None:
@@ -116,6 +178,24 @@ def sum_logprobs(choice: litellm.utils.Choices | list[float]) -> float | None:
     elif isinstance(choice, list):
         return sum(choice)
     return None
+
+
+def extract_top_logprobs(
+    completion: litellm.utils.Choices,
+) -> list[list[tuple[str, float]]] | None:
+    """Extract the top logprobs from an litellm completion."""
+    logprobs_obj = getattr(completion, "logprobs", None)
+    if logprobs_obj is None:
+        return None
+
+    content = getattr(logprobs_obj, "content", None)
+    if not content or not isinstance(content, list):
+        return None
+
+    return [
+        [(t.token, float(t.logprob)) for t in (getattr(pos, "top_logprobs", []) or [])]
+        for pos in content
+    ]
 
 
 def validate_json_completion(
@@ -226,6 +306,23 @@ class LLMModel(ABC, BaseModel):
     # None means we won't provide a tool_choice to the LLM API
     UNSPECIFIED_TOOL_CHOICE: ClassVar[None] = None
 
+    def _maybe_patch_gemini3_tool_response_messages(
+        self, messages: list[Message]
+    ) -> list[Message]:
+        """As of 2025-11-18, Gemini 3 doesn't accept role="tool" in ToolResponseMessage.
+
+        This function patches it to role="user".
+        """
+        if "gemini-3" not in self.name:
+            return messages
+
+        return [
+            m
+            if not isinstance(m, ToolResponseMessage)
+            else m.model_copy(update={"role": "user"})
+            for m in messages
+        ]
+
     async def call(  # noqa: C901, PLR0915
         self,
         messages: list[Message],
@@ -255,6 +352,7 @@ class LLMModel(ABC, BaseModel):
         Raises:
             ValueError: If the LLM type is unknown.
         """
+        messages = self._maybe_patch_gemini3_tool_response_messages(messages)
         chat_kwargs = copy.deepcopy(kwargs)
         # if using the config for an LLMModel,
         # there may be a nested 'config' key
@@ -360,9 +458,8 @@ class LLMModel(ABC, BaseModel):
                 results.append(result)
 
         for result in results:
-            usage = result.prompt_count, result.completion_count
-            if not sum(usage):
-                result.completion_count = self.count_tokens(cast("str", result.text))
+            if not result.completion_count and result.text is not None:
+                result.completion_count = self.count_tokens(result.text)
             result.seconds_to_last_token = (
                 asyncio.get_running_loop().time() - start_clock
             )
@@ -521,12 +618,61 @@ class PassThroughRouter(litellm.Router):  # TODO: add rate_limited
         return await litellm.aembedding(*args, **(self._default_kwargs | kwargs))
 
 
+def default_tool_parser(
+    choice: litellm.utils.Choices, tools: list[dict] | None
+) -> Message | ToolRequestMessage:
+    msg_type = (
+        ToolRequestMessage
+        if choice.finish_reason == "tool_calls"
+        or getattr(choice.message, "tool_calls", None) is not None
+        else Message
+    )
+    serialized_message = choice.message.model_dump()
+    if (
+        # Confirm we explicitly received an empty tool list, so we don't unnecessarily
+        # make a tool request message over a normal message
+        tools is not None
+        and not tools  # Confirm it's the empty tools special case
+        and not serialized_message.get("tool_calls")  # Don't clobber anything
+    ):
+        # This is a design decision made to simplify
+        # downstream language agent logic, where:
+        # 1. We wanted the presence of tools, even if the list is empty,
+        #    to lead to a ToolRequestMessage
+        # 2. However, OpenAI gpt-4o returns null tool_calls if tools is empty,
+        #    not empty tool_calls, which leads to a plain Message
+        # 3. So, we add this special case to make a ToolRequestMessage
+        serialized_message["tool_calls"] = []
+        msg_type = ToolRequestMessage
+    return msg_type(**serialized_message)
+
+
 class LiteLLMModel(LLMModel):
     """A wrapper around the litellm library."""
 
     model_config = ConfigDict(extra="forbid")
 
     name: str = CommonLLMNames.GPT_4O.value
+
+    tool_parser: (
+        Callable[
+            [litellm.utils.Choices, list[dict] | None],
+            Message | ToolRequestMessage,
+        ]
+        | Callable[
+            [str, list[dict] | None],
+            Message | ToolRequestMessage,
+        ]
+        | None
+    ) = Field(
+        default=None,
+        description=(
+            "Custom parser for converting LLM completions to tool requests. "
+            "Accepts either `(completion: str, tools: list[dict] | None) -> ToolRequestMessage | Message` "
+            "or `(choice: litellm.utils.Choices, tools: list[dict] | None) -> ToolRequestMessage | Message`. "
+            "Returns `aviary.core.ToolRequestMessage` on successful parsing, `aviary.core.Message` otherwise."
+        ),
+    )
     config: dict = Field(
         default_factory=dict,
         description=(
@@ -549,7 +695,7 @@ class LiteLLMModel(LLMModel):
 
     @model_validator(mode="before")
     @classmethod
-    def maybe_set_config_attribute(cls, input_data: dict[str, Any]) -> dict[str, Any]:
+    def maybe_set_config_attribute(cls, input_data: dict[str, Any]) -> dict[str, Any]:  # noqa: C901
         """
         Set the config attribute if it is not provided.
 
@@ -568,7 +714,18 @@ class LiteLLMModel(LLMModel):
         if "name" not in data:
             data["name"] = data["config"].get("name", cls.model_fields["name"].default)
         if "model_list" not in data["config"]:
+            try:
+                is_openai_model = "openai" in litellm.get_llm_provider(data["name"])
+            except litellm.BadRequestError:  # LiteLLM doesn't have provider registered
+                is_openai_model = False
             max_tokens = data["config"].get("max_tokens")
+            if (
+                "logprobs" in data["config"] or "top_logprobs" in data["config"]
+            ) and not is_openai_model:
+                logger.warning(
+                    "Ignoring token logprobs for non-OpenAI model %s, as they are not supported.",
+                    data["name"],
+                )
             data["config"] = {
                 "model_list": [
                     {
@@ -586,6 +743,18 @@ class LiteLLMModel(LLMModel):
                                 else {"safety_settings": DEFAULT_VERTEX_SAFETY_SETTINGS}
                             )
                             | ({} if max_tokens else {"max_tokens": max_tokens})
+                            | (
+                                {}
+                                if "logprobs" not in data["config"]
+                                or not is_openai_model
+                                else {"logprobs": data["config"]["logprobs"]}
+                            )
+                            | (
+                                {}
+                                if "top_logprobs" not in data["config"]
+                                or not is_openai_model
+                                else {"top_logprobs": data["config"]["top_logprobs"]}
+                            )
                         ),
                     }
                 ],
@@ -601,6 +770,9 @@ class LiteLLMModel(LLMModel):
                 "router_kwargs"
             ]
 
+        if "tool_parser" in data["config"]:
+            data["tool_parser"] = data["config"].pop("tool_parser")
+
         # we only support one "model name" for now, here we validate
         model_list = data["config"]["model_list"]
         if IS_PYTHON_BELOW_312:
@@ -610,6 +782,19 @@ class LiteLLMModel(LLMModel):
         else:
             # pylint: disable-next=possibly-used-before-assignment
             _DeploymentTypedDictValidator.validate_python(model_list)
+
+        # HOT FIX for https://github.com/BerriAI/litellm/issues/16808
+        model_names = [m.get("model_name", "") for m in model_list] + [data["name"]]
+        for m in model_names:
+            if (
+                m
+                and (model_cost_key := m.split("/")[-1]) in litellm.model_cost
+                and litellm.model_cost[model_cost_key]["mode"] == "responses"
+            ):
+                logger.warning(
+                    f"We are applying hotfix to force completion mode from litellm for {model_cost_key}"
+                )
+                litellm.model_cost[model_cost_key]["mode"] = "chat"
         return data
 
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
@@ -629,8 +814,32 @@ class LiteLLMModel(LLMModel):
         state["__dict__"].pop("_router", None)
         return state
 
-    @property
-    def router(self) -> litellm.Router:
+    def get_router(
+        self, override_config: OverrideRouterConfig | None = None
+    ) -> litellm.Router:
+        """Get the router, optionally with an override configuration.
+
+        Args:
+            override_config: Optional configuration to override the default router settings.
+                Should contain 'model_list' and 'router_kwargs' keys.
+
+        Returns:
+            A litellm.Router instance.
+        """
+        if override_config:
+            override_model_list = override_config.model_list
+            override_router_kwargs = override_config.router_kwargs
+
+            can_override = override_model_list and override_router_kwargs
+            if not can_override:
+                logger.warning(
+                    "Cannot override router with provided config. Will use default config."
+                )
+            else:
+                return litellm.Router(
+                    model_list=override_model_list, **override_router_kwargs
+                )
+
         if self._router is None:
             router_kwargs: dict = self.config.get("router_kwargs", {})
             if self.config.get("pass_through_router"):
@@ -660,13 +869,63 @@ class LiteLLMModel(LLMModel):
                 **kwargs,
             )
 
+    async def _handle_refusal_via_fallback(
+        self, messages: list[Message], kwargs: dict[str, Any]
+    ) -> list[LLMResult]:
+        # Let's remove the current model from the configuration
+        current_model = self.name
+        override_config = OverrideRouterConfig(
+            model_list=kwargs.pop("model_list", self.config["model_list"]),
+            router_kwargs=kwargs.pop("router_kwargs", self.config["router_kwargs"]),
+            fallbacks=kwargs.pop("fallbacks", self.config["fallbacks"]),
+        )
+
+        new_model_list = [
+            model
+            for model in override_config.model_list
+            if model.get("model_name") != current_model
+        ]
+
+        new_fallbacks = []
+        for fallback in override_config.fallbacks:
+            if current_model not in fallback:
+                new_fallbacks.append(fallback)
+            else:
+                target_model = fallback[current_model][0]
+                new_fallbacks.append({target_model: fallback[current_model][1:]})
+
+        # Now we update the configuration
+        # Here I am resetting all the configuration I think the user needs to set
+        # But it is possible there is a user misconfiguration that I'd be fixing here
+        # We use model name to make the request. Will reset it after the request
+        self.name = new_model_list[0].get("model_name") or ""
+        if "fallbacks" in kwargs:
+            kwargs["fallbacks"] = new_fallbacks
+        kwargs["override_config"] = {
+            "model_list": new_model_list,
+            "router_kwargs": override_config.router_kwargs
+            | {
+                "fallbacks": new_fallbacks,
+            },
+            "fallbacks": new_fallbacks,
+        }
+
+        results = await self.acompletion(messages, **kwargs)
+        # Put the object back to the original state
+        self.name = current_model
+        return results
+
     # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
-    async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:
+    async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:  # noqa: C901, PLR0915
+        override_config = kwargs.pop("override_config", None)
+        if override_config:
+            override_config = OverrideRouterConfig(**override_config)
+        router = self.get_router(override_config)
         tools = kwargs.get("tools")
         if not tools:
-            # OpenAI, Anthropic and pottentially other LLM providers
+            # OpenAI, Anthropic and potentially other LLM providers
             # don't allow empty tool_calls lists, so remove empty
             kwargs.pop("tools", None)
 
@@ -675,43 +934,110 @@ class LiteLLMModel(LLMModel):
             "list[litellm.types.llms.openai.AllMessageValues]",
             [m.model_dump(by_alias=True) for m in messages],
         )
-        completions = await track_costs(self.router.acompletion)(
+        tool_choice = kwargs.get("tool_choice")
+        if self.tool_parser is not None and tool_choice not in {
+            None,
+            self.NO_TOOL_CHOICE,
+        }:
+            logger.warning(
+                f"Custom tool parser was provided."
+                f"Setting tool_choice parameter to {self.NO_TOOL_CHOICE}."
+            )
+            kwargs["tool_choice"] = self.NO_TOOL_CHOICE
+
+        completions = await track_costs(router.acompletion)(
             self.name, prompts, **kwargs
         )
+
+        finish_reason = (
+            getattr(completions.choices[0], "finish_reason", None)
+            if completions.choices
+            else None
+        )
+        if completions.choices and finish_reason in REFUSAL_REASON:
+            logger.warning(
+                f"The LLM request was refused with finish reason '{finish_reason}' "
+                f"for model {self.name}. "
+                "Attempting to fallback to next model in the list."
+            )
+            if override_config is not None:
+                # Case we had a previous refusal
+                kwargs["model_list"] = override_config.model_list
+                kwargs["router_kwargs"] = override_config.router_kwargs
+                kwargs["fallbacks"] = override_config.fallbacks
+
+            model_list = kwargs.get("model_list") or self.config.get("model_list", None)
+            if model_list and len(model_list) > 1:
+                return await self._handle_refusal_via_fallback(messages, kwargs)
+            logger.warning(
+                f"No fallback models available after refusal for model {self.name}. "
+                "Will return return a LLMResult with the refusal completion."
+            )
+
         used_model = completions.model or self.name
         results: list[LLMResult] = []
 
+        # Use getattr because ModelResponse.usage not in LiteLLM's type hints
+        # In practice, usage always exists in non-streaming responses
+        usage = getattr(completions, "usage", None)
+        prompt_count = usage.prompt_tokens if usage else None
+        completion_count = usage.completion_tokens if usage else None
+        cache_read, cache_creation = parse_cached_usage(usage)
+
+        try:
+            cost = completion_cost(completion_response=completions, model=used_model)
+        except Exception as e:
+            cost = 0.0
+            logger.warning(f"Failed to calculate cost for {used_model}: {e}")
+
         # We are not streaming here, so we can cast to list[litellm.utils.Choices]
         choices = cast("list[litellm.utils.Choices]", completions.choices)
-        for completion in choices:
-            if (
-                tools is not None  # Allows for empty tools list
-                or completion.finish_reason == "tool_calls"
-                or (getattr(completion.message, "tool_calls", None) is not None)
-            ):
-                serialized_message = completion.message.model_dump()
-                serialized_message["tool_calls"] = (
-                    serialized_message.get("tool_calls") or []
-                )
-                output_messages: list[Message | ToolRequestMessage] = [
-                    ToolRequestMessage(**serialized_message)
-                ]
-            else:
-                output_messages = [Message(**completion.message.model_dump())]
+        for choice in choices:
+            try:
+                if self.tool_parser is None:
+                    output_messages: (
+                        Message
+                        | ToolRequestMessage
+                        | list[Message]
+                        | list[ToolRequestMessage]
+                    ) = default_tool_parser(choice, tools)
+                else:
+                    sig = signature(self.tool_parser)
+                    first_param = next(iter(sig.parameters.values()))
+                    arg: str | litellm.utils.Choices = (
+                        choice.message.content or ""
+                        if first_param.annotation is str
+                        else choice
+                    )
+                    output_messages = self.tool_parser(arg, tools)  # type: ignore[arg-type]
+            except ValidationError as exc:
+                raise MalformedMessageError(
+                    f"Failed to convert model response's message {choice.message}"
+                    f" Got finish reason {choice.finish_reason!r},"
+                    f" full response was {completions},"
+                    f" and tool choice was {kwargs.get('tool_choice')!r}."
+                ) from exc
+
+            if not isinstance(output_messages, list):
+                output_messages = [output_messages]
 
             reasoning_content = None
-            if hasattr(completion.message, "reasoning_content"):
-                reasoning_content = completion.message.reasoning_content
+            if hasattr(choice.message, "reasoning_content"):
+                reasoning_content = choice.message.reasoning_content
 
             results.append(
                 LLMResult(
                     model=used_model,
-                    text=completion.message.content,
+                    text=choice.message.content,
                     prompt=messages,
                     messages=output_messages,
-                    logprob=sum_logprobs(completion),
-                    prompt_count=completions.usage.prompt_tokens,  # type: ignore[attr-defined]
-                    completion_count=completions.usage.completion_tokens,  # type: ignore[attr-defined]
+                    logprob=sum_logprobs(choice),
+                    top_logprobs=extract_top_logprobs(choice),
+                    prompt_count=prompt_count,
+                    completion_count=completion_count,
+                    cache_read_tokens=cache_read,
+                    cache_creation_tokens=cache_creation,
+                    cost=cost,
                     system_fingerprint=completions.system_fingerprint,
                     reasoning_content=reasoning_content,
                 )
@@ -724,6 +1050,10 @@ class LiteLLMModel(LLMModel):
     async def acompletion_iter(
         self, messages: list[Message], **kwargs
     ) -> AsyncIterable[LLMResult]:
+        override_config = kwargs.pop("override_config", None)
+        if override_config:
+            override_config = OverrideRouterConfig(**override_config)
+        router = self.get_router(override_config)
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
         prompts = cast(
             "list[litellm.types.llms.openai.AllMessageValues]",
@@ -736,7 +1066,7 @@ class LiteLLMModel(LLMModel):
         if kwargs.get("include_reasoning"):
             stream_options["include_reasoning"] = True
 
-        stream_completions = await track_costs_iter(self.router.acompletion)(
+        stream_completions = await track_costs_iter(router.acompletion)(
             self.name,
             prompts,
             stream=True,
@@ -763,33 +1093,56 @@ class LiteLLMModel(LLMModel):
             if hasattr(delta, "reasoning_content"):
                 reasoning_content.append(delta.reasoning_content or "")
         text = "".join(outputs)
+
+        # Calculate usage info first so we can pass it during construction
+        cache_read, cache_creation, cost = None, None, 0.0
+        prompt_count, completion_count = None, None
+        if hasattr(completion, "usage"):
+            prompt_count = completion.usage.prompt_tokens
+            completion_count = completion.usage.completion_tokens
+            cache_read, cache_creation = parse_cached_usage(completion.usage)
+            try:
+                cost = completion_cost(completion_response=completion, model=used_model)
+            except Exception as e:
+                logger.warning(f"Failed to calculate cost for {used_model}: {e}")
+
         result = LLMResult(
             model=used_model,
             text=text,
             prompt=messages,
             messages=[Message(role=role, content=text)],
             logprob=sum_logprobs(logprobs),
+            top_logprobs=extract_top_logprobs(completion),
             reasoning_content="".join(reasoning_content),
+            prompt_count=prompt_count,
+            completion_count=completion_count,
+            cache_read_tokens=cache_read,
+            cache_creation_tokens=cache_creation,
+            cost=cost,
         )
 
         if text:
             result.seconds_to_first_token = (
                 asyncio.get_running_loop().time() - start_clock
             )
-        if hasattr(completion, "usage"):
-            result.prompt_count = completion.usage.prompt_tokens
-            result.completion_count = completion.usage.completion_tokens
 
         yield result
 
     def count_tokens(self, text: str) -> int:
+        # NOTE: by design text is just str here, as None leads to a ValueError
         return litellm.token_counter(model=self.name, text=text)
+
+    @property
+    def provider(self) -> str:
+        return litellm.get_llm_provider(
+            self.name, api_base=self.config.get("api_base")
+        )[1]
 
     async def select_tool(
         self, *selection_args, **selection_kwargs
     ) -> ToolRequestMessage:
         """Shim to aviary.core.ToolSelector that supports tool schemae."""
         tool_selector = ToolSelector(
-            model_name=self.name, acompletion=track_costs(self.router.acompletion)
+            model_name=self.name, acompletion=track_costs(self.get_router().acompletion)
         )
         return await tool_selector(*selection_args, **selection_kwargs)

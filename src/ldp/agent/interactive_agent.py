@@ -55,7 +55,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
 
         tool: Tool | None = None
         while not tool:
-            tool_choice = input(">>> Select tool by name: ")
+            tool_choice = input(">>> Select tool by name: ")  # noqa: ASYNC250
             if tool_choice == CLEAR:
                 continue
             if tool_choice == EXIT:
@@ -75,7 +75,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
             pdefault = pprops.get("default", MISSING_DEFAULT)
             prompt = f">>> Enter parameter ({self._get_param_string(pname, pprops)}): "
             while True:
-                value = input(prompt)
+                value = input(prompt)  # noqa: ASYNC250
                 if value == CLEAR:
                     return await self.get_asv(agent_state, obs)  # just start over
                 if value == EXIT:

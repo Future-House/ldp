@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import contextlib
 import logging
 import logging.config
@@ -8,6 +9,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import litellm
+from litellm.litellm_core_utils.logging_callback_manager import LoggingCallbackManager
 
 try:
     from tqdm.asyncio import tqdm
@@ -15,7 +17,10 @@ except ImportError:
     tqdm = None  # type: ignore[assignment,misc]
 
 if TYPE_CHECKING:
+    from typing import IO
+
     import vcr.request
+    from PIL._typing import StrOrBytesPath
 
 
 def configure_llm_logs() -> None:
@@ -126,4 +131,54 @@ def update_litellm_max_callbacks(value: int = 1000) -> None:
 
     SEE: https://github.com/BerriAI/litellm/issues/9792
     """
-    litellm.litellm_core_utils.logging_callback_manager.LoggingCallbackManager.MAX_CALLBACKS = value
+    # Can't do full path from litellm package root since
+    # https://github.com/BerriAI/litellm/pull/18396 changed __init__.py
+    LoggingCallbackManager.MAX_CALLBACKS = value
+
+
+def bytes_to_string(value: bytes) -> str:
+    """Convert bytes to a base64-encoded string."""
+    # 1. Convert bytes to base64 bytes
+    # 2. Convert base64 bytes to base64 string,
+    #    using UTF-8 since base64 produces ASCII characters
+    return base64.b64encode(value).decode("utf-8")
+
+
+def string_to_bytes(value: str) -> bytes:
+    """Convert a base64-encoded string to bytes."""
+    # 1. Convert base64 string to base64 bytes (the noqa comment is to make this clear)
+    # 2. Convert base64 bytes to original bytes
+    return base64.b64decode(value.encode("utf-8"))  # noqa: FURB120
+
+
+def validate_image(path: "StrOrBytesPath | IO[bytes]") -> None:
+    """
+    Validate that the file at the given path is a valid image.
+
+    Raises:
+        OSError: If the image file is truncated.
+    """  # noqa: DOC502
+    try:
+        from PIL import Image
+    except ImportError as exc:
+        raise ImportError(
+            "Image validation requires the 'image' extra for 'pillow'. Please:"
+            " `pip install fhlmi[image]`."
+        ) from exc
+
+    with Image.open(path) as img:
+        img.load()
+
+
+def encode_image_as_url(image_type: str, image_data: bytes | str) -> str:
+    """Convert image data to an RFC 2397 data URL format."""
+    if isinstance(image_data, bytes):
+        image_data = bytes_to_string(image_data)
+    return f"data:image/{image_type};base64,{image_data}"
+
+
+def is_encoded_image(image: str) -> bool:
+    """Check if the given image is a GCS URL or a RFC 2397 data URL."""
+    return image.startswith("gs://") or (
+        image.startswith("data:image/") and ";base64," in image
+    )

@@ -23,9 +23,9 @@ classifiers = [
 ]
 dependencies = [
     "aiofiles",
-    "fhaviary>=0.20.0",  # For Environment.get_id
+    "fhaviary>=0.32.0",  # For Message.prepend_text
     "fhlmi",  # For new LLM client interface
-    "httpx",
+    "httpx-aiohttp",
     "numpy>=1.20",  # For numpy.typing
     "pydantic~=2.0",
     "tenacity",
@@ -44,11 +44,12 @@ requires-python = ">=3.11"
 dev = [
     "fhaviary[xml]>=0.19",  # For not line-wrapping tool descriptions
     "fhlmi[dev]",
+    "httpx",
     "ipython>=8",  # Pin to keep recent
     "ldp[monitor,nn,rich,server,typing,visualization]",
     "litellm",  # Version ranges are enforced by lmi
-    "mypy>=1.8",  # Pin for mutable-override
-    "pre-commit>=3.4",  # Pin to keep recent
+    "mypy>=1.19",  # Pin for zip default detection
+    "prek",
     "pydantic~=2.9",  # Pydantic 2.9 changed JSON schema exports 'allOf', so ensure tests match
     "pylint-pydantic",
     "pylint>=3.2",  # Pin to keep recent
@@ -64,20 +65,20 @@ dev = [
     "pytest>=8",  # Pin to keep recent
     "refurb>=2",  # Pin to keep recent
     "usearch>=2.13",  # For py.typed
-    "vcrpy>=6",  # Pin for https://github.com/kevin1024/vcrpy/issues/884
+    "vcrpy>=8",  # Pin for dropping unused requests support
 ]
 monitor = [
     "wandb",
 ]
 nn = [
     "accelerate",
-    "dask-cuda>=24.8.2",
+    "dask-cuda>=24.8.2,<25.10.0",  # Downpin for requiring cuda-core, which breaks macOS installs
     "dask-jobqueue",
     "dask[distributed]",
     "ldp[scg]",
     "tokenizers>0.20",
-    "torch>=2.5,<2.6",  # Temporarily pin <2.6 until someone fixes our CI with newer versions
-    "transformers>=4.46,<4.51",  # Temporarily pin <4.51 until someone fixes our CI with newer versions, and also https://github.com/huggingface/transformers/issues/37339
+    "torch==2.6",
+    "transformers>=4.51,<5",  # Pin for py.typed, TODO: handle v5's breaking changes
     "wandb",
 ]
 rich = [
@@ -92,6 +93,7 @@ server = [
     "fastapi>=0.109",  # For Python 3.12 support
 ]
 typing = [
+    "httpx",
     "types-aiofiles",
     "types-tqdm",
 ]
@@ -112,14 +114,9 @@ check-hidden = true
 ignore-words-list = "astroid,ser"
 skip = "**tests/cassettes/*,**/tests/cassettes/*"
 
-[tool.markdownlint]
-no-inline-html = false
-
-[tool.markdownlint.line-length]
-code_block_line_length = 88  # Match ruff line-length
-line_length = 120  # Match ruff max-doc-length
-stern = true
-tables = false
+[tool.markdown_toc_creator]
+horizontal-rule-style = "prettier"
+proactive = false
 
 [tool.mypy]
 # Type-checks the interior of functions without type annotations.
@@ -190,6 +187,7 @@ ignore_missing_imports = true
 module = [
     "accelerate.*",  # SEE: https://github.com/huggingface/accelerate/issues/2396
     "dask_cuda",
+    "google.cloud.storage",  # SEE: https://github.com/googleapis/python-storage/issues/393
     "networkx",  # SEE: https://github.com/networkx/networkx/issues/3988
     "pydot",
     "transformers.*",  # SEE: https://github.com/huggingface/transformers/pull/18485
@@ -208,6 +206,12 @@ max-attributes = 12
 max-line-length = 88  # Match ruff line-length
 
 [tool.pylint.main]
+# Files or directories matching the regular expression patterns are skipped.
+# The regex matches against base names, not paths. The default value ignores
+# Emacs file locks
+ignore-patterns = [
+    "^version\\.py$",  # Version files made by setuptools_scm
+]
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use, and will cap the count on Windows to
 # avoid hangs.
@@ -224,8 +228,9 @@ disable = [
     "arguments-differ",  # Ops intentionally differ arguments
     "attribute-defined-outside-init",  # Disagrees with reset pattern
     "bare-except",  # Rely on ruff E722 for this
-    "broad-exception-caught",  # Don't care to enforce this
+    "broad-exception-caught",  # Rely on ruff BLE001 for this
     "broad-exception-raised",  # Rely on ruff TRY002 for this
+    "consider-using-in",  # Rely on ruff PLR1714 for this
     "cyclic-import",  # Let Python blow up
     "dangerous-default-value",  # Rely on ruff W0102 for this
     "empty-docstring",  # Let pep257 take care of docstrings
@@ -292,6 +297,16 @@ score = false
 # Minimum lines number of a similarity.
 min-similarity-lines = 12
 
+[tool.pymarkdown]
+plugins.line-length.code_block_line_length = 88  # Match ruff line-length
+plugins.line-length.enabled = true
+plugins.line-length.line_length = 120  # Match ruff max-doc-length
+plugins.line-length.stern = true
+plugins.line-length.tables = false
+plugins.no-duplicate-heading.siblings_only = true  # GitHub appends -X for duplicated headings
+plugins.no-emphasis-as-heading.enabled = false
+plugins.no-inline-html.enabled = false
+
 [tool.pytest.ini_options]
 # Add the specified OPTS to the set of command line arguments as if they had been
 # specified by the user.
@@ -321,6 +336,7 @@ enable_all = true
 ignore = [
     "FURB101",  # Rely on ruff FURB101 for this
     "FURB103",  # Rely on ruff FURB103 for this
+    "FURB108",  # Rely on ruff PLR1714 for this
     "FURB118",  # We often use inspect.signature in FxnOp. In 3.11, this doesn't work on operator.itemgetter.
     "FURB141",  # Rely on ruff PTH110 for this
     "FURB144",  # Rely on ruff PTH107 for this
@@ -345,16 +361,15 @@ preview = true
 [tool.ruff.lint]
 explicit-preview-rules = true
 extend-select = [
-    "AIR002",
-    "AIR301",
-    "AIR302",
-    "AIR311",
-    "AIR312",
-    "ASYNC116",
+    "ASYNC212",
+    "ASYNC240",
+    "ASYNC250",
     "B901",
     "B903",
     "B909",
+    "B912",
     "CPY001",
+    "DOC102",
     "DOC201",
     "DOC202",
     "DOC402",
@@ -406,11 +421,8 @@ extend-select = [
     "FURB103",
     "FURB110",
     "FURB113",
-    "FURB116",
     "FURB118",
-    "FURB122",
     "FURB131",
-    "FURB132",
     "FURB140",
     "FURB142",
     "FURB145",
@@ -418,17 +430,13 @@ extend-select = [
     "FURB152",
     "FURB154",
     "FURB156",
-    "FURB157",
-    "FURB162",
     "FURB164",
-    "FURB166",
     "FURB171",
     "FURB180",
     "FURB189",
     "FURB192",
     "LOG004",
-    "LOG014",
-    "PLC0415",
+    "PLC0207",
     "PLC1901",
     "PLC2701",
     "PLC2801",
@@ -442,49 +450,35 @@ extend-select = [
     "PLR0916",
     "PLR0917",
     "PLR1702",
-    "PLR1733",
     "PLR6104",
     "PLR6201",
     "PLR6301",
     "PLW0108",
-    "PLW0177",
     "PLW0244",
     "PLW1514",
-    "PLW1641",
     "PLW3201",
-    "PT028",
     "PT029",
-    "PT030",
-    "PT031",
-    "PYI059",
-    "PYI061",
     "RUF027",
-    "RUF028",
     "RUF029",
     "RUF031",
     "RUF036",
     "RUF037",
     "RUF038",
     "RUF039",
-    "RUF043",
     "RUF045",
     "RUF047",
-    "RUF049",
     "RUF052",
-    "RUF053",
     "RUF054",
     "RUF055",
     "RUF056",
-    "RUF057",
-    "RUF058",
-    "RUF059",
+    "RUF060",
+    "RUF061",
+    "RUF063",
+    "RUF064",
+    "RUF065",
     "RUF102",
     "TC008",
     "UP042",
-    "UP045",
-    "UP046",
-    "UP047",
-    "UP049",
     "W391",
 ]
 external = [
@@ -564,6 +558,7 @@ unfixable = [
     "ERA001",  # While debugging, temporarily commenting code can be useful
     "F401",  # While debugging, unused imports can be useful
     "F841",  # While debugging, unused locals can be useful
+    "PIE794",  # Autoremoving the latter of two fields is dangerous
     "RUF059",  # While debugging, unused locals can be useful
     "TC004",  # While debugging, it can be nice to keep TYPE_CHECKING in-tact
 ]
@@ -576,6 +571,7 @@ mypy-init-return = true
     "E501",  # Tests can have long strings
     "F841",  # Tests can have unused locals
     "N802",  # Tests function names can match class names
+    "PLC2701",  # Test can import private names if needed
     "PLR2004",  # Tests can have magic values
     "PLR6301",  # Test classes can ignore self
     "S101",  # Tests can have assertions

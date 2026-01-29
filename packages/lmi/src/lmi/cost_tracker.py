@@ -7,6 +7,8 @@ from typing import ParamSpec, TypeVar
 
 import litellm
 
+from lmi.types import LLMResponse
+
 logger = logging.getLogger(__name__)
 
 
@@ -18,22 +20,41 @@ class CostTracker:
         self.enabled = contextvars.ContextVar[bool]("track_costs", default=False)
         # Not a contextvar because I can't imagine a scenario where you'd want more fine-grained control
         self.report_every_usd = 1.0
+        self._callbacks: list[Callable[[LLMResponse], Awaitable]] = []
 
-    def record(
-        self,
-        response: (
-            litellm.ModelResponse
-            | litellm.types.utils.EmbeddingResponse
-            | litellm.types.utils.ModelResponseStream
-        ),
-    ) -> None:
-        self.lifetime_cost_usd += litellm.cost_calculator.completion_cost(
-            completion_response=response
-        )
+    def add_callback(self, callback: Callable[[LLMResponse], Awaitable]) -> None:
+        self._callbacks.append(callback)
+
+    async def record(self, response: LLMResponse) -> None:
+        # Only record on responses with usage information (final chunk in streaming)
+        # We check for usage presence rather than cost > 0 because:
+        # - Free models, unknown models, or custom pricing can have cost = 0
+        # - We still want to fire callbacks for these to maintain visibility
+        if not getattr(response, "usage", None):
+            return
+
+        try:
+            self.lifetime_cost_usd += litellm.cost_calculator.completion_cost(
+                completion_response=response
+            )
+        except Exception:
+            model = getattr(response, "model", "unknown")
+            logger.warning(
+                f"Failed to calculate cost for model '{model}'. "
+                "This model may not be in LiteLLM's pricing database."
+            )
 
         if self.lifetime_cost_usd - self.last_report > self.report_every_usd:
             logger.info(f"Cumulative lmi API call cost: ${self.lifetime_cost_usd:.8f}")
             self.last_report = self.lifetime_cost_usd
+
+        for callback in self._callbacks:
+            try:
+                await callback(response)
+            except Exception as e:
+                logger.warning(
+                    f"Callback failed during cost tracking: {e}", exc_info=True
+                )
 
 
 GLOBAL_COST_TRACKER = CostTracker()
@@ -90,7 +111,7 @@ def track_costs(
     async def wrapped_func(*args, **kwargs):
         response = await func(*args, **kwargs)
         if GLOBAL_COST_TRACKER.enabled.get():
-            GLOBAL_COST_TRACKER.record(response)
+            await GLOBAL_COST_TRACKER.record(response)
         return response
 
     return wrapped_func
@@ -130,16 +151,10 @@ class TrackedStreamWrapper:
     def __aiter__(self):
         return self
 
-    def __next__(self):
-        response = next(self.stream)
-        if GLOBAL_COST_TRACKER.enabled.get():
-            GLOBAL_COST_TRACKER.record(response)
-        return response
-
     async def __anext__(self):
         response = await self.stream.__anext__()
         if GLOBAL_COST_TRACKER.enabled.get():
-            GLOBAL_COST_TRACKER.record(response)
+            await GLOBAL_COST_TRACKER.record(response)
         return response
 
 

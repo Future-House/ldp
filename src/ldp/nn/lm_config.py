@@ -86,19 +86,19 @@ class LMConfig(BaseModel):
             raise ValueError("Do not set torch_dtype in load_args. Use dtype instead.")
         return self
 
-    def get_causal_lm(self) -> tuple[PreTrainedTokenizer, AutoModelForCausalLM]:
+    def get_causal_lm(self) -> tuple[PreTrainedTokenizer, PreTrainedModel]:
         return self.get_model(AutoModelForCausalLM)
 
     def get_regression_lm(
         self,
-    ) -> tuple[PreTrainedTokenizer, AutoModelForSequenceClassification]:
+    ) -> tuple[PreTrainedTokenizer, PreTrainedModel]:
         # num_labels=1 puts it in regression mode (MSE loss, single output)
         # https://huggingface.co/docs/transformers/v4.44.2/en/model_doc/auto#transformers.AutoModelForSequenceClassification
         return self.get_classification_lm(num_labels=1)
 
     def get_classification_lm(
         self, num_labels: int
-    ) -> tuple[PreTrainedTokenizer, AutoModelForSequenceClassification]:
+    ) -> tuple[PreTrainedTokenizer, PreTrainedModel]:
         return self.get_model(AutoModelForSequenceClassification, num_labels=num_labels)
 
     # huggingface autotypes make type annotations messy, so disable mypy

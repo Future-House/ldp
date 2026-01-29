@@ -2,7 +2,7 @@ import os
 import secrets
 from typing import TYPE_CHECKING, Annotated, TypeVar
 
-import httpx
+import httpx_aiohttp
 from aviary.core import Message, Messages, Tool, ToolRequestMessage, ToolsAdapter
 from pydantic import BaseModel
 
@@ -12,6 +12,7 @@ from .agent import Agent
 from .simple_agent import SimpleAgentState
 
 if TYPE_CHECKING:
+    import httpx._types
     from fastapi import FastAPI
 
 TSerializableAgentState = TypeVar("TSerializableAgentState", bound=BaseModel)
@@ -24,7 +25,7 @@ class HTTPAgentClient(Agent[TSerializableAgentState]):
         self,
         agent_state_type: type[TSerializableAgentState],
         server_url: str,
-        request_headers: httpx._types.HeaderTypes | None = None,
+        request_headers: "httpx._types.HeaderTypes | None" = None,
         request_timeout: float | None = None,
     ):
         super().__init__()
@@ -38,7 +39,7 @@ class HTTPAgentClient(Agent[TSerializableAgentState]):
         agent_state: TSerializableAgentState,
         obs: list[Message],
     ) -> tuple[OpResult[ToolRequestMessage], TSerializableAgentState, float]:
-        async with httpx.AsyncClient() as client:
+        async with httpx_aiohttp.HttpxAiohttpClient() as client:
             response = await client.post(
                 f"{self._request_url}/get_asv",
                 json={
@@ -58,7 +59,7 @@ class HTTPAgentClient(Agent[TSerializableAgentState]):
             )
 
     async def init_state(self, tools: list[Tool]) -> TSerializableAgentState:
-        async with httpx.AsyncClient() as client:
+        async with httpx_aiohttp.HttpxAiohttpClient() as client:
             response = await client.post(
                 f"{self._request_url}/init_state",
                 json=ToolsAdapter.dump_python(tools),

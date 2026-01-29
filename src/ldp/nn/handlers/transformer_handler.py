@@ -11,7 +11,16 @@ from collections.abc import Awaitable, Callable
 from enum import StrEnum, auto
 from functools import cache, partial, wraps
 from pathlib import Path
-from typing import Any, Concatenate, ParamSpec, Self, TypeVar, assert_never
+from typing import (
+    Any,
+    Concatenate,
+    Literal,
+    ParamSpec,
+    Self,
+    TypeVar,
+    assert_never,
+    cast,
+)
 
 import accelerate
 import torch
@@ -32,13 +41,13 @@ from torch.distributed.fsdp import (
     StateDictType,
 )
 from torch.nn.functional import pad
-from transformers import PreTrainedModel, PreTrainedTokenizer
+from transformers import GenerationMixin, PreTrainedModel, PreTrainedTokenizer
 from transformers.generation.utils import GenerateDecoderOnlyOutput, LogitsProcessorList
 from transformers.tokenization_utils_base import BatchEncoding
 
 from ldp.graph.async_torch import AsyncBufferedWorker, AsyncTorchModule
 from ldp.nn.generation import LogitsProcessorWithFinalize
-from ldp.nn.handlers.chunking import TensorChunker
+from ldp.nn.handlers.chunking import TensorChunker, TOutputType
 from ldp.nn.handlers.module_handler import ModuleExecutionInterface, ModuleHandler
 from ldp.nn.lm_config import LMConfig, TorchDType
 from ldp.nn.utils import REPO_ROOT, set_seed
@@ -186,7 +195,7 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
     async def __call__(  # type: ignore[override]
         self,
         inputs: str | BatchEncoding | list[dict],
-        tools_json: list[dict] | None = None,
+        tools_json: list[dict[Any, Any]] | None = None,
         **kwargs,
     ) -> tuple[str, torch.Tensor]:
         """Call the transformer on a single input, which may be encoded."""
@@ -201,7 +210,11 @@ class AsyncTransformerInterface(ModuleExecutionInterface, AsyncTorchModule, ABC)
                 f"model.generate() input_ids shape: {kwargs['input_ids'].shape}, rank"
                 f" {os.environ.get('RANK')}"
             )
-            return model.generate(
+            if not isinstance(model, GenerationMixin):  # type: ignore[unreachable]
+                raise TypeError(
+                    "model_generate only supports models that inherit from GenerationMixin"
+                )
+            return model.generate(  # type: ignore[unreachable]
                 *args,
                 **kwargs,
                 pad_token_id=model.config.pad_token_id,  # not always set properly by .generate()
@@ -295,8 +308,8 @@ class AsyncTransformer(TransformerHandler, AsyncTransformerInterface):
 
     async def __call__(
         self,
-        inputs: str | BatchEncoding | list[dict] | None = None,
-        tools_json: list[dict] | None = None,
+        inputs: str | BatchEncoding | dict | list[dict] | None = None,
+        tools_json: list[dict[Any, Any]] | None = None,
         input_ids: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
         **kwargs,
@@ -420,9 +433,10 @@ class ParallelTransformerHandler(TransformerHandler):
         kwargs = tree.map_structure(to_device, kwargs)
 
         try:
-            with torch.autocast(
-                device_type=self.module.device.type, dtype=self.module.dtype
-            ):
+            device_type: str = str(self.module.device.type)
+            assert self.module.dtype is not None
+            dtype: torch.dtype = self.module.dtype  # type: ignore[assignment]
+            with torch.autocast(device_type=device_type, dtype=dtype):
                 res = (
                     getattr(self, func)(*args, **kwargs)
                     if isinstance(func, str)
@@ -588,8 +602,8 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
 
     async def __call__(
         self,
-        inputs: str | BatchEncoding | list[dict] | None = None,
-        tools_json: list[dict] | None = None,
+        inputs: str | BatchEncoding | dict | list[dict] | None = None,
+        tools_json: list[dict[Any, Any]] | None = None,
         input_ids: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
         **kwargs,
@@ -610,13 +624,32 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
             self.handler_call_fn, **batch_kwargs, split_data=True
         )
 
+    @overload
+    def _submit_and_gather(
+        self,
+        func: Callable[Concatenate[ParallelTransformerHandler, TParams], TOutputType]
+        | str,
+        *args,
+        split_data: Literal[True],
+        **kwargs,
+    ) -> TOutputType: ...
+
+    @overload
     def _submit_and_gather(
         self,
         func: Callable[Concatenate[ParallelTransformerHandler, TParams], TReturn] | str,
         *args,
+        split_data: Literal[False] = False,  # default
+        **kwargs,
+    ) -> list[TReturn]: ...
+
+    def _submit_and_gather(
+        self,
+        func: Callable[Concatenate[ParallelTransformerHandler, TParams], Any] | str,
+        *args,
         split_data: bool = False,
         **kwargs,
-    ) -> list[TReturn]:
+    ) -> TOutputType | list[TReturn]:
         """Submit a function to all workers and gather the results.
 
         Args:
@@ -651,7 +684,7 @@ class ParallelAsyncTransformer(AsyncTransformerInterface):
                 self.actors, self.worker_ids, split_args, split_kwargs, strict=True
             )
         ]
-        results: list[TReturn] = self._client_gather(futures)
+        results = self._client_gather(futures)
 
         if split_data:
             return chunker.dechunkify(results, dummy_flags)
@@ -899,24 +932,22 @@ def decollate_fn_transformer_decoder(
 ) -> list[GenerateDecoderOnlyOutput]:
     """Decollates a batched output from a huggingface transformer decoder."""
     batch_size = len(batched_output.sequences)
-
-    return [
-        GenerateDecoderOnlyOutput({
-            "sequences": batched_output.sequences[i][None, :],
-            "scores": (
-                [
-                    score[i][None, :]
-                    for score in batched_output.scores
-                    if (score[i] is not None)
-                ]
-                if batched_output.scores
-                else None
-            ),
-            # There are other fields in the batched output that we can add here,
-            # but no calling code is using them, so ignore for now.
-        })
+    outputs: list[GenerateDecoderOnlyOutput] = [
+        GenerateDecoderOnlyOutput(
+            sequences=batched_output.sequences[i][None, :],  # type: ignore[arg-type]
+            scores=[
+                score[i][None, :]
+                for score in batched_output.scores
+                if (score[i] is not None)
+            ]
+            if batched_output.scores
+            else None,  # type: ignore[arg-type]
+        )
         for i in range(batch_size)
     ]
+    # There are other fields in the batched output that we can add here,
+    # but no calling code is using them, so ignore for now.
+    return outputs
 
 
 # From: https://github.com/pytorch/torchtune/blob/c5db813ce0473db090a4f1f6b450f559acac58e5/torchtune/training/_distributed.py#L207
@@ -968,7 +999,7 @@ def _get_data_device() -> torch.device:
 def _get_tokenized_inputs(
     tokenizer: PreTrainedTokenizer,
     inputs: str | dict | BatchEncoding | list[dict],
-    tools_json: list[dict] | None = None,
+    tools_json: list[dict[Any, Any]] | None = None,
 ) -> BatchEncoding:
     if isinstance(inputs, BatchEncoding):
         return inputs
@@ -977,13 +1008,14 @@ def _get_tokenized_inputs(
     if isinstance(inputs, str):
         return tokenizer(inputs, return_tensors="pt")
     if is_conversation(inputs):
-        return tokenizer.apply_chat_template(
+        result = tokenizer.apply_chat_template(
             inputs,
-            tools=tools_json,
+            tools=tools_json,  # type: ignore[arg-type]
             return_tensors="pt",
             return_dict=True,
             add_generation_prompt=True,
         )
+        return cast(BatchEncoding, result)
     raise ValueError(
         f"inputs must be a str, BatchEncoding, or Conversation, but got {type(inputs)}"
     )

@@ -25,7 +25,7 @@ dependencies = [
     "coredis",
     "fhaviary>=0.14.0",  # For multi-image support
     "limits>=4.8",  # Pin for RedisBridge.key_prefix
-    "litellm>=1.63.5,<1.75",  # Lower pin for reasoning + streaming fix, upper-pin for https://github.com/BerriAI/litellm/issues/13081
+    "litellm>=1.75.6",  # Lower pin for OpenAI reasoning effort support
     "pydantic~=2.0,>=2.10.1",
     "tiktoken>=0.4.0",
     "typing-extensions; python_version <= '3.11'",  # for typing.override
@@ -40,10 +40,12 @@ requires-python = ">=3.11"
 [project.optional-dependencies]
 dev = [
     "fhaviary[xml]",
-    "fhlmi[local,progress,typing,vcr]",
-    "httpx",
+    "fhlmi[image,local,progress,typing,vcr]",
+    "google-auth>=2",  # Pin to keep recent
+    "google-cloud-storage>=3",  # Pin to keep recent
+    "httpx-aiohttp",
     "ipython>=8",  # Pin to keep recent
-    "litellm>=1.68,<1.71",  # Lower pin for PydanticDeprecatedSince20 fixes, upper pin for VCR cassette breaks (https://github.com/BerriAI/litellm/issues/11724)
+    "litellm>=1.80.10,<1.80.11",  # Lower pin for fixing text completions using optimized HTTP, upper pin for https://github.com/BerriAI/litellm/issues/19811
     "mypy>=1.8",  # Pin for mutable-override
     "pre-commit>=3.4",  # Pin to keep recent
     "pylint-pydantic",
@@ -59,6 +61,9 @@ dev = [
     "refurb>=2",  # Pin to keep recent
     "typeguard",
 ]
+image = [
+    "pillow>=10.3.0",  # Pin for py.typed
+]
 local = [
     "numpy",
     "sentence-transformers",
@@ -66,7 +71,7 @@ local = [
 progress = ["tqdm"]
 typing = ["types-tqdm"]
 vcr = [
-    "vcrpy>=6",  # Pin for https://github.com/kevin1024/vcrpy/issues/884
+    "vcrpy>=8",  # Pin for dropping unused cassettes support
 ]
 
 [project.urls]

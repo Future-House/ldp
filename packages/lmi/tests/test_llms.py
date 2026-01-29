@@ -1,13 +1,15 @@
+import json
 import pathlib
 import pickle
+import re
 from collections.abc import AsyncIterator
 from typing import Any, ClassVar
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import litellm
 import numpy as np
 import pytest
-from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
+from aviary.core import Message, Tool, ToolCall, ToolRequestMessage, ToolResponseMessage
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
 from lmi.exceptions import JSONSchemaValidationError
@@ -25,6 +27,7 @@ class TestLiteLLMModel:
         # Test default instantiation
         model1 = LiteLLMModel()
         assert model1.name == CommonLLMNames.GPT_4O.value
+        assert model1.provider == "openai"
         assert isinstance(model1.config, dict)
         assert "model_list" in model1.config
 
@@ -32,6 +35,7 @@ class TestLiteLLMModel:
         name = CommonLLMNames.ANTHROPIC_TEST.value
         model2 = LiteLLMModel(name=name)
         assert model2.name == name
+        assert model2.provider == "anthropic"
         assert model2.config["model_list"][0]["model_name"] == name
 
         # Test config-only instantiation
@@ -42,6 +46,7 @@ class TestLiteLLMModel:
         }
         model3 = LiteLLMModel(config=config)
         assert model3.name == CommonLLMNames.OPENAI_TEST.value
+        assert model3.provider == "openai"
         assert (
             model3.config["model_list"][0]["model_name"]
             == CommonLLMNames.OPENAI_TEST.value
@@ -54,9 +59,42 @@ class TestLiteLLMModel:
         config = {"temperature": 0.5, "max_tokens": 100}
         model4 = LiteLLMModel(name=name, config=config)
         assert model4.name == name
+        assert model4.provider == "openai"
         assert model4.config["model_list"][0]["model_name"] == name
         assert model4.config["model_list"][0]["litellm_params"]["temperature"] == 0.5
         assert model4.config["model_list"][0]["litellm_params"]["max_tokens"] == 100
+
+        # Test logprobs and top_logprobs configuration passing through (OpenAI-specific)
+        name = CommonLLMNames.OPENAI_TEST.value
+        config_with_logprobs = {
+            "logprobs": True,
+            "top_logprobs": 20,
+            "temperature": 0.7,
+        }
+        model5 = LiteLLMModel(name=name, config=config_with_logprobs)
+        assert model5.config["model_list"][0]["litellm_params"]["logprobs"] is True
+        assert model5.config["model_list"][0]["litellm_params"]["top_logprobs"] == 20
+        assert model5.config["model_list"][0]["litellm_params"]["temperature"] == 0.7
+
+        model6 = LiteLLMModel(name="definitely/not-a-provider")
+        assert (
+            model6.name
+            == model6.config["model_list"][0]["model_name"]
+            == "definitely/not-a-provider"
+        )
+        with pytest.raises(litellm.BadRequestError, match="definitely"):
+            _ = model6.provider
+
+        model7 = LiteLLMModel(
+            name="nvidia/nemotron-parse",
+            config={"api_base": "https://integrate.api.nvidia.com/v1"},
+        )
+        assert (
+            model7.name
+            == model7.config["model_list"][0]["model_name"]
+            == "nvidia/nemotron-parse"
+        )
+        assert model7.provider == "nvidia_nim"
 
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.parametrize(
@@ -73,6 +111,7 @@ class TestLiteLLMModel:
                                 "temperature": 0,
                                 "max_tokens": 56,
                                 "logprobs": True,
+                                "top_logprobs": 5,
                             },
                         }
                     ],
@@ -122,8 +161,22 @@ class TestLiteLLMModel:
         if llm.config["model_list"][0]["litellm_params"].get("logprobs"):
             assert isinstance(result.logprob, float)
             assert result.logprob <= 0
+            # Test top_logprobs only for OpenAI models (top_logprobs is OpenAI-specific)
+            if llm.config["model_list"][0]["litellm_params"].get("top_logprobs"):
+                assert isinstance(result.top_logprobs, list)
+                assert len(result.top_logprobs) > 0
+                # Each position should have a list of (token, logprob) tuples
+                for position_logprobs in result.top_logprobs:
+                    assert isinstance(position_logprobs, list)
+                    for token, logprob in position_logprobs:
+                        assert isinstance(token, str)
+                        assert isinstance(logprob, float)
+            else:
+                # For non-OpenAI models or when top_logprobs not configured
+                assert result.top_logprobs is None
         else:
             assert result.logprob is None
+            assert result.top_logprobs is None
         assert result.name == result_name
         result = await llm.call_single(messages)
         assert isinstance(result, LLMResult)
@@ -190,53 +243,84 @@ class TestLiteLLMModel:
     @pytest.mark.asyncio
     async def test_call_w_figure(self) -> None:
         llm = LiteLLMModel(name=CommonLLMNames.GPT_4O.value)
+        sys_message = Message(
+            role="system", content="You are a detective who investigates colors"
+        )
+
+        # First let's get baseline prompt tokens and cost
+        (result,) = await llm.call([
+            sys_message,
+            Message(
+                content=(
+                    "What color is this square? Show me your chain of reasoning."
+                    " Alternately, if there is no square, just answer 'no square'."
+                )
+            ),
+        ])
+        assert isinstance(result, LLMResult)
+        assert result.prompt_count is not None
+        assert result.prompt_count > 0
+        assert result.cost > 0
+        assert (result.text or "").strip().rstrip(".").lower() == "no square"
+        no_image_prompt_count = result.prompt_count
+        no_image_completion_count = result.completion_count
+        no_image_cost = result.cost
+
+        # Now let's prompt an image and confirm its used and incorporated into cost
         image = np.zeros((32, 32, 3), dtype=np.uint8)
         image[:] = [255, 0, 0]
         messages = [
-            Message(
-                role="system", content="You are a detective who investigate colors"
-            ),
+            sys_message,
             Message.create_message(
-                role="user",
-                text="What color is this square? Show me your chain of reasoning.",
+                text=(
+                    "What color is this square? Show me your chain of reasoning."
+                    " Alternately, if there is no square, just answer 'no square'."
+                ),
                 images=image,
             ),
         ]
-        results = await llm.call(messages)
-        assert isinstance(results, list)
-        for result in results:
-            assert isinstance(result, LLMResult)
-            assert isinstance(result.prompt, list)
-            assert all(isinstance(msg, Message) for msg in result.prompt)
-            assert isinstance(result.prompt[1], Message)
-            assert len(result.prompt) == 2
-            assert result.prompt[1].content
-            assert isinstance(result.text, str)
-            assert "red" in result.text.lower()
-            assert result.seconds_to_last_token > 0
-            assert result.prompt_count > 0
-            assert result.completion_count > 0
-            assert result.cost > 0
+        (result,) = await llm.call(messages)
+        assert isinstance(result, LLMResult)
+        assert isinstance(result.prompt, list)
+        assert all(isinstance(msg, Message) for msg in result.prompt)
+        assert isinstance(result.prompt[1], Message)
+        assert len(result.prompt) == 2
+        assert result.prompt[1].content
+        assert isinstance(result.text, str)
+        assert "red" in result.text.lower()
+        assert result.seconds_to_last_token > 0
+        assert (  # noqa: PT018
+            result.prompt_count is not None
+            and result.prompt_count > 1.25 * no_image_prompt_count
+        ), "Image usage should require more prompt tokens"
+        assert result.completion_count is not None
+        assert result.completion_count > 0
+        assert result.cost > 1.25 * no_image_cost, (
+            f"Image usage should require higher cost. For reference,"
+            f" {result.prompt_count=}, {result.completion_count=},"
+            f" {result.cost=}, {no_image_prompt_count=},"
+            f" {no_image_completion_count=}, and {no_image_cost=}."
+        )
 
         # Also test with a callback
         async def ac(x) -> None:
             pass
 
-        results = await llm.call(messages, [ac])
-        assert isinstance(results, list)
-        for result in results:
-            assert isinstance(result, LLMResult)
-            assert isinstance(result.prompt, list)
-            assert all(isinstance(msg, Message) for msg in result.prompt)
-            assert isinstance(result.prompt[1], Message)
-            assert len(result.prompt) == 2
-            assert result.prompt[1].content
-            assert isinstance(result.text, str)
-            assert "red" in result.text.lower()
-            assert result.seconds_to_last_token > 0
-            assert result.prompt_count > 0
-            assert result.completion_count > 0
-            assert result.cost > 0
+        (result,) = await llm.call(messages, [ac])
+        assert isinstance(result, LLMResult)
+        assert isinstance(result.prompt, list)
+        assert all(isinstance(msg, Message) for msg in result.prompt)
+        assert isinstance(result.prompt[1], Message)
+        assert len(result.prompt) == 2
+        assert result.prompt[1].content
+        assert isinstance(result.text, str)
+        assert "red" in result.text.lower()
+        assert result.seconds_to_last_token > 0
+        assert result.prompt_count is not None
+        assert result.prompt_count > 0
+        assert result.completion_count is not None
+        assert result.completion_count > 0
+        assert result.cost > 0
 
     @pytest.mark.parametrize(
         "config",
@@ -291,7 +375,9 @@ class TestLiteLLMModel:
         )
         assert completion.model == CommonLLMNames.OPENAI_TEST.value
         assert completion.seconds_to_last_token > 0
+        assert completion.prompt_count is not None
         assert completion.prompt_count > 0
+        assert completion.completion_count is not None
         assert completion.completion_count > 0
         assert str(completion) == "".join(outputs)
         assert completion.cost > 0
@@ -318,7 +404,10 @@ class TestLiteLLMModel:
                 max_tokens=1000,
             )
             assert completion.cost > 0
-            assert completion.completion_count > 100, "Expected a long completion"
+            assert (  # noqa: PT018
+                completion.completion_count is not None
+                and completion.completion_count > 100
+            ), "Expected a long completion"
 
         with subtests.test(msg="autowraps message"):
 
@@ -401,7 +490,10 @@ class TestLiteLLMModel:
             rehydrated_llm = pickle.load(f)
         assert llm.name == rehydrated_llm.name
         assert llm.config == rehydrated_llm.config
-        assert llm.router.deployment_names == rehydrated_llm.router.deployment_names
+        assert (
+            llm.get_router().deployment_names
+            == rehydrated_llm.get_router().deployment_names
+        )
 
     @pytest.mark.asyncio
     async def test_acompletion_iter_logprobs_edge_cases(self) -> None:
@@ -550,7 +642,9 @@ class TestMultipleCompletion:
         assert len(results) == self.NUM_COMPLETIONS
 
         for result in results:
+            assert result.prompt_count is not None
             assert result.prompt_count > 0
+            assert result.completion_count is not None
             assert result.completion_count > 0
             assert result.cost > 0
         if model.config["model_list"][0]["litellm_params"].get("logprobs"):
@@ -689,11 +783,10 @@ class TestMultipleCompletion:
         ]
         result = await model.call_single(messages)
         assert isinstance(result, LLMResult)
-
-        assert isinstance(result, LLMResult)
         assert result.messages
         assert len(result.messages) == 1
         assert result.messages[0].content
+        assert not hasattr(result.messages[0], "tool_calls"), "Expected normal message"
 
         model = self.MODEL_CLS(name=model_name, config={"n": 2})
         result = await model.call_single(messages)
@@ -701,6 +794,7 @@ class TestMultipleCompletion:
         assert result.messages
         assert len(result.messages) == 1
         assert result.messages[0].content
+        assert not hasattr(result.messages[0], "tool_calls"), "Expected normal message"
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -837,6 +931,83 @@ class TestTooling:
                 ]
             )
 
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_custom_tool_parser_from_config(self) -> None:
+        def custom_tool_parser(
+            content: str, tools: list[dict]
+        ) -> ToolRequestMessage | Message:
+            tool_calls = []
+            matches = re.finditer(
+                r"<tool_call>\s*(.*?)\s*</tool_call>", content, re.DOTALL
+            )
+            for match in matches:
+                tool_call_str = match.group(1)
+                try:
+                    tool_call = json.loads(tool_call_str)
+                except json.JSONDecodeError:
+                    return Message(role="assistant", content="Tool request is wrong.")
+
+                if not isinstance(tool_call, dict):
+                    return Message(role="assistant", content="Tool request is wrong.")
+
+                if (
+                    "name" not in tool_call
+                    or "arguments" not in tool_call
+                    or not isinstance(tool_call["name"], str)
+                    or not isinstance(tool_call["arguments"], dict)
+                ):
+                    continue
+
+                name = tool_call["name"]
+                # Check if the tool name is in the provided tools list
+                if not any(tool["function"]["name"] == name for tool in tools):
+                    return Message(role="assistant", content="Tool request is wrong.")
+                arguments = tool_call["arguments"]
+                tool_calls.append(ToolCall.from_name(function_name=name, **arguments))
+
+            if not tool_calls:
+                return Message(role="assistant", content="No tools were requested...")
+            return ToolRequestMessage(role="assistant", tool_calls=tool_calls)
+
+        model = LiteLLMModel(
+            name=CommonLLMNames.OPENAI_TEST.value,
+            config={"tool_parser": custom_tool_parser},
+        )
+
+        def my_function(x: int, y: str) -> str:
+            """A test function.
+
+            Args:
+                x: The x parameter.
+                y: The y parameter.
+
+            Returns:
+                A formatted string.
+            """
+            return f"{x}: {y}"
+
+        tools = [Tool.from_function(my_function)]
+
+        messages = [
+            Message(
+                role="system",
+                content='Repeat the same output. Use format:\n<tool_call>\n{"name": "my_function", "arguments": {"x": 1, "y": "foo"}}\n</tool_call>',
+            ),
+            Message(content="Call my_function with x=1, y='foo'"),
+        ]
+
+        result = await model.call_single(messages, tools=tools, tool_choice="auto")
+
+        assert result.messages
+        assert len(result.messages) == 1
+        assert isinstance(result.messages[0], ToolRequestMessage)
+        assert result.messages[0].tool_calls
+        assert len(result.messages[0].tool_calls) == 1
+        assert result.messages[0].tool_calls[0].function.name == "my_function"
+        assert result.messages[0].tool_calls[0].function.arguments["x"] == 1
+        assert result.messages[0].tool_calls[0].function.arguments["y"] == "foo"
+
 
 class TestReasoning:
     @pytest.mark.parametrize(
@@ -874,35 +1045,51 @@ class TestReasoning:
             assert result.reasoning_content
             assert outputs[i] == result.text
 
-    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.vcr
     @pytest.mark.asyncio
-    async def test_anthropic_model(self) -> None:
+    @pytest.mark.parametrize(
+        "model", [CommonLLMNames.GPT_5, CommonLLMNames.CLAUDE_45_SONNET]
+    )
+    @pytest.mark.parametrize(
+        ("reasoning_effort", "expected_len"),
+        [("low", (200, 2_500)), ("high", (900, 10_000))],
+    )
+    async def test_reasoning_effort(
+        self,
+        model: CommonLLMNames,
+        reasoning_effort: str,
+        expected_len: tuple[int, int],
+    ) -> None:
         llm = LiteLLMModel(
-            # Using 3.7 sonnet for its reasoning capabilities
-            name=CommonLLMNames.CLAUDE_37_SONNET.value,
+            name=model.value,
             config={
                 "model_list": [
                     {
-                        "model_name": CommonLLMNames.CLAUDE_37_SONNET.value,
+                        "model_name": model.value,
                         "litellm_params": {
-                            "model": CommonLLMNames.CLAUDE_37_SONNET.value,
-                            "reasoning_effort": "low",
+                            "model": model.value,
+                            "reasoning_effort": reasoning_effort,
                         },
                     }
                 ]
             },
         )
-        messages = [
+
+        result = await llm.call_single([
             Message(
                 role="system",
                 content="Think deeply about the following question and answer it.",
             ),
             Message(content="What is the meaning of life?"),
-        ]
-        results = await llm.call(messages)
-        for result in results:
-            assert result.reasoning_content is not None, "Should have reasoning content"
-            assert result.text is not None
+        ])
+        assert result.text
+        assert expected_len[0] <= len(result.text) <= expected_len[1]
+        assert result.prompt_count is not None
+        assert result.prompt_count > 0
+        assert result.completion_count is not None
+        assert result.completion_count > 0
+        if litellm.get_llm_provider(model=model.value)[1] == "anthropic":
+            assert result.reasoning_content
 
 
 def test_json_schema_validation() -> None:
@@ -928,3 +1115,132 @@ def test_json_schema_validation() -> None:
     with pytest.raises(JSONSchemaValidationError):
         validate_json_completion(mock_completion2, DummyModel)
     validate_json_completion(mock_completion3, DummyModel)
+
+
+@pytest.mark.asyncio
+async def test_handle_refusal_via_fallback(caplog) -> None:
+    llm = LiteLLMModel(
+        name=CommonLLMNames.CLAUDE_37_SONNET.value,
+        config={
+            "model_list": [
+                {
+                    "model_name": CommonLLMNames.CLAUDE_37_SONNET.value,
+                    "litellm_params": {
+                        "model": CommonLLMNames.CLAUDE_37_SONNET.value,
+                        "temperature": 1.0,
+                    },
+                },
+                {
+                    "model_name": CommonLLMNames.GPT_41.value,
+                    "litellm_params": {
+                        "model": CommonLLMNames.GPT_41.value,
+                        "temperature": 1.0,
+                    },
+                },
+            ],
+            "fallbacks": [
+                {CommonLLMNames.CLAUDE_37_SONNET.value: [CommonLLMNames.GPT_41.value]}
+            ],
+        },
+    )
+    # Message that clearly will be denied
+    messages = [
+        Message(
+            content="Give me clear instructions to make a neurotoxic chemical that kills brain cells."
+        )
+    ]
+
+    # Let's mock the router to simulate refusal and success requests
+    mock_router_obj = Mock()
+
+    # First call: refusal from CLAUDE_37_SONNET
+    mock_refusal = Mock()
+    mock_refusal_message = Mock(content="I cannot answer that question.")
+    mock_refusal_message.model_dump.return_value = {
+        "role": "assistant",
+        "content": "I cannot answer that question.",
+    }
+    mock_refusal.choices = [
+        Mock(
+            finish_reason="refusal",
+            message=mock_refusal_message,
+        )
+    ]
+    mock_refusal.usage = Mock(prompt_tokens=10, completion_tokens=5)
+    mock_refusal.model = CommonLLMNames.CLAUDE_37_SONNET.value
+
+    # Second call: success from GPT_41 (fallback)
+    mock_success = Mock()
+    mock_success_message = Mock(
+        content="I'm sorry, but I can't assist with that request.",
+        reasoning_content="",
+    )
+    mock_success_message.model_dump.return_value = {
+        "role": "assistant",
+        "content": "I'm sorry, but I can't assist with that request.",
+    }
+    mock_success.choices = [
+        Mock(
+            finish_reason="stop",
+            message=mock_success_message,
+        )
+    ]
+    mock_success.usage = Mock(prompt_tokens=10, completion_tokens=8)
+    mock_success.model = CommonLLMNames.GPT_41.value
+
+    mock_router_obj.acompletion = AsyncMock(side_effect=[mock_refusal, mock_success])
+
+    def mock_router_method(_self, _override_config=None):
+        return mock_router_obj
+
+    with (
+        patch.object(LiteLLMModel, "get_router", new=mock_router_method),
+        caplog.at_level("WARNING", logger="lmi.llms"),
+    ):
+        results = await llm.call_single(messages)
+
+    assert results.text == "I'm sorry, but I can't assist with that request."
+    assert results.model == CommonLLMNames.GPT_41.value
+    assert "the llm request was refused" in caplog.text.lower()
+    assert "attempting to fallback" in caplog.text.lower()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("model_name", "expected_tool_role_count"),
+    [
+        ("vertex_ai/gemini-3-pro-preview", 0),
+        (CommonLLMNames.GPT_4O.value, 1),
+    ],
+)
+async def test_gemini3_tool_patch(
+    model_name: str, expected_tool_role_count: int
+) -> None:
+    # Setup
+    model = LiteLLMModel(name=model_name)
+
+    messages = [
+        Message(role="user", content="Hello"),
+        ToolResponseMessage(
+            role="tool", content="Result", tool_call_id="123", name="test_tool"
+        ),
+    ]
+
+    # Execute
+    with patch.object(
+        LiteLLMModel, "acompletion", new_callable=AsyncMock
+    ) as mock_acompletion:
+        mock_acompletion.return_value = []
+        await model.call(messages)
+
+        # Verify
+        call_args = mock_acompletion.call_args
+        assert call_args is not None
+        # call_args[0] are positional args: (messages,)
+        called_messages = call_args[0][0]
+
+        assert len(called_messages) == 2
+        assert called_messages[0].role == "user"
+
+        tool_messages = [m for m in called_messages if m.role == "tool"]
+        assert len(tool_messages) == expected_tool_role_count

@@ -13,7 +13,37 @@ from lmi.constants import CHARACTERS_PER_TOKEN_ASSUMPTION, MODEL_COST_MAP
 from lmi.cost_tracker import track_costs
 from lmi.llms import PassThroughRouter
 from lmi.rate_limiter import GLOBAL_LIMITER
-from lmi.utils import get_litellm_retrying_config
+from lmi.utils import get_litellm_retrying_config, is_encoded_image
+
+URL_ENCODED_IMAGE_TOKEN_ESTIMATE = 85  # tokens
+
+
+def estimate_tokens(
+    document: str
+    | list[str]
+    | list[litellm.ChatCompletionImageObject]
+    | list[litellm.types.llms.vertex_ai.PartType],
+) -> float:
+    """Estimate token count for rate limiting purposes."""
+    if isinstance(document, str):  # Text or a data URL
+        return (
+            URL_ENCODED_IMAGE_TOKEN_ESTIMATE
+            if is_encoded_image(document)
+            else len(document) / CHARACTERS_PER_TOKEN_ASSUMPTION
+        )
+    # For multimodal content, estimate based on text parts and add fixed cost for images
+    token_count = 0.0
+    for part in document:
+        if isinstance(part, str):  # Part of a batch of text or data URLs
+            token_count += estimate_tokens(part)
+        # Handle different multimodal formats
+        elif part.get("type") == "image_url":  # OpenAI format
+            token_count += URL_ENCODED_IMAGE_TOKEN_ESTIMATE
+        elif (  # Gemini text format -- https://ai.google.dev/api#text-only-prompt
+            "text" in part
+        ):
+            token_count += len(part["text"]) / CHARACTERS_PER_TOKEN_ASSUMPTION  # type: ignore[typeddict-item]
+    return token_count
 
 
 class EmbeddingModes(StrEnum):
@@ -39,7 +69,7 @@ class EmbeddingModel(ABC, BaseModel):
 
     @abstractmethod
     async def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        pass
+        """Embed a list of documents."""
 
     async def embed_document(self, text: str) -> list[float]:
         return (await self.embed_documents([text]))[0]
@@ -138,7 +168,7 @@ class LiteLLMEmbeddingModel(EmbeddingModel):
         # heuristic about ratio of tokens to characters
         conservative_char_token_ratio = 3
         maybe_too_large = max_tokens * conservative_char_token_ratio
-        if any(len(t) > maybe_too_large for t in texts):
+        if any(len(t) > maybe_too_large for t in texts if not is_encoded_image(t)):
             try:
                 enct = tiktoken.encoding_for_model("cl100k_base")
                 enc_batch = enct.encode_ordinary_batch(texts)
@@ -154,16 +184,12 @@ class LiteLLMEmbeddingModel(EmbeddingModel):
         N = len(texts)
         embeddings = []
         for i in range(0, N, batch_size):
-            await self.check_rate_limit(
-                sum(
-                    len(t) / CHARACTERS_PER_TOKEN_ASSUMPTION
-                    for t in texts[i : i + batch_size]
-                )
-            )
+            batch = texts[i : i + batch_size]
+            await self.check_rate_limit(sum(estimate_tokens(t) for t in batch))
 
             response = await track_costs(self.router.aembedding)(
                 model=self.name,
-                input=texts[i : i + batch_size],
+                input=batch,
                 dimensions=self.ndim,
                 **self.config.get("kwargs", {}),
             )

@@ -3,10 +3,10 @@ default_language_version:
   python: python3
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
-      - id: check-byte-order-marker
+        exclude: uv.lock
       - id: check-case-conflict
       - id: check-merge-conflict
       - id: check-shebang-scripts-are-executable
@@ -16,20 +16,21 @@ repos:
       - id: debug-statements
       - id: detect-private-key
       - id: end-of-file-fixer
+      - id: fix-byte-order-marker
       - id: mixed-line-ending
       - id: trailing-whitespace
   - repo: https://github.com/jsh9/markdown-toc-creator
-    rev: 0.0.10
+    rev: 0.1.3
     hooks:
       - id: markdown-toc-creator
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.13
+    rev: v0.14.7
     hooks:
-      - id: ruff
+      - id: ruff-check
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.5.3
+    rev: v3.7.3
     hooks:
       - id: prettier
   - repo: https://github.com/Yelp/detect-secrets
@@ -42,11 +43,11 @@ repos:
           - --exclude-files=.secrets.baseline$
         exclude: tests/cassettes
   - repo: https://github.com/adamchainz/blacken-docs
-    rev: 1.19.1
+    rev: 1.20.0
     hooks:
       - id: blacken-docs
   - repo: https://github.com/jsh9/markdown-toc-creator
-    rev: 0.0.10
+    rev: 0.1.3
     hooks:
       - id: markdown-toc-creator
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
@@ -60,7 +61,7 @@ repos:
         additional_dependencies: [".[toml]"]
         exclude_types: [jupyter]
   - repo: https://github.com/pappasam/toml-sort
-    rev: v0.24.2
+    rev: v0.24.3
     hooks:
       - id: toml-sort-fix
   - repo: https://github.com/srstevenson/nb-clean
@@ -68,23 +69,22 @@ repos:
     hooks:
       - id: nb-clean
         args: [--preserve-cell-outputs, --remove-empty-cells]
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.45.0
+  - repo: https://github.com/jackdewinter/pymarkdown
+    rev: v0.9.33
     hooks:
-      - id: markdownlint
-        args: [--config=pyproject.toml, --configPointer=/tool/markdownlint]
+      - id: pymarkdown
   - repo: https://github.com/henryiii/validate-pyproject-schema-store
-    rev: 2025.05.12
+    rev: 2025.11.21
     hooks:
       - id: validate-pyproject
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.7.12
+    rev: 0.9.13
     hooks:
       - id: uv-lock
   - repo: local
     hooks:
       - id: mypy
         name: mypy
-        entry: mypy
+        entry: uv run --frozen mypy # Use --frozen to avoid mutating local venv
         language: system
         types_or: [python, pyi]

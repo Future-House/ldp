@@ -94,9 +94,9 @@ class TestTensorChunker:
         # Simulate outputs from handlers
         outputs_list = []
         for i in range(num_chunks):
-            sequences = torch.tensor([[2 * i], [2 * i + 1]])
+            sequences = torch.tensor([[2 * i], [2 * i + 1]], dtype=torch.long)
             scores = None  # Simplify the test by not including scores
-            output = GenerateDecoderOnlyOutput(sequences=sequences, scores=scores)
+            output = GenerateDecoderOnlyOutput(sequences=sequences, scores=scores)  # type: ignore[arg-type]
             outputs_list.append(output)
         dummy_chunk_flags = [i >= batch_size for i in range(num_chunks)]
 
@@ -268,7 +268,7 @@ class TestHandlers:
         def update_model(handler: ldp.nn.TransformerHandler) -> float:
             parameters = list(handler.module.parameters())
             opt = SGD(parameters, lr=0.1)
-            x = torch.ones((2, 2), dtype=torch.long).to(handler.module.device)
+            x = torch.ones((2, 2), dtype=torch.long).to(handler.module.device)  # type: ignore[arg-type]
             loss = handler.module(x, labels=x).loss
             loss.backward()
             opt.step()
