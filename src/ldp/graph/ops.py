@@ -116,7 +116,7 @@ class OpResult(Generic[TOutput_co]):
         grad_outputs[self.call_id] = [grad_output] if grad_output is not None else [0.0]
 
         # We will traverse the graph in reverse topological order
-        for node in self.traverse():
+        for node in self.traverse(topological_order=True):
             # get output gradients
             grad_output = grad_outputs[node.call_id]
             if not grad_output:
