@@ -22,7 +22,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "coredis",
+    "coredis>=3.0.1",  # Lower pin v3 for Redis class, pin v3.0.1 for fix in https://github.com/alisaifee/coredis/commit/7e9b1a1b384cd97725cab479d2ce091e3b0823d2
     "fhaviary>=0.14.0",  # For multi-image support
     "limits>=4.8",  # Pin for RedisBridge.key_prefix
     "litellm>=1.75.6",  # Lower pin for OpenAI reasoning effort support
