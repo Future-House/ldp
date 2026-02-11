@@ -2,12 +2,18 @@ from contextlib import contextmanager
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import litellm
 import numpy as np
 import pytest
 from aviary.core import Message
 
 from lmi import cost_tracking_ctx
-from lmi.cost_tracker import GLOBAL_COST_TRACKER, TrackedStreamWrapper
+from lmi.cost_tracker import (
+    GLOBAL_COST_TRACKER,
+    TrackedStreamWrapper,
+    _requested_model_ctx,
+    track_costs,
+)
 from lmi.embeddings import LiteLLMEmbeddingModel
 from lmi.llms import CommonLLMNames, LiteLLMModel, parse_cached_usage
 from lmi.utils import VCR_DEFAULT_MATCH_ON
@@ -946,3 +952,179 @@ class TestCachedTokenEdgeCases:
                 assert result.cost == 0, (
                     "Expected cost to be 0 when completion_cost fails"
                 )
+
+
+class TestVertexAICostTrackingFix:
+    """Tests for Vertex AI cost tracking fix.
+
+    See: https://github.com/BerriAI/litellm/issues/10181
+
+    When using Vertex AI models, litellm's handlers create new ModelResponse objects
+    that don't preserve `custom_llm_provider` in `_hidden_params`. This causes
+    `completion_cost()` to fail with "LLM Provider NOT provided".
+
+    The fix passes the model name explicitly to completion_cost().
+    """
+
+    def _create_vertex_ai_response(self) -> litellm.ModelResponse:
+        """Create a ModelResponse that simulates Vertex AI's broken behavior.
+
+        Vertex AI handlers create responses where:
+        - model field contains just "claude-3-5-sonnet-v2@20241022" (no provider prefix)
+        - _hidden_params does NOT contain custom_llm_provider
+
+        This causes completion_cost() to fail when called with only the response.
+        """
+        return litellm.ModelResponse(
+            id="chatcmpl-test",
+            created=1234567890,
+            model="claude-3-5-sonnet-v2@20241022",  # No vertex_ai/ prefix
+            object="chat.completion",
+            choices=[
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": "Hello!"},
+                    "finish_reason": "stop",
+                }
+            ],
+            usage=litellm.Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15),
+            # Critically: no _hidden_params or custom_llm_provider
+        )
+
+    def test_completion_cost_fails_without_model_parameter(self):
+        """Verify the bug: completion_cost fails without explicit model parameter.
+
+        This test documents the litellm bug that our fix works around.
+        When Vertex AI responses don't have custom_llm_provider in _hidden_params,
+        completion_cost() cannot determine the provider and fails.
+        """
+        response = self._create_vertex_ai_response()
+
+        # Verify _hidden_params doesn't have custom_llm_provider (simulating the bug)
+        hidden_params = getattr(response, "_hidden_params", {}) or {}
+        assert hidden_params.get("custom_llm_provider") is None
+
+        # completion_cost should fail without explicit model parameter
+        with pytest.raises(Exception):  # noqa: B017, PT011
+            litellm.cost_calculator.completion_cost(completion_response=response)
+
+    def test_completion_cost_succeeds_with_model_parameter(self):
+        """Verify the fix: completion_cost succeeds with explicit model parameter.
+
+        When we pass the model name explicitly, litellm can determine the provider
+        and calculate costs correctly.
+        """
+        response = self._create_vertex_ai_response()
+
+        # completion_cost succeeds when model is passed explicitly
+        cost = litellm.cost_calculator.completion_cost(
+            completion_response=response,
+            model="vertex_ai/claude-3-5-sonnet-v2@20241022",
+        )
+
+        assert cost > 0
+
+    @pytest.mark.asyncio
+    async def test_track_costs_sets_context_variable(self):
+        """Verify track_costs decorator sets the model name in context variable."""
+        captured_model = None
+
+        @track_costs
+        async def mock_completion(  # noqa: RUF029
+            _model: str, _messages: list
+        ) -> litellm.ModelResponse:
+            nonlocal captured_model
+            captured_model = _requested_model_ctx.get()
+            return self._create_vertex_ai_response()
+
+        await mock_completion("vertex_ai/claude-3-5-sonnet-v2@20241022", [])
+
+        assert captured_model == "vertex_ai/claude-3-5-sonnet-v2@20241022"
+
+    @pytest.mark.asyncio
+    async def test_record_uses_context_variable_for_cost_calculation(self):
+        """Verify record() uses the context variable to pass model to completion_cost."""
+        response = self._create_vertex_ai_response()
+        initial_cost = GLOBAL_COST_TRACKER.lifetime_cost_usd
+
+        # Set the context variable (simulating what track_costs does)
+        token = _requested_model_ctx.set("vertex_ai/claude-3-5-sonnet-v2@20241022")
+        try:
+            with cost_tracking_ctx():
+                await GLOBAL_COST_TRACKER.record(response)
+        finally:
+            _requested_model_ctx.reset(token)
+
+        # Cost should have increased (completion_cost succeeded)
+        assert GLOBAL_COST_TRACKER.lifetime_cost_usd > initial_cost
+
+    @pytest.mark.asyncio
+    async def test_record_fails_without_context_variable(self, caplog):
+        """Verify record() fails gracefully when context variable is not set.
+
+        Without the context variable, we fall back to calling completion_cost
+        without the model, which fails for Vertex AI responses. The failure
+        is logged but doesn't raise.
+        """
+        response = self._create_vertex_ai_response()
+        initial_cost = GLOBAL_COST_TRACKER.lifetime_cost_usd
+
+        # Ensure context variable is empty
+        token = _requested_model_ctx.set("")
+        try:
+            with cost_tracking_ctx():
+                await GLOBAL_COST_TRACKER.record(response)
+        finally:
+            _requested_model_ctx.reset(token)
+
+        # Cost should NOT have increased (completion_cost failed)
+        assert GLOBAL_COST_TRACKER.lifetime_cost_usd == initial_cost
+        # Warning should be logged
+        assert "Failed to calculate cost for model" in caplog.text
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("model_name", "response_model"),
+        [
+            ("gpt-4o", "gpt-4o-2024-08-06"),
+            ("claude-3-5-sonnet-20241022", "claude-3-5-sonnet-20241022"),
+        ],
+        ids=["openai", "anthropic"],
+    )
+    async def test_other_providers_not_affected(
+        self, model_name: str, response_model: str
+    ):
+        """Verify the fix doesn't break cost tracking for other providers.
+
+        OpenAI and Anthropic responses already work with completion_cost() because
+        they preserve the provider info. This test ensures the fix is a no-op for
+        these providers.
+        """
+        # Create a response that simulates OpenAI/Anthropic (provider info preserved)
+        response = litellm.ModelResponse(
+            id="chatcmpl-test",
+            created=1234567890,
+            model=response_model,
+            object="chat.completion",
+            choices=[
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": "Hello!"},
+                    "finish_reason": "stop",
+                }
+            ],
+            usage=litellm.Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15),
+        )
+
+        initial_cost = GLOBAL_COST_TRACKER.lifetime_cost_usd
+
+        # Set context variable (simulating what track_costs does)
+        token = _requested_model_ctx.set(model_name)
+        try:
+            with cost_tracking_ctx():
+                await GLOBAL_COST_TRACKER.record(response)
+        finally:
+            _requested_model_ctx.reset(token)
+
+        # Cost should have increased
+        assert GLOBAL_COST_TRACKER.lifetime_cost_usd > initial_cost
