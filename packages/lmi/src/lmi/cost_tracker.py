@@ -126,7 +126,7 @@ def track_costs(
 
     @wraps(func)
     async def wrapped_func(*args, **kwargs):
-        # Track requested model name for cost calculation (fixes Vertex AI provider issue)
+        # Track requested model name for Vertex AI cost calculation (litellm#10181)
         model = args[0] if args else kwargs.get("model", "")
         token = _requested_model_ctx.set(model)
         try:
@@ -217,7 +217,7 @@ def track_costs_iter(
 
     @wraps(func)
     async def wrapped_func(*args, **kwargs):
-        # Track requested model name for cost calculation (fixes Vertex AI provider issue)
+        # Track requested model name for Vertex AI cost calculation (litellm#10181)
         model = args[0] if args else kwargs.get("model", "")
         return TrackedStreamWrapper(await func(*args, **kwargs), requested_model=model)
 

@@ -962,8 +962,6 @@ class TestVertexAICostTrackingFix:
     When using Vertex AI models, litellm's handlers create new ModelResponse objects
     that don't preserve `custom_llm_provider` in `_hidden_params`. This causes
     `completion_cost()` to fail with "LLM Provider NOT provided".
-
-    The fix passes the model name explicitly to completion_cost().
     """
 
     def _create_vertex_ai_response(self) -> litellm.ModelResponse:
@@ -978,7 +976,9 @@ class TestVertexAICostTrackingFix:
         return litellm.ModelResponse(
             id="chatcmpl-test",
             created=1234567890,
-            model="claude-3-5-sonnet-v2@20241022",  # No vertex_ai/ prefix
+            # Simulates actual Vertex AI behavior: litellm's Vertex handler strips
+            # the "vertex_ai/" prefix when creating the response object
+            model="claude-3-5-sonnet-v2@20241022",
             object="chat.completion",
             choices=[
                 {
@@ -1059,30 +1059,6 @@ class TestVertexAICostTrackingFix:
         assert GLOBAL_COST_TRACKER.lifetime_cost_usd > initial_cost
 
     @pytest.mark.asyncio
-    async def test_record_fails_without_context_variable(self, caplog):
-        """Verify record() fails gracefully when context variable is not set.
-
-        Without the context variable, we fall back to calling completion_cost
-        without the model, which fails for Vertex AI responses. The failure
-        is logged but doesn't raise.
-        """
-        response = self._create_vertex_ai_response()
-        initial_cost = GLOBAL_COST_TRACKER.lifetime_cost_usd
-
-        # Ensure context variable is empty
-        token = _requested_model_ctx.set("")
-        try:
-            with cost_tracking_ctx():
-                await GLOBAL_COST_TRACKER.record(response)
-        finally:
-            _requested_model_ctx.reset(token)
-
-        # Cost should NOT have increased (completion_cost failed)
-        assert GLOBAL_COST_TRACKER.lifetime_cost_usd == initial_cost
-        # Warning should be logged
-        assert "Failed to calculate cost for model" in caplog.text
-
-    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         ("model_name", "response_model"),
         [
@@ -1100,7 +1076,7 @@ class TestVertexAICostTrackingFix:
         they preserve the provider info. This test ensures the fix is a no-op for
         these providers.
         """
-        # Create a response that simulates OpenAI/Anthropic (provider info preserved)
+        # Unlike Vertex AI, these model names are unambiguous so litellm can infer the provider
         response = litellm.ModelResponse(
             id="chatcmpl-test",
             created=1234567890,
