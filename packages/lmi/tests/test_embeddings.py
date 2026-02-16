@@ -281,9 +281,17 @@ class TestLiteLLMEmbeddingModel:
             subtests.test(msg="denies two texts"),
             pytest.raises(litellm.BadRequestError, match="one instance"),
         ):
-            # This is more of a confirmation/demonstration that Vertex AI denies any
-            # embedding request containing >1 text or >1 image
+            # This is a confirmation/demonstration that Vertex AI denies any
+            # embedding request containing >1 text
             await multimodal_model.embed_documents(["A", "B"])
+
+        with (
+            subtests.test(msg="denies two images"),
+            pytest.raises(litellm.BadRequestError, match="one instance"),
+        ):
+            # This is a confirmation/demonstration that Vertex AI denies any
+            # embedding request containing >1 image
+            await multimodal_model.embed_documents([png_image_gcs, png_image_gcs])
 
         with subtests.test(msg="text and image mixing"):
             (embedding_image_text,) = await multimodal_model.embed_documents([
@@ -292,15 +300,6 @@ class TestLiteLLMEmbeddingModel:
             ])
             assert len(embedding_image_text) == 1408
             assert all(isinstance(x, float) for x in embedding_image_text)
-
-            (embedding_two_images,) = await multimodal_model.embed_documents([
-                png_image_gcs,
-                png_image_gcs,
-            ])
-            assert len(embedding_two_images) == 1408
-            assert all(isinstance(x, float) for x in embedding_two_images)
-
-            assert embedding_image_text != embedding_two_images
 
         with subtests.test(msg="batching"):
             multimodal_model.config["batch_size"] = 1
@@ -312,6 +311,20 @@ class TestLiteLLMEmbeddingModel:
             for embedding in embeddings:
                 assert len(embedding) == 1408
                 assert all(isinstance(x, float) for x in embedding)
+
+            # NOTE: two images aren't allowed in a single request,
+            # but when spread across two batches it works
+            embeddings = await multimodal_model.embed_documents([
+                png_image_gcs,
+                png_image_gcs,
+            ])
+            assert len(embeddings) == 2
+            for embedding in embeddings:
+                assert len(embedding) == 1408
+                assert all(isinstance(x, float) for x in embedding)
+            assert embeddings[0] == pytest.approx(embeddings[1], abs=1e-5), (
+                "Same image should produce roughly the same embedding"
+            )
 
 
 @pytest.mark.asyncio
