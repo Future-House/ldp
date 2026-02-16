@@ -25,7 +25,7 @@ dependencies = [
     "coredis>=3.0.1",  # Lower pin v3 for Redis class, pin v3.0.1 for fix in https://github.com/alisaifee/coredis/commit/7e9b1a1b384cd97725cab479d2ce091e3b0823d2
     "fhaviary>=0.14.0",  # For multi-image support
     "limits[async-redis]>=4.8",  # Specify 'async-redis' since that's what we use. Lower pin for RedisBridge.key_prefix.
-    "litellm>=1.75.6",  # Lower pin for OpenAI reasoning effort support
+    "litellm>=1.81.10",  # Lower pin for MAX_CALLBACKS refactor from https://github.com/BerriAI/litellm/pull/20781
     "pydantic~=2.0,>=2.10.1",
     "tiktoken>=0.4.0",
     "typing-extensions; python_version <= '3.11'",  # for typing.override
@@ -45,7 +45,7 @@ dev = [
     "google-cloud-storage>=3",  # Pin to keep recent
     "httpx-aiohttp",
     "ipython>=8",  # Pin to keep recent
-    "litellm>=1.80.10,<1.80.11",  # Lower pin for fixing text completions using optimized HTTP, upper pin for https://github.com/BerriAI/litellm/issues/19811
+    "litellm>=1.81.3",  # Lower pin for Vertex AI multimodal embedding text + image fix from https://github.com/BerriAI/litellm/issues/19811
     "mypy>=1.8",  # Pin for mutable-override
     "pre-commit>=3.4",  # Pin to keep recent
     "pylint-pydantic",
