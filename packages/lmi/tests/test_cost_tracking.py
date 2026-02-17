@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from contextlib import contextmanager
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -7,6 +9,7 @@ import numpy as np
 import pytest
 from aviary.core import Message
 
+import lmi
 from lmi import cost_tracking_ctx
 from lmi.cost_tracker import (
     GLOBAL_COST_TRACKER,
@@ -17,6 +20,17 @@ from lmi.cost_tracker import (
 from lmi.embeddings import LiteLLMEmbeddingModel
 from lmi.llms import CommonLLMNames, LiteLLMModel, parse_cached_usage
 from lmi.utils import VCR_DEFAULT_MATCH_ON
+
+
+def test_imports_without_warnings() -> None:
+    result = subprocess.run(  # noqa: S603
+        (sys.executable, "-c", f"import {lmi.__name__}"),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, f"Import failed:\n{result.stderr}"
+    assert "WARNING" not in result.stderr, f"Import produced warnings:\n{result.stderr}"
 
 
 @contextmanager
