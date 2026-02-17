@@ -9,7 +9,6 @@ from litellm.caching import Cache, InMemoryCache
 from pytest_subtests import SubTests
 
 from lmi.embeddings import (
-    MODEL_COST_MAP,
     EmbeddingModel,
     HybridEmbeddingModel,
     LiteLLMEmbeddingModel,
@@ -140,7 +139,7 @@ class TestLiteLLMEmbeddingModel:
 
         with (
             patch.dict(
-                MODEL_COST_MAP, {embedding_model.name: {"max_input_tokens": 100}}
+                litellm.model_cost, {embedding_model.name: {"max_input_tokens": 100}}
             ),
             patch("tiktoken.encoding_for_model", return_value=mock_encoder),
         ):
@@ -151,7 +150,7 @@ class TestLiteLLMEmbeddingModel:
         texts = ["a" * 10000, "b" * 10000]
         with (
             patch.dict(
-                MODEL_COST_MAP, {embedding_model.name: {"max_input_tokens": 100}}
+                litellm.model_cost, {embedding_model.name: {"max_input_tokens": 100}}
             ),
             patch("tiktoken.encoding_for_model", side_effect=KeyError),
         ):
