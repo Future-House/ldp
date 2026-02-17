@@ -11,6 +11,15 @@ from lmi.types import LLMResponse
 
 logger = logging.getLogger(__name__)
 
+# Context variable to track the requested model name during LLM calls.
+# Used to fix Vertex AI cost tracking - see https://github.com/BerriAI/litellm/issues/10181
+# When using Vertex AI models, litellm's handlers create new ModelResponse objects that
+# don't preserve `custom_llm_provider` in `_hidden_params`, causing completion_cost() to
+# fail. We track the requested model and pass it explicitly to completion_cost().
+_requested_model_ctx: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "requested_model", default=""
+)
+
 
 class CostTracker:
     def __init__(self):
@@ -34,8 +43,14 @@ class CostTracker:
             return
 
         try:
+            # Pass model name explicitly to fix Vertex AI cost tracking.
+            # See: https://github.com/BerriAI/litellm/issues/10181
+            requested_model = _requested_model_ctx.get()
+            cost_kwargs: dict = {"completion_response": response}
+            if requested_model:
+                cost_kwargs["model"] = requested_model
             self.lifetime_cost_usd += litellm.cost_calculator.completion_cost(
-                completion_response=response
+                **cost_kwargs
             )
         except Exception:
             model = getattr(response, "model", "unknown")
@@ -102,17 +117,25 @@ def track_costs(
     ```
 
     Args:
-        func: A coroutine that returns a ModelResponse or EmbeddingResponse
+        func: A coroutine that returns a ModelResponse or EmbeddingResponse.
+            The first positional argument should be the model name.
 
     Returns:
         A wrapped coroutine with the same signature.
     """
 
+    @wraps(func)
     async def wrapped_func(*args, **kwargs):
-        response = await func(*args, **kwargs)
-        if GLOBAL_COST_TRACKER.enabled.get():
-            await GLOBAL_COST_TRACKER.record(response)
-        return response
+        # Track requested model name for Vertex AI cost calculation (litellm#10181)
+        model = args[0] if args else kwargs.get("model", "")
+        token = _requested_model_ctx.set(model)
+        try:
+            response = await func(*args, **kwargs)
+            if GLOBAL_COST_TRACKER.enabled.get():
+                await GLOBAL_COST_TRACKER.record(response)
+            return response
+        finally:
+            _requested_model_ctx.reset(token)
 
     return wrapped_func
 
@@ -142,8 +165,9 @@ class TrackedStreamWrapper:
     we introduce this class to wrap the stream.
     """
 
-    def __init__(self, stream: litellm.CustomStreamWrapper):
+    def __init__(self, stream: litellm.CustomStreamWrapper, requested_model: str = ""):
         self.stream = stream
+        self._requested_model = requested_model
 
     def __iter__(self):
         return self
@@ -154,7 +178,12 @@ class TrackedStreamWrapper:
     async def __anext__(self):
         response = await self.stream.__anext__()
         if GLOBAL_COST_TRACKER.enabled.get():
-            await GLOBAL_COST_TRACKER.record(response)
+            # Set context variable before record() for correct model tracking
+            token = _requested_model_ctx.set(self._requested_model)
+            try:
+                await GLOBAL_COST_TRACKER.record(response)
+            finally:
+                _requested_model_ctx.reset(token)
         return response
 
 
@@ -179,6 +208,7 @@ def track_costs_iter(
 
     Args:
         func: A coroutine that returns CustomStreamWrapper.
+            The first positional argument should be the model name.
 
     Returns:
         A wrapped coroutine with the same arguments but with a
@@ -187,6 +217,8 @@ def track_costs_iter(
 
     @wraps(func)
     async def wrapped_func(*args, **kwargs):
-        return TrackedStreamWrapper(await func(*args, **kwargs))
+        # Track requested model name for Vertex AI cost calculation (litellm#10181)
+        model = args[0] if args else kwargs.get("model", "")
+        return TrackedStreamWrapper(await func(*args, **kwargs), requested_model=model)
 
     return wrapped_func

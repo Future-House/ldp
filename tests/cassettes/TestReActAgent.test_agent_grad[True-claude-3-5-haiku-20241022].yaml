@@ -17,7 +17,7 @@ interactions:
         of the action\n... (this Thought/Action/Action Input/Observation can repeat
         N times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction:
         get_weather\nAction Input: \"New York\", 7\nObservation: The 7 day forecast
-        for New York is [...]"}],"max_tokens":4096}'
+        for New York is [...]"}],"max_tokens":8192}'
       headers:
         accept:
           - application/json
@@ -34,30 +34,32 @@ interactions:
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.70.4
+          - litellm/1.81.9
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA3RQwUoDMRD9lTAXFbLSri5obj14EARFhB6sLDGZdkPTmTWZqKX032VXilTxNLx5
-          b2bemx0EDwY2edVOplf1zeXj3M3X/Ueez2dvblY/9EvQINseBxXmbFcIGhLHoWFzDlksCWjYsMcI
-          Bly0xWN1UTVVZ8O6VPWkvpxO6ho0OCZBEjDPu8NOwc9heiwGnjouq06Muj2JUbmEVlBZ5ZhcyKia
-          6oOTV1k4bZWw6lMgWdDMSWAy37Ad2UNT3VJfxKjTBdwxYdyqxK8sasmFvCqEnz06Qa98WAWxUUV+
-          x/MFnC0I9i8asnDfJrSZCcw3yvhWkNzwhmNs4P41Y3q3oxvQUMZvmR2EwUQrvEbKYC6aRoOzrsN2
-          TBiY2mPF5MAntP4/7jA7HMC+ww0mG9tm81f/w0673+xeAxc5snetYYgRHLYSMI25LXmbPOz3XwAA
-          AP//AwCSfbzyMQIAAA==
+          H4sIAAAAAAAA/3WRT0/DMAzFv0qUCyCtaP8qTblxYwKEBOwCQ5HXeGtYm3SJOxhTvztuUYUG4pT4
+          /Z5jP+UoS2+wkEpmBdQGk0mSJjnYbZ2Mh+PpaDgey4G0hg1l3Ojh6IHK2duidIucnm+uZ5+Tu+mj
+          2bGHDhW2LowRNshC8EUrQIw2EjhiKfOOkG/q5dj7CT9a0h1KPuW+3uSkxPysKEQWEAgFCO7LbESR
+          Ju8+GBHJh4MgL6pgHS3dVUbWO/Vd6o72opi7qub3zpfy1q5RrArvSzQC1oRBUI4igHWXS3mxdLJ5
+          HUjurjTPjd7xPl0VcVejy9pMp7WS96uIYQ/deMZ1F10dpW2navJbdFGqSZpydshy1F0kdutTx7Dn
+          jM1/rO9tB2CVY4kBCp2Wf/0/dJT/ps1A+ppO1ptxMI5hM9RkMXS5wRkIpv17t8bQxtUb9IycJw17
+          sAWs+H+b5gtM5VqyQgIAAA==
       headers:
         CF-RAY:
-          - 971bc3ecaacd67ad-SJC
+          - 9cefe5ea9aa23493-SJC
         Connection:
           - keep-alive
         Content-Encoding:
           - gzip
+        Content-Security-Policy:
+          - default-src 'none'; frame-ancestors 'none'
         Content-Type:
           - application/json
         Date:
-          - Tue, 19 Aug 2025 18:38:00 GMT
+          - Mon, 16 Feb 2026 20:47:06 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -71,35 +73,33 @@ interactions:
         anthropic-ratelimit-input-tokens-remaining:
           - "5000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2025-08-19T18:37:59Z"
+          - "2026-02-16T20:47:05Z"
         anthropic-ratelimit-output-tokens-limit:
           - "1000000"
         anthropic-ratelimit-output-tokens-remaining:
           - "1000000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2025-08-19T18:38:00Z"
+          - "2026-02-16T20:47:06Z"
         anthropic-ratelimit-requests-limit:
           - "5000"
         anthropic-ratelimit-requests-remaining:
           - "4999"
         anthropic-ratelimit-requests-reset:
-          - "2025-08-19T18:37:59Z"
+          - "2026-02-16T20:47:05Z"
         anthropic-ratelimit-tokens-limit:
           - "6000000"
         anthropic-ratelimit-tokens-remaining:
           - "6000000"
         anthropic-ratelimit-tokens-reset:
-          - "2025-08-19T18:37:59Z"
+          - "2026-02-16T20:47:05Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_011CSHZ7E6G7rShsSFoWQFvd
+          - req_011CYCQMyCF9B9dXuGLTyvp4
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
-        via:
-          - 1.1 google
         x-envoy-upstream-service-time:
-          - "1354"
+          - "1153"
       status:
         code: 200
         message: OK

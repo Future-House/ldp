@@ -1,8 +1,6 @@
 import os
 from sys import version_info
 
-import litellm
-
 USE_RESPONSES_API = os.environ.get("LMI_USE_RESPONSES", "").lower() in {"true", "1"}
 print(f"USE_RESPONSES_API: {USE_RESPONSES_API}")
 print(f"LMI_USE_RESPONSES: {os.environ.get('LMI_USE_RESPONSES')}")
@@ -14,8 +12,6 @@ CHARACTERS_PER_TOKEN_ASSUMPTION: float = 4.0
 # Need to add while doing rate limits
 # Taken from empirical counts in tests
 EXTRA_TOKENS_FROM_USER_ROLE: int = 7
-
-MODEL_COST_MAP = litellm.get_model_cost_map("")
 
 DEFAULT_VERTEX_SAFETY_SETTINGS: list[dict[str, str]] = [
     {
