@@ -1,7 +1,6 @@
 from .constants import (
     CHARACTERS_PER_TOKEN_ASSUMPTION,
     EXTRA_TOKENS_FROM_USER_ROLE,
-    MODEL_COST_MAP,
 )
 from .cost_tracker import GLOBAL_COST_TRACKER, cost_tracking_ctx, enable_cost_tracking
 from .embeddings import (
@@ -36,7 +35,6 @@ __all__ = [
     "CHARACTERS_PER_TOKEN_ASSUMPTION",
     "EXTRA_TOKENS_FROM_USER_ROLE",
     "GLOBAL_COST_TRACKER",
-    "MODEL_COST_MAP",
     "CommonLLMNames",
     "Embeddable",
     "EmbeddingModel",

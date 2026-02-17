@@ -9,7 +9,7 @@ import litellm
 import tiktoken
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from lmi.constants import CHARACTERS_PER_TOKEN_ASSUMPTION, MODEL_COST_MAP
+from lmi.constants import CHARACTERS_PER_TOKEN_ASSUMPTION
 from lmi.cost_tracker import track_costs
 from lmi.llms import PassThroughRouter
 from lmi.rate_limiter import GLOBAL_LIMITER
@@ -162,9 +162,9 @@ class LiteLLMEmbeddingModel(EmbeddingModel):
 
     def _truncate_if_large(self, texts: list[str]) -> list[str]:
         """Truncate texts if they are too large by using litellm cost map."""
-        if self.name not in MODEL_COST_MAP:
+        if self.name not in litellm.model_cost:
             return texts
-        max_tokens = MODEL_COST_MAP[self.name]["max_input_tokens"]
+        max_tokens = litellm.model_cost[self.name]["max_input_tokens"]
         # heuristic about ratio of tokens to characters
         conservative_char_token_ratio = 3
         maybe_too_large = max_tokens * conservative_char_token_ratio
