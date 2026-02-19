@@ -135,8 +135,12 @@ class CommonLLMNames(StrEnum):
     GPT_41 = "gpt-4.1-2025-04-14"
     GPT_4O = "gpt-4o-2024-11-20"
     GPT_35_TURBO = "gpt-3.5-turbo-0125"
+    CLAUDE_45_HAIKU = "claude-haiku-4-5-20251001"
     CLAUDE_37_SONNET = "claude-3-7-sonnet-20250219"
     CLAUDE_45_SONNET = "claude-sonnet-4-5-20250929"
+    CLAUDE_46_SONNET = "claude-sonnet-4-6"
+    CLAUDE_45_OPUS = "claude-opus-4-5-20251101"
+    CLAUDE_46_OPUS = "claude-opus-4-6"
 
     # Use these when trying to think of a somewhat opinionated default
     OPENAI_BASELINE = "gpt-4o-2024-11-20"  # Fast and decent
@@ -144,7 +148,7 @@ class CommonLLMNames(StrEnum):
     # Use these in unit testing
     OPENAI_TEST = "gpt-4o-mini-2024-07-18"  # Cheap, fast, and not OpenAI's cutting edge
     ANTHROPIC_TEST = (  # Cheap, fast, and not Anthropic's cutting edge
-        "claude-3-5-haiku-20241022"
+        "claude-haiku-4-5-20251001"
     )
 
 
