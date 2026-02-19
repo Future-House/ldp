@@ -1044,6 +1044,7 @@ class LiteLLMModel(LLMModel):
                     cost=cost,
                     system_fingerprint=completions.system_fingerprint,
                     reasoning_content=reasoning_content,
+                    finish_reason=choice.finish_reason,
                 )
             )
         return results
@@ -1081,6 +1082,7 @@ class LiteLLMModel(LLMModel):
         outputs = []
         logprobs = []
         role = None
+        finish_reason: str | None = None
         reasoning_content = []
         used_model = None
         async for completion in stream_completions:
@@ -1094,6 +1096,9 @@ class LiteLLMModel(LLMModel):
                 logprobs.append(logprob_content[0].logprob or 0)
             outputs.append(delta.content or "")
             role = delta.role or role
+            # The usage-only chunk (when include_usage=True) has finish_reason=None,
+            # so retain the last non-None finish_reason value
+            finish_reason = choice.finish_reason or finish_reason
             if hasattr(delta, "reasoning_content"):
                 reasoning_content.append(delta.reasoning_content or "")
         text = "".join(outputs)
@@ -1123,6 +1128,7 @@ class LiteLLMModel(LLMModel):
             cache_read_tokens=cache_read,
             cache_creation_tokens=cache_creation,
             cost=cost,
+            finish_reason=finish_reason,
         )
 
         if text:

@@ -123,6 +123,13 @@ class LLMResult(BaseModel):
     reasoning_content: str | None = Field(
         default=None, description="Reasoning content from LLMs such as DeepSeek-R1."
     )
+    finish_reason: str | None = Field(
+        default=None,
+        description=(
+            "The reason the model stopped generating tokens, or None if not available."
+        ),
+        examples=["stop", "length", "tool_calls", "refusal"],
+    )
 
     def __str__(self) -> str:
         return self.text or ""

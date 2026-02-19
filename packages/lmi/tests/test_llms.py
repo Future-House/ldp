@@ -381,12 +381,14 @@ class TestLiteLLMModel:
         assert completion.completion_count > 0
         assert str(completion) == "".join(outputs)
         assert completion.cost > 0
+        assert completion.finish_reason == "stop"
 
         completion = await llm.call_single(
             messages=messages,
         )
         assert completion.seconds_to_last_token > 0
         assert completion.cost > 0
+        assert completion.finish_reason == "stop"
 
         # check with mixed callbacks
         async def ac(x) -> None:
@@ -507,6 +509,7 @@ class TestLiteLLMModel:
             delta_content: str = "",
             delta_reasoning_content: str = "hmmm",
             delta_role: str = "assistant",
+            finish_reason: str = "unknown",
             usage: Any = None,
         ) -> Mock:
             return Mock(
@@ -514,6 +517,7 @@ class TestLiteLLMModel:
                 choices=[
                     Mock(
                         logprobs=logprobs,
+                        finish_reason=finish_reason,
                         delta=Mock(
                             content=delta_content,
                             reasoning_content=delta_reasoning_content,
@@ -545,9 +549,10 @@ class TestLiteLLMModel:
                 logprobs=Mock(content=[Mock(logprob=-0.5)])
             )
 
-            # Mock completion with usage info
+            # Mock completion with usage info (final chunk has finish_reason)
             mock_completion_usage = _build_mock_completion(
-                usage=Mock(prompt_tokens=10, completion_tokens=5)
+                usage=Mock(prompt_tokens=10, completion_tokens=5),
+                finish_reason="stop",
             )
 
             # Create async generator that yields mock completions
@@ -576,6 +581,7 @@ class TestLiteLLMModel:
             assert result.logprob == -0.5
             assert result.prompt_count == 10
             assert result.completion_count == 5
+            assert result.finish_reason == "stop"
 
 
 class DummyOutputSchema(BaseModel):
@@ -787,6 +793,7 @@ class TestMultipleCompletion:
         assert len(result.messages) == 1
         assert result.messages[0].content
         assert not hasattr(result.messages[0], "tool_calls"), "Expected normal message"
+        assert result.finish_reason == "stop"
 
         model = self.MODEL_CLS(name=model_name, config={"n": 2})
         result = await model.call_single(messages)
@@ -795,6 +802,7 @@ class TestMultipleCompletion:
         assert len(result.messages) == 1
         assert result.messages[0].content
         assert not hasattr(result.messages[0], "tool_calls"), "Expected normal message"
+        assert result.finish_reason == "stop"
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
@@ -857,10 +865,9 @@ class TestTooling:
             messages, tools=tools, tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL
         )
         assert isinstance(results, list)
-        assert isinstance(results[0].messages, list)
-
-        tool_message = results[0].messages[0]
-
+        (result,) = results
+        assert isinstance(result.messages, list)
+        tool_message = result.messages[0]
         assert isinstance(tool_message, ToolRequestMessage), (
             "It should have selected a tool"
         )
@@ -868,6 +875,7 @@ class TestTooling:
         assert tool_message.tool_calls[0].function.arguments["x"] == 8, (
             "LLM failed in select the correct tool or arguments"
         )
+        assert result.finish_reason == "tool_calls"
 
         # Simulate the observation
         observation = ToolResponseMessage(
@@ -882,9 +890,11 @@ class TestTooling:
             messages, tools=tools, tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL
         )
         assert isinstance(results, list)
-        assert isinstance(results[0].messages, list)
-        assert results[0].messages[0].content
-        assert "16" in results[0].messages[0].content
+        (result,) = results
+        assert isinstance(result.messages, list)
+        assert result.messages[0].content
+        assert "16" in result.messages[0].content
+        assert result.finish_reason == "stop"
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -1201,6 +1211,7 @@ async def test_handle_refusal_via_fallback(caplog) -> None:
 
     assert results.text == "I'm sorry, but I can't assist with that request."
     assert results.model == CommonLLMNames.GPT_41.value
+    assert results.finish_reason == "stop"
     assert "the llm request was refused" in caplog.text.lower()
     assert "attempting to fallback" in caplog.text.lower()
 
