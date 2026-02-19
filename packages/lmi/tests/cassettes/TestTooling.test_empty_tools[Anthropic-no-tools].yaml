@@ -1,7 +1,7 @@
 interactions:
   - request:
       body:
-        '{"model":"claude-3-5-haiku-20241022","messages":[{"role":"user","content":[{"type":"text","text":"What
+        '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":[{"type":"text","text":"What
         does 42 mean?"}]}],"temperature":1.0,"max_tokens":56}'
       headers:
         accept:
@@ -19,31 +19,33 @@ interactions:
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.70.4
+          - litellm/1.81.12
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//ZFFdi9tADPwrQi/3simJm2vBb7m2XI9+QKF5aopR1rK9eL3rrrS5uCH/
-          vdhtoKVPQjOjYdBc0NVY4iBttd68ftgfp5+7Y/uw+7CnN+fCftL+MxrUaeRZxSLUMhpM0c8AiThR
-          CooGh1izxxKtp1zz6uXqftWR6/OqWBfbzboo0KCNQTkolt8uN0/l83y9jBKfAoxxzJ4S2Ow1Jzaw
-          LcAJNDTELH6CPsTnACSgHcMBd0GeOYHGZd97dQMpw5fMoi4GiA18dA2b33RwJ07CBijU8O7EadLO
-          hfaA0KQ4wNuYW08Cu5oGuQOxjoNlaJxdvGwcuJ5AODkWOODXjuG9U9t1rud0J/CYXc23LI/k6Ty9
-          OCA8hQU4xtgbIJA8crJxGLNywut3g6JxrBKTxDC/mc6Vxp6D4B9K+Eeek2AZsvcG81JDeUEXxqw3
-          cbnZGrRkO65sYpojV/8K1jc+MdX/czHr38j9K4PC6eQsV+o4YYlz2TWlGq/XXwAAAP//AwCNMalP
-          OgIAAA==
+          H4sIAAAAAAAA/3WS34/TMAzH/xUrPCBNHWqnjYe+8TDdkDjECQ4kKKp8rbuGpUmJnf1g2v9+ybiK
+          X+Ipjj9fO7bjsxpcS0aVqjEYWpr3qHdhvpyv5ot8sSryvFCZ0m0UDLyt82J91377Ed7azc5+vD82
+          79efV4dP76JGTiMlFTHjlqLDO5McyKxZ0Ep0Nc4KRav8cp70QsdErkepnsFyARtkuA1G9GgIbgmt
+          tluubGU/9ASDY4EOBxcYPHXkyTYEmqHzboDZrFJJtdHS9L3ekX/OcBN0SyAOJJIbNHg8ZZWazeDQ
+          x/D0Ygq/pjQnqFSSvbJ8ID8F3cdiBhSCu0As2llwHbzRHWU/sdV78hxvaFtYR/skfSz6RaXgtcQK
+          HqhxAwGqy9dMsbix9oTsbJoXHmtxO7KsnhDT95CaUqUNxmQqXOdZnpW2Y5BJXBbLOE9seqqbmCwV
+          Vf8pyCcecfs/NsWm/DT2NJBHU6+Gf/W/aNH/TS+ZckF+d61exm7I73VDtWjysdO0BC36Nu2Tffq4
+          eksuIuukxj1qgw9xZy6XR4NL/h2WAgAA
       headers:
         CF-RAY:
-          - 950d32908a2222ba-SJC
+          - 9d0904d22e398acf-SJC
         Connection:
           - keep-alive
         Content-Encoding:
           - gzip
+        Content-Security-Policy:
+          - default-src 'none'; frame-ancestors 'none'
         Content-Type:
           - application/json
         Date:
-          - Mon, 16 Jun 2025 20:53:37 GMT
+          - Thu, 19 Feb 2026 21:57:16 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -53,37 +55,37 @@ interactions:
         anthropic-organization-id:
           - f2c99ed9-038a-406f-9cb5-1f840b758a20
         anthropic-ratelimit-input-tokens-limit:
-          - "5000000"
+          - "4000000"
         anthropic-ratelimit-input-tokens-remaining:
-          - "5000000"
+          - "4000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2025-06-16T20:53:36Z"
+          - "2026-02-19T21:57:15Z"
         anthropic-ratelimit-output-tokens-limit:
-          - "1000000"
+          - "800000"
         anthropic-ratelimit-output-tokens-remaining:
-          - "1000000"
+          - "800000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2025-06-16T20:53:37Z"
+          - "2026-02-19T21:57:16Z"
         anthropic-ratelimit-requests-limit:
-          - "5000"
+          - "4000"
         anthropic-ratelimit-requests-remaining:
-          - "4999"
+          - "3999"
         anthropic-ratelimit-requests-reset:
-          - "2025-06-16T20:53:35Z"
+          - "2026-02-19T21:57:15Z"
         anthropic-ratelimit-tokens-limit:
-          - "6000000"
+          - "4800000"
         anthropic-ratelimit-tokens-remaining:
-          - "6000000"
+          - "4800000"
         anthropic-ratelimit-tokens-reset:
-          - "2025-06-16T20:53:36Z"
+          - "2026-02-19T21:57:15Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_011CQCZgPPKo6QLeQKpNcFSc
+          - req_011CYJB93Sd4BEqQ9kyf6kBF
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
-        via:
-          - 1.1 google
+        x-envoy-upstream-service-time:
+          - "885"
       status:
         code: 200
         message: OK

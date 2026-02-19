@@ -1120,13 +1120,13 @@ def test_json_schema_validation() -> None:
 @pytest.mark.asyncio
 async def test_handle_refusal_via_fallback(caplog) -> None:
     llm = LiteLLMModel(
-        name=CommonLLMNames.CLAUDE_37_SONNET.value,
+        name=CommonLLMNames.CLAUDE_45_SONNET.value,
         config={
             "model_list": [
                 {
-                    "model_name": CommonLLMNames.CLAUDE_37_SONNET.value,
+                    "model_name": CommonLLMNames.CLAUDE_45_SONNET.value,
                     "litellm_params": {
-                        "model": CommonLLMNames.CLAUDE_37_SONNET.value,
+                        "model": CommonLLMNames.CLAUDE_45_SONNET.value,
                         "temperature": 1.0,
                     },
                 },
@@ -1139,7 +1139,7 @@ async def test_handle_refusal_via_fallback(caplog) -> None:
                 },
             ],
             "fallbacks": [
-                {CommonLLMNames.CLAUDE_37_SONNET.value: [CommonLLMNames.GPT_41.value]}
+                {CommonLLMNames.CLAUDE_45_SONNET.value: [CommonLLMNames.GPT_41.value]}
             ],
         },
     )
@@ -1153,7 +1153,7 @@ async def test_handle_refusal_via_fallback(caplog) -> None:
     # Let's mock the router to simulate refusal and success requests
     mock_router_obj = Mock()
 
-    # First call: refusal from CLAUDE_37_SONNET
+    # First call: refusal from CLAUDE_45_SONNET
     mock_refusal = Mock()
     mock_refusal_message = Mock(content="I cannot answer that question.")
     mock_refusal_message.model_dump.return_value = {
@@ -1167,7 +1167,7 @@ async def test_handle_refusal_via_fallback(caplog) -> None:
         )
     ]
     mock_refusal.usage = Mock(prompt_tokens=10, completion_tokens=5)
-    mock_refusal.model = CommonLLMNames.CLAUDE_37_SONNET.value
+    mock_refusal.model = CommonLLMNames.CLAUDE_45_SONNET.value
 
     # Second call: success from GPT_41 (fallback)
     mock_success = Mock()
