@@ -12,7 +12,13 @@ from typing import TYPE_CHECKING, Generic, TypeVar, cast, overload
 
 import numpy as np
 import tenacity
-from aviary.core import Message, Tool, ToolRequestMessage, is_coroutine_callable
+from aviary.core import (
+    MalformedMessageError,
+    Message,
+    Tool,
+    ToolRequestMessage,
+    is_coroutine_callable,
+)
 from lmi import (
     EmbeddingModel,
     HybridEmbeddingModel,
@@ -316,7 +322,21 @@ class LLMCallOp(Op[Message]):
         self.ctx.update(call_id, "temperature", temperature)
         self.ctx.update(call_id, "logprob", logprob)
 
-        return result.messages[0]
+        result_msg = result.messages[0]
+        if (
+            tools
+            and (
+                isinstance(tool_choice, Tool)
+                or tool_choice == LLMModel.TOOL_CHOICE_REQUIRED
+            )
+            and not isinstance(result_msg, ToolRequestMessage)
+        ):
+            raise MalformedMessageError(
+                f"A tool choice was required but the LLM returned"
+                f" a {type(result_msg).__name__}"
+                f" with a finish reason of {result.finish_reason!r}."
+            )
+        return result_msg
 
     async def _call_single_and_maybe_validate(
         self, model: LLMModel, num_retries: int = 0, **kwargs
