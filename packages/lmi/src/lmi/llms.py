@@ -953,12 +953,11 @@ class LiteLLMModel(LLMModel):
             self.name, prompts, **kwargs
         )
 
+        first_choice = completions.choices[0] if completions.choices else None
         finish_reason = (
-            getattr(completions.choices[0], "finish_reason", None)
-            if completions.choices
-            else None
+            getattr(first_choice, "finish_reason", None) if first_choice else None
         )
-        if completions.choices and finish_reason in REFUSAL_REASON:
+        if first_choice is not None and finish_reason in REFUSAL_REASON:
             logger.warning(
                 f"The LLM request was refused with finish reason '{finish_reason}' "
                 f"for model {self.name}. "
@@ -976,6 +975,22 @@ class LiteLLMModel(LLMModel):
             logger.warning(
                 f"No fallback models available after refusal for model {self.name}. "
                 "Will return return a LLMResult with the refusal completion."
+            )
+
+        if (
+            first_choice is not None
+            and (
+                isinstance(tool_choice, Tool)
+                or tool_choice == self.TOOL_CHOICE_REQUIRED
+            )
+            and finish_reason != "tool_calls"
+            and getattr(getattr(first_choice, "message", None), "tool_calls", None)
+            is None
+        ):
+            raise MalformedMessageError(
+                f"A tool choice was required but the LLM {self.name} returned no tool"
+                f" calls in a {type(getattr(first_choice, 'message', None)).__name__}"
+                f" with a finish reason of {finish_reason}."
             )
 
         used_model = completions.model or self.name
