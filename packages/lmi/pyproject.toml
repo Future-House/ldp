@@ -26,6 +26,7 @@ dependencies = [
     "fhaviary>=0.14.0",  # For multi-image support
     "limits[async-redis]>=4.8",  # Specify 'async-redis' since that's what we use. Lower pin for RedisBridge.key_prefix.
     "litellm>=1.81.10",  # Lower pin for MAX_CALLBACKS refactor from https://github.com/BerriAI/litellm/pull/20781
+    "orjson",  # Required by litellm for Responses API
     "pydantic~=2.0,>=2.10.1",
     "tiktoken>=0.4.0",
     "typing-extensions; python_version <= '3.11'",  # for typing.override

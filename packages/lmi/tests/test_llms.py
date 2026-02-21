@@ -1,21 +1,33 @@
+import base64
 import json
 import pathlib
 import pickle
 import re
 from collections.abc import AsyncIterator
+from io import BytesIO
 from typing import Any, ClassVar
 from unittest.mock import AsyncMock, Mock, patch
 
 import litellm
 import numpy as np
 import pytest
-from aviary.core import Message, Tool, ToolCall, ToolRequestMessage, ToolResponseMessage
+from aviary.core import (
+    Message,
+    Tool,
+    ToolCall,
+    ToolCallFunction,
+    ToolRequestMessage,
+    ToolResponseMessage,
+)
+from PIL import Image
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
 from lmi.exceptions import JSONSchemaValidationError
 from lmi.llms import (
     CommonLLMNames,
     LiteLLMModel,
+    _convert_multimodal_content_for_responses,
+    _convert_to_responses_input,
     validate_json_completion,
 )
 from lmi.types import LLMResult
@@ -1214,6 +1226,523 @@ async def test_handle_refusal_via_fallback(caplog) -> None:
     assert results.finish_reason == "stop"
     assert "the llm request was refused" in caplog.text.lower()
     assert "attempting to fallback" in caplog.text.lower()
+
+
+class TestResponses:
+    """Tests for the Responses API backend."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    @pytest.mark.parametrize("model_name", ["gpt-5.2", "gpt-5-mini"])
+    async def test_basic_call(self, model_name: str) -> None:
+        """Test basic text completion via Responses API."""
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name=model_name)
+            messages = [
+                Message(role="system", content="Respond with single words."),
+                Message(role="user", content="What color is the sky?"),
+            ]
+            result = await model.call_single(messages)
+
+            assert isinstance(result, LLMResult)
+            assert result.text is not None
+            assert "blue" in result.text.lower()
+            assert result.prompt_count is not None
+            assert result.prompt_count > 0
+            assert result.completion_count is not None
+            assert result.completion_count > 0
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_tool_calling(self) -> None:
+        """Test tool calling via Responses API."""
+
+        def get_weather(city: str) -> str:
+            """Get the weather for a city.
+
+            Args:
+                city: The city to get weather for.
+
+            Returns:
+                The weather description.
+            """
+            return f"Weather in {city}: sunny"
+
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-5-mini")
+            messages = [
+                Message(role="user", content="What's the weather in Paris?"),
+            ]
+            tools = [Tool.from_function(get_weather)]
+
+            result = await model.call_single(
+                messages, tools=tools, tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL
+            )
+
+            assert isinstance(result, LLMResult)
+            assert result.messages
+            assert isinstance(result.messages[0], ToolRequestMessage)
+            assert result.messages[0].tool_calls
+            assert result.messages[0].tool_calls[0].function.name == "get_weather"
+            assert (
+                "paris"
+                in result.messages[0].tool_calls[0].function.arguments["city"].lower()
+            )
+
+    # The below are integration tests; therefore not VCR'd - want to confirm they work live
+
+    @pytest.mark.asyncio
+    async def test_streaming_with_callbacks(self) -> None:
+        """Test that streaming with callbacks works via Responses API."""
+        received_chunks: list[str] = []
+
+        def callback(text: str) -> None:
+            received_chunks.append(text)
+
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-5-mini")
+            messages: list[Message] = [
+                Message(role="user", content="Count from 1 to 5, one number per line."),
+            ]
+
+            result = await model.call(messages, callbacks=[callback])
+
+            # Should have received streaming chunks
+            assert received_chunks, "Should have received streaming chunks"
+
+            # Final result should have complete text and usage info
+            assert result
+            assert result[0].text is not None
+            assert result[0].prompt_count is not None, "prompt_count should be set"
+            assert result[0].completion_count is not None, (
+                "completion_count should be set"
+            )
+            # The full text should contain the numbers
+            full_text = "".join(received_chunks)
+            assert "1" in full_text
+            assert "5" in full_text
+
+    @pytest.mark.asyncio
+    async def test_multi_turn_tool_calling(self) -> None:
+        """Test multi-turn conversation with tool calling via Responses API."""
+
+        def get_stock_price(symbol: str) -> str:
+            """Get the current stock price.
+
+            Args:
+                symbol: Stock ticker symbol.
+
+            Returns:
+                The current price.
+            """
+            return f"{symbol}: $142.50"
+
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-5-mini")
+            tools = [Tool.from_function(get_stock_price)]
+
+            # Turn 1: User asks, model should call tool
+            messages: list[Message] = [
+                Message(role="user", content="What is the current price of AAPL?"),
+            ]
+            result = await model.call_single(
+                messages, tools=tools, tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL
+            )
+
+            assert result.messages
+            assert isinstance(result.messages[0], ToolRequestMessage)
+            tool_call = result.messages[0].tool_calls[0]
+            assert tool_call.function.name == "get_stock_price"
+
+            # Turn 2: Provide tool result, model should respond with answer
+            messages.extend((
+                result.messages[0],
+                ToolResponseMessage(
+                    role="tool",
+                    name="get_stock_price",
+                    content="$142.50",
+                    tool_call_id=tool_call.id,
+                ),
+            ))
+
+            result = await model.call_single(messages, tools=tools, tool_choice="auto")
+
+            assert result.text is not None
+            assert "142" in result.text
+
+    @pytest.mark.asyncio
+    async def test_multi_turn_tool_calling_with_images(self) -> None:
+        """Test that images in tool responses are visible to the model.
+
+        This verifies that the Responses API correctly handles images in tool
+        responses, unlike the Chat Completions API which silently drops them
+        for some models like gpt-5.2.
+        """
+        # Create a solid red image
+        img = Image.new("RGB", (100, 100), color=(255, 0, 0))
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        image_b64 = base64.b64encode(buffer.getvalue()).decode()
+        image_url = f"data:image/png;base64,{image_b64}"
+
+        def get_image() -> str:
+            """Retrieve an image for analysis.
+
+            Returns:
+                The image data.
+            """
+            return "Image retrieved"
+
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-5.2")
+            tools = [Tool.from_function(get_image)]
+
+            # Turn 1: User asks for image, model calls tool
+            messages: list[Message] = [
+                Message(role="user", content="Get the image and tell me its color."),
+            ]
+            result = await model.call_single(
+                messages, tools=tools, tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL
+            )
+
+            assert result.messages
+            assert isinstance(result.messages[0], ToolRequestMessage)
+            tool_call = result.messages[0].tool_calls[0]
+            assert tool_call.function.name == "get_image"
+
+            # Turn 2: Provide tool response with image
+            messages.append(result.messages[0])
+
+            # Create tool response with image using aviary's message creation
+            tool_response = Message.create_message(role="tool", images=[image_url])
+            response_kwargs = tool_response.model_dump(
+                exclude={"role", "tool_call_id", "name"},
+                context={"deserialize_content": False},
+            ) | {"content_is_json_str": tool_response.content_is_json_str}
+            tool_response_msg = ToolResponseMessage.from_call(
+                tool_call, **response_kwargs
+            )
+
+            messages.append(tool_response_msg)
+
+            result = await model.call_single(messages, tools=tools, tool_choice="auto")
+
+            assert result.text is not None
+            # The model should identify the red color, proving it can see the image
+            assert "red" in result.text.lower(), (
+                f"Model should identify red color, got: {result.text}"
+            )
+
+    @pytest.mark.asyncio
+    async def test_tool_with_optional_params(self) -> None:
+        """Test that tools with optional parameters work with Responses API strict mode.
+
+        OpenAI's strict mode requires all properties in 'required', so optional
+        params must be converted to nullable types.
+        """
+
+        def search_papers(
+            query: str, min_year: int | None = None, max_year: int | None = None
+        ) -> str:
+            """Search for academic papers.
+
+            Args:
+                query: Search query.
+                min_year: Filter for minimum publication year.
+                max_year: Filter for maximum publication year.
+
+            Returns:
+                Search results.
+            """
+            result = f"Found papers for '{query}'"
+            if min_year:
+                result += f" from {min_year}"
+            if max_year:
+                result += f" to {max_year}"
+            return result
+
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-5-mini")
+            tools = [Tool.from_function(search_papers)]
+
+            messages: list[Message] = [
+                Message(
+                    role="user",
+                    content="Search for papers about machine learning from 2020.",
+                ),
+            ]
+            result = await model.call_single(
+                messages, tools=tools, tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL
+            )
+
+            assert result.messages
+            assert isinstance(result.messages[0], ToolRequestMessage)
+            tool_call = result.messages[0].tool_calls[0]
+            assert tool_call.function.name == "search_papers"
+            # Model should have provided query and possibly min_year
+            assert "query" in tool_call.function.arguments
+
+    def test_convert_to_responses_preserves_tool_request_content(self) -> None:
+        """Test that ToolRequestMessage content is preserved in Responses API conversion.
+
+        This is a regression test for a critical bug where ToolRequestMessage content
+        (the agent's reasoning/thought) was being dropped during conversion to the
+        Responses API format, causing significant performance degradation in multi-turn
+        agentic workflows.
+
+        The bug affected scenarios where an agent generates both explanatory text
+        (in content) and tool calls (in tool_calls) in a single turn, which is a
+        common pattern in agentic systems.
+        """
+        # Create a ToolRequestMessage with both content and tool_calls
+        # This simulates what an agent generates when it has a "thought" and actions
+        tool_request = ToolRequestMessage(
+            role="assistant",
+            content="Let me search for information about Python design patterns.",
+            tool_calls=[
+                ToolCall(
+                    id="call_123",
+                    type="function",
+                    function=ToolCallFunction(
+                        name="search",
+                        arguments={"query": "Python design patterns"},
+                    ),
+                )
+            ],
+        )
+
+        # Convert to Responses API format
+        result = _convert_to_responses_input([tool_request])
+
+        # Verify that BOTH the message content AND the function call are present
+        assert len(result) == 2, "Should have both message and function_call items"
+
+        # First item should be the message with the thought/reasoning
+        assert result[0]["type"] == "message"
+        assert result[0]["role"] == "assistant"
+        assert (
+            result[0]["content"]
+            == "Let me search for information about Python design patterns."
+        )
+
+        # Second item should be the function call
+        assert result[1]["type"] == "function_call"
+        assert result[1]["call_id"] == "call_123"
+        assert result[1]["name"] == "search"
+        assert '"query": "Python design patterns"' in result[1]["arguments"]
+
+    def test_convert_to_responses_handles_empty_content(self) -> None:
+        """Test that ToolRequestMessage with empty/None content still works.
+
+        Some tool calls may not have accompanying content. This test ensures
+        the conversion handles this gracefully.
+        """
+        # Create a ToolRequestMessage with NO content, only tool_calls
+        tool_request = ToolRequestMessage(
+            role="assistant",
+            content=None,  # No thought/reasoning
+            tool_calls=[
+                ToolCall(
+                    id="call_456",
+                    type="function",
+                    function=ToolCallFunction(
+                        name="get_weather",
+                        arguments={"city": "Paris"},
+                    ),
+                )
+            ],
+        )
+
+        # Convert to Responses API format
+        result = _convert_to_responses_input([tool_request])
+
+        # Should only have the function call, no message item
+        assert len(result) == 1, (
+            "Should only have function_call item when content is None"
+        )
+        assert result[0]["type"] == "function_call"
+        assert result[0]["call_id"] == "call_456"
+        assert result[0]["name"] == "get_weather"
+
+    @pytest.mark.parametrize(
+        ("input_content", "expected_output"),
+        [
+            pytest.param(
+                [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/png;base64,ABC123"},
+                    }
+                ],
+                [{"type": "input_image", "image_url": "data:image/png;base64,ABC123"}],
+                id="image-only",
+            ),
+            pytest.param(
+                [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/png;base64,ABC123"},
+                    },
+                    {"type": "text", "text": "What color is this?"},
+                ],
+                [
+                    {
+                        "type": "input_image",
+                        "image_url": "data:image/png;base64,ABC123",
+                    },
+                    {"type": "input_text", "text": "What color is this?"},
+                ],
+                id="text-and-image",
+            ),
+            pytest.param(
+                [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/png;base64,IMG1"},
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/png;base64,IMG2"},
+                    },
+                    {"type": "text", "text": "Compare these images"},
+                ],
+                [
+                    {"type": "input_image", "image_url": "data:image/png;base64,IMG1"},
+                    {"type": "input_image", "image_url": "data:image/png;base64,IMG2"},
+                    {"type": "input_text", "text": "Compare these images"},
+                ],
+                id="multiple-images",
+            ),
+        ],
+    )
+    def test_convert_multimodal_content_for_responses(
+        self, input_content: list[dict], expected_output: list[dict]
+    ) -> None:
+        assert (
+            _convert_multimodal_content_for_responses(json.dumps(input_content))
+            == expected_output
+        )
+
+    def test_convert_to_responses_multimodal_messages(
+        self, subtests: pytest.Subtests
+    ) -> None:
+        with subtests.test(msg="multimodal-message"):
+            image = np.zeros((32, 32, 3), dtype=np.uint8)
+            image[:] = [255, 0, 0]  # Red image
+            multimodal_msg = Message.create_message(
+                text="What color is this square?", images=image
+            )
+            assert multimodal_msg.is_multimodal, (
+                "Message should be detected as multimodal"
+            )
+
+            # Convert to Responses API format and check structure
+            result = _convert_to_responses_input([multimodal_msg])
+            assert len(result) == 1
+            assert result[0]["type"] == "message"
+            assert result[0]["role"] == "user"
+            content = result[0]["content"]
+            assert isinstance(content, list), (
+                "Multimodal content should be a list, not a string"
+            )
+            image_blocks = [c for c in content if c.get("type") == "input_image"]
+            assert len(image_blocks) == 1, "Should have one image block"
+            assert "image_url" in image_blocks[0]
+            assert image_blocks[0]["image_url"].startswith("data:image/")
+            text_blocks = [c for c in content if c.get("type") == "input_text"]
+            assert len(text_blocks) == 1, "Should have one text block"
+            assert text_blocks[0]["text"] == "What color is this square?"
+
+        with subtests.test(msg="non-multimodal-unchanged"):
+            simple_msg = Message(role="user", content="Hello, world!")
+
+            result = _convert_to_responses_input([simple_msg])
+            assert len(result) == 1
+            assert result[0]["type"] == "message"
+            assert result[0]["role"] == "user"
+            assert result[0]["content"] == "Hello, world!", (
+                "Expecting non-multimodal content to be a string"
+            )
+            assert isinstance(result[0]["content"], str)
+
+        with subtests.test(msg="mixed-message-types"):
+            text_msg = Message(role="system", content="You are a helpful assistant.")
+            multimodal_msg = Message.create_message(
+                role="user",
+                text="Describe this image",
+                images=np.zeros((16, 16, 3), dtype=np.uint8),
+            )
+            result = _convert_to_responses_input([text_msg, multimodal_msg])
+            assert len(result) == 2
+            assert result[0]["type"] == "message", "First message should be plain text"
+            assert result[0]["content"] == "You are a helpful assistant."
+            assert isinstance(result[0]["content"], str)
+            assert result[1]["type"] == "message", (
+                "Second message should have converted multimodal content"
+            )
+            assert isinstance(result[1]["content"], list)
+
+    @pytest.mark.asyncio
+    @pytest.mark.vcr
+    async def test_multimodal_message_responses_api(self) -> None:
+        # Create a red square image
+        image = np.zeros((32, 32, 3), dtype=np.uint8)
+        image[:] = [255, 0, 0]  # Red
+
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-4o-mini")
+            result = await model.call_single([
+                Message.create_message(
+                    text="What color is this square? Answer with just the color name.",
+                    images=image,
+                ),
+            ])
+            assert isinstance(result, LLMResult)
+            assert result.text
+            # The model should identify the red color - this proves it can see the image
+            # If the image were tokenized as text, the model would just see gibberish
+            assert "red" in result.text.lower()
+            assert result.prompt_count
+            assert result.prompt_count > 0
+            assert result.completion_count
+            assert result.completion_count > 0
+
+    @pytest.mark.asyncio
+    async def test_tool_call_responses_api(self) -> None:
+        """Integration test for Responses API tool calling."""
+
+        def search_database(query: str) -> str:
+            """Search the database for information.
+
+            Args:
+                query: The search query.
+
+            Returns:
+                Search results.
+            """
+            return f"Results for: {query}"
+
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            model = LiteLLMModel(name="gpt-5-mini")
+            messages = [
+                Message(
+                    role="user",
+                    content="Please search the database for 'python tutorials'. "
+                    "Explain your reasoning before calling the tool.",
+                ),
+            ]
+            tools = [Tool.from_function(search_database)]
+
+            result = await model.call_single(
+                messages, tools=tools, tool_choice=LiteLLMModel.MODEL_CHOOSES_TOOL
+            )
+
+            assert isinstance(result, LLMResult)
+            assert result.messages
+            tool_request = result.messages[0]
+            assert isinstance(tool_request, ToolRequestMessage)
+            assert tool_request.tool_calls
+            assert tool_request.content
 
 
 @pytest.mark.asyncio
