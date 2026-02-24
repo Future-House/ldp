@@ -116,7 +116,7 @@ class OpResult(Generic[TOutput_co]):
         grad_outputs[self.call_id] = [grad_output] if grad_output is not None else [0.0]
 
         # We will traverse the graph in reverse topological order
-        for node in self.traverse():
+        for node in self.traverse(topological_order=True):
             # get output gradients
             grad_output = grad_outputs[node.call_id]
             if not grad_output:
@@ -246,7 +246,7 @@ class OpResult(Generic[TOutput_co]):
 
     def traverse(
         self,
-        topological_order: bool = True,
+        topological_order: bool = False,
         filter_fn: Callable[[OpResult], bool] = lambda _: True,
     ) -> Iterator[OpResult]:
         """Traverse the compute graph that led to this OpResult.
@@ -256,7 +256,7 @@ class OpResult(Generic[TOutput_co]):
                 order. This requires having the whole graph in memory. If False,
                 traverse the backwards graph in depth-first order. This can be done
                 lazily and is useful if we are trying to hydrate the graph node-by-node.
-                Most user-facing cases can leave this as True. Defaults to True.
+                Probably True is a better default, but to avoid nx import we set to False.
             filter_fn: Will only yield nodes that pass this filter function. Note that
                 nodes that fail will still be traversed.
 
