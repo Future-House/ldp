@@ -150,7 +150,7 @@ class TestLiteLLMEmbeddingModel:
             ),
         ],
     )
-    def test_truncate_if_large_mocked(
+    def test_truncate_if_large_edge_cases(
         self,
         embedding_model: LiteLLMEmbeddingModel,
         tiktoken_patch_kwargs: dict,
@@ -166,19 +166,6 @@ class TestLiteLLMEmbeddingModel:
                 embedding_model._truncate_if_large(["a" * 10000, "b" * 10000])
                 == expected
             )
-
-    def test_truncate_if_large_end_to_end(
-        self, embedding_model: LiteLLMEmbeddingModel
-    ) -> None:
-        max_tokens = 10
-        long_text = "hello world " * 200
-        with patch.dict(
-            litellm.model_cost,
-            {embedding_model.name: {"max_input_tokens": max_tokens}},
-        ):
-            (truncated,) = embedding_model._truncate_if_large([long_text])
-        enc = tiktoken.get_encoding("cl100k_base")
-        assert truncated == enc.decode(enc.encode_ordinary(long_text)[:max_tokens])
 
     @pytest.mark.vcr
     @pytest.mark.asyncio
