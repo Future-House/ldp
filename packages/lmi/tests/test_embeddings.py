@@ -130,32 +130,42 @@ class TestLiteLLMEmbeddingModel:
         truncated_texts = embedding_model._truncate_if_large(texts)
         assert truncated_texts == texts
 
-    def test_truncate_if_large_with_truncation(self, embedding_model):
-        texts = ["a" * 10000, "b" * 10000]
-
-        mock_encoder = Mock()
-        mock_encoder.encode_ordinary_batch.return_value = [[1] * 1000 for _ in texts]
-        mock_encoder.decode.return_value = "truncated text"
-
+    @pytest.mark.parametrize(
+        ("tiktoken_patch_kwargs", "expected"),
+        [
+            pytest.param(
+                {
+                    "return_value": Mock(
+                        encode_ordinary_batch=Mock(return_value=[[1] * 1000] * 2),
+                        decode=Mock(return_value="truncated text"),
+                    )
+                },
+                ["truncated text", "truncated text"],
+                id="with-truncation",
+            ),
+            pytest.param(
+                {"side_effect": KeyError},
+                ["a" * 300, "b" * 300],
+                id="key-error-fallback",
+            ),
+        ],
+    )
+    def test_truncate_if_large_edge_cases(
+        self,
+        embedding_model: LiteLLMEmbeddingModel,
+        tiktoken_patch_kwargs: dict,
+        expected: list[str],
+    ) -> None:
         with (
             patch.dict(
                 litellm.model_cost, {embedding_model.name: {"max_input_tokens": 100}}
             ),
-            patch("tiktoken.encoding_for_model", return_value=mock_encoder),
+            patch("tiktoken.get_encoding", **tiktoken_patch_kwargs),
         ):
-            truncated_texts = embedding_model._truncate_if_large(texts)
-        assert truncated_texts == ["truncated text", "truncated text"]
-
-    def test_truncate_if_large_key_error(self, embedding_model):
-        texts = ["a" * 10000, "b" * 10000]
-        with (
-            patch.dict(
-                litellm.model_cost, {embedding_model.name: {"max_input_tokens": 100}}
-            ),
-            patch("tiktoken.encoding_for_model", side_effect=KeyError),
-        ):
-            truncated_texts = embedding_model._truncate_if_large(texts)
-            assert truncated_texts == ["a" * 300, "b" * 300]
+            assert (
+                embedding_model._truncate_if_large(["a" * 10000, "b" * 10000])
+                == expected
+            )
 
     @pytest.mark.vcr
     @pytest.mark.asyncio

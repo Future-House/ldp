@@ -170,7 +170,7 @@ class LiteLLMEmbeddingModel(EmbeddingModel):
         maybe_too_large = max_tokens * conservative_char_token_ratio
         if any(len(t) > maybe_too_large for t in texts if not is_encoded_image(t)):
             try:
-                enct = tiktoken.encoding_for_model("cl100k_base")
+                enct = tiktoken.get_encoding("cl100k_base")
                 enc_batch = enct.encode_ordinary_batch(texts)
                 return [enct.decode(t[:max_tokens]) for t in enc_batch]
             except KeyError:
