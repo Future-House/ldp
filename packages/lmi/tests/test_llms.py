@@ -96,6 +96,25 @@ class TestLiteLLMModel:
         )
         assert model7.provider == "nvidia_nim"
 
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            CommonLLMNames.GPT_5.value,
+            CommonLLMNames.GPT_5_MINI.value,
+            CommonLLMNames.GPT_41.value,
+            CommonLLMNames.GPT_4O.value,
+        ],
+    )
+    def test_chat_models_not_responses_mode(self, model_name: str) -> None:
+        """
+        Regression test for https://github.com/BerriAI/litellm/issues/16808.
+
+        By lower pinning litellm>=1.80.5 we should be safe.
+        """
+        model_cost_key = litellm.get_llm_provider(model_name)[0]
+        assert model_cost_key in litellm.model_cost
+        assert litellm.model_cost[model_cost_key]["mode"] != "responses"
+
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.parametrize(
         "config",
