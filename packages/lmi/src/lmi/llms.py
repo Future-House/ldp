@@ -220,9 +220,9 @@ def validate_json_completion(
             # make sure it is a JSON completion, even if None
             # We do want to modify the underlying message
             # so that users of it can just parse it as expected
-            choice.message.content = (
-                choice.message.content.split("```json")[-1].split("```")[0] or ""
-            )
+            choice.message.content = choice.message.content.split("```json")[-1].split(
+                "```"
+            )[0]
             if isinstance(output_type, Mapping):  # JSON schema
                 litellm.litellm_core_utils.json_validation_rule.validate_schema(
                     schema=dict(output_type), response=choice.message.content
@@ -910,7 +910,7 @@ class LiteLLMModel(LLMModel):
     # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
-    async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:  # noqa: C901, PLR0915
+    async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:  # noqa: C901
         override_config = kwargs.pop("override_config", None)
         if override_config:
             override_config = OverrideRouterConfig(**override_config)
@@ -983,8 +983,7 @@ class LiteLLMModel(LLMModel):
             logger.warning(f"Failed to calculate cost for {used_model}: {e}")
 
         # We are not streaming here, so we can cast to list[litellm.utils.Choices]
-        choices = cast("list[litellm.utils.Choices]", completions.choices)
-        for choice in choices:
+        for choice in completions.choices:
             try:
                 if self.tool_parser is None:
                     output_messages: (
