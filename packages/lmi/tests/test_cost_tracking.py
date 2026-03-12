@@ -982,7 +982,7 @@ class TestVertexAICostTrackingFix:
         """Create a ModelResponse that simulates Vertex AI's broken behavior.
 
         Vertex AI handlers create responses where:
-        - model field contains just "claude-3-5-sonnet-v2@20241022" (no provider prefix)
+        - model field contains just the model name (no provider prefix)
         - _hidden_params does NOT contain custom_llm_provider
 
         This causes completion_cost() to fail when called with only the response.
@@ -992,7 +992,7 @@ class TestVertexAICostTrackingFix:
             created=1234567890,
             # Simulates actual Vertex AI behavior: litellm's Vertex handler strips
             # the "vertex_ai/" prefix when creating the response object
-            model="claude-3-5-sonnet-v2@20241022",
+            model="claude-3-5-sonnet-20241022",
             object="chat.completion",
             choices=[
                 {
@@ -1033,7 +1033,7 @@ class TestVertexAICostTrackingFix:
         # completion_cost succeeds when model is passed explicitly
         cost = litellm.cost_calculator.completion_cost(
             completion_response=response,
-            model="vertex_ai/claude-3-5-sonnet-v2@20241022",
+            model=f"{litellm.LlmProviders.VERTEX_AI.value}/claude-3-5-sonnet-20241022",
         )
 
         assert cost > 0
@@ -1051,9 +1051,14 @@ class TestVertexAICostTrackingFix:
             captured_model = _requested_model_ctx.get()
             return self._create_vertex_ai_response()
 
-        await mock_completion("vertex_ai/claude-3-5-sonnet-v2@20241022", [])
+        await mock_completion(
+            f"{litellm.LlmProviders.VERTEX_AI.value}/claude-3-5-sonnet-20241022", []
+        )
 
-        assert captured_model == "vertex_ai/claude-3-5-sonnet-v2@20241022"
+        assert (
+            captured_model
+            == f"{litellm.LlmProviders.VERTEX_AI.value}/claude-3-5-sonnet-20241022"
+        )
 
     @pytest.mark.asyncio
     async def test_record_uses_context_variable_for_cost_calculation(self):
@@ -1062,7 +1067,9 @@ class TestVertexAICostTrackingFix:
         initial_cost = GLOBAL_COST_TRACKER.lifetime_cost_usd
 
         # Set the context variable (simulating what track_costs does)
-        token = _requested_model_ctx.set("vertex_ai/claude-3-5-sonnet-v2@20241022")
+        token = _requested_model_ctx.set(
+            f"{litellm.LlmProviders.VERTEX_AI.value}/claude-3-5-sonnet-20241022"
+        )
         try:
             with cost_tracking_ctx():
                 await GLOBAL_COST_TRACKER.record(response)
@@ -1077,7 +1084,7 @@ class TestVertexAICostTrackingFix:
         ("model_name", "response_model"),
         [
             ("gpt-4o", "gpt-4o-2024-08-06"),
-            ("claude-3-5-sonnet-20241022", "claude-3-5-sonnet-20241022"),
+            ("claude-sonnet-4-5-20250929", "claude-sonnet-4-5-20250929"),
         ],
         ids=["openai", "anthropic"],
     )
