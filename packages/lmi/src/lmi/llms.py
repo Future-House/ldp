@@ -963,7 +963,7 @@ class LiteLLMModel(LLMModel):
                 return await self._handle_refusal_via_fallback(messages, kwargs)
             logger.warning(
                 f"No fallback models available after refusal for model {self.name}. "
-                "Will return return a LLMResult with the refusal completion."
+                "Will return a LLMResult with the refusal completion."
             )
 
         used_model = completions.model or self.name
