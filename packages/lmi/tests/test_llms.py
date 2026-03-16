@@ -10,16 +10,50 @@ import litellm
 import numpy as np
 import pytest
 from aviary.core import Message, Tool, ToolCall, ToolRequestMessage, ToolResponseMessage
+from aviary.utils import encode_image_to_base64
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
+from pytest_subtests import SubTests
 
 from lmi.exceptions import JSONSchemaValidationError
 from lmi.llms import (
     CommonLLMNames,
     LiteLLMModel,
+    estimate_message_tokens,
     validate_json_completion,
 )
 from lmi.types import LLMResult
 from lmi.utils import VCR_DEFAULT_MATCH_ON
+
+
+def test_estimate_message_tokens(png_image: bytes, subtests: SubTests) -> None:
+    model = CommonLLMNames.ANTHROPIC_TEST.value
+    png_data_url = encode_image_to_base64(png_image)
+
+    for name, messages, fewer_tokens_messages in (
+        ("empty", [], None),
+        ("plain_text", [Message(content="hello world")], None),
+        (
+            "image_adds_tokens",
+            [Message.create_message(text="look at this", images=[png_data_url])],
+            [Message.create_message(text="look at this")],
+        ),
+        (
+            "multiple_images_add_tokens",
+            [
+                Message.create_message(
+                    text="look at this", images=[png_data_url, png_data_url]
+                )
+            ],
+            [Message.create_message(text="look at this", images=[png_data_url])],
+        ),
+    ):
+        with subtests.test(msg=name):
+            token_count = estimate_message_tokens(messages, model=model)
+            assert token_count >= 0
+            if fewer_tokens_messages is not None:
+                assert token_count > estimate_message_tokens(
+                    fewer_tokens_messages, model=model
+                )
 
 
 class TestLiteLLMModel:

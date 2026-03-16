@@ -3,6 +3,7 @@ __all__ = [
     "LLMModel",
     "LiteLLMModel",
     "PassThroughRouter",
+    "estimate_message_tokens",
     "extract_top_logprobs",
     "parse_cached_usage",
     "rate_limited",
@@ -34,6 +35,7 @@ from typing import Any, ClassVar, ParamSpec, TypeAlias, cast, overload
 import litellm
 from aviary.core import (
     Message,
+    MessagesAdapter,
     Tool,
     ToolRequestMessage,
     ToolResponseMessage,
@@ -113,6 +115,13 @@ def parse_cached_usage(usage: Usage | None) -> tuple[int | None, int | None]:
             cache_creation = cached_val
 
     return cache_read, cache_creation
+
+
+def estimate_message_tokens(messages: Iterable[Message], model: str) -> int:
+    """Estimate total token count for a list of messages using ``litellm.token_counter``."""
+    return litellm.token_counter(
+        model=model, messages=MessagesAdapter.dump_python(list(messages))
+    )
 
 
 if not IS_PYTHON_BELOW_312:
