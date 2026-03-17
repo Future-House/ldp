@@ -79,12 +79,8 @@ class Transition(BaseModel):
         cls, action: OpResult[Message] | dict | None
     ) -> OpResult[Message] | None:
         if isinstance(action, dict):
-            value = action.get("value", {})
-            msg_type = (
-                ToolRequestMessage
-                if isinstance(value, dict) and "tool_calls" in value
-                else Message
-            )
+            value = cast("dict", action.get("value", {}))
+            msg_type = ToolRequestMessage if "tool_calls" in value else Message
             return OpResult.from_dict(msg_type, action)
         return action
 

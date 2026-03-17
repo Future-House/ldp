@@ -1,6 +1,6 @@
 import os
 import secrets
-from typing import TYPE_CHECKING, Annotated, TypeVar
+from typing import TYPE_CHECKING, Annotated, TypeVar, cast
 
 import httpx_aiohttp
 from aviary.core import Message, Messages, Tool, ToolRequestMessage, ToolsAdapter
@@ -52,12 +52,8 @@ class HTTPAgentClient(Agent[TSerializableAgentState]):
             )
             response.raise_for_status()
             response_data = response.json()
-            value = response_data[0].get("value", {})
-            msg_type = (
-                ToolRequestMessage
-                if isinstance(value, dict) and "tool_calls" in value
-                else Message
-            )
+            value = cast("dict", response_data[0].get("value", {}))
+            msg_type = ToolRequestMessage if "tool_calls" in value else Message
             return (
                 OpResult.from_dict(msg_type, response_data[0]),
                 self._agent_state_type(**response_data[1]),
