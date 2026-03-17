@@ -274,7 +274,9 @@ class LLMCallOp(Op[Message]):
             tool_choice: Configures how the model should choose a tool.
                 Can be a Tool or a string; see here for string options:
                 https://platform.openai.com/docs/guides/function-calling#configuring-function-calling-behavior-using-the-tool_choice-parameter
-                NOTE: if `tools` is None or empty, this parameter is ignored.
+                If None (default), uses self.default_tool_choice when tools
+                are provided. If `tools` is None or empty, this parameter
+                is ignored.
 
         Returns:
             Output message from the model.
@@ -282,6 +284,7 @@ class LLMCallOp(Op[Message]):
         model = LLMModel(config=config)
 
         if not tools:
+            # if no tools are provided, tool_choice must be 'none'
             tool_choice = "none"
         elif tool_choice is None:
             tool_choice = self.default_tool_choice
