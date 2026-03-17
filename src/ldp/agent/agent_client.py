@@ -38,7 +38,7 @@ class HTTPAgentClient(Agent[TSerializableAgentState]):
         self,
         agent_state: TSerializableAgentState,
         obs: list[Message],
-    ) -> tuple[OpResult[ToolRequestMessage], TSerializableAgentState, float]:
+    ) -> tuple[OpResult[Message], TSerializableAgentState, float]:
         async with httpx_aiohttp.HttpxAiohttpClient() as client:
             response = await client.post(
                 f"{self._request_url}/get_asv",
@@ -52,8 +52,14 @@ class HTTPAgentClient(Agent[TSerializableAgentState]):
             )
             response.raise_for_status()
             response_data = response.json()
+            value = response_data[0].get("value", {})
+            msg_type = (
+                ToolRequestMessage
+                if isinstance(value, dict) and "tool_calls" in value
+                else Message
+            )
             return (
-                OpResult.from_dict(ToolRequestMessage, response_data[0]),
+                OpResult.from_dict(msg_type, response_data[0]),
                 self._agent_state_type(**response_data[1]),
                 response_data[2],
             )

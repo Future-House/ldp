@@ -935,12 +935,8 @@ dependencies = [
     {name = "pydantic"},
 ]
 name = "fhaviary"
-sdist = {hash = "sha256:442b7844c4d78080c0de8857372ba3d2f4d9ec608baa41f737e1ae14c8706cf6", size = 5868495, upload-time = "2026-02-18T23:12:51.777Z", url = "https://files.pythonhosted.org/packages/0b/c3/513f3ca1e70c6965d4b5604c62b035a482015004d8655891ea6b867831dd/fhaviary-0.33.0.tar.gz"}
-source = {registry = "https://pypi.org/simple"}
-version = "0.33.0"
-wheels = [
-    {hash = "sha256:b4c88b2a4c2a8e6877dfd2c67a5944406a9442af3e3b25db61ef1a8f15f6cec6", size = 60872, upload-time = "2026-02-18T23:12:45.739Z", url = "https://files.pythonhosted.org/packages/36/39/b9ae1cd70695859ee3998416af74eb1d046d03d61c9ff5eece868d3bc597/fhaviary-0.33.0-py3-none-any.whl"},
-]
+source = {git = "https://github.com/Future-House/aviary.git?branch=main#08a4cba35a4f0c1ff53e406626c6ee246f67167d"}
+version = "0.33.1.dev3+g08a4cba35"
 
 [package.optional-dependencies]
 xml = [
@@ -971,7 +967,8 @@ requires-dist = [
     {editable = "packages/lmi", extras = ["image", "local", "progress", "typing", "vcr"], marker = "extra == 'dev'", name = "fhlmi"},
     {extras = ["async-redis"], name = "limits", specifier = ">=4.8"},
     {extras = ["colorama"], marker = "extra == 'dev'", name = "pytest-timer"},
-    {extras = ["xml"], marker = "extra == 'dev'", name = "fhaviary"},
+    {extras = ["xml"], git = "https://github.com/Future-House/aviary.git?branch=main", marker = "extra == 'dev'", name = "fhaviary"},
+    {git = "https://github.com/Future-House/aviary.git?branch=main", name = "fhaviary"},
     {marker = "extra == 'dev'", name = "google-auth", specifier = ">=2"},
     {marker = "extra == 'dev'", name = "google-cloud-storage", specifier = ">=3"},
     {marker = "extra == 'dev'", name = "httpx-aiohttp"},
@@ -998,7 +995,6 @@ requires-dist = [
     {marker = "extra == 'vcr'", name = "vcrpy", specifier = ">=8"},
     {marker = "python_full_version < '3.12'", name = "typing-extensions"},
     {name = "coredis", specifier = ">=3.0.1"},
-    {name = "fhaviary", specifier = ">=0.14.0"},
     {name = "litellm", specifier = ">=1.81.10"},
     {name = "pydantic", specifier = "~=2.0,>=2.10.1"},
     {name = "tiktoken", specifier = ">=0.4.0"},
@@ -1866,7 +1862,8 @@ requires-dist = [
     {extras = ["colorama"], marker = "extra == 'dev'", name = "pytest-timer"},
     {extras = ["default"], marker = "extra == 'scg'", name = "networkx", specifier = "~=3.4"},
     {extras = ["distributed"], marker = "extra == 'nn'", name = "dask"},
-    {extras = ["xml"], marker = "extra == 'dev'", name = "fhaviary", specifier = ">=0.19"},
+    {extras = ["xml"], git = "https://github.com/Future-House/aviary.git?branch=main", marker = "extra == 'dev'", name = "fhaviary"},
+    {git = "https://github.com/Future-House/aviary.git?branch=main", name = "fhaviary"},
     {marker = "extra == 'dev'", name = "httpx"},
     {marker = "extra == 'dev'", name = "ipython", specifier = ">=8"},
     {marker = "extra == 'dev'", name = "litellm"},
@@ -1905,7 +1902,6 @@ requires-dist = [
     {marker = "extra == 'visualization'", name = "pydot", specifier = ">=3.0.1"},
     {marker = "python_full_version < '3.12'", name = "typing-extensions"},
     {name = "aiofiles"},
-    {name = "fhaviary", specifier = ">=0.32.0"},
     {name = "httpx-aiohttp"},
     {name = "numpy", specifier = ">=1.20"},
     {name = "pydantic", specifier = "~=2.0"},
@@ -2720,7 +2716,7 @@ wheels = [
 
 [[package]]
 dependencies = [
-    {name = "nvidia-cublas-cu12"},
+    {marker = "sys_platform != 'emscripten' and sys_platform != 'win32'", name = "nvidia-cublas-cu12"},
 ]
 name = "nvidia-cudnn-cu12"
 source = {registry = "https://pypi.org/simple"}
@@ -2731,7 +2727,7 @@ wheels = [
 
 [[package]]
 dependencies = [
-    {name = "nvidia-nvjitlink-cu12"},
+    {marker = "sys_platform != 'emscripten' and sys_platform != 'win32'", name = "nvidia-nvjitlink-cu12"},
 ]
 name = "nvidia-cufft-cu12"
 source = {registry = "https://pypi.org/simple"}
@@ -2750,9 +2746,9 @@ wheels = [
 
 [[package]]
 dependencies = [
-    {name = "nvidia-cublas-cu12"},
-    {name = "nvidia-cusparse-cu12"},
-    {name = "nvidia-nvjitlink-cu12"},
+    {marker = "sys_platform != 'emscripten' and sys_platform != 'win32'", name = "nvidia-cublas-cu12"},
+    {marker = "sys_platform != 'emscripten' and sys_platform != 'win32'", name = "nvidia-cusparse-cu12"},
+    {marker = "sys_platform != 'emscripten' and sys_platform != 'win32'", name = "nvidia-nvjitlink-cu12"},
 ]
 name = "nvidia-cusolver-cu12"
 source = {registry = "https://pypi.org/simple"}
@@ -2763,7 +2759,7 @@ wheels = [
 
 [[package]]
 dependencies = [
-    {name = "nvidia-nvjitlink-cu12"},
+    {marker = "sys_platform != 'emscripten' and sys_platform != 'win32'", name = "nvidia-nvjitlink-cu12"},
 ]
 name = "nvidia-cusparse-cu12"
 source = {registry = "https://pypi.org/simple"}
@@ -2925,7 +2921,7 @@ wheels = [
 
 [[package]]
 dependencies = [
-    {name = "ptyprocess"},
+    {marker = "sys_platform != 'emscripten' and sys_platform != 'win32'", name = "ptyprocess"},
 ]
 name = "pexpect"
 sdist = {hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z", url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz"}

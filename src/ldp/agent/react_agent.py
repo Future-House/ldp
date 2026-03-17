@@ -5,7 +5,6 @@ from aviary.core import (
     MalformedMessageError,
     Message,
     Tool,
-    ToolRequestMessage,
     ToolResponseMessage,
 )
 from lmi import CommonLLMNames
@@ -186,7 +185,7 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
     @compute_graph()
     async def get_asv(
         self, agent_state: SimpleAgentState, obs: list[Message]
-    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+    ) -> tuple[OpResult[Message], SimpleAgentState, float]:
         obs = obs.copy()  # Keep original obs, as we edit the content below
         if self.single_prompt:
             for i, m in enumerate(obs):

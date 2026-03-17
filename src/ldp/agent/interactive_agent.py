@@ -44,7 +44,7 @@ class InteractiveAgent(Agent[SimpleAgentState]):
     @compute_graph()
     async def get_asv(  # noqa: C901
         self, agent_state: SimpleAgentState, obs: list[Message]
-    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+    ) -> tuple[OpResult[Message], SimpleAgentState, float]:
         print()  # add a newline to flush any progress bars, etc
         print("OBSERVATIONS:\n" + ("-" * 80))
         for msg in obs:

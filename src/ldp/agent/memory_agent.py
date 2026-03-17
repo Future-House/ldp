@@ -5,9 +5,9 @@ memories, formatted using specified prompts. A memory is typically a set of prev
 """
 
 from collections.abc import Awaitable, Callable, Iterable
-from typing import ClassVar, cast
+from typing import ClassVar
 
-from aviary.core import Message, ToolRequestMessage
+from aviary.core import Message
 from pydantic import ConfigDict, Field
 
 from ldp.graph import (
@@ -105,7 +105,7 @@ class MemoryAgent(SimpleAgent):
     @compute_graph()
     async def get_asv(
         self, agent_state: SimpleAgentState, obs: list[Message]
-    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+    ) -> tuple[OpResult[Message], SimpleAgentState, float]:
         next_state = agent_state.get_next_state(obs)
 
         memories = await self._memory_op(
@@ -119,11 +119,8 @@ class MemoryAgent(SimpleAgent):
             ),
             use_memories=bool(memories.value),
         )
-        result = cast(
-            "OpResult[ToolRequestMessage]",
-            await self._llm_call_op(
-                await self._config_op(), msgs=packaged_messages, tools=next_state.tools
-            ),
+        result = await self._llm_call_op(
+            await self._config_op(), msgs=packaged_messages, tools=next_state.tools
         )
         next_state.messages = [*next_state.messages, result.value]
         return result, next_state, 0.0

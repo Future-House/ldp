@@ -49,7 +49,7 @@ class Transition(BaseModel):
         description="Environment.step output. This is o_t+1 in the POMDP."
     )
 
-    action: OpResult[ToolRequestMessage] | None = Field(
+    action: OpResult[Message] | None = Field(
         default=None, description="Agent.get_asv output. This is a_t in the POMDP."
     )
 
@@ -76,10 +76,16 @@ class Transition(BaseModel):
     @field_validator("action", mode="before")
     @classmethod
     def construct_action(
-        cls, action: OpResult[ToolRequestMessage] | dict | None
-    ) -> OpResult[ToolRequestMessage] | None:
+        cls, action: OpResult[Message] | dict | None
+    ) -> OpResult[Message] | None:
         if isinstance(action, dict):
-            return OpResult.from_dict(ToolRequestMessage, action)
+            value = action.get("value", {})
+            msg_type = (
+                ToolRequestMessage
+                if isinstance(value, dict) and "tool_calls" in value
+                else Message
+            )
+            return OpResult.from_dict(msg_type, action)
         return action
 
     @property
@@ -424,13 +430,16 @@ class TransitionTree:
             state_hash = agent_state_hash_fn(step.agent_state)
 
             if step.action is not None:
-                tool_request_msg = step.action.value
-                # NOTE: we are ignoring tool call ID in the comparison of tool requests.
-                # Thus, the tool call ID is excluded from the hash, so we can't just
-                # simply call str(tool_request_msg)
-                action_str = (tool_request_msg.content or "") + " ".join(
-                    str(tc) for tc in tool_request_msg.tool_calls
-                )
+                action_msg = step.action.value
+                if isinstance(action_msg, ToolRequestMessage):
+                    # NOTE: we are ignoring tool call ID in the comparison of tool requests.
+                    # Thus, the tool call ID is excluded from the hash, so we can't just
+                    # simply call str(action_msg)
+                    action_str = (action_msg.content or "") + " ".join(
+                        str(tc) for tc in action_msg.tool_calls
+                    )
+                else:
+                    action_str = action_msg.content or ""
             else:
                 action_str = ""
 

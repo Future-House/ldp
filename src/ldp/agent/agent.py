@@ -6,7 +6,7 @@ from collections.abc import Collection, Iterable, Mapping, Sequence
 from typing import Any, Generic, TypeVar
 
 import numpy as np
-from aviary.core import Message, Tool, ToolRequestMessage
+from aviary.core import Message, Tool
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 from ldp.graph import IdentityOp, Op, OpResult
@@ -48,7 +48,7 @@ class Agent(ABC, Generic[TAgentState]):
     @abstractmethod
     async def get_asv(
         self, agent_state: TAgentState, obs: list[Message]
-    ) -> tuple[OpResult[ToolRequestMessage], TAgentState, float]:
+    ) -> tuple[OpResult[Message], TAgentState, float]:
         """
         Get new action, state, and value given state and observation messages.
 
@@ -85,13 +85,11 @@ class Agent(ABC, Generic[TAgentState]):
         return _AGENT_REGISTRY[name](**kwargs)
 
     @classmethod
-    async def wrap_action(
-        cls, action: ResultOrValue[ToolRequestMessage]
-    ) -> OpResult[ToolRequestMessage]:
+    async def wrap_action(cls, action: ResultOrValue[Message]) -> OpResult[Message]:
         """Wraps the action in an OpResult, if it isn't already."""
         if isinstance(action, OpResult):
             return action
-        return await IdentityOp[ToolRequestMessage]()(action)
+        return await IdentityOp[Message]()(action)
 
 
 class AgentConfig(BaseModel):

@@ -90,7 +90,7 @@ class Callback:
     async def after_agent_get_asv(
         self,
         traj_id: str,
-        action: OpResult[ToolRequestMessage],
+        action: OpResult[Message],
         next_agent_state: Any,
         value: float,
     ) -> None:
@@ -249,7 +249,7 @@ class RolloutDebugDumpCallback(Callback):
     async def after_agent_get_asv(
         self,
         traj_id: str,
-        action: OpResult[ToolRequestMessage],
+        action: OpResult[Message],
         next_agent_state: Any,
         value: float,
     ) -> None:
@@ -309,6 +309,7 @@ class ComputeTrajectoryMetricsMixin:
                     sum(tc.function.name == tool for tc in s.action.value.tool_calls)
                     for s in traj.steps
                     if isinstance(s.action, OpResult)
+                    and isinstance(s.action.value, ToolRequestMessage)
                 )
                 for traj in trajectories
             ]
@@ -562,7 +563,7 @@ class TerminalPrintingCallback(Callback):
     async def after_agent_get_asv(
         self,
         traj_id: str,
-        action: OpResult[ToolRequestMessage],
+        action: OpResult[Message],
         next_agent_state: Any,
         value: float,
     ) -> None:

@@ -81,7 +81,7 @@ class TreeofThoughtsAgent(BaseModel, Agent[SimpleAgentState]):
         eval_function: Callable[[str, list[str]], float],
         n_steps: int = 0,
         n_select_samples: int = 0,
-    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+    ) -> tuple[OpResult[Message], SimpleAgentState, float]:
         """Generate and evaluate possible steps in the problem-solving process.
 
         Args:

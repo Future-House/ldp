@@ -91,7 +91,7 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
     @compute_graph()
     async def get_asv(
         self, agent_state: SimpleAgentState, obs: list[Message]
-    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+    ) -> tuple[OpResult[Message], SimpleAgentState, float]:
         """Generates an action-state-value tuple using the local LLM model."""
         next_state = agent_state.get_next_state(obs)
 

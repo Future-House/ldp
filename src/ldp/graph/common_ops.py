@@ -222,6 +222,7 @@ class LLMCallOp(Op[Message]):
         self,
         num_samples_logprob_estimate: int = 0,
         response_validator: Callable[[LLMResult], Awaitable[None] | None] | None = None,
+        default_tool_choice: str | None = LLMModel.TOOL_CHOICE_REQUIRED,
     ) -> None:
         """Initializes the LLMCallOp.
 
@@ -231,10 +232,13 @@ class LLMCallOp(Op[Message]):
             response_validator: An optional callable (can be async) that validates the response.
                 It should raise an exception if the response is invalid. The Op will retry up
                 to `config.get('num_retries', 0)` times if validation fails.
+            default_tool_choice: Default tool_choice when tools are provided and caller
+                doesn't specify one. Defaults to "required".
         """
         super().__init__()
         self.num_samples_partition_estimate = num_samples_logprob_estimate
         self.response_validator = response_validator
+        self.default_tool_choice = default_tool_choice
 
     @overload
     async def forward(
@@ -242,7 +246,7 @@ class LLMCallOp(Op[Message]):
         config: dict,
         msgs: list[Message],
         tools: list[Tool] = ...,
-        tool_choice: Tool | str | None = LLMModel.TOOL_CHOICE_REQUIRED,
+        tool_choice: Tool | str | None = ...,
     ) -> ToolRequestMessage: ...
 
     @overload
@@ -251,7 +255,7 @@ class LLMCallOp(Op[Message]):
         config: dict,
         msgs: list[Message],
         tools: None = None,
-        tool_choice: str | None = LLMModel.TOOL_CHOICE_REQUIRED,
+        tool_choice: str | None = ...,
     ) -> Message: ...
 
     async def forward(
@@ -259,7 +263,7 @@ class LLMCallOp(Op[Message]):
         config: dict,
         msgs: list[Message],
         tools: list[Tool] | None = None,
-        tool_choice: Tool | str | None = LLMModel.TOOL_CHOICE_REQUIRED,
+        tool_choice: Tool | str | None = None,
     ) -> Message:
         """Calls the LLM.
 
@@ -278,8 +282,9 @@ class LLMCallOp(Op[Message]):
         model = LLMModel(config=config)
 
         if not tools:
-            # if no tools are provided, tool_choice must be 'none'
             tool_choice = "none"
+        elif tool_choice is None:
+            tool_choice = self.default_tool_choice
 
         result = await self._call_single_and_maybe_validate(
             model=model,
