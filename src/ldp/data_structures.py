@@ -431,17 +431,17 @@ class TransitionTree:
                     # NOTE: we are ignoring tool call ID in the comparison of tool requests.
                     # Thus, the tool call ID is excluded from the hash, so we can't just
                     # simply call str(action_msg)
-                    action_str = (action_msg.content or "") + " ".join(
+                    action_content: str | None = (action_msg.content or "") + " ".join(
                         str(tc) for tc in action_msg.tool_calls
                     )
                 else:
-                    action_str = action_msg.content or ""
+                    action_content = action_msg.content
             else:
-                action_str = ""
+                action_content = None
 
             step_hash = hash((
                 state_hash,
-                action_str,
+                action_content,
                 # (s, a, o): works for deterministic envs
                 observation_hash_fn(step.observation),
                 # (s, a, o, o'): works for both deterministic and stochastic envs
