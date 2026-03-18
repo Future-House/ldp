@@ -3,7 +3,7 @@ import re
 import textwrap
 from collections.abc import Iterable
 from enum import StrEnum
-from typing import Any, cast
+from typing import Any
 
 from aviary.core import (
     MalformedMessageError,
@@ -298,7 +298,7 @@ class ReActModuleSinglePrompt:
     @compute_graph()
     async def __call__(
         self, messages: Iterable[Message], tools: list[Tool]
-    ) -> tuple[OpResult[ToolRequestMessage], list[Message]]:
+    ) -> tuple[OpResult[Message], list[Message]]:
         packaged_msgs = await self.package_msg_op(
             messages, sys_content=await self._create_system_prompt(tools)
         )
@@ -349,7 +349,7 @@ class ReActModule(ReActModuleSinglePrompt):
     @compute_graph()
     async def __call__(
         self, messages: Iterable[Message], tools: list[Tool]
-    ) -> tuple[OpResult[ToolRequestMessage], Messages]:
+    ) -> tuple[OpResult[Message], Messages]:
         sys_prompt = await self.prompt_op()
 
         packaged_msgs = await self.package_msg_op(messages, sys_content=sys_prompt)
@@ -369,7 +369,7 @@ class ReActModule(ReActModuleSinglePrompt):
         tool_selection_msg = await self.llm_call_op(
             self.llm_config, msgs=packaged_msgs_with_reasoning, tools=tools
         )
-        return cast("OpResult[ToolRequestMessage]", tool_selection_msg), [
+        return tool_selection_msg, [
             # We return the 3 new messages: reasoning (assistant) message,
             # the "continue..." (user) message from user,
             # and tool selection (assistant) message

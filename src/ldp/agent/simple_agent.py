@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from itertools import chain
-from typing import Any, Self, cast
+from typing import Any, Self
 
 from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
 from aviary.message import EnvStateMessage
@@ -165,7 +165,7 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
     @compute_graph()
     async def get_asv(
         self, agent_state: SimpleAgentState, obs: list[Message]
-    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+    ) -> tuple[OpResult[Message], SimpleAgentState, float]:
         next_state = agent_state.get_next_state(obs)
 
         messages = (
@@ -173,11 +173,8 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
             if self.sys_prompt is not None
             else next_state.messages
         )
-        result = cast(
-            "OpResult[ToolRequestMessage]",
-            await self._llm_call_op(
-                await self._config_op(), msgs=messages, tools=next_state.tools
-            ),
+        result = await self._llm_call_op(
+            await self._config_op(), msgs=messages, tools=next_state.tools
         )
         next_state.messages = [*next_state.messages, result.value]
         return result, next_state, 0.0
@@ -207,7 +204,7 @@ class NoToolsSimpleAgent(SimpleAgent):
     @compute_graph()
     async def get_asv(
         self, agent_state: SimpleAgentState, obs: list[Message]
-    ) -> tuple[OpResult[ToolRequestMessage], SimpleAgentState, float]:
+    ) -> tuple[OpResult[Message], SimpleAgentState, float]:
         next_state = agent_state.get_next_state(obs)
 
         messages = (

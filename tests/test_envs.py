@@ -95,6 +95,7 @@ class TestParallelism:
         action, agent_state, _ = await agent.get_asv(  # noqa: RUF059
             await agent.init_state(tools=tools), obs
         )
+        assert isinstance(action.value, ToolRequestMessage)
         selected_tools: set[str] = {tc.function.name for tc in action.value.tool_calls}
         assert {
             "move_left_hand",

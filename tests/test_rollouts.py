@@ -36,10 +36,8 @@ class DummyEnv(Environment[None]):
     async def reset(self) -> tuple[list[Message], list[Tool]]:
         return [Message(content="Hello!")], self.tools
 
-    async def step(
-        self, action: ToolRequestMessage
-    ) -> tuple[list[Message], float, bool, bool]:
-        if action.tool_calls:
+    async def step(self, action: Message) -> tuple[list[Message], float, bool, bool]:
+        if isinstance(action, ToolRequestMessage) and action.tool_calls:
             responses = cast("list[Message]", await self.exec_tool_calls(action))
         else:
             responses = [Message(content="Use the 'talk' tool to speak.")]
@@ -260,7 +258,7 @@ class DummyCallback(Callback):
     async def after_agent_get_asv(
         self,
         traj_id: str,
-        action: OpResult[ToolRequestMessage],
+        action: OpResult[Message],
         next_agent_state: Any,
         value: float,
     ):
@@ -308,7 +306,7 @@ class CountingAgent(Agent[CountingAgentState]):
     @compute_graph()
     async def get_asv(
         self, agent_state: CountingAgentState, obs: list[Message]
-    ) -> tuple[OpResult[ToolRequestMessage], CountingAgentState, float]:
+    ) -> tuple[OpResult[Message], CountingAgentState, float]:
         new_state = CountingAgentState(count=float(cast("str", obs[0].content)) + 1)
         action = await self.op()
         return action, new_state, 0.0
@@ -321,9 +319,7 @@ class CountingEnv(Environment[float]):
     async def reset(self) -> tuple[list[Message], list[Tool]]:
         return [Message(content=str(self.state))], []
 
-    async def step(
-        self, action: ToolRequestMessage
-    ) -> tuple[list[Message], float, bool, bool]:
+    async def step(self, action: Message) -> tuple[list[Message], float, bool, bool]:
         self.state += 1
         return [Message(content=str(self.state))], 0.0, self.state >= 3, False
 
@@ -350,9 +346,7 @@ async def test_deterministic_rollout():
 
 
 class NoisyCountingEnv(CountingEnv):
-    async def step(
-        self, action: ToolRequestMessage
-    ) -> tuple[list[Message], float, bool, bool]:
+    async def step(self, action: Message) -> tuple[list[Message], float, bool, bool]:
         self.state += 1 + random.uniform(-0.01, 0.01)
         return [Message(content=str(self.state))], 1.0, self.state >= 3, False
 
