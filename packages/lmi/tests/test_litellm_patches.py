@@ -14,8 +14,8 @@ class TestRefusalFinishReasonPatch:
 
     def test_refusal_mapped_to_refusal(self):
         """Verify 'refusal' is mapped to 'refusal' instead of being swallowed."""
-        assert "refusal" in _litellm_core_helpers._FINISH_REASON_MAP
-        assert _litellm_core_helpers._FINISH_REASON_MAP["refusal"] == "refusal"
+        assert "refusal" in _litellm_core_helpers._FINISH_REASON_MAP  # type: ignore[attr-defined, unused-ignore]
+        assert _litellm_core_helpers._FINISH_REASON_MAP["refusal"] == "refusal"  # type: ignore[attr-defined, unused-ignore]
 
 
 class TestModelDumpPatch:
