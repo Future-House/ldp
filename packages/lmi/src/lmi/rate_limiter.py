@@ -298,10 +298,7 @@ class GlobalRateLimiter:
                 "get_rate_limit_keys only works with RedisStorage."
             )
 
-        password = parsed.password
-        client = Redis(
-            host=host, port=port, **({} if password is None else {"password": password})
-        )
+        client = Redis(host=host, port=port, password=parsed.password)
 
         try:
             cursor: int | bytes = b"0"
