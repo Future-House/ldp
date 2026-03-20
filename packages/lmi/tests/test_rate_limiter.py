@@ -400,7 +400,7 @@ class TestGlobalRateLimiter:
         [
             pytest.param(
                 lambda: "10.58.188.212:6379",
-                {"host": "10.58.188.212", "port": 6379},
+                {"host": "10.58.188.212", "port": 6379, "password": None},
                 id="plain-host-port",
             ),
             pytest.param(

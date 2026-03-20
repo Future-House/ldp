@@ -286,7 +286,7 @@ class GlobalRateLimiter:
                 " correctly pass at initialization or set env variable REDIS_URL."
             ) from exc
 
-        if host is None or port is None or port <= 0:
+        if not (host and port):
             raise ValueError(
                 f"Failed to parse host and port from Redis URL {redis_url!r},"
                 " correctly pass at initialization or set env variable REDIS_URL."
