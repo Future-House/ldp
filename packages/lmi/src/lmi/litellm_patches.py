@@ -13,7 +13,6 @@ Patches applied:
 import litellm
 import litellm.litellm_core_utils.core_helpers as _litellm_core_helpers
 
-
 # Patch 1: Refusal finish reason preservation
 #
 # litellm 1.82.2 maps unknown finish_reasons to "stop", swallowing Anthropic's
@@ -30,7 +29,12 @@ _litellm_core_helpers._FINISH_REASON_MAP.setdefault("refusal", "refusal")  # typ
 # LiteLLM inherits from OpenAI's BaseModel, so we patch it here.
 # See: https://github.com/anthropics/anthropic-sdk-python/pull/1165
 def _apply_model_dump_patch():
-    from openai._models import BaseModel as OpenAIBaseModel  # noqa: PLC0415, PLC2701
+    try:
+        from openai._models import (
+            BaseModel as OpenAIBaseModel,  # noqa: PLC2701
+        )
+    except ImportError:
+        return  # OpenAI SDK not installed, skip patch
 
     original_model_dump = OpenAIBaseModel.model_dump
 
@@ -43,7 +47,6 @@ def _apply_model_dump_patch():
 
 
 _apply_model_dump_patch()
-del _apply_model_dump_patch
 
 
 # Patch 3: Provider-specific 400 error retry
@@ -78,7 +81,6 @@ def _apply_should_retry_patch():
 
 
 _apply_should_retry_patch()
-del _apply_should_retry_patch
 
 
 # Patch 4: Vertex AI context caching fix
@@ -100,9 +102,12 @@ del _apply_should_retry_patch
 # Upstream issue (closed by stale bot, not fixed):
 # https://github.com/BerriAI/litellm/issues/17304
 def _apply_vertex_caching_fix():
-    from litellm.llms.vertex_ai.gemini import (  # noqa: PLC0415
-        transformation as _vertex_transform,
-    )
+    try:
+        from litellm.llms.vertex_ai.gemini import (
+            transformation as _vertex_transform,
+        )
+    except ImportError:
+        return  # Vertex support not available, skip patch
 
     original_transform_request_body = _vertex_transform._transform_request_body
 
@@ -120,4 +125,3 @@ def _apply_vertex_caching_fix():
 
 
 _apply_vertex_caching_fix()
-del _apply_vertex_caching_fix
