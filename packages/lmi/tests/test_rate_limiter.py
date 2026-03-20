@@ -1,8 +1,9 @@
 import asyncio
 import time
+import uuid
 from itertools import product
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import httpx_aiohttp
 import pytest
@@ -393,6 +394,41 @@ async def test_rpm_concurrent_requests(llm_config_w_request_limits: dict[str, An
 
 
 class TestGlobalRateLimiter:
+    @pytest.mark.parametrize(
+        ("redis_url_factory", "expected_host", "expected_port"),
+        [
+            pytest.param(
+                lambda: "10.58.188.212:6379",
+                "10.58.188.212",
+                6379,
+                id="plain-host-port",
+            ),
+            pytest.param(
+                lambda: f":{uuid.uuid4()}@10.58.188.212:6379",
+                "10.58.188.212",
+                6379,
+                id="password-protected",
+            ),
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_get_rate_limit_keys_parses_redis_url(
+        self, redis_url_factory, expected_host: str, expected_port: int
+    ) -> None:
+        """Test that get_rate_limit_keys correctly parses both plain and password-protected Redis URLs."""
+        redis_url = redis_url_factory()
+        limiter = GlobalRateLimiter(redis_url=redis_url)
+        with patch("lmi.rate_limiter.Redis") as mock_redis_cls:
+            # we're safe to use mocks here, since it's testing internal parsing logic
+            # if we can get the host/port then we're happy.
+            mock_client = mock_redis_cls.return_value
+            mock_client.scan = AsyncMock(return_value=(0, []))
+            mock_client.quit = AsyncMock()
+            await limiter.get_rate_limit_keys()
+            mock_redis_cls.assert_called_once_with(
+                host=expected_host, port=expected_port
+            )
+
     @pytest.mark.asyncio
     async def test_parsing_namespace(self) -> None:
         limiter = GlobalRateLimiter()

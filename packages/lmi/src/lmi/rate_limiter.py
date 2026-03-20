@@ -273,16 +273,18 @@ class GlobalRateLimiter:
         if redis_url is None:
             raise ValueError("Redis URL is not set correctly.")
 
-        try:
-            host, port = redis_url.split(":", maxsplit=2)
-        except ValueError as exc:
+        # parse redis_url which may be "host:port" or ":password@host:port"
+        # the prefixed : looks like a bug waiting to happen but this is how
+        # the redis client handles uris without a username this way
+        parsed = urlparse(f"redis://{redis_url}")
+        host = parsed.hostname
+        port = parsed.port
+
+        if not (host and port):
             raise ValueError(
                 f"Failed to parse host and port from Redis URL {redis_url!r},"
                 " correctly pass at initialization or set env variable REDIS_URL."
-            ) from exc
-
-        if not (host and port):
-            raise ValueError(f"Invalid Redis URL: {redis_url}.")
+            )
 
         storage = self.storage
         if not isinstance(storage, RedisStorage):
