@@ -1,6 +1,3 @@
-from . import (
-    litellm_patches as _litellm_patches,  # noqa: F401 - Apply patches at import
-)
 from .constants import (
     CHARACTERS_PER_TOKEN_ASSUMPTION,
     EXTRA_TOKENS_FROM_USER_ROLE,

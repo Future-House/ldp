@@ -66,6 +66,8 @@ from lmi.rate_limiter import GLOBAL_LIMITER
 from lmi.types import LLMResult
 from lmi.utils import get_litellm_retrying_config
 
+from . import litellm_patches as _litellm_patches  # noqa: F401 - In-place apply patches at import
+
 logger = logging.getLogger(__name__)
 
 # List of possible refusal flags in finish_reason
