@@ -19,7 +19,7 @@ import litellm.litellm_core_utils.core_helpers as _litellm_core_helpers
 # "refusal" signal. This breaks lmi's refusal fallback cascade.
 # SEE: https://github.com/BerriAI/litellm/commit/a4fc73f8
 # and https://github.com/BerriAI/litellm/issues/23793
-_litellm_core_helpers._FINISH_REASON_MAP.setdefault("refusal", "refusal")  # type: ignore[arg-type]
+_litellm_core_helpers._FINISH_REASON_MAP.setdefault("refusal", "refusal")  # type: ignore[attr-defined]
 
 
 # Patch 2: OpenAI BaseModel.model_dump pydantic v2 fix
@@ -30,8 +30,8 @@ _litellm_core_helpers._FINISH_REASON_MAP.setdefault("refusal", "refusal")  # typ
 # See: https://github.com/anthropics/anthropic-sdk-python/pull/1165
 def _apply_model_dump_patch():
     try:
-        from openai._models import (
-            BaseModel as OpenAIBaseModel,  # noqa: PLC2701
+        from openai._models import (  # noqa: PLC2701
+            BaseModel as OpenAIBaseModel,
         )
     except ImportError:
         return  # OpenAI SDK not installed, skip patch
