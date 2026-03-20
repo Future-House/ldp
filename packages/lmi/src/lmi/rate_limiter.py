@@ -276,11 +276,17 @@ class GlobalRateLimiter:
         # parse redis_url which may be "host:port" or ":password@host:port"
         # the prefixed : looks like a bug waiting to happen but this is how
         # the redis client handles uris without a username this way
-        parsed = urlparse(f"redis://{redis_url}")
-        host = parsed.hostname
-        port = parsed.port
+        try:
+            parsed = urlparse(f"redis://{redis_url}")
+            host = parsed.hostname
+            port = parsed.port
+        except ValueError as exc:
+            raise ValueError(
+                f"Failed to parse host and port from Redis URL {redis_url!r},"
+                " correctly pass at initialization or set env variable REDIS_URL."
+            ) from exc
 
-        if not (host and port):
+        if host is None or port is None or port <= 0:
             raise ValueError(
                 f"Failed to parse host and port from Redis URL {redis_url!r},"
                 " correctly pass at initialization or set env variable REDIS_URL."
