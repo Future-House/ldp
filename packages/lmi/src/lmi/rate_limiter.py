@@ -299,7 +299,9 @@ class GlobalRateLimiter:
             )
 
         password = parsed.password
-        client = Redis(host=host, port=port, **({} if password is None else {"password": password}))
+        client = Redis(
+            host=host, port=port, **({} if password is None else {"password": password})
+        )
 
         try:
             cursor: int | bytes = b"0"

@@ -2,9 +2,9 @@ import asyncio
 import time
 import uuid
 from itertools import product
-from urllib.parse import urlparse
 from typing import Any
 from unittest.mock import AsyncMock, patch
+from urllib.parse import urlparse
 
 import httpx_aiohttp
 import pytest
