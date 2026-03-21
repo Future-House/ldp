@@ -278,15 +278,13 @@ class GlobalRateLimiter:
         # the redis client handles uris without a username this way
         try:
             parsed = urlparse(f"redis://{redis_url}")
-            host = parsed.hostname
-            port = parsed.port
         except ValueError as exc:
             raise ValueError(
                 f"Failed to parse host and port from Redis URL {redis_url!r},"
                 " correctly pass at initialization or set env variable REDIS_URL."
             ) from exc
 
-        if not (host and port):
+        if not (parsed.hostname and parsed.port):
             raise ValueError(
                 f"Failed to parse host and port from Redis URL {redis_url!r},"
                 " correctly pass at initialization or set env variable REDIS_URL."
@@ -298,7 +296,9 @@ class GlobalRateLimiter:
                 "get_rate_limit_keys only works with RedisStorage."
             )
 
-        client = Redis(host=host, port=port, password=parsed.password)
+        client = Redis(
+            host=parsed.hostname, port=parsed.port, password=parsed.password
+        )
 
         try:
             cursor: int | bytes = b"0"
