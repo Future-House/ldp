@@ -2,7 +2,8 @@ name: Publish
 
 on:
   release:
-    types: [created, published]
+    # 'published' covers both new releases and draft->published transitions
+    types: [published]
   workflow_dispatch:
 
 jobs:
