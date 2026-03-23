@@ -2,7 +2,8 @@ name: Publish
 
 on:
   release:
-    types: [created]
+    # 'published' covers both new releases and draft->published transitions
+    types: [published]
   workflow_dispatch:
 
 jobs:
@@ -12,6 +13,8 @@ jobs:
       UV_VENV_CLEAR: 1 # Work around https://github.com/hynek/build-and-inspect-python-package/issues/174
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - id: build-ldp
         uses: hynek/build-and-inspect-python-package@v2
         with:
