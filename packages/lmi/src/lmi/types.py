@@ -128,7 +128,7 @@ class LLMResult(BaseModel):
         description=(
             "The reason the model stopped generating tokens, or None if not available."
         ),
-        examples=["stop", "length", "tool_calls", "refusal"],
+        examples=["stop", "length", "tool_calls", "content_filter"],
     )
 
     def __str__(self) -> str:

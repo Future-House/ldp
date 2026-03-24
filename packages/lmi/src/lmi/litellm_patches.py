@@ -4,25 +4,15 @@ This module applies patches at import time to fix issues in litellm that haven't
 been fixed upstream or were closed as stale without resolution.
 
 Patches applied:
-1. Refusal finish reason preservation (litellm 1.82.2 swallows "refusal")
-2. OpenAI BaseModel.model_dump pydantic v2 fix (by_alias=None issue)
-3. Provider-specific 400 error retry (Anthropic 100-image limit)
-4. Vertex AI context caching fix (tools + cachedContent conflict)
+1. OpenAI BaseModel.model_dump pydantic v2 fix (by_alias=None issue)
+2. Provider-specific 400 error retry (Anthropic 100-image limit)
+3. Vertex AI context caching fix (tools + cachedContent conflict)
 """
 
 import litellm
-import litellm.litellm_core_utils.core_helpers as _litellm_core_helpers
-
-# Patch 1: Refusal finish reason preservation
-#
-# litellm 1.82.2 maps unknown finish_reasons to "stop", swallowing Anthropic's
-# "refusal" signal. This breaks lmi's refusal fallback cascade.
-# SEE: https://github.com/BerriAI/litellm/commit/a4fc73f8
-# and https://github.com/BerriAI/litellm/issues/23793
-_litellm_core_helpers._FINISH_REASON_MAP.setdefault("refusal", "refusal")  # type: ignore[attr-defined, arg-type, unused-ignore]
 
 
-# Patch 2: OpenAI BaseModel.model_dump pydantic v2 fix
+# Patch 1: OpenAI BaseModel.model_dump pydantic v2 fix
 #
 # Pydantic v2 + openai/litellm has an issue where model_dump is called with
 # by_alias=None, which fails. The OpenAI SDK only fixes this for pydantic v1.
@@ -49,7 +39,7 @@ def _apply_model_dump_patch():
 _apply_model_dump_patch()
 
 
-# Patch 3: Provider-specific 400 error retry
+# Patch 2: Provider-specific 400 error retry
 #
 # Issue: Anthropic has a 100-image limit that returns 400 Bad Request. litellm's
 # default behavior doesn't retry 400 errors, so requests with >100 images fail
@@ -83,7 +73,7 @@ def _apply_should_retry_patch():
 _apply_should_retry_patch()
 
 
-# Patch 4: Vertex AI context caching fix
+# Patch 3: Vertex AI context caching fix
 #
 # Bug: LiteLLM sends both cachedContent AND tools/system_instruction in Gemini
 # generateContent requests. Gemini's API requires that when using cached content,

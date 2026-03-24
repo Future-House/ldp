@@ -1218,14 +1218,17 @@ async def test_handle_refusal_via_fallback(caplog) -> None:
 
     # First call: refusal from CLAUDE_45_SONNET
     mock_refusal = Mock()
-    mock_refusal_message = Mock(content="I cannot answer that question.")
+    # reasoning_content must be a string (not auto-Mock) to pass LLMResult validation
+    mock_refusal_message = Mock(
+        content="I cannot answer that question.", reasoning_content=""
+    )
     mock_refusal_message.model_dump.return_value = {
         "role": "assistant",
         "content": "I cannot answer that question.",
     }
     mock_refusal.choices = [
         Mock(
-            finish_reason="refusal",
+            finish_reason="content_filter",
             message=mock_refusal_message,
         )
     ]
