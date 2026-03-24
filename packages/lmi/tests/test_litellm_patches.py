@@ -5,17 +5,7 @@ requiring actual API calls.
 """
 
 import litellm
-import litellm.litellm_core_utils.core_helpers as _litellm_core_helpers
 from litellm.llms.vertex_ai.gemini import transformation
-
-
-class TestRefusalFinishReasonPatch:
-    """Tests for the refusal finish reason preservation patch."""
-
-    def test_refusal_mapped_to_refusal(self):
-        """Verify 'refusal' is mapped to 'refusal' instead of being swallowed."""
-        assert "refusal" in _litellm_core_helpers._FINISH_REASON_MAP  # type: ignore[attr-defined, unused-ignore]
-        assert _litellm_core_helpers._FINISH_REASON_MAP["refusal"] == "refusal"  # type: ignore[attr-defined, unused-ignore]
 
 
 class TestModelDumpPatch:

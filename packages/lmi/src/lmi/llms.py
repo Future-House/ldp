@@ -74,7 +74,7 @@ logger = logging.getLogger(__name__)
 
 # List of possible refusal flags in finish_reason
 REFUSAL_REASON = (
-    "refusal",  # Anthropic safety filter
+    "content_filter",  # litellm normalizes provider safety signals (including Anthropic "refusal") to this
 )
 
 
