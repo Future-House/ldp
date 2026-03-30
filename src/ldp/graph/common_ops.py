@@ -8,7 +8,7 @@ import inspect
 import logging
 from collections.abc import Awaitable, Callable
 from functools import lru_cache
-from typing import TYPE_CHECKING, Generic, TypeVar, cast, overload
+from typing import TYPE_CHECKING, ClassVar, Generic, TypeVar, cast, overload
 
 import numpy as np
 import tenacity
@@ -218,6 +218,13 @@ class ResponseValidationError(Exception):
 class LLMCallOp(Op[Message]):
     """An operation for LLM calls interaction."""
 
+    # Use this lookup to filter out LLMModel.config items before LLMModel.call:
+    # - Remove keys that are not call parameters (e.g. router_kwargs).
+    # - Provider-specific parameters (e.g. reasoning_effort), as they should
+    #   be set in per-model litellm_params within the LiteLLM Router's
+    #   model_list, not broadcast to every model in the fallback chain.
+    CONFIG_ONLY_KEYS: ClassVar[set[str]] = {"router_kwargs", "reasoning_effort"}
+
     def __init__(
         self,
         num_samples_logprob_estimate: int = 0,
@@ -294,10 +301,7 @@ class LLMCallOp(Op[Message]):
             messages=msgs,
             tools=tools,
             tool_choice=tool_choice,
-            # Since config is shared between our LLMModel and our `call` options
-            # we need to ensure we remove keys which work with LLMModel
-            # but not `call`.
-            **{k: v for k, v in config.items() if k != "router_kwargs"},
+            **{k: v for k, v in config.items() if k not in self.CONFIG_ONLY_KEYS},
         )
         if result.messages is None:
             raise ValueError("No messages returned")

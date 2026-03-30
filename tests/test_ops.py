@@ -2,6 +2,7 @@ import asyncio
 import operator
 import random
 from typing import TypeVar, cast
+from unittest.mock import patch
 from uuid import UUID
 
 import litellm
@@ -204,6 +205,53 @@ class TestLLMCallOp:
         llm_op = LLMCallOp(response_validator=StatefulValidator())
         with pytest.raises(tenacity.RetryError, match="ResponseValidationError"):
             await llm_op(config, msgs=[Message(content="Hello")])
+
+    @pytest.mark.vcr
+    @pytest.mark.asyncio
+    async def test_reasoning_effort_not_spread_to_call(self) -> None:
+        """Verify reasoning_effort in config does not leak to the LLMModel-level call.
+
+        Without filtering, reasoning_effort leaks to every fallback model,
+        causing Anthropic to reject with:
+        > Thinking may not be enabled when tool_choice forces tool use.
+        """
+        model = f"{litellm.LlmProviders.ANTHROPIC.value}/claude-sonnet-4-6"
+        config = {
+            "name": model,
+            "reasoning_effort": "high",
+            "config": {
+                "model_list": [
+                    {"model_name": model, "litellm_params": {"model": model}}
+                ],
+            },
+        }
+
+        def get_weather(location: str) -> str:
+            """Get the weather for a location.
+
+            Args:
+                location: City name.
+            """
+            return f"Sunny in {location}"
+
+        llm_op = LLMCallOp()
+        with patch.object(
+            LLMModel, "call_single", autospec=True, side_effect=LLMModel.call_single
+        ) as mock_call_single:
+            await llm_op(
+                config,
+                msgs=[Message(content="What is the weather in Tokyo?")],
+                tools=[Tool.from_function(get_weather)],
+            )
+
+        mock_call_single.assert_awaited_once()
+        assert mock_call_single.await_args is not None
+        assert len(mock_call_single.await_args.args) == 1, (
+            "Only positional argument to call_single is self"
+        )
+        assert "reasoning_effort" not in mock_call_single.await_args.kwargs, (
+            "reasoning_effort leaked from config into model.call_single() kwargs"
+        )
 
 
 class StatefulValidator:
