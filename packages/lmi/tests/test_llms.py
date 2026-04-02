@@ -12,7 +12,6 @@ import pytest
 from aviary.core import Message, Tool, ToolCall, ToolRequestMessage, ToolResponseMessage
 from aviary.utils import encode_image_to_base64
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
-from pytest_subtests import SubTests
 
 from lmi.exceptions import JSONSchemaValidationError
 from lmi.llms import (
@@ -25,7 +24,7 @@ from lmi.types import LLMResult
 from lmi.utils import VCR_DEFAULT_MATCH_ON
 
 
-def test_estimate_message_tokens(png_image: bytes, subtests: SubTests) -> None:
+def test_estimate_message_tokens(png_image: bytes, subtests: pytest.Subtests) -> None:
     model = CommonLLMNames.ANTHROPIC_TEST.value
     png_data_url = encode_image_to_base64(png_image)
 

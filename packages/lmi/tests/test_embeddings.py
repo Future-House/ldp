@@ -6,7 +6,6 @@ import litellm
 import pytest
 import tiktoken
 from litellm.caching import Cache, InMemoryCache
-from pytest_subtests import SubTests
 
 from lmi.embeddings import (
     EmbeddingModel,
@@ -20,7 +19,7 @@ from lmi.embeddings import (
 from lmi.utils import VCR_DEFAULT_MATCH_ON, encode_image_as_url
 
 
-def test_estimate_tokens(subtests: SubTests, png_image: bytes) -> None:
+def test_estimate_tokens(subtests: pytest.Subtests, png_image: bytes) -> None:
     with subtests.test(msg="text only"):
         text_only = "Hello world"
         text_only_estimated_token_count = estimate_tokens(text_only)
@@ -269,7 +268,7 @@ class TestLiteLLMEmbeddingModel:
 
     @pytest.mark.asyncio
     async def test_multimodal_embedding(
-        self, subtests: SubTests, png_image_gcs: str
+        self, subtests: pytest.Subtests, png_image_gcs: str
     ) -> None:
         multimodal_model = LiteLLMEmbeddingModel(
             name=f"{litellm.LlmProviders.VERTEX_AI.value}/multimodalembedding@001"
@@ -337,7 +336,7 @@ class TestLiteLLMEmbeddingModel:
 
 
 @pytest.mark.asyncio
-async def test_sparse_embedding_model(subtests: SubTests):
+async def test_sparse_embedding_model(subtests: pytest.Subtests):
     with subtests.test("1D sparse"):
         ndim = 1
         expected_output = [[1.0], [1.0]]

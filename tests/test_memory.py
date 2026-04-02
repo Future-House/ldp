@@ -1,6 +1,5 @@
 import pytest
 from lmi import EmbeddingModel
-from pytest_subtests import SubTests
 
 from ldp.graph import Memory
 from ldp.graph.memory import UIndexMemoryModel
@@ -14,7 +13,7 @@ def fixture_sample_memory() -> Memory:
 
 
 class TestUIndexMemoryModel:
-    def test_initialization_serialization(self, subtests: SubTests) -> None:
+    def test_initialization_serialization(self, subtests: pytest.Subtests) -> None:
         with subtests.test(msg="default-model-specified"):
             model = UIndexMemoryModel()
             assert isinstance(model.embedding_model, EmbeddingModel), (
