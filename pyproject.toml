@@ -86,7 +86,8 @@ rich = [
     "tqdm>=4.56",  # When tqdm.rich was created
 ]
 scg = [
-    "dm-tree",
+    "dm-tree; python_version < '3.14'",
+    "dm-tree>=0.1.10; python_version >= '3.14'",  # Lower pin for 3.14 support: https://github.com/google-deepmind/tree/pull/138
     "networkx[default]~=3.4",  # Pin for pydot fix
 ]
 server = [
