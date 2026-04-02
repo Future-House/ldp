@@ -3,7 +3,7 @@ import logging
 import torch
 import torch.distributed as dist
 from aviary.core import Message, Tool, ToolRequestMessage
-from litellm.utils import token_counter
+from lmi.llms import estimate_message_tokens
 from pydantic import Field, field_validator
 
 from ldp.agent import Agent, SimpleAgentState
@@ -130,10 +130,10 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
         messages_for_tokenizer = self._llm_call_op.prep_messages_for_tokenizer(messages)
         tools_for_tokenizer = self._llm_call_op.prep_tools_for_tokenizer(tools)
 
-        total_tokens = token_counter(
+        total_tokens = estimate_message_tokens(
             model=self.llm_model.model,
             messages=messages_for_tokenizer,
-            tools=tools_for_tokenizer,  # type: ignore[arg-type]
+            tools=tools_for_tokenizer,
         )
         if total_tokens > self.llm_model.max_token_count:
             logger.error(

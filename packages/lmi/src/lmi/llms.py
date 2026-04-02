@@ -121,10 +121,19 @@ def parse_cached_usage(usage: Usage | None) -> tuple[int | None, int | None]:
     return cache_read, cache_creation
 
 
-def estimate_message_tokens(messages: Iterable[Message], model: str) -> int:
+def estimate_message_tokens(
+    messages: Iterable[Message] | Sequence[dict[str, Any]], model: str, **kwargs
+) -> int:
     """Estimate total token count for a list of messages using ``litellm.token_counter``."""
+    messages_list = list(messages)
     return litellm.token_counter(
-        model=model, messages=MessagesAdapter.dump_python(list(messages))
+        model=model,
+        messages=(
+            MessagesAdapter.dump_python(cast(list[Message], messages_list))
+            if messages_list and isinstance(messages_list[0], Message)
+            else messages_list
+        ),
+        **kwargs,
     )
 
 
