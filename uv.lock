@@ -1154,13 +1154,14 @@ xml = [
 name = "fhlmi"
 source = { editable = "packages/lmi" }
 dependencies = [
+    { name = "aiohttp" },
     { name = "coredis" },
     { name = "fhaviary" },
     { name = "limits", extra = ["async-redis"] },
     { name = "litellm" },
+    { name = "openai" },
     { name = "pydantic" },
     { name = "tiktoken" },
-    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 
 [package.optional-dependencies]
@@ -1218,6 +1219,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp" },
     { name = "coredis", specifier = ">=3.0.1" },
     { name = "deptry", marker = "extra == 'dev'" },
     { name = "fhaviary", specifier = ">=0.14.0" },
@@ -1231,6 +1233,7 @@ requires-dist = [
     { name = "litellm", specifier = ">=1.81.10,<=1.82.6" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
     { name = "numpy", marker = "extra == 'local'" },
+    { name = "openai", specifier = ">=2" },
     { name = "pillow", marker = "extra == 'image'", specifier = ">=10.3.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.4" },
     { name = "pydantic", specifier = "~=2.0,>=2.10.1" },
@@ -1249,7 +1252,6 @@ requires-dist = [
     { name = "tqdm", marker = "extra == 'progress'" },
     { name = "typeguard", marker = "extra == 'dev'" },
     { name = "types-tqdm", marker = "extra == 'typing'" },
-    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
     { name = "vcrpy", marker = "extra == 'vcr'", specifier = ">=8" },
 ]
 provides-extras = ["dev", "image", "local", "progress", "typing", "vcr"]
@@ -2043,7 +2045,6 @@ dependencies = [
     { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14'" },
     { name = "pydantic" },
     { name = "tenacity" },
-    { name = "tiktoken" },
     { name = "tqdm" },
     { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
@@ -2057,6 +2058,8 @@ dev = [
     { name = "dask-cuda", version = "25.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14'" },
     { name = "dask-jobqueue" },
     { name = "deptry" },
+    { name = "distributed", version = "2024.11.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14'" },
+    { name = "distributed", version = "2025.7.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14'" },
     { name = "dm-tree" },
     { name = "fastapi" },
     { name = "fhaviary", extra = ["xml"] },
@@ -2082,7 +2085,6 @@ dev = [
     { name = "pytest-xdist" },
     { name = "refurb" },
     { name = "rich" },
-    { name = "tokenizers" },
     { name = "torch" },
     { name = "tqdm" },
     { name = "transformers" },
@@ -2102,9 +2104,10 @@ nn = [
     { name = "dask-cuda", version = "24.12.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14'" },
     { name = "dask-cuda", version = "25.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14'" },
     { name = "dask-jobqueue" },
+    { name = "distributed", version = "2024.11.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14'" },
+    { name = "distributed", version = "2025.7.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14'" },
     { name = "dm-tree" },
     { name = "networkx", extra = ["default"] },
-    { name = "tokenizers" },
     { name = "torch" },
     { name = "transformers" },
     { name = "wandb" },
@@ -2143,6 +2146,7 @@ requires-dist = [
     { name = "dask-cuda", marker = "extra == 'nn'", specifier = ">=24.8.2,<25.10.0" },
     { name = "dask-jobqueue", marker = "extra == 'nn'" },
     { name = "deptry", marker = "extra == 'dev'" },
+    { name = "distributed", marker = "extra == 'nn'" },
     { name = "dm-tree", marker = "python_full_version >= '3.14' and extra == 'scg'", specifier = ">=0.1.10" },
     { name = "dm-tree", marker = "python_full_version < '3.14' and extra == 'scg'" },
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.109" },
@@ -2177,8 +2181,6 @@ requires-dist = [
     { name = "refurb", marker = "extra == 'dev'", specifier = ">=2" },
     { name = "rich", marker = "extra == 'rich'" },
     { name = "tenacity" },
-    { name = "tiktoken" },
-    { name = "tokenizers", marker = "extra == 'nn'", specifier = ">0.20" },
     { name = "torch", marker = "extra == 'nn'", specifier = ">=2.9,==2.11.0" },
     { name = "tqdm" },
     { name = "tqdm", marker = "extra == 'rich'", specifier = ">=4.56" },
