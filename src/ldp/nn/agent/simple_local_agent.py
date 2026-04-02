@@ -181,7 +181,7 @@ class SimpleLocalLLMAgent(Agent[SimpleAgentState]):
             },
         )
         am = torch.tensor(encoded["assistant_masks"])
-        action_start = (1 - am[0]).argwhere()[-1].item() + 1
+        action_start = int((1 - am[0]).argwhere()[-1].item()) + 1
 
         out = handler.wrap_func(
             SimpleLocalLLMAgent.recompute_logprobs_forward,
