@@ -43,6 +43,7 @@ requires-python = ">=3.11"
 
 [project.optional-dependencies]
 dev = [
+    "deptry",
     "fhaviary[xml]>=0.19",  # For not line-wrapping tool descriptions
     "fhlmi[dev]",
     "httpx",
@@ -113,6 +114,18 @@ check-filenames = true
 check-hidden = true
 ignore-words-list = "astroid,ser"
 skip = "**tests/cassettes/*,**/tests/cassettes/*"
+
+[tool.deptry]
+extend_exclude = ["packages/lmi"]
+optional_dependencies_dev_groups = ["dev", "typing"]
+
+[tool.deptry.per_rule_ignores]
+DEP002 = [
+    "pydot",  # Used indirectly via nx.drawing.nx_pydot
+]
+DEP004 = [
+    "usearch",  # Didn't want to make an extra for this
+]
 
 [tool.markdown_toc_creator]
 horizontal-rule-style = "prettier"
