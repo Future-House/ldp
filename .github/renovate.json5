@@ -27,14 +27,9 @@
       automerge: true,
     },
     {
-      // TODO: remove after https://github.com/pytorch/pytorch/issues/152292
-      matchPackageNames: ["torch"],
-      allowedVersions: "<2.6",
-    },
-    {
-      // Match pyproject.toml
-      matchPackageNames: ["dask-cuda"],
-      allowedVersions: "<25.10.0",
+      // Don't let any updates (including security) bypass upper-pinned packages
+      matchPackageNames: ["litellm", "dask-cuda"],
+      enabled: false,
     },
   ],
 }
