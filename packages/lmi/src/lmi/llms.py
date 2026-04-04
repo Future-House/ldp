@@ -514,7 +514,13 @@ class LLMModel(ABC, BaseModel):
         )
         if len(results) != 1:
             # Can be caused by issues like https://github.com/BerriAI/litellm/issues/12298
-            raise ValueError(f"Got {len(results)} results when expecting just one.")
+            raise ValueError(
+                f"Got {len(results)} results when expecting just one from"
+                f" model {kwargs.get('model') or self.name!r},"
+                f" given {len(messages)} message(s),"
+                f" {len(tools) if tools is not None else None} tools,"
+                f" and {tool_choice!r} tool choice."
+            )
         return results[0]
 
 
