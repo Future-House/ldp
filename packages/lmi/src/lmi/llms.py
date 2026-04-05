@@ -512,7 +512,7 @@ class LLMModel(ABC, BaseModel):
             n=1,
             **kwargs,
         )
-        if len(results) == 0:
+        if not results:
             raise ValueError(
                 f"Got 0 results from model {kwargs.get('model') or self.name!r},"
                 f" given {len(messages)} message(s),"
