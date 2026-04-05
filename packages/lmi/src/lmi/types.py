@@ -130,6 +130,10 @@ class LLMResult(BaseModel):
         ),
         examples=["stop", "length", "tool_calls", "content_filter"],
     )
+    response_id: str | None = Field(
+        default=None,
+        description="OpenAI Responses API response ID for stateful multi-turn.",
+    )
 
     def __str__(self) -> str:
         return self.text or ""

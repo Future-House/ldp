@@ -29,6 +29,7 @@ from collections.abc import (
     Sequence,
 )
 from enum import StrEnum
+from http import HTTPStatus
 from inspect import isasyncgenfunction, isawaitable, signature
 from typing import Any, ClassVar, ParamSpec, TypeAlias, cast, overload
 
@@ -37,6 +38,8 @@ from aviary.core import (
     Message,
     MessagesAdapter,
     Tool,
+    ToolCall,
+    ToolCallFunction,
     ToolRequestMessage,
     ToolResponseMessage,
     ToolsAdapter,
@@ -44,8 +47,20 @@ from aviary.core import (
     is_coroutine_callable,
 )
 from aviary.message import MalformedMessageError
-from litellm import completion_cost
+from litellm import LlmProviders, completion_cost
+from litellm.types.llms.openai import (
+    ErrorEvent,
+    OutputTextDeltaEvent,
+    ResponseCompletedEvent,
+    ResponseFailedEvent,
+    ResponseIncompleteEvent,
+    ResponsesAPIResponse,
+)
 from litellm.types.utils import Usage
+from openai.types.responses import (
+    ResponseFunctionToolCall,
+    ResponseOutputMessage,
+)
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -59,6 +74,7 @@ from lmi.constants import (
     CHARACTERS_PER_TOKEN_ASSUMPTION,
     DEFAULT_VERTEX_SAFETY_SETTINGS,
     IS_PYTHON_BELOW_312,
+    USE_RESPONSES_API,
 )
 from lmi.cost_tracker import track_costs, track_costs_iter
 from lmi.exceptions import JSONSchemaValidationError
@@ -71,6 +87,194 @@ from . import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _convert_tool_response_content(content: str | None) -> str | list[dict[str, Any]]:
+    """Convert tool response content to Responses API format.
+
+    Aviary stores images as JSON: [{"type": "image_url", "image_url": {"url": "..."}}]
+    Responses API expects: [{"type": "input_image", "image_url": "..."}]
+    """
+    if not content:
+        return ""
+    if content.startswith("["):
+        try:
+            items = json.loads(content)
+            if isinstance(items, list):
+                converted = []
+                for item in items:
+                    if item.get("type") == "image_url":
+                        image_url = item.get("image_url", {}).get("url", "")
+                        converted.append({
+                            "type": "input_image",
+                            "image_url": image_url,
+                        })
+                    elif item.get("type") == "text":
+                        converted.append({
+                            "type": "input_text",
+                            "text": item.get("text", ""),
+                        })
+                    else:
+                        converted.append(item)
+                return converted
+        except json.JSONDecodeError:
+            pass
+    return content
+
+
+def _convert_multimodal_content_for_responses(
+    content: str | None,
+) -> list[dict[str, Any]]:
+    """Convert multimodal content from Chat Completions format to Responses API format.
+
+    Aviary stores multimodal content as JSON: [{"type": "image_url", "image_url": {"url": "..."}}]
+    Responses API expects: [{"type": "input_image", "image_url": "..."}]
+
+    Examples:
+        >>> _convert_multimodal_content_for_responses(
+        ...     '[{"type": "image_url", "image_url": {"url": "data:image/png;base64,ABC"}}]'
+        ... )
+        [{'type': 'input_image', 'image_url': 'data:image/png;base64,ABC'}]
+
+        >>> _convert_multimodal_content_for_responses(
+        ...     '[{"type": "text", "text": "What is this?"}]'
+        ... )
+        [{'type': 'input_text', 'text': 'What is this?'}]
+    """
+    if content is None:
+        raise ValueError("Multimodal content cannot be None.")
+    items = json.loads(content)
+    converted = []
+    for item in items:
+        if item.get("type") == "image_url":
+            image_url = item.get("image_url", {}).get("url", "")
+            converted.append({
+                "type": "input_image",
+                "image_url": image_url,
+            })
+        elif item.get("type") == "text":
+            converted.append({
+                "type": "input_text",
+                "text": item.get("text", ""),
+            })
+        else:
+            raise NotImplementedError(
+                f"Unknown multimodal content type {item.get('type')!r} in item {item!r}."
+            )
+    return converted
+
+
+def _convert_to_responses_input(messages: list[Message]) -> list[dict[str, Any]]:
+    """Convert aviary Messages to Responses API input format."""
+    result = []
+    for msg in messages:
+        if isinstance(msg, ToolResponseMessage):
+            result.append({
+                "type": "function_call_output",
+                "call_id": msg.tool_call_id,
+                "output": _convert_tool_response_content(msg.content),
+            })
+        elif isinstance(msg, ToolRequestMessage):
+            if msg.content:
+                result.append({
+                    "type": "message",
+                    "role": msg.role,
+                    "content": msg.content,
+                })
+            result.extend(
+                {
+                    "type": "function_call",
+                    "call_id": tc.id,
+                    "name": tc.function.name,
+                    "arguments": json.dumps(tc.function.arguments),
+                }
+                for tc in msg.tool_calls
+            )
+        elif msg.is_multimodal:
+            result.append({
+                "type": "message",
+                "role": msg.role,
+                "content": _convert_multimodal_content_for_responses(msg.content),
+            })
+        else:
+            result.append({
+                "type": "message",
+                "role": msg.role,
+                "content": msg.content or "",
+            })
+    return result
+
+
+def _convert_tools_for_responses(tools: list[dict] | None) -> list[dict] | None:
+    """Convert Chat Completions tools to Responses API format."""
+    if not tools:
+        return None
+    result = []
+    for tool in tools:
+        if tool["type"] == "function":
+            func = tool["function"]
+            result.append({
+                "type": "function",
+                "name": func["name"],
+                "description": func.get("description"),
+                "parameters": func.get("parameters"),
+                "strict": False,
+            })
+        else:
+            result.append(tool)
+    return result
+
+
+def _parse_responses_output(
+    output: list[ResponseOutputMessage | ResponseFunctionToolCall],
+) -> tuple[str | None, list[Message | ToolRequestMessage]]:
+    """Convert Responses API output to aviary Messages."""
+    text_content = None
+    tool_calls = []
+
+    for item in output:
+        if item.type == "message":
+            for c in item.content:
+                if c.type == "output_text":
+                    text_content = c.text
+        elif item.type == "function_call":
+            arguments = json.loads(item.arguments)
+            tool_calls.append(
+                ToolCall(
+                    id=item.call_id,
+                    type="function",
+                    function=ToolCallFunction(name=item.name, arguments=arguments),
+                )
+            )
+
+    messages: list[Message | ToolRequestMessage] = []
+    if tool_calls:
+        messages.append(
+            ToolRequestMessage(
+                role="assistant", content=text_content, tool_calls=tool_calls
+            )
+        )
+    elif text_content is not None:
+        messages.append(Message(role="assistant", content=text_content))
+
+    return text_content, messages
+
+
+def _extract_previous_response_id(
+    messages: list[Message],
+) -> tuple[str | None, list[Message]]:
+    """Scan messages for the last response_id in Message.info and split into delta.
+
+    Returns:
+        (previous_response_id, messages_to_send): If a response_id is found,
+        returns it and only the messages after it. Otherwise returns (None, messages).
+    """
+    for i in range(len(messages) - 1, -1, -1):
+        rid = (messages[i].info or {}).get("response_id")
+        if rid is not None:
+            return rid, messages[i + 1 :]
+    return None, messages
+
 
 # List of possible refusal flags in finish_reason
 REFUSAL_REASON = (
@@ -457,7 +661,41 @@ class LLMModel(ABC, BaseModel):
         results: list[LLMResult] = []
 
         start_clock = asyncio.get_running_loop().time()
-        if callbacks is None:
+        if USE_RESPONSES_API:
+            previous_response_id, messages_to_send = _extract_previous_response_id(
+                messages
+            )
+            tools_for_api = chat_kwargs.pop("tools", None)
+            router = self.get_router()  # type: ignore[attr-defined]
+            if callbacks is not None:
+                sync_callbacks = [f for f in callbacks if not is_coroutine_callable(f)]
+                async_callbacks = [f for f in callbacks if is_coroutine_callable(f)]
+                stream_results = self._aresponses_iter(  # type: ignore[attr-defined]
+                    messages_to_send,
+                    router,
+                    tools_for_api,
+                    previous_response_id=previous_response_id,
+                    **chat_kwargs,
+                )
+                async for result in stream_results:
+                    if result.text:
+                        if result.seconds_to_first_token == 0:
+                            result.seconds_to_first_token = (
+                                asyncio.get_running_loop().time() - start_clock
+                            )
+                        await do_callbacks(
+                            async_callbacks, sync_callbacks, result.text, name
+                        )
+                    results.append(result)
+            else:
+                results = await self._aresponses(  # type: ignore[attr-defined]
+                    messages_to_send,
+                    router,
+                    tools_for_api,
+                    previous_response_id=previous_response_id,
+                    **chat_kwargs,
+                )
+        elif callbacks is None:
             results = await self.acompletion(messages, **chat_kwargs)
         else:
             if tools:
@@ -655,6 +893,9 @@ class PassThroughRouter(litellm.Router):  # TODO: add rate_limited
 
     async def aembedding(self, *args, **kwargs):
         return await litellm.aembedding(*args, **(self._default_kwargs | kwargs))
+
+    async def aresponses(self, *args, **kwargs):
+        return await litellm.aresponses(*args, **(self._default_kwargs | kwargs))
 
 
 def default_tool_parser(
@@ -1159,6 +1400,152 @@ class LiteLLMModel(LLMModel):
             )
 
         yield result
+
+    async def _aresponses(
+        self,
+        messages: list[Message],
+        router: litellm.Router | PassThroughRouter,
+        tools: list[dict] | None,
+        previous_response_id: str | None = None,
+        **kwargs,
+    ) -> list[LLMResult]:
+        """Call the Responses API (non-streaming)."""
+        responses_input = _convert_to_responses_input(messages)
+        responses_tools = _convert_tools_for_responses(tools)
+
+        call_kwargs: dict[str, Any] = {
+            "model": self.name,
+            "input": responses_input,
+            "tools": responses_tools,
+            "store": True,
+            **kwargs,
+        }
+        if previous_response_id is not None:
+            call_kwargs["previous_response_id"] = previous_response_id
+
+        response = await track_costs(router.aresponses)(**call_kwargs)
+
+        used_model = response.model or self.name
+        usage = getattr(response, "usage", None)
+        prompt_count = usage.input_tokens if usage else None
+        completion_count = usage.output_tokens if usage else None
+
+        try:
+            cost = completion_cost(completion_response=response, model=used_model)
+        except Exception as e:
+            cost = 0.0
+            logger.warning(f"Failed to calculate cost for {used_model}: {e}")
+
+        text_content, output_messages = _parse_responses_output(response.output)
+
+        for msg in output_messages:
+            msg.info = {**(msg.info or {}), "response_id": response.id}
+
+        return [
+            LLMResult(
+                model=used_model,
+                text=text_content,
+                prompt=messages,
+                messages=output_messages
+                or [Message(role="assistant", content=text_content)],
+                prompt_count=prompt_count,
+                completion_count=completion_count,
+                cost=cost,
+                response_id=response.id,
+            )
+        ]
+
+    def _build_result_from_response(
+        self, response: ResponsesAPIResponse, messages: list[Message]
+    ) -> LLMResult:
+        """Build an LLMResult from a completed Responses API response."""
+        text, output_messages = _parse_responses_output(response.output)  # type: ignore[arg-type]
+        usage = response.usage
+
+        for msg in output_messages:
+            msg.info = {**(msg.info or {}), "response_id": response.id}
+
+        return LLMResult(
+            model=response.model or self.name,
+            text=text,
+            messages=output_messages or [Message(role="assistant", content=text)],
+            prompt=messages,
+            prompt_count=usage.input_tokens if usage else None,
+            completion_count=usage.output_tokens if usage else None,
+            response_id=response.id,
+        )
+
+    async def _aresponses_iter(
+        self,
+        messages: list[Message],
+        router: litellm.Router | PassThroughRouter,
+        tools: list[dict] | None,
+        previous_response_id: str | None = None,
+        **kwargs,
+    ) -> AsyncIterable[LLMResult]:
+        """Stream results from the Responses API."""
+        responses_input = _convert_to_responses_input(messages)
+        responses_tools = _convert_tools_for_responses(tools)
+
+        call_kwargs: dict[str, Any] = {
+            "model": self.name,
+            "input": responses_input,
+            "tools": responses_tools,
+            "store": True,
+            "stream": True,
+            **kwargs,
+        }
+        if previous_response_id is not None:
+            call_kwargs["previous_response_id"] = previous_response_id
+
+        stream = await track_costs_iter(router.aresponses)(**call_kwargs)
+
+        completed_response: ResponsesAPIResponse | None = None
+        incomplete_response: ResponsesAPIResponse | None = None
+        async for event in stream:
+            if isinstance(event, OutputTextDeltaEvent):
+                yield LLMResult(model=self.name, text=event.delta, prompt=messages)
+            elif isinstance(event, ResponseCompletedEvent):
+                completed_response = event.response
+            elif isinstance(event, ResponseIncompleteEvent):
+                incomplete_response = event.response
+            elif isinstance(event, ResponseFailedEvent):
+                error_dict = event.response.error
+                error_msg = (
+                    error_dict.get("message", "Unknown error")
+                    if error_dict
+                    else "Response failed"
+                )
+                raise litellm.APIError(
+                    message=f"Responses API request failed: {error_msg}",
+                    llm_provider=LlmProviders.OPENAI,
+                    model=self.name,
+                    status_code=error_dict.get("code", HTTPStatus.INTERNAL_SERVER_ERROR)
+                    if error_dict
+                    else HTTPStatus.INTERNAL_SERVER_ERROR,
+                )
+            elif isinstance(event, ErrorEvent):
+                raise litellm.APIError(
+                    message=f"Responses API streaming error: {event.error.message}",
+                    llm_provider=LlmProviders.OPENAI,
+                    model=self.name,
+                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                )
+
+        if completed_response:
+            yield self._build_result_from_response(completed_response, messages)
+        elif incomplete_response:
+            logger.warning(
+                f"Responses API returned incomplete response for model {self.name}."
+            )
+            yield self._build_result_from_response(incomplete_response, messages)
+        else:
+            raise litellm.APIError(
+                message="Responses API stream ended unexpectedly without a terminal event",
+                llm_provider=LlmProviders.OPENAI,
+                model=self.name,
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
 
     def count_tokens(self, text: str) -> int:
         # NOTE: by design text is just str here, as None leads to a ValueError

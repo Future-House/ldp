@@ -29,6 +29,7 @@ dependencies = [
     "limits[async-redis]>=4.8",  # Specify 'async-redis' since that's what we use. Lower pin for RedisBridge.key_prefix.
     "litellm>=1.81.10,<=1.82.6",  # Lower pin for MAX_CALLBACKS refactor from https://github.com/BerriAI/litellm/pull/20781, upper pin for supply chain attack
     "openai>=2",  # Pin to keep recent
+    "orjson",  # Required by litellm for Responses API
     "pydantic~=2.0,>=2.10.1",
     "tiktoken>=0.4.0",
 ]
