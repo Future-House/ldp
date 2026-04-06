@@ -117,7 +117,10 @@ def _convert_tool_response_content(content: str | None) -> str | list[dict[str, 
                         converted.append(item)
                 return converted
         except json.JSONDecodeError:
-            pass
+            logger.warning(
+                "Tool response content starts with '[' but is not valid JSON;"
+                f" treating as plain text. Content: {content!r}"
+            )
     return content
 
 
