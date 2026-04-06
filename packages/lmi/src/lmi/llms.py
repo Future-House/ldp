@@ -29,7 +29,6 @@ from collections.abc import (
     Sequence,
 )
 from enum import StrEnum
-from http import HTTPStatus
 from inspect import isasyncgenfunction, isawaitable, signature
 from typing import Any, ClassVar, ParamSpec, TypeAlias, cast, overload
 
@@ -47,7 +46,7 @@ from aviary.core import (
     is_coroutine_callable,
 )
 from aviary.message import MalformedMessageError
-from litellm import LlmProviders, completion_cost
+from litellm import completion_cost
 from litellm.types.llms.openai import (
     ErrorEvent,
     OutputTextDeltaEvent,
@@ -1526,20 +1525,10 @@ class LiteLLMModel(LLMModel):
                     if error_dict
                     else "Response failed"
                 )
-                raise litellm.APIError(
-                    message=f"Responses API request failed: {error_msg}",
-                    llm_provider=LlmProviders.OPENAI,
-                    model=self.name,
-                    status_code=error_dict.get("code", HTTPStatus.INTERNAL_SERVER_ERROR)
-                    if error_dict
-                    else HTTPStatus.INTERNAL_SERVER_ERROR,
-                )
+                raise RuntimeError(f"Responses API request failed: {error_msg}")  # noqa: TRY004
             elif isinstance(event, ErrorEvent):
-                raise litellm.APIError(
-                    message=f"Responses API streaming error: {event.error.message}",
-                    llm_provider=LlmProviders.OPENAI,
-                    model=self.name,
-                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                raise RuntimeError(  # noqa: TRY004
+                    f"Responses API streaming error: {event.error.message}"
                 )
 
         if completed_response:
@@ -1550,11 +1539,8 @@ class LiteLLMModel(LLMModel):
             )
             yield self._build_result_from_response(incomplete_response, messages)
         else:
-            raise litellm.APIError(
-                message="Responses API stream ended unexpectedly without a terminal event",
-                llm_provider=LlmProviders.OPENAI,
-                model=self.name,
-                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            raise RuntimeError(
+                "Responses API stream ended unexpectedly without a terminal event"
             )
 
     def count_tokens(self, text: str) -> int:
