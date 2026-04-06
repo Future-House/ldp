@@ -23,13 +23,14 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
+    "aiohttp",
     "coredis>=3.0.1",  # Lower pin v3 for Redis class, pin v3.0.1 for fix in https://github.com/alisaifee/coredis/commit/7e9b1a1b384cd97725cab479d2ce091e3b0823d2
     "fhaviary>=0.14.0",  # For multi-image support
     "limits[async-redis]>=4.8",  # Specify 'async-redis' since that's what we use. Lower pin for RedisBridge.key_prefix.
     "litellm>=1.81.10,<=1.82.6",  # Lower pin for MAX_CALLBACKS refactor from https://github.com/BerriAI/litellm/pull/20781, upper pin for supply chain attack
+    "openai>=2",  # Pin to keep recent
     "pydantic~=2.0,>=2.10.1",
     "tiktoken>=0.4.0",
-    "typing-extensions; python_version <= '3.11'",  # for typing.override
 ]
 description = "A client to provide LLM responses for FutureHouse applications."
 dynamic = ["version"]
@@ -40,6 +41,7 @@ requires-python = ">=3.11"
 
 [project.optional-dependencies]
 dev = [
+    "deptry",
     "fhaviary[xml]",
     "fhlmi[image,local,progress,typing,vcr]",
     "google-auth>=2",  # Pin to keep recent
@@ -76,6 +78,16 @@ vcr = [
 [project.urls]
 issues = "https://github.com/Future-House/ldp/packages/lmi/issues"
 repository = "https://github.com/Future-House/ldp/packages/lmi"
+
+[tool.deptry]
+# Work around https://github.com/osprey-oss/deptry/issues/302: un-exclude tests
+exclude = ["\\.direnv", "\\.git", "\\.venv", "setup\\.py", "venv"]
+known_first_party = ["lmi"]
+optional_dependencies_dev_groups = ["dev", "typing"]
+
+[tool.deptry.per_rule_ignores]
+# Work around https://github.com/osprey-oss/deptry/issues/1533
+DEP004 = ["dotenv", "google", "httpx_aiohttp", "pytest"]
 
 [tool.ruff]
 extend = "../../pyproject.toml"

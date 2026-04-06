@@ -30,7 +30,6 @@ dependencies = [
     "numpy>=1.20",  # For numpy.typing
     "pydantic~=2.0",
     "tenacity",
-    "tiktoken",
     "tqdm",
     "typing-extensions; python_version <= '3.11'",  # for typing.override
 ]
@@ -43,6 +42,7 @@ requires-python = ">=3.11"
 
 [project.optional-dependencies]
 dev = [
+    "deptry",
     "fhaviary[xml]>=0.19",  # For not line-wrapping tool descriptions
     "fhlmi[dev]",
     "httpx",
@@ -74,8 +74,8 @@ nn = [
     "dask-cuda>=24.8.2,<25.10.0",  # Downpin for requiring cuda-core, which breaks macOS installs
     "dask-jobqueue",
     "dask[distributed]",
+    "distributed",
     "ldp[scg]",
-    "tokenizers>0.20",
     "torch>=2.9,==2.11.0",  # Pin lower for 3.14 support in https://github.com/pytorch/pytorch/issues/156856, exact pin for stability
     "transformers>=4.51,<5",  # Pin for py.typed, TODO: handle v5's breaking changes
     "wandb",
@@ -113,6 +113,18 @@ check-filenames = true
 check-hidden = true
 ignore-words-list = "astroid,ser"
 skip = "**tests/cassettes/*,**/tests/cassettes/*"
+
+[tool.deptry]
+extend_exclude = ["packages/lmi"]
+optional_dependencies_dev_groups = ["dev", "typing"]
+
+[tool.deptry.per_rule_ignores]
+DEP002 = [
+    "pydot",  # Used indirectly via nx.drawing.nx_pydot
+]
+DEP004 = [
+    "usearch",  # Didn't want to make an extra for this
+]
 
 [tool.markdown_toc_creator]
 horizontal-rule-style = "prettier"
