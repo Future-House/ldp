@@ -245,6 +245,11 @@ def _parse_responses_output(
                 )
             )
 
+    if len(text_parts) > 1:
+        logger.warning(
+            f"Responses API returned {len(text_parts)} output_text parts;"
+            " concatenating with newlines."
+        )
     text_content = "\n".join(text_parts) if text_parts else None
 
     messages: list[Message | ToolRequestMessage] = []
@@ -666,7 +671,10 @@ class LLMModel(ABC, BaseModel):
                 messages
             )
             tools_for_api = chat_kwargs.pop("tools", None)
-            router = self.get_router()  # type: ignore[attr-defined]
+            override_config = chat_kwargs.pop("override_config", None)
+            if override_config:
+                override_config = OverrideRouterConfig(**override_config)
+            router = self.get_router(override_config)  # type: ignore[attr-defined]
             if callbacks is not None:
                 sync_callbacks = [f for f in callbacks if not is_coroutine_callable(f)]
                 async_callbacks = [f for f in callbacks if is_coroutine_callable(f)]
