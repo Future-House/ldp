@@ -1409,6 +1409,8 @@ class LiteLLMModel(LLMModel):
 
         yield result
 
+    @request_limited
+    @rate_limited
     async def _aresponses(
         self,
         messages: list[Message],
@@ -1482,6 +1484,8 @@ class LiteLLMModel(LLMModel):
             response_id=response.id,
         )
 
+    @request_limited
+    @rate_limited
     async def _aresponses_iter(
         self,
         messages: list[Message],
