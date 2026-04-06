@@ -3,7 +3,6 @@ from unittest.mock import Mock, patch
 import pytest
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
 from lmi import CommonLLMNames
-from pytest_subtests import SubTests
 
 from ldp.agent import ReActAgent
 from ldp.graph import OpResult
@@ -112,7 +111,7 @@ class TestReActModule:
         assert mock_forward.await_args[1]["msgs"][0] == expected_message
 
     @pytest.mark.asyncio
-    async def test_react_parse(self, subtests: SubTests) -> None:  # noqa: PLR0915, C901
+    async def test_react_parse(self, subtests: pytest.Subtests) -> None:  # noqa: PLR0915, C901
         def zero_arg() -> int:
             """A test function."""
             return 0

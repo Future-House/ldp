@@ -1141,7 +1141,6 @@ dev = [
     { name = "httpx-aiohttp" },
     { name = "ipython", version = "9.10.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "ipython", version = "9.12.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "litellm" },
     { name = "mypy" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.14'" },
     { name = "numpy", version = "2.4.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14'" },
@@ -1152,7 +1151,6 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "pytest-recording" },
     { name = "pytest-rerunfailures" },
-    { name = "pytest-subtests" },
     { name = "pytest-sugar" },
     { name = "pytest-timer", extra = ["colorama"] },
     { name = "pytest-xdist" },
@@ -1198,19 +1196,17 @@ requires-dist = [
     { name = "httpx-aiohttp", marker = "extra == 'dev'" },
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "limits", extras = ["async-redis"], specifier = ">=4.8" },
-    { name = "litellm", specifier = "<=1.83.0,>=1.83.0" },
-    { name = "litellm", marker = "extra == 'dev'", specifier = "<=1.83.0,>=1.83.0" },
+    { name = "litellm", specifier = ">=1.81.10,<=1.82.6" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.8" },
     { name = "numpy", marker = "extra == 'local'" },
     { name = "pillow", marker = "extra == 'image'", specifier = ">=10.3.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.4" },
     { name = "pydantic", specifier = "~=2.0,>=2.10.1" },
     { name = "pylint-pydantic", marker = "extra == 'dev'" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9" },
     { name = "pytest-asyncio", marker = "extra == 'dev'" },
     { name = "pytest-recording", marker = "extra == 'dev'" },
     { name = "pytest-rerunfailures", marker = "extra == 'dev'" },
-    { name = "pytest-subtests", marker = "extra == 'dev'" },
     { name = "pytest-sugar", marker = "extra == 'dev'" },
     { name = "pytest-timer", extras = ["colorama"], marker = "extra == 'dev'" },
     { name = "pytest-xdist", marker = "extra == 'dev'" },
@@ -2035,7 +2031,6 @@ dev = [
     { name = "httpx" },
     { name = "ipython", version = "9.10.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "ipython", version = "9.12.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "litellm" },
     { name = "mypy" },
     { name = "networkx", extra = ["default"] },
     { name = "prek" },
@@ -2048,7 +2043,6 @@ dev = [
     { name = "pytest-mock" },
     { name = "pytest-recording" },
     { name = "pytest-rerunfailures" },
-    { name = "pytest-subtests" },
     { name = "pytest-sugar" },
     { name = "pytest-timeout" },
     { name = "pytest-timer", extra = ["colorama"] },
@@ -2128,7 +2122,6 @@ requires-dist = [
     { name = "ipython", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "ldp", extras = ["monitor", "nn", "rich", "server", "typing", "visualization"], marker = "extra == 'dev'", editable = "." },
     { name = "ldp", extras = ["scg"], marker = "extra == 'nn'", editable = "." },
-    { name = "litellm", marker = "extra == 'dev'", specifier = "<=1.83.0,>=1.83" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.19" },
     { name = "networkx", extras = ["default"], marker = "extra == 'scg'", specifier = "~=3.4" },
     { name = "numpy", specifier = ">=1.20" },
@@ -2138,12 +2131,11 @@ requires-dist = [
     { name = "pydot", marker = "extra == 'visualization'", specifier = ">=3.0.1" },
     { name = "pylint", marker = "extra == 'dev'", specifier = ">=3.2" },
     { name = "pylint-pydantic", marker = "extra == 'dev'" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=9" },
     { name = "pytest-asyncio", marker = "extra == 'dev'" },
     { name = "pytest-mock", marker = "extra == 'dev'" },
     { name = "pytest-recording", marker = "extra == 'dev'" },
     { name = "pytest-rerunfailures", marker = "extra == 'dev'" },
-    { name = "pytest-subtests", marker = "extra == 'dev'" },
     { name = "pytest-sugar", marker = "extra == 'dev'" },
     { name = "pytest-timeout", marker = "extra == 'dev'" },
     { name = "pytest-timer", extras = ["colorama"], marker = "extra == 'dev'" },
@@ -2267,7 +2259,7 @@ async-redis = [
 
 [[package]]
 name = "litellm"
-version = "1.83.0"
+version = "1.82.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -2283,9 +2275,9 @@ dependencies = [
     { name = "tiktoken" },
     { name = "tokenizers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/22/92/6ce9737554994ca8e536e5f4f6a87cc7c4774b656c9eb9add071caf7d54b/litellm-1.83.0.tar.gz", hash = "sha256:860bebc76c4bb27b4cf90b4a77acd66dba25aced37e3db98750de8a1766bfb7a", size = 17333062, upload-time = "2026-03-31T05:08:25.331Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/29/75/1c537aa458426a9127a92bc2273787b2f987f4e5044e21f01f2eed5244fd/litellm-1.82.6.tar.gz", hash = "sha256:2aa1c2da21fe940c33613aa447119674a3ad4d2ad5eb064e4d5ce5ee42420136", size = 17414147, upload-time = "2026-03-22T06:36:00.452Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/19/2c/a670cc050fcd6f45c6199eb99e259c73aea92edba8d5c2fc1b3686d36217/litellm-1.83.0-py3-none-any.whl", hash = "sha256:88c536d339248f3987571493015784671ba3f193a328e1ea6780dbebaa2094a8", size = 15610306, upload-time = "2026-03-31T05:08:21.987Z" },
+    { url = "https://files.pythonhosted.org/packages/02/6c/5327667e6dbe9e98cbfbd4261c8e91386a52e38f41419575854248bbab6a/litellm-1.82.6-py3-none-any.whl", hash = "sha256:164a3ef3e19f309e3cabc199bef3d2045212712fefdfa25fc7f75884a5b5b205", size = 15591595, upload-time = "2026-03-22T06:35:56.795Z" },
 ]
 
 [[package]]
@@ -3977,19 +3969,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/de/04/71e9520551fc8fe2cf5c1a1842e4e600265b0815f2016b7c27ec85688682/pytest_rerunfailures-16.1.tar.gz", hash = "sha256:c38b266db8a808953ebd71ac25c381cb1981a78ff9340a14bcb9f1b9bff1899e", size = 30889, upload-time = "2025-10-10T07:06:01.238Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/77/54/60eabb34445e3db3d3d874dc1dfa72751bfec3265bd611cb13c8b290adea/pytest_rerunfailures-16.1-py3-none-any.whl", hash = "sha256:5d11b12c0ca9a1665b5054052fcc1084f8deadd9328962745ef6b04e26382e86", size = 14093, upload-time = "2025-10-10T07:06:00.019Z" },
-]
-
-[[package]]
-name = "pytest-subtests"
-version = "0.15.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "attrs" },
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/bb/d9/20097971a8d315e011e055d512fa120fd6be3bdb8f4b3aa3e3c6bf77bebc/pytest_subtests-0.15.0.tar.gz", hash = "sha256:cb495bde05551b784b8f0b8adfaa27edb4131469a27c339b80fd8d6ba33f887c", size = 18525, upload-time = "2025-10-20T16:26:18.358Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/23/64/bba465299b37448b4c1b84c7a04178399ac22d47b3dc5db1874fe55a2bd3/pytest_subtests-0.15.0-py3-none-any.whl", hash = "sha256:da2d0ce348e1f8d831d5a40d81e3aeac439fec50bd5251cbb7791402696a9493", size = 9185, upload-time = "2025-10-20T16:26:17.239Z" },
 ]
 
 [[package]]
