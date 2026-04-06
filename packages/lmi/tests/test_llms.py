@@ -11,12 +11,21 @@ import numpy as np
 import pytest
 from aviary.core import Message, Tool, ToolCall, ToolRequestMessage, ToolResponseMessage
 from aviary.utils import encode_image_to_base64
+from openai.types.responses import (
+    ResponseFunctionToolCall,
+    ResponseOutputMessage,
+    ResponseOutputText,
+)
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
 from lmi.exceptions import JSONSchemaValidationError
 from lmi.llms import (
     CommonLLMNames,
     LiteLLMModel,
+    _convert_to_responses_input,
+    _convert_tools_for_responses,
+    _extract_previous_response_id,
+    _parse_responses_output,
     estimate_message_tokens,
     validate_json_completion,
 )
@@ -1324,3 +1333,340 @@ async def test_gemini3_tool_patch(
 
         tool_messages = [m for m in called_messages if m.role == "tool"]
         assert len(tool_messages) == expected_tool_role_count
+
+
+class TestResponsesAPI:
+    """Tests for Responses API support (conversion functions, delta detection, stateful calls)."""
+
+    def test_extract_previous_response_id_none(self) -> None:
+        msgs = [
+            Message(content="hi", role="user"),
+            Message(content="hello", role="assistant"),
+        ]
+        rid, delta = _extract_previous_response_id(msgs)
+        assert rid is None
+        assert delta is msgs
+
+    def test_extract_previous_response_id_found(self) -> None:
+        msgs = [
+            Message(content="hi", role="user"),
+            Message(
+                content="hello",
+                role="assistant",
+                info={"response_id": "resp_abc"},
+            ),
+            Message(content="thanks", role="user"),
+        ]
+        rid, delta = _extract_previous_response_id(msgs)
+        assert rid == "resp_abc"
+        assert len(delta) == 1
+        assert delta[0].content == "thanks"
+
+    def test_extract_previous_response_id_picks_last(self) -> None:
+        msgs = [
+            Message(content="hi", role="user"),
+            Message(
+                content="hello",
+                role="assistant",
+                info={"response_id": "resp_1"},
+            ),
+            Message(content="more", role="user"),
+            Message(
+                content="ok",
+                role="assistant",
+                info={"response_id": "resp_2"},
+            ),
+            Message(content="final", role="user"),
+        ]
+        rid, delta = _extract_previous_response_id(msgs)
+        assert rid == "resp_2"
+        assert len(delta) == 1
+        assert delta[0].content == "final"
+
+    def test_extract_previous_response_id_empty_delta(self) -> None:
+        """When the last message has a response_id, delta is empty."""
+        msgs = [
+            Message(content="hi", role="user"),
+            Message(
+                content="hello",
+                role="assistant",
+                info={"response_id": "resp_x"},
+            ),
+        ]
+        rid, delta = _extract_previous_response_id(msgs)
+        assert rid == "resp_x"
+        assert delta == []
+
+    def test_convert_to_responses_input_basic(self) -> None:
+        msgs = [
+            Message(role="system", content="You are helpful."),
+            Message(role="user", content="Hello"),
+        ]
+        result = _convert_to_responses_input(msgs)
+        assert result == [
+            {"type": "message", "role": "system", "content": "You are helpful."},
+            {"type": "message", "role": "user", "content": "Hello"},
+        ]
+
+    def test_convert_to_responses_input_tool_request(self) -> None:
+        msgs: list[Message] = [
+            ToolRequestMessage(
+                role="assistant",
+                content=None,
+                tool_calls=[
+                    ToolCall(
+                        id="call_1",
+                        type="function",
+                        function={"name": "get_weather", "arguments": {"city": "NYC"}},
+                    )
+                ],
+            ),
+        ]
+        result = _convert_to_responses_input(msgs)
+        assert len(result) == 1
+        assert result[0]["type"] == "function_call"
+        assert result[0]["call_id"] == "call_1"
+        assert result[0]["name"] == "get_weather"
+
+    def test_convert_to_responses_input_tool_response(self) -> None:
+        msgs: list[Message] = [
+            ToolResponseMessage(
+                role="tool",
+                content="72°F",
+                tool_call_id="call_1",
+                name="get_weather",
+            ),
+        ]
+        result = _convert_to_responses_input(msgs)
+        assert result == [
+            {"type": "function_call_output", "call_id": "call_1", "output": "72°F"},
+        ]
+
+    def test_convert_tools_for_responses(self) -> None:
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get weather",
+                    "parameters": {"type": "object", "properties": {}},
+                },
+            }
+        ]
+        result = _convert_tools_for_responses(tools)
+        assert result is not None
+        assert len(result) == 1
+        assert result[0]["type"] == "function"
+        assert result[0]["name"] == "get_weather"
+        assert result[0]["strict"] is False
+
+    def test_convert_tools_for_responses_none(self) -> None:
+        assert _convert_tools_for_responses(None) is None
+        assert _convert_tools_for_responses([]) is None
+
+    def test_parse_responses_output_text(self) -> None:
+        output: list[ResponseOutputMessage | ResponseFunctionToolCall] = [
+            ResponseOutputMessage(
+                id="msg_1",
+                type="message",
+                role="assistant",
+                status="completed",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="Hello!", annotations=[]
+                    )
+                ],
+            )
+        ]
+        text, messages = _parse_responses_output(output)
+        assert text == "Hello!"
+        assert len(messages) == 1
+        assert messages[0].content == "Hello!"
+        assert messages[0].role == "assistant"
+
+    def test_parse_responses_output_tool_call(self) -> None:
+        output: list[ResponseOutputMessage | ResponseFunctionToolCall] = [
+            ResponseFunctionToolCall(
+                id="fc_1",
+                type="function_call",
+                call_id="call_1",
+                name="get_weather",
+                arguments='{"city": "NYC"}',
+                status="completed",
+            )
+        ]
+        text, messages = _parse_responses_output(output)
+        assert text is None
+        assert len(messages) == 1
+        assert isinstance(messages[0], ToolRequestMessage)
+        assert messages[0].tool_calls[0].function.name == "get_weather"
+        assert messages[0].tool_calls[0].id == "call_1"
+
+    @pytest.mark.asyncio
+    async def test_aresponses_sets_response_id(self) -> None:
+        """Verify _aresponses sets response_id on both LLMResult and Message.info."""
+        mock_response = Mock()
+        mock_response.id = "resp_test123"
+        mock_response.model = "gpt-4o-mini"
+        mock_response.output = [
+            ResponseOutputMessage(
+                id="msg_1",
+                type="message",
+                role="assistant",
+                status="completed",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="Hi there!", annotations=[]
+                    )
+                ],
+            )
+        ]
+        mock_response.usage = Mock()
+        mock_response.usage.input_tokens = 10
+        mock_response.usage.output_tokens = 5
+
+        mock_router = AsyncMock()
+        mock_router.aresponses = AsyncMock(return_value=mock_response)
+
+        model = LiteLLMModel(name="gpt-4o-mini")
+        messages = [Message(role="user", content="Hello")]
+
+        with patch("lmi.llms.track_costs", side_effect=lambda f: f):
+            results = await model._aresponses(messages, mock_router, tools=None)
+
+        assert len(results) == 1
+        result = results[0]
+        assert result.response_id == "resp_test123"
+        assert result.messages is not None
+        assert result.messages[0].info is not None
+        assert result.messages[0].info["response_id"] == "resp_test123"
+        assert result.text == "Hi there!"
+
+    @pytest.mark.asyncio
+    async def test_call_with_responses_api_first_turn(self) -> None:
+        """First turn: no response_id in messages, sends full history."""
+        model = LiteLLMModel(name="gpt-4o-mini")
+        messages = [
+            Message(role="system", content="Be helpful."),
+            Message(role="user", content="Hello"),
+        ]
+
+        mock_result = LLMResult(
+            model="gpt-4o-mini",
+            text="Hi!",
+            messages=[
+                Message(
+                    role="assistant",
+                    content="Hi!",
+                    info={"response_id": "resp_first"},
+                )
+            ],
+            response_id="resp_first",
+        )
+
+        with (
+            patch("lmi.llms.USE_RESPONSES_API", new=True),
+            patch.object(LiteLLMModel, "get_router", return_value=Mock()),
+            patch.object(
+                LiteLLMModel,
+                "_aresponses",
+                new_callable=AsyncMock,
+                return_value=[mock_result],
+            ) as mock_aresponses,
+        ):
+            results = await model.call(messages)
+
+        assert len(results) == 1
+        assert results[0].response_id == "resp_first"
+
+        call_args = mock_aresponses.call_args
+        sent_messages = call_args[0][0]
+        assert len(sent_messages) == 2
+
+        assert call_args.kwargs["previous_response_id"] is None
+
+    @pytest.mark.asyncio
+    async def test_call_with_responses_api_subsequent_turn(self) -> None:
+        """Subsequent turn: response_id in messages, sends only delta."""
+        model = LiteLLMModel(name="gpt-4o-mini")
+        messages = [
+            Message(role="system", content="Be helpful."),
+            Message(role="user", content="Hello"),
+            Message(
+                role="assistant",
+                content="Hi!",
+                info={"response_id": "resp_first"},
+            ),
+            Message(role="user", content="How are you?"),
+        ]
+
+        mock_result = LLMResult(
+            model="gpt-4o-mini",
+            text="Great!",
+            messages=[
+                Message(
+                    role="assistant",
+                    content="Great!",
+                    info={"response_id": "resp_second"},
+                )
+            ],
+            response_id="resp_second",
+        )
+
+        with (
+            patch("lmi.llms.USE_RESPONSES_API", new=True),
+            patch.object(LiteLLMModel, "get_router", return_value=Mock()),
+            patch.object(
+                LiteLLMModel,
+                "_aresponses",
+                new_callable=AsyncMock,
+                return_value=[mock_result],
+            ) as mock_aresponses,
+        ):
+            results = await model.call(messages)
+
+        assert len(results) == 1
+        assert results[0].response_id == "resp_second"
+
+        call_args = mock_aresponses.call_args
+        sent_messages = call_args[0][0]
+        assert len(sent_messages) == 1
+        assert sent_messages[0].content == "How are you?"
+
+        assert call_args.kwargs["previous_response_id"] == "resp_first"
+
+    @pytest.mark.asyncio
+    async def test_call_without_responses_api_ignores_response_id(self) -> None:
+        """When USE_RESPONSES_API is off, response_id in Message.info is inert."""
+        model = LiteLLMModel(name="gpt-4o-mini")
+        messages = [
+            Message(role="user", content="Hello"),
+            Message(
+                role="assistant",
+                content="Hi!",
+                info={"response_id": "resp_ignored"},
+            ),
+            Message(role="user", content="How are you?"),
+        ]
+
+        mock_result = LLMResult(
+            model="gpt-4o-mini",
+            text="Fine!",
+            messages=[Message(role="assistant", content="Fine!")],
+        )
+
+        with (
+            patch("lmi.llms.USE_RESPONSES_API", new=False),
+            patch.object(
+                LiteLLMModel,
+                "acompletion",
+                new_callable=AsyncMock,
+                return_value=[mock_result],
+            ) as mock_acompletion,
+        ):
+            results = await model.call(messages)
+
+        assert len(results) == 1
+        assert results[0].response_id is None
+        sent_messages = mock_acompletion.call_args[0][0]
+        assert len(sent_messages) == 3
