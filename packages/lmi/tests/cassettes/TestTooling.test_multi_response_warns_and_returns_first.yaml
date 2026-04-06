@@ -17,7 +17,7 @@ interactions:
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.97.0
+          - AsyncOpenAI/Python 2.30.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -27,7 +27,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.97.0
+          - 2.30.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -37,22 +37,27 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.8
+          - 3.13.7
       method: POST
       uri: https://api.openai.com/v1/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA6SRz0rDQBDG73mKYY9ipUn/qLmIiAgqXtQK/qFskmmyupkJu5O2KoIP4tP5JLJp
-          aQ9687KH75tvvh+z7xGAMoVKQeV1Y3sn48sLXi6e/YSWt/dnyfG1q8d3g4PDyflprHbDNGfPmEtI
-          CC5lmnPdWBTDtLJzh1owbIz3R6NxctCPh51Rc4E2xDKdZbrENOkng15/v5fEvXmyDldscvQqhYcI
-          AOC9e2FVFbJwUyEUaLHUgh4cNg49knjQDiGv2CNB0SLM2IEhL5pyBF3MNYkuEXgGUiEIuhq+P78m
-          7bx966q7FkMFLlUK/Y1iuWwcZ4GIWms3+syQ8dXUofZMAcwilVKpzv/Y/Rt+55Ee6a7SAsbDK7cO
-          mooJgdo6Q3e0tRfG2jAAmSlW8hXv/caM/4kZATx1Z2+9LlGla2LVOK4bmQq/IIWV8bpIbf96aw6S
-          tSks2m714SAKFR/RDwAAAP//AwBm4PnMYwIAAA==
+          H4sIAAAAAAAA/6VRXU/CMBR951fc7JkZNjB8vKngA4FIUBONGNJ1l63QtUt7gRnif7cdCzwYn3xp
+          2nN6Pm57agEEIg1GEPCilOF4+TSYbzflo63e7xbHdDooJ9L0Z8vs9W0WtP1tnWyRk1cQVrTm2umQ
+          hFZnmhtkhN4x6vdve9FwOBzURKFTlF6WsCRhGY7iTtwNO/0wjsJD3IhzLThad+vDHQFO9QrnKK+F
+          B604KjIuA7QCZDwHpuwRDWTigKoNWHEsCTbaAOUIklm6gZdmB8JCoQ3WcbWzUClWzrpzQaTOSqMT
+          30LtpbzgG6GEzdduPuuGdWUkqozyoOa/238UBlipSTVaMDKC7+CZmLWCefT+64KOpzAXKtvblVqp
+          392if3Zz62f9vnvrHt7R55qBsypKWpPeofKWURMUXD/1SnbjhiRNTF7xXrflI75bPwWroXBMAgAA
       headers:
-        CF-RAY:
-          - 971bb3b26a5b1586-SJC
+        Access-Control-Allow-Origin:
+          - "*"
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-Ray:
+          - 9e7b366c0fd6ebe3-SJC
         Cache-Control:
           - no-cache, must-revalidate
         Connection:
@@ -62,43 +67,35 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 19 Aug 2025 18:26:54 GMT
+          - Sun, 05 Apr 2026 20:13:19 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=jjkPFISY0G9FfFGTwaN3bpAdQmcrnI7_Z_axTZGr2Ek-1755628014-1.0.1.1-WZp7BTRVC1TCu0AP8xTRHO19jgKRSCvWFstSxgGhxVDhrxWtXwuxKYlrZDkNpfj5HvtuRO1lPxYFIo_uyONYbnQ8oezxLmjhn2tI5lbCwf0;
-            path=/; expires=Tue, 19-Aug-25 18:56:54 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=iGXWyPuxSsL.5KgJX1FhHUs9721rtsupO6YykvzSDXA-1755628014815-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+          - __cf_bm=2YCe6Ri4I9DUPJW4MvbeepaVbbNH8UYCCZax2Q16tYc-1775419998.0877683-1.0.1.1-_aVKeITksY.9SHYQ3RBjwb4FopOf4emI_6JajDoMSDYSfvINFu7wqoed9hd9IRD5t9.U_dWvNslVE2Ant.gy2NIKma_1zXTtUFkc23c_r3tCPibKWzCNkqSTzMK1pL7v;
+            HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Sun, 05 Apr 2026
+            20:43:19 GMT
+        Strict-Transport-Security:
+          - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
+        Via:
+          - envoy-router-686f9fdb7c-ldsmb
         X-Content-Type-Options:
           - nosniff
-        access-control-allow-origin:
-          - "*"
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         openai-model:
           - babbage:2023-07-21-v2
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "203"
+          - "139"
         openai-project:
-          - proj_RpeV6PrPclPHBb5GlExPXSBj
+          - proj_Jt6Hc8GI0Cv9yaRVy35owwje
         openai-version:
           - "2020-10-01"
-        strict-transport-security:
-          - max-age=31536000; includeSubDomains; preload
-        via:
-          - envoy-router-5fcd8764f7-dzrxn
-        x-envoy-upstream-service-time:
-          - "240"
+        x-openai-proxy-wasm:
+          - v0.1
         x-ratelimit-limit-requests:
           - "3000"
         x-ratelimit-limit-tokens:
@@ -112,7 +109,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 2ms
         x-request-id:
-          - req_f7041fa8d2cd426a83453099bed0714e
+          - req_be5039405bb844768e6008ccce57ce05
       status:
         code: 200
         message: OK

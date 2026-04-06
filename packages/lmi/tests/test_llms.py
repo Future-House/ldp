@@ -982,16 +982,30 @@ class TestTooling:
 
     @pytest.mark.asyncio
     @pytest.mark.vcr
-    async def test_multi_response_validation(self) -> None:
+    async def test_multi_response_warns_and_returns_first(self, caplog) -> None:
         model = LiteLLMModel(name="text-completion-openai/babbage-002")
-        with pytest.raises(ValueError, match="2 results"):
-            # Confirming https://github.com/BerriAI/litellm/issues/12298
-            # does not silently pass through LMI
-            await model.call_single(
+        # https://github.com/BerriAI/litellm/issues/12298 — some models
+        # return n>1 results even when n=1 is requested. call_single should
+        # warn and return the first result rather than raising.
+        with caplog.at_level("WARNING", logger="lmi.llms"):
+            result = await model.call_single(
                 messages=[
                     Message(role="system", content="Answer in a concise tone."),
                     Message(content="What is your name?"),
                 ]
+            )
+        assert isinstance(result, LLMResult)
+        assert "2 results" in caplog.text
+
+    @pytest.mark.asyncio
+    async def test_call_single_empty_results_raises(self) -> None:
+        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+        with (
+            patch.object(LiteLLMModel, "call", new_callable=AsyncMock, return_value=[]),
+            pytest.raises(ValueError, match="Got 0 results"),
+        ):
+            await model.call_single(
+                messages=[Message(content="hello")],
             )
 
     @pytest.mark.asyncio
