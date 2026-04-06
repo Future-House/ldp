@@ -1395,7 +1395,7 @@ class TestResponsesAPI:
         ]
         rid, delta = _extract_previous_response_id(msgs)
         assert rid == "resp_x"
-        assert delta == []
+        assert not delta
 
     def test_convert_to_responses_input_basic(self) -> None:
         msgs = [

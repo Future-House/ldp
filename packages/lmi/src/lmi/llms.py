@@ -229,14 +229,12 @@ def _parse_responses_output(
     output: list[ResponseOutputMessage | ResponseFunctionToolCall],
 ) -> tuple[str | None, list[Message | ToolRequestMessage]]:
     """Convert Responses API output to aviary Messages."""
-    text_content = None
+    text_parts: list[str] = []
     tool_calls = []
 
     for item in output:
         if item.type == "message":
-            for c in item.content:
-                if c.type == "output_text":
-                    text_content = c.text
+            text_parts.extend(c.text for c in item.content if c.type == "output_text")
         elif item.type == "function_call":
             arguments = json.loads(item.arguments)
             tool_calls.append(
@@ -246,6 +244,8 @@ def _parse_responses_output(
                     function=ToolCallFunction(name=item.name, arguments=arguments),
                 )
             )
+
+    text_content = "\n".join(text_parts) if text_parts else None
 
     messages: list[Message | ToolRequestMessage] = []
     if tool_calls:
@@ -1418,8 +1418,7 @@ class LiteLLMModel(LLMModel):
             "input": responses_input,
             "tools": responses_tools,
             "store": True,
-            **kwargs,
-        }
+        } | kwargs
         if previous_response_id is not None:
             call_kwargs["previous_response_id"] = previous_response_id
 
@@ -1493,8 +1492,7 @@ class LiteLLMModel(LLMModel):
             "tools": responses_tools,
             "store": True,
             "stream": True,
-            **kwargs,
-        }
+        } | kwargs
         if previous_response_id is not None:
             call_kwargs["previous_response_id"] = previous_response_id
 
