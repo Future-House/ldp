@@ -63,6 +63,10 @@ jobs:
         run: rm -r ${{ steps.build-fhlmi.outputs.dist }}
       - run: uv sync
       - run: uv run refurb .
+      - name: Run deptry on LMI
+        run: uv run --directory packages/lmi deptry .
+      - name: Run deptry on LDP
+        run: uv run deptry .
       - if: matrix.python-version == '3.11' # Only need to run this on one version
         uses: suzuki-shunsuke/github-action-renovate-config-validator@v2.1.0
   macos:
