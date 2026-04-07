@@ -175,8 +175,10 @@ class FxnOp(Op[TOutput_co]):
 
     async def forward(self, *args, **kwargs) -> TOutput_co:
         if is_coroutine_callable(self.fxn):
-            return await self.fxn(*args, **kwargs)
-        return self.fxn(*args, **kwargs)
+            return await cast("Callable[..., Awaitable[TOutput_co]]", self.fxn)(
+                *args, **kwargs
+            )
+        return cast("Callable[..., TOutput_co]", self.fxn)(*args, **kwargs)
 
     @classmethod
     def backward(

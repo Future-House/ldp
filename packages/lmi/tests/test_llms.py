@@ -11,12 +11,24 @@ import numpy as np
 import pytest
 from aviary.core import Message, Tool, ToolCall, ToolRequestMessage, ToolResponseMessage
 from aviary.utils import encode_image_to_base64
+from openai.types.responses import (
+    ResponseFunctionToolCall,
+    ResponseOutputMessage,
+    ResponseOutputText,
+)
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
 from lmi.exceptions import JSONSchemaValidationError
 from lmi.llms import (
     CommonLLMNames,
     LiteLLMModel,
+    _convert_content_block_for_responses,
+    _convert_multimodal_content_for_responses,
+    _convert_to_responses_input,
+    _convert_tool_response_for_responses,
+    _convert_tools_for_responses,
+    _extract_previous_response_id,
+    _parse_responses_output,
     estimate_message_tokens,
     validate_json_completion,
 )
@@ -1324,3 +1336,309 @@ async def test_gemini3_tool_patch(
 
         tool_messages = [m for m in called_messages if m.role == "tool"]
         assert len(tool_messages) == expected_tool_role_count
+
+
+class TestResponsesAPI:
+    """Tests for Responses API support (conversion functions, delta detection, stateful calls)."""
+
+    def test_extract_previous_response_id_none(self) -> None:
+        msgs = [
+            Message(content="hi", role="user"),
+            Message(content="hello", role="assistant"),
+        ]
+        rid, delta = _extract_previous_response_id(msgs)
+        assert rid is None
+        assert delta is msgs
+
+    def test_extract_previous_response_id_found(self) -> None:
+        msgs = [
+            Message(content="hi", role="user"),
+            Message(
+                content="hello",
+                role="assistant",
+                info={"response_id": "resp_abc"},
+            ),
+            Message(content="thanks", role="user"),
+        ]
+        rid, delta = _extract_previous_response_id(msgs)
+        assert rid == "resp_abc"
+        assert len(delta) == 1
+        assert delta[0].content == "thanks"
+
+    def test_extract_previous_response_id_picks_last(self) -> None:
+        msgs = [
+            Message(content="hi", role="user"),
+            Message(
+                content="hello",
+                role="assistant",
+                info={"response_id": "resp_1"},
+            ),
+            Message(content="more", role="user"),
+            Message(
+                content="ok",
+                role="assistant",
+                info={"response_id": "resp_2"},
+            ),
+            Message(content="final", role="user"),
+        ]
+        rid, delta = _extract_previous_response_id(msgs)
+        assert rid == "resp_2"
+        assert len(delta) == 1
+        assert delta[0].content == "final"
+
+    def test_extract_previous_response_id_empty_delta(self) -> None:
+        """When the last message has a response_id, delta is empty."""
+        msgs = [
+            Message(content="hi", role="user"),
+            Message(
+                content="hello",
+                role="assistant",
+                info={"response_id": "resp_x"},
+            ),
+        ]
+        rid, delta = _extract_previous_response_id(msgs)
+        assert rid == "resp_x"
+        assert not delta
+
+    def test_convert_content_block_image(self) -> None:
+        block = {"type": "image_url", "image_url": {"url": "data:image/png;base64,ABC"}}
+        assert _convert_content_block_for_responses(block) == {
+            "type": "input_image",
+            "image_url": "data:image/png;base64,ABC",
+        }
+
+    def test_convert_content_block_text(self) -> None:
+        block = {"type": "text", "text": "hello"}
+        assert _convert_content_block_for_responses(block) == {
+            "type": "input_text",
+            "text": "hello",
+        }
+
+    def test_convert_content_block_passthrough(self) -> None:
+        block = {"type": "unknown", "data": 123}
+        assert _convert_content_block_for_responses(block) == block
+
+    def test_convert_tool_response_plain_text(self) -> None:
+        msg = ToolResponseMessage(
+            role="tool", content="just text", tool_call_id="c1", name="t"
+        )
+        assert _convert_tool_response_for_responses(msg) == "just text"
+
+    def test_convert_tool_response_empty(self) -> None:
+        msg = ToolResponseMessage(role="tool", content="", tool_call_id="c1", name="t")
+        assert not _convert_tool_response_for_responses(msg)
+
+    def test_convert_tool_response_json_images(self) -> None:
+        content = json.dumps([
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,X"}},
+            {"type": "text", "text": "caption"},
+        ])
+        msg = ToolResponseMessage(
+            role="tool",
+            content=content,
+            content_is_json_str=True,
+            tool_call_id="c1",
+            name="t",
+        )
+        result = _convert_tool_response_for_responses(msg)
+        assert result == [
+            {"type": "input_image", "image_url": "data:image/png;base64,X"},
+            {"type": "input_text", "text": "caption"},
+        ]
+
+    def test_convert_multimodal_content(self) -> None:
+        content = json.dumps([
+            {"type": "image_url", "image_url": {"url": "https://example.com/img.png"}},
+            {"type": "text", "text": "describe this"},
+        ])
+        msg = Message(role="user", content=content, content_is_json_str=True)
+        result = _convert_multimodal_content_for_responses(msg)
+        assert result == [
+            {"type": "input_image", "image_url": "https://example.com/img.png"},
+            {"type": "input_text", "text": "describe this"},
+        ]
+
+    def test_convert_multimodal_content_none_raises(self) -> None:
+        msg = Message(role="user", content=None)
+        with pytest.raises(TypeError, match="Multimodal content cannot be None"):
+            _convert_multimodal_content_for_responses(msg)
+
+    def test_convert_to_responses_input_basic(self) -> None:
+        msgs = [
+            Message(role="system", content="You are helpful."),
+            Message(role="user", content="Hello"),
+        ]
+        result = _convert_to_responses_input(msgs)
+        assert result == [
+            {"type": "message", "role": "system", "content": "You are helpful."},
+            {"type": "message", "role": "user", "content": "Hello"},
+        ]
+
+    def test_convert_to_responses_input_tool_request(self) -> None:
+        msgs: list[Message] = [
+            ToolRequestMessage(
+                role="assistant",
+                content=None,
+                tool_calls=[
+                    ToolCall(
+                        id="call_1",
+                        type="function",
+                        function={"name": "get_weather", "arguments": {"city": "NYC"}},
+                    )
+                ],
+            ),
+        ]
+        result = _convert_to_responses_input(msgs)
+        assert len(result) == 1
+        assert result[0]["type"] == "function_call"
+        assert result[0]["call_id"] == "call_1"
+        assert result[0]["name"] == "get_weather"
+
+    def test_convert_to_responses_input_tool_response(self) -> None:
+        msgs: list[Message] = [
+            ToolResponseMessage(
+                role="tool",
+                content="72°F",
+                tool_call_id="call_1",
+                name="get_weather",
+            ),
+        ]
+        result = _convert_to_responses_input(msgs)
+        assert result == [
+            {"type": "function_call_output", "call_id": "call_1", "output": "72°F"},
+        ]
+
+    def test_convert_tools_for_responses(self) -> None:
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get weather",
+                    "parameters": {"type": "object", "properties": {}},
+                },
+            }
+        ]
+        result = _convert_tools_for_responses(tools)
+        assert result is not None
+        assert len(result) == 1
+        assert result[0]["type"] == "function"
+        assert result[0]["name"] == "get_weather"
+        assert result[0]["strict"] is False
+
+    def test_convert_tools_for_responses_none(self) -> None:
+        assert _convert_tools_for_responses(None) is None
+        assert _convert_tools_for_responses([]) is None
+
+    def test_parse_responses_output_text(self) -> None:
+        output: list[ResponseOutputMessage | ResponseFunctionToolCall] = [
+            ResponseOutputMessage(
+                id="msg_1",
+                type="message",
+                role="assistant",
+                status="completed",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="Hello!", annotations=[]
+                    )
+                ],
+            )
+        ]
+        text, messages = _parse_responses_output(output)
+        assert text == "Hello!"
+        assert len(messages) == 1
+        assert messages[0].content == "Hello!"
+        assert messages[0].role == "assistant"
+
+    def test_parse_responses_output_tool_call(self) -> None:
+        output: list[ResponseOutputMessage | ResponseFunctionToolCall] = [
+            ResponseFunctionToolCall(
+                id="fc_1",
+                type="function_call",
+                call_id="call_1",
+                name="get_weather",
+                arguments='{"city": "NYC"}',
+                status="completed",
+            )
+        ]
+        text, messages = _parse_responses_output(output)
+        assert text is None
+        assert len(messages) == 1
+        assert isinstance(messages[0], ToolRequestMessage)
+        assert messages[0].tool_calls[0].function.name == "get_weather"
+        assert messages[0].tool_calls[0].id == "call_1"
+
+
+class TestResponsesAPIIntegration:
+    """Tests for Responses API call-level behavior with real API calls (VCR-recorded)."""
+
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.asyncio
+    async def test_basic_call(self) -> None:
+        """First turn: full history sent, response_id returned."""
+        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+        messages = [
+            Message(role="system", content="Respond with single words."),
+            Message(role="user", content="What color is the sky?"),
+        ]
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            results = await model.call(messages)
+
+        assert len(results) == 1
+        result = results[0]
+        assert result.text
+        assert result.response_id is not None
+        assert result.response_id.startswith("resp_")
+        assert result.messages is not None
+        assert result.messages[0].info is not None
+        assert result.messages[0].info["response_id"] == result.response_id
+
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.asyncio
+    async def test_multi_turn_stateful(self) -> None:
+        """Second turn uses previous_response_id, sends only delta."""
+        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+
+        messages_turn1 = [
+            Message(role="system", content="Respond with single words."),
+            Message(role="user", content="What color is the sky?"),
+        ]
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            results1 = await model.call(messages_turn1)
+
+        assert results1[0].response_id is not None
+        assert results1[0].messages is not None
+        first_response_msg = results1[0].messages[0]
+
+        messages_turn2 = [
+            *messages_turn1,
+            first_response_msg,
+            Message(role="user", content="And grass?"),
+        ]
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            results2 = await model.call(messages_turn2)
+
+        assert len(results2) == 1
+        assert results2[0].text
+        assert results2[0].response_id is not None
+        assert results2[0].response_id != results1[0].response_id
+
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.asyncio
+    async def test_responses_api_off_ignores_response_id(self) -> None:
+        """When USE_RESPONSES_API is off, response_id in Message.info is inert."""
+        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+        messages = [
+            Message(role="user", content="Hello"),
+            Message(
+                role="assistant",
+                content="Hi!",
+                info={"response_id": "resp_ignored"},
+            ),
+            Message(role="user", content="How are you?"),
+        ]
+        with patch("lmi.llms.USE_RESPONSES_API", new=False):
+            results = await model.call(messages)
+
+        assert len(results) == 1
+        assert results[0].response_id is None
