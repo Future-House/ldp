@@ -88,6 +88,7 @@ optional_dependencies_dev_groups = ["dev", "typing"]
 
 [tool.deptry.per_rule_ignores]
 # Work around https://github.com/osprey-oss/deptry/issues/1533
+DEP002 = ["orjson"]  # Required at runtime by litellm for Responses API
 DEP004 = ["dotenv", "google", "httpx_aiohttp", "pytest"]
 
 [tool.ruff]
