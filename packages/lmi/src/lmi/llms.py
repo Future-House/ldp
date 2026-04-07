@@ -88,82 +88,45 @@ from . import (
 logger = logging.getLogger(__name__)
 
 
-def _convert_tool_response_content(content: str | None) -> str | list[dict[str, Any]]:
-    """Convert tool response content to Responses API format.
+def _convert_content_block_for_responses(block: dict[str, Any]) -> dict[str, Any]:
+    """Convert a single Chat Completions content block to Responses API format.
 
-    Aviary stores images as JSON: [{"type": "image_url", "image_url": {"url": "..."}}]
-    Responses API expects: [{"type": "input_image", "image_url": "..."}]
+    Aviary format: {"type": "image_url", "image_url": {"url": "..."}}
+    Responses API: {"type": "input_image", "image_url": "..."}
     """
-    if not content:
+    if block.get("type") == "image_url":
+        return {
+            "type": "input_image",
+            "image_url": block.get("image_url", {}).get("url", ""),
+        }
+    if block.get("type") == "text":
+        return {
+            "type": "input_text",
+            "text": block.get("text", ""),
+        }
+    return block
+
+
+def _convert_tool_response_for_responses(
+    msg: ToolResponseMessage,
+) -> str | list[dict[str, Any]]:
+    """Convert tool response content to Responses API format."""
+    if not msg.content:
         return ""
-    if content.startswith("["):
-        try:
-            items = json.loads(content)
-            if isinstance(items, list):
-                converted = []
-                for item in items:
-                    if item.get("type") == "image_url":
-                        image_url = item.get("image_url", {}).get("url", "")
-                        converted.append({
-                            "type": "input_image",
-                            "image_url": image_url,
-                        })
-                    elif item.get("type") == "text":
-                        converted.append({
-                            "type": "input_text",
-                            "text": item.get("text", ""),
-                        })
-                    else:
-                        converted.append(item)
-                return converted
-        except json.JSONDecodeError:
-            logger.warning(
-                "Tool response content starts with '[' but is not valid JSON;"
-                f" treating as plain text. Content: {content!r}"
-            )
-    return content
+    if not msg.content_is_json_str:
+        return msg.content
+    items = json.loads(msg.content)
+    if not isinstance(items, list):
+        return msg.content
+    return [_convert_content_block_for_responses(item) for item in items]
 
 
-def _convert_multimodal_content_for_responses(
-    content: str | None,
-) -> list[dict[str, Any]]:
-    """Convert multimodal content from Chat Completions format to Responses API format.
-
-    Aviary stores multimodal content as JSON: [{"type": "image_url", "image_url": {"url": "..."}}]
-    Responses API expects: [{"type": "input_image", "image_url": "..."}]
-
-    Examples:
-        >>> _convert_multimodal_content_for_responses(
-        ...     '[{"type": "image_url", "image_url": {"url": "data:image/png;base64,ABC"}}]'
-        ... )
-        [{'type': 'input_image', 'image_url': 'data:image/png;base64,ABC'}]
-
-        >>> _convert_multimodal_content_for_responses(
-        ...     '[{"type": "text", "text": "What is this?"}]'
-        ... )
-        [{'type': 'input_text', 'text': 'What is this?'}]
-    """
-    if content is None:
-        raise ValueError("Multimodal content cannot be None.")
-    items = json.loads(content)
-    converted = []
-    for item in items:
-        if item.get("type") == "image_url":
-            image_url = item.get("image_url", {}).get("url", "")
-            converted.append({
-                "type": "input_image",
-                "image_url": image_url,
-            })
-        elif item.get("type") == "text":
-            converted.append({
-                "type": "input_text",
-                "text": item.get("text", ""),
-            })
-        else:
-            raise NotImplementedError(
-                f"Unknown multimodal content type {item.get('type')!r} in item {item!r}."
-            )
-    return converted
+def _convert_multimodal_content_for_responses(msg: Message) -> list[dict[str, Any]]:
+    """Convert multimodal message content to Responses API format."""
+    if msg.content is None:
+        raise TypeError("Multimodal content cannot be None.")
+    items = json.loads(msg.content)
+    return [_convert_content_block_for_responses(item) for item in items]
 
 
 def _convert_to_responses_input(messages: list[Message]) -> list[dict[str, Any]]:
@@ -174,7 +137,7 @@ def _convert_to_responses_input(messages: list[Message]) -> list[dict[str, Any]]
             result.append({
                 "type": "function_call_output",
                 "call_id": msg.tool_call_id,
-                "output": _convert_tool_response_content(msg.content),
+                "output": _convert_tool_response_for_responses(msg),
             })
         elif isinstance(msg, ToolRequestMessage):
             if msg.content:
@@ -196,7 +159,7 @@ def _convert_to_responses_input(messages: list[Message]) -> list[dict[str, Any]]
             result.append({
                 "type": "message",
                 "role": msg.role,
-                "content": _convert_multimodal_content_for_responses(msg.content),
+                "content": _convert_multimodal_content_for_responses(msg),
             })
         else:
             result.append({

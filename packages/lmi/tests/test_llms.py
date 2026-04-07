@@ -22,7 +22,10 @@ from lmi.exceptions import JSONSchemaValidationError
 from lmi.llms import (
     CommonLLMNames,
     LiteLLMModel,
+    _convert_content_block_for_responses,
+    _convert_multimodal_content_for_responses,
     _convert_to_responses_input,
+    _convert_tool_response_for_responses,
     _convert_tools_for_responses,
     _extract_previous_response_id,
     _parse_responses_output,
@@ -1397,6 +1400,69 @@ class TestResponsesAPI:
         assert rid == "resp_x"
         assert not delta
 
+    def test_convert_content_block_image(self) -> None:
+        block = {"type": "image_url", "image_url": {"url": "data:image/png;base64,ABC"}}
+        assert _convert_content_block_for_responses(block) == {
+            "type": "input_image",
+            "image_url": "data:image/png;base64,ABC",
+        }
+
+    def test_convert_content_block_text(self) -> None:
+        block = {"type": "text", "text": "hello"}
+        assert _convert_content_block_for_responses(block) == {
+            "type": "input_text",
+            "text": "hello",
+        }
+
+    def test_convert_content_block_passthrough(self) -> None:
+        block = {"type": "unknown", "data": 123}
+        assert _convert_content_block_for_responses(block) == block
+
+    def test_convert_tool_response_plain_text(self) -> None:
+        msg = ToolResponseMessage(
+            role="tool", content="just text", tool_call_id="c1", name="t"
+        )
+        assert _convert_tool_response_for_responses(msg) == "just text"
+
+    def test_convert_tool_response_empty(self) -> None:
+        msg = ToolResponseMessage(role="tool", content="", tool_call_id="c1", name="t")
+        assert not _convert_tool_response_for_responses(msg)
+
+    def test_convert_tool_response_json_images(self) -> None:
+        content = json.dumps([
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,X"}},
+            {"type": "text", "text": "caption"},
+        ])
+        msg = ToolResponseMessage(
+            role="tool",
+            content=content,
+            content_is_json_str=True,
+            tool_call_id="c1",
+            name="t",
+        )
+        result = _convert_tool_response_for_responses(msg)
+        assert result == [
+            {"type": "input_image", "image_url": "data:image/png;base64,X"},
+            {"type": "input_text", "text": "caption"},
+        ]
+
+    def test_convert_multimodal_content(self) -> None:
+        content = json.dumps([
+            {"type": "image_url", "image_url": {"url": "https://example.com/img.png"}},
+            {"type": "text", "text": "describe this"},
+        ])
+        msg = Message(role="user", content=content, content_is_json_str=True)
+        result = _convert_multimodal_content_for_responses(msg)
+        assert result == [
+            {"type": "input_image", "image_url": "https://example.com/img.png"},
+            {"type": "input_text", "text": "describe this"},
+        ]
+
+    def test_convert_multimodal_content_none_raises(self) -> None:
+        msg = Message(role="user", content=None)
+        with pytest.raises(TypeError, match="Multimodal content cannot be None"):
+            _convert_multimodal_content_for_responses(msg)
+
     def test_convert_to_responses_input_basic(self) -> None:
         msgs = [
             Message(role="system", content="You are helpful."),
@@ -1502,143 +1568,66 @@ class TestResponsesAPI:
         assert messages[0].tool_calls[0].function.name == "get_weather"
         assert messages[0].tool_calls[0].id == "call_1"
 
+
+class TestResponsesAPIIntegration:
+    """Tests for Responses API call-level behavior with real API calls (VCR-recorded)."""
+
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
-    async def test_aresponses_sets_response_id(self) -> None:
-        """Verify _aresponses sets response_id on both LLMResult and Message.info."""
-        mock_response = Mock()
-        mock_response.id = "resp_test123"
-        mock_response.model = "gpt-4o-mini"
-        mock_response.output = [
-            ResponseOutputMessage(
-                id="msg_1",
-                type="message",
-                role="assistant",
-                status="completed",
-                content=[
-                    ResponseOutputText(
-                        type="output_text", text="Hi there!", annotations=[]
-                    )
-                ],
-            )
+    async def test_basic_call(self) -> None:
+        """First turn: full history sent, response_id returned."""
+        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+        messages = [
+            Message(role="system", content="Respond with single words."),
+            Message(role="user", content="What color is the sky?"),
         ]
-        mock_response.usage = Mock()
-        mock_response.usage.input_tokens = 10
-        mock_response.usage.output_tokens = 5
-
-        mock_router = AsyncMock()
-        mock_router.aresponses = AsyncMock(return_value=mock_response)
-
-        model = LiteLLMModel(name="gpt-4o-mini")
-        messages = [Message(role="user", content="Hello")]
-
-        with patch("lmi.llms.track_costs", side_effect=lambda f: f):
-            results = await model._aresponses(messages, mock_router, tools=None)
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            results = await model.call(messages)
 
         assert len(results) == 1
         result = results[0]
-        assert result.response_id == "resp_test123"
+        assert result.text
+        assert result.response_id is not None
+        assert result.response_id.startswith("resp_")
         assert result.messages is not None
         assert result.messages[0].info is not None
-        assert result.messages[0].info["response_id"] == "resp_test123"
-        assert result.text == "Hi there!"
+        assert result.messages[0].info["response_id"] == result.response_id
 
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
-    async def test_call_with_responses_api_first_turn(self) -> None:
-        """First turn: no response_id in messages, sends full history."""
-        model = LiteLLMModel(name="gpt-4o-mini")
-        messages = [
-            Message(role="system", content="Be helpful."),
-            Message(role="user", content="Hello"),
+    async def test_multi_turn_stateful(self) -> None:
+        """Second turn uses previous_response_id, sends only delta."""
+        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+
+        messages_turn1 = [
+            Message(role="system", content="Respond with single words."),
+            Message(role="user", content="What color is the sky?"),
         ]
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            results1 = await model.call(messages_turn1)
 
-        mock_result = LLMResult(
-            model="gpt-4o-mini",
-            text="Hi!",
-            messages=[
-                Message(
-                    role="assistant",
-                    content="Hi!",
-                    info={"response_id": "resp_first"},
-                )
-            ],
-            response_id="resp_first",
-        )
+        assert results1[0].response_id is not None
+        assert results1[0].messages is not None
+        first_response_msg = results1[0].messages[0]
 
-        with (
-            patch("lmi.llms.USE_RESPONSES_API", new=True),
-            patch.object(LiteLLMModel, "get_router", return_value=Mock()),
-            patch.object(
-                LiteLLMModel,
-                "_aresponses",
-                new_callable=AsyncMock,
-                return_value=[mock_result],
-            ) as mock_aresponses,
-        ):
-            results = await model.call(messages)
-
-        assert len(results) == 1
-        assert results[0].response_id == "resp_first"
-
-        call_args = mock_aresponses.call_args
-        sent_messages = call_args[0][0]
-        assert len(sent_messages) == 2
-
-        assert call_args.kwargs["previous_response_id"] is None
-
-    @pytest.mark.asyncio
-    async def test_call_with_responses_api_subsequent_turn(self) -> None:
-        """Subsequent turn: response_id in messages, sends only delta."""
-        model = LiteLLMModel(name="gpt-4o-mini")
-        messages = [
-            Message(role="system", content="Be helpful."),
-            Message(role="user", content="Hello"),
-            Message(
-                role="assistant",
-                content="Hi!",
-                info={"response_id": "resp_first"},
-            ),
-            Message(role="user", content="How are you?"),
+        messages_turn2 = [
+            *messages_turn1,
+            first_response_msg,
+            Message(role="user", content="And grass?"),
         ]
+        with patch("lmi.llms.USE_RESPONSES_API", new=True):
+            results2 = await model.call(messages_turn2)
 
-        mock_result = LLMResult(
-            model="gpt-4o-mini",
-            text="Great!",
-            messages=[
-                Message(
-                    role="assistant",
-                    content="Great!",
-                    info={"response_id": "resp_second"},
-                )
-            ],
-            response_id="resp_second",
-        )
+        assert len(results2) == 1
+        assert results2[0].text
+        assert results2[0].response_id is not None
+        assert results2[0].response_id != results1[0].response_id
 
-        with (
-            patch("lmi.llms.USE_RESPONSES_API", new=True),
-            patch.object(LiteLLMModel, "get_router", return_value=Mock()),
-            patch.object(
-                LiteLLMModel,
-                "_aresponses",
-                new_callable=AsyncMock,
-                return_value=[mock_result],
-            ) as mock_aresponses,
-        ):
-            results = await model.call(messages)
-
-        assert len(results) == 1
-        assert results[0].response_id == "resp_second"
-
-        call_args = mock_aresponses.call_args
-        sent_messages = call_args[0][0]
-        assert len(sent_messages) == 1
-        assert sent_messages[0].content == "How are you?"
-
-        assert call_args.kwargs["previous_response_id"] == "resp_first"
-
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
-    async def test_call_without_responses_api_ignores_response_id(self) -> None:
+    async def test_responses_api_off_ignores_response_id(self) -> None:
         """When USE_RESPONSES_API is off, response_id in Message.info is inert."""
-        model = LiteLLMModel(name="gpt-4o-mini")
+        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
         messages = [
             Message(role="user", content="Hello"),
             Message(
@@ -1648,25 +1637,8 @@ class TestResponsesAPI:
             ),
             Message(role="user", content="How are you?"),
         ]
-
-        mock_result = LLMResult(
-            model="gpt-4o-mini",
-            text="Fine!",
-            messages=[Message(role="assistant", content="Fine!")],
-        )
-
-        with (
-            patch("lmi.llms.USE_RESPONSES_API", new=False),
-            patch.object(
-                LiteLLMModel,
-                "acompletion",
-                new_callable=AsyncMock,
-                return_value=[mock_result],
-            ) as mock_acompletion,
-        ):
+        with patch("lmi.llms.USE_RESPONSES_API", new=False):
             results = await model.call(messages)
 
         assert len(results) == 1
         assert results[0].response_id is None
-        sent_messages = mock_acompletion.call_args[0][0]
-        assert len(sent_messages) == 3
