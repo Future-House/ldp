@@ -10,10 +10,10 @@ fails in ways that another model might handle.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
 import litellm
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, SecretStr
 
 from lmi.constants import DEFAULT_VERTEX_SAFETY_SETTINGS
 
@@ -119,6 +119,53 @@ class LLMConfig(BaseModel):
     )
 
     @classmethod
+    def coerce(cls, v: Any) -> LLMConfig:
+        """Accept an `LLMConfig` or any dict shape LMI knows about.
+
+        Supported inputs:
+
+        - an `LLMConfig` instance (passes through)
+        - a dict with `"models"` — the typed-dict form of `LLMConfig`
+        - a dict with `"model_list"` — the legacy litellm-Router shape; see
+          `from_legacy_dict`
+        - a dict with `"name"` — a bare model name plus flat request-shape
+          kwargs (e.g. `temperature`, `max_tokens`); built via
+          `ModelSpec.from_name`
+        """
+        if isinstance(v, cls):
+            return v
+        if not isinstance(v, dict):
+            raise TypeError(f"Cannot build an LLMConfig from {type(v).__name__}")
+        if "models" in v:
+            return cls.model_validate(v)
+        if "model_list" in v:
+            return cls.from_legacy_dict(v)
+        if "name" in v:
+            kwargs = dict(v)
+            name = kwargs.pop("name")
+            return cls(models=[ModelSpec.from_name(name, **kwargs)])
+        raise ValueError(
+            "Can't infer LLMConfig shape from dict; expected 'models',"
+            " 'model_list', or 'name' key"
+        )
+
+    def with_extra_params(self, **params: Any) -> LLMConfig:
+        """Return a copy where every `ModelSpec.extra_params` has `params` merged in.
+
+        Useful for chain-wide request-shape additions like stop sequences: the
+        caller doesn't have to rebuild each spec individually, and the original
+        `LLMConfig` is left untouched.
+        """
+        return self.model_copy(
+            update={
+                "models": [
+                    m.model_copy(update={"extra_params": {**m.extra_params, **params}})
+                    for m in self.models
+                ]
+            }
+        )
+
+    @classmethod
     def from_legacy_dict(cls, legacy: dict[str, Any]) -> LLMConfig:
         """Build an `LLMConfig` from the legacy dict-shaped configuration.
 
@@ -195,3 +242,10 @@ def _spec_from_legacy_params(
             k: v for k, v in params.items() if k not in _RESERVED_LEGACY_PARAMS
         },
     )
+
+
+# Pydantic field annotation that accepts any input `LLMConfig.coerce` supports.
+# Use in place of a bare `LLMConfig` when you want the model to accept both
+# typed instances and the dict shapes LMI recognises, without writing a
+# `@field_validator` on every class.
+LLMConfigField = Annotated[LLMConfig, BeforeValidator(LLMConfig.coerce)]

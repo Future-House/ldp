@@ -1,9 +1,9 @@
 from typing import Any
 
 import pytest
-from pydantic import SecretStr, ValidationError
+from pydantic import BaseModel, Field, SecretStr, ValidationError
 
-from lmi.config import LLMConfig, ModelSpec
+from lmi.config import LLMConfig, LLMConfigField, ModelSpec
 from lmi.constants import DEFAULT_VERTEX_SAFETY_SETTINGS
 from lmi.llms import CommonLLMNames, LiteLLMModel
 
@@ -300,3 +300,95 @@ class TestLiteLLMModelPopulatesLLMConfig:
         extras = model.llm_config.models[0].extra_params
         assert extras["temperature"] == expected_temp
         assert extras["max_tokens"] == expected_max_tokens
+
+
+class TestLLMConfigCoerce:
+    def test_passthrough_llmconfig_instance(self) -> None:
+        cfg = LLMConfig(models=[ModelSpec(name="gpt-4o-mini")])
+        assert LLMConfig.coerce(cfg) is cfg
+
+    def test_typed_dict(self) -> None:
+        cfg = LLMConfig.coerce({"models": [{"name": "gpt-4o-mini"}]})
+        assert [m.name for m in cfg.models] == ["gpt-4o-mini"]
+
+    def test_legacy_router_dict(self) -> None:
+        cfg = LLMConfig.coerce({
+            "model_list": [
+                {
+                    "model_name": "primary",
+                    "litellm_params": {"model": "gpt-4o-mini", "temperature": 0.5},
+                },
+            ]
+        })
+        assert cfg.models[0].name == "gpt-4o-mini"
+        assert cfg.models[0].extra_params == {"temperature": 0.5}
+
+    def test_name_plus_flat_kwargs(self) -> None:
+        cfg = LLMConfig.coerce({
+            "name": "gpt-4o-mini",
+            "temperature": 0.1,
+            "timeout": 30.0,
+        })
+        spec = cfg.models[0]
+        assert spec.name == "gpt-4o-mini"
+        assert spec.timeout == 30.0
+        assert spec.extra_params["temperature"] == 0.1
+
+    def test_name_plus_flat_does_not_mutate_input(self) -> None:
+        src = {"name": "gpt-4o-mini", "temperature": 0.1}
+        LLMConfig.coerce(src)
+        # coerce() must not mutate the caller's dict.
+        assert src == {"name": "gpt-4o-mini", "temperature": 0.1}
+
+    def test_empty_dict_raises(self) -> None:
+        with pytest.raises(ValueError, match="Can't infer"):
+            LLMConfig.coerce({})
+
+    def test_non_dict_non_llmconfig_raises(self) -> None:
+        with pytest.raises(TypeError, match="Cannot build"):
+            LLMConfig.coerce(42)
+
+
+class TestLLMConfigField:
+    """Pydantic fields annotated with `LLMConfigField` coerce all supported input shapes."""
+
+    class _Holder(BaseModel):
+        cfg: LLMConfigField = Field(
+            default_factory=lambda: LLMConfig(models=[ModelSpec(name="gpt-4o-mini")])
+        )
+
+    def test_accepts_instance(self) -> None:
+        expected = LLMConfig(models=[ModelSpec(name="x")])
+        h = self._Holder(cfg=expected)
+        # Pydantic copies the instance through BeforeValidator but preserves contents.
+        assert [m.name for m in h.cfg.models] == ["x"]
+
+    def test_accepts_typed_dict(self) -> None:
+        h = self._Holder(cfg={"models": [{"name": "y"}]})
+        assert [m.name for m in h.cfg.models] == ["y"]
+
+    def test_accepts_legacy_dict(self) -> None:
+        h = self._Holder(
+            cfg={
+                "model_list": [
+                    {
+                        "model_name": "primary",
+                        "litellm_params": {"model": "gpt-4o-mini"},
+                    }
+                ]
+            }
+        )
+        assert h.cfg.models[0].name == "gpt-4o-mini"
+
+    def test_accepts_name_plus_flat(self) -> None:
+        h = self._Holder(cfg={"name": "gpt-4o-mini", "temperature": 0.1})
+        assert h.cfg.models[0].extra_params["temperature"] == 0.1
+
+    def test_rejects_unrecognized_dict(self) -> None:
+        with pytest.raises(ValidationError):
+            self._Holder(cfg={"unknown_key": "value"})
+
+    def test_rejects_wrong_type(self) -> None:
+        # `TypeError` raised inside `BeforeValidator` propagates unwrapped.
+        with pytest.raises(TypeError, match="Cannot build"):
+            self._Holder(cfg=42)

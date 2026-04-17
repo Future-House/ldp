@@ -14,10 +14,10 @@ undertake intermediate reasoning steps as environment steps.
 import logging
 import operator
 from collections.abc import Callable
-from typing import Any
 
 from aviary.core import Message, Tool, ToolCall, ToolRequestMessage
 from lmi import CommonLLMNames
+from lmi.config import LLMConfig, LLMConfigField, ModelSpec
 from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.graph import FxnOp, LLMCallOp, OpResult, compute_graph
@@ -42,12 +42,16 @@ class TreeofThoughtsAgent(BaseModel, Agent[SimpleAgentState]):
     # passed around) or in the internal Ops
     model_config = ConfigDict(frozen=True)
 
-    llm_model: dict[str, Any] = Field(
-        default={
-            "name": CommonLLMNames.GPT_4O.value,
-            "temperature": 0.1,
-            "timeout": DEFAULT_LLM_COMPLETION_TIMEOUT,
-        },
+    llm_config: LLMConfigField = Field(
+        default_factory=lambda: LLMConfig(
+            models=[
+                ModelSpec.from_name(
+                    CommonLLMNames.GPT_4O.value,
+                    temperature=0.1,
+                    timeout=DEFAULT_LLM_COMPLETION_TIMEOUT,
+                )
+            ]
+        ),
         description="Starting configuration for the LLM model.",
     )
     value_prompt_func: Callable[[str, str], str] = Field(
@@ -109,7 +113,7 @@ class TreeofThoughtsAgent(BaseModel, Agent[SimpleAgentState]):
                 proposal_msgs = await self._prepend_op(
                     new_state.messages, sys_content=proposal_prompt_init
                 )
-                proposal = await self._llm_call_op(self.llm_model, msgs=proposal_msgs)
+                proposal = await self._llm_call_op(self.llm_config, msgs=proposal_msgs)
                 # Append candidate paths to the current paths
                 candidate_paths += [
                     path + _ + "\n"
@@ -124,7 +128,9 @@ class TreeofThoughtsAgent(BaseModel, Agent[SimpleAgentState]):
                 value_msgs = await self._prepend_op(
                     new_state.messages, sys_content=value_prompt_init
                 )
-                value_outputs = await self._llm_call_op(self.llm_model, msgs=value_msgs)
+                value_outputs = await self._llm_call_op(
+                    self.llm_config, msgs=value_msgs
+                )
                 values.append(eval_function(path, [value_outputs.value.content or ""]))
 
             # greedy selection
