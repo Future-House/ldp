@@ -386,38 +386,23 @@ class TestLiteLLMModel:
         assert result.completion_count > 0
         assert result.cost > 0
 
-    @pytest.mark.parametrize(
-        "config",
-        [
-            pytest.param(
-                {
-                    "name": CommonLLMNames.OPENAI_TEST.value,
-                    "model_list": [
-                        {
-                            "model_name": CommonLLMNames.OPENAI_TEST.value,
-                            "litellm_params": {
-                                "model": CommonLLMNames.OPENAI_TEST.value,
-                                "temperature": 0,
-                                "max_tokens": 56,
-                                "logprobs": True,
-                            },
-                        }
-                    ],
-                },
-                id="with-router",
-            ),
-            pytest.param(
-                {
-                    "pass_through_router": True,
-                    "router_kwargs": {"temperature": 0, "max_tokens": 56},
-                },
-                id="without-router",
-            ),
-        ],
-    )
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
-    async def test_call_single(self, config: dict[str, Any], subtests) -> None:
+    async def test_call_single(self, subtests) -> None:
+        config = {
+            "name": CommonLLMNames.OPENAI_TEST.value,
+            "model_list": [
+                {
+                    "model_name": CommonLLMNames.OPENAI_TEST.value,
+                    "litellm_params": {
+                        "model": CommonLLMNames.OPENAI_TEST.value,
+                        "temperature": 0,
+                        "max_tokens": 56,
+                        "logprobs": True,
+                    },
+                }
+            ],
+        }
         llm = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value, config=config)
 
         outputs = []
@@ -564,60 +549,35 @@ class TestLiteLLMModel:
                 usage=usage,
             )
 
-        # Mock the router to return different logprobs scenarios
-        with patch.object(model, "_router") as mock_router:
-            # Mock completion with None logprobs
-            mock_completion_none = _build_mock_completion(delta_content="Hello")
-
-            # Mock completion with logprobs but no content
-            mock_completion_no_content = _build_mock_completion(
-                logprobs=Mock(content=None),
-                delta_content=" world",
-            )
-
-            # Mock completion with empty content list
-            mock_completion_empty = _build_mock_completion(
-                logprobs=Mock(content=[]), delta_content="!"
-            )
-
-            # Mock completion with valid logprobs
-            mock_completion_valid = _build_mock_completion(
-                logprobs=Mock(content=[Mock(logprob=-0.5)])
-            )
-
-            # Mock completion with usage info (final chunk has finish_reason)
-            mock_completion_usage = _build_mock_completion(
+        chunks = [
+            _build_mock_completion(delta_content="Hello"),
+            _build_mock_completion(logprobs=Mock(content=None), delta_content=" world"),
+            _build_mock_completion(logprobs=Mock(content=[]), delta_content="!"),
+            _build_mock_completion(logprobs=Mock(content=[Mock(logprob=-0.5)])),
+            # Final chunk: includes usage and the terminal finish_reason.
+            _build_mock_completion(
                 usage=Mock(prompt_tokens=10, completion_tokens=5),
                 finish_reason="stop",
-            )
+            ),
+        ]
 
-            # Create async generator that yields mock completions
-            async def mock_stream():  # noqa: RUF029
-                async def mock_stream_iter():  # noqa: RUF029
-                    yield mock_completion_none
-                    yield mock_completion_no_content
-                    yield mock_completion_empty
-                    yield mock_completion_valid
-                    yield mock_completion_usage
+        async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
+            for chunk in chunks:
+                yield chunk
 
-                return mock_stream_iter()
-
-            mock_router.acompletion.return_value = mock_stream()
-
-            # Test that the method doesn't raise exceptions
+        with patch("litellm.acompletion", AsyncMock(return_value=mock_stream())):
             async_iterable = await model.acompletion_iter(messages)
             results = [result async for result in async_iterable]
 
-            # Verify we got one final result
-            assert len(results) == 1
-            result = results[0]
-            assert isinstance(result, LLMResult)
-            assert result.text == "Hello world!"
-            assert result.model == "test-model"
-            assert result.logprob == -0.5
-            assert result.prompt_count == 10
-            assert result.completion_count == 5
-            assert result.finish_reason == "stop"
+        assert len(results) == 1
+        result = results[0]
+        assert isinstance(result, LLMResult)
+        assert result.text == "Hello world!"
+        assert result.model == "test-model"
+        assert result.logprob == -0.5
+        assert result.prompt_count == 10
+        assert result.completion_count == 5
+        assert result.finish_reason == "stop"
 
 
 class DummyOutputSchema(BaseModel):

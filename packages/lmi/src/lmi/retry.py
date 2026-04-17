@@ -35,6 +35,11 @@ _FALLBACKABLE: tuple[type[BaseException], ...] = (
     litellm.ContextWindowExceededError,
     litellm.NotFoundError,
     litellm.ContentPolicyViolationError,
+    # Auth/permission failures: when a user configures a fallback chain, they
+    # likely have distinct credentials per entry, so a 401/403 on one model
+    # shouldn't block the others.
+    litellm.AuthenticationError,
+    litellm.PermissionDeniedError,
     ModelRefusalError,
 )
 

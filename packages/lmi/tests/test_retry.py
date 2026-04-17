@@ -13,7 +13,18 @@ from lmi.retry import (
 
 def _litellm_exc(cls, message: str = "boom"):
     """Instantiate a litellm exception uniformly across variants."""
-    return cls(message=message, model="gpt-4o-mini", llm_provider="openai")
+    kwargs: dict[str, object] = {
+        "message": message,
+        "model": "gpt-4o-mini",
+        "llm_provider": "openai",
+    }
+    # PermissionDeniedError inherits from openai.PermissionDeniedError which
+    # requires a `response` argument.
+    if cls is litellm.PermissionDeniedError:
+        import httpx
+
+        kwargs["response"] = httpx.Response(403, request=httpx.Request("POST", "x"))
+    return cls(**kwargs)
 
 
 class TestShouldRetry:
@@ -37,6 +48,7 @@ class TestShouldRetry:
             litellm.NotFoundError,
             litellm.ContentPolicyViolationError,
             litellm.AuthenticationError,
+            litellm.PermissionDeniedError,
             litellm.BadRequestError,
         ],
     )
@@ -60,6 +72,8 @@ class TestShouldFallback:
             litellm.ContextWindowExceededError,
             litellm.NotFoundError,
             litellm.ContentPolicyViolationError,
+            litellm.AuthenticationError,
+            litellm.PermissionDeniedError,
         ],
     )
     def test_stable_errors_fallback(self, cls) -> None:
@@ -92,10 +106,9 @@ class TestShouldFallback:
         [
             litellm.RateLimitError,
             litellm.Timeout,
-            litellm.AuthenticationError,
         ],
     )
-    def test_retryable_or_fatal_does_not_fall_back(self, cls) -> None:
+    def test_retryable_errors_do_not_fall_back(self, cls) -> None:
         assert should_fallback(_litellm_exc(cls)) is False
 
 

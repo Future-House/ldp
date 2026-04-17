@@ -125,14 +125,28 @@ class TestRunWithFallbacks:
     @pytest.mark.asyncio
     async def test_fatal_exception_propagates(self) -> None:
         model = _model()
-        auth_err = litellm.AuthenticationError(
-            message="bad key", model=PRIMARY, llm_provider="openai"
+        # A plain BadRequestError (malformed request, not a provider-limit one)
+        # indicates a caller bug; it can't be fixed by another model.
+        bad = litellm.BadRequestError(
+            message="malformed request", model=PRIMARY, llm_provider="openai"
         )
-        attempt = AsyncMock(side_effect=[auth_err])
-        with pytest.raises(litellm.AuthenticationError):
+        attempt = AsyncMock(side_effect=[bad])
+        with pytest.raises(litellm.BadRequestError):
             await model._run_with_fallbacks(attempt)
         # Did not fall back to the second model.
         assert attempt.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_auth_error_advances_to_fallback(self) -> None:
+        model = _model()
+        auth_err = litellm.AuthenticationError(
+            message="bad key", model=PRIMARY, llm_provider="openai"
+        )
+        attempt = AsyncMock(side_effect=[auth_err, "ok"])
+        result = await model._run_with_fallbacks(attempt)
+        assert result == "ok"
+        specs = [call.args[0] for call in attempt.await_args_list]
+        assert [s.name for s in specs] == [PRIMARY, FALLBACK]
 
     @pytest.mark.asyncio
     async def test_all_models_exhausted_raises(self) -> None:
@@ -301,14 +315,13 @@ class TestCallEndToEnd:
     @pytest.mark.asyncio
     async def test_fatal_exception_propagates_unwrapped(self) -> None:
         model = _model()
-        auth_err = litellm.AuthenticationError(
-            message="bad key", model=PRIMARY, llm_provider="openai"
+        # Plain BadRequestError = malformed request / caller bug; not fallback-able.
+        bad = litellm.BadRequestError(
+            message="malformed request", model=PRIMARY, llm_provider="openai"
         )
         with (
-            patch(
-                "litellm.acompletion", AsyncMock(side_effect=[auth_err])
-            ) as mock_call,
-            pytest.raises(litellm.AuthenticationError),
+            patch("litellm.acompletion", AsyncMock(side_effect=[bad])) as mock_call,
+            pytest.raises(litellm.BadRequestError),
         ):
             await model.call([Message(content="hi")])
         assert mock_call.await_count == 1
