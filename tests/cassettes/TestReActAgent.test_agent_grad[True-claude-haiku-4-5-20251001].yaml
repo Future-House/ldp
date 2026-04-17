@@ -1,15 +1,14 @@
 interactions:
   - request:
       body:
-        '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":[{"type":"text","text":"Write
-        a 5 word story via print_story"}]}],"temperature":0.1,"stop_sequences":["Observation:"],"system":[{"type":"text","text":"Answer
-        the following questions as best you can. You have access to the following tools:\n\nNAME:
-        print_story\n\nSYNOPSIS:\n    print_story(string story)\n\nDESCRIPTION:\n    Print
-        a story.\n\nPARAMETERS:\n    story (string): Story to print.\n\nNAME: cast_float\n\nSYNOPSIS:\n    cast_float(string
-        x)\n\nDESCRIPTION:\n    Cast the input argument x to a float.\n\nPARAMETERS:\n    x
-        (string): No description provided.\n\nNAME: cast_int\n\nSYNOPSIS:\n    cast_int(number
-        x)\n\nDESCRIPTION:\n    Cast the input argument x to an integer.\n\nPARAMETERS:\n    x
-        (number): No description provided.\n\nNAME: get_random_int\n\nSYNOPSIS:\n    get_random_int()\n\nDESCRIPTION:\n    Get
+        '{"messages":[{"role":"system","content":"Answer the following questions
+        as best you can. You have access to the following tools:\n\nNAME: print_story\n\nSYNOPSIS:\n    print_story(string
+        story)\n\nDESCRIPTION:\n    Print a story.\n\nPARAMETERS:\n    story (string):
+        Story to print.\n\nNAME: cast_float\n\nSYNOPSIS:\n    cast_float(string x)\n\nDESCRIPTION:\n    Cast
+        the input argument x to a float.\n\nPARAMETERS:\n    x (string): No description
+        provided.\n\nNAME: cast_int\n\nSYNOPSIS:\n    cast_int(number x)\n\nDESCRIPTION:\n    Cast
+        the input argument x to an integer.\n\nPARAMETERS:\n    x (number): No description
+        provided.\n\nNAME: get_random_int\n\nSYNOPSIS:\n    get_random_int()\n\nDESCRIPTION:\n    Get
         a random integer in 1 to 10.\n\nPARAMETERS:\n\nUse the following format:\n\nThought:
         you should always think about what to do\nAction: the action to take, should
         be one of [print_story, cast_float, cast_int, get_random_int]\nAction Input:
@@ -17,93 +16,134 @@ interactions:
         of the action\n... (this Thought/Action/Action Input/Observation can repeat
         N times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction:
         get_weather\nAction Input: \"New York\", 7\nObservation: The 7 day forecast
-        for New York is [...]"}],"max_tokens":64000}'
+        for New York is [...]"},{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","logprobs":true,"max_tokens":4096,"n":1,"stop":["Observation:"],"temperature":0.1,"top_logprobs":1}'
       headers:
         accept:
           - application/json
         accept-encoding:
           - gzip, deflate
-        anthropic-version:
-          - "2023-06-01"
         connection:
           - keep-alive
         content-length:
-          - "1493"
+          - "1482"
         content-type:
           - application/json
         host:
-          - api.anthropic.com
+          - api.openai.com
         user-agent:
-          - litellm/1.82.1
+          - AsyncOpenAI/Python 2.30.0
+        x-stainless-arch:
+          - arm64
+        x-stainless-async:
+          - async:asyncio
+        x-stainless-lang:
+          - python
+        x-stainless-os:
+          - MacOS
+        x-stainless-package-version:
+          - 2.30.0
+        x-stainless-raw-response:
+          - "true"
+        x-stainless-read-timeout:
+          - "120.0"
+        x-stainless-retry-count:
+          - "0"
+        x-stainless-runtime:
+          - CPython
+        x-stainless-runtime-version:
+          - 3.13.7
       method: POST
-      uri: https://api.anthropic.com/v1/messages
+      uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          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
+          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
       headers:
-        CF-RAY:
-          - 9dde05215e5d2ed1-SJC
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-Ray:
+          - 9edf587b7e3dd4f9-SJC
         Connection:
           - keep-alive
         Content-Encoding:
           - gzip
-        Content-Security-Policy:
-          - default-src 'none'; frame-ancestors 'none'
         Content-Type:
           - application/json
         Date:
-          - Tue, 17 Mar 2026 18:21:55 GMT
+          - Fri, 17 Apr 2026 23:52:50 GMT
         Server:
           - cloudflare
+        Set-Cookie:
+          - __cf_bm=zGZ3BLj8ICCeHNe8kTaJ5USrb4xjWVl_bnxJyM8D74k-1776469969.200307-1.0.1.1-oUjzfpvJhyf0ynX1yybs07YgvNrpK.g5x3C4yIhpZkAV6fhVDYVyX5PCt0FAm.FF_mdgXmrvNiK0iFwrn10khUYPdc.2LnocaYaEncS.DJA3BI0_X5cnjLsxw5spDewP;
+            HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Sat, 18 Apr 2026
+            00:22:50 GMT
+        Strict-Transport-Security:
+          - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
-        Vary:
-          - Accept-Encoding
-        X-Robots-Tag:
-          - none
-        anthropic-organization-id:
-          - 569b7dde-84c5-41d2-a238-92eabce6c127
-        anthropic-ratelimit-input-tokens-limit:
-          - "4000000"
-        anthropic-ratelimit-input-tokens-remaining:
-          - "4000000"
-        anthropic-ratelimit-input-tokens-reset:
-          - "2026-03-17T18:21:55Z"
-        anthropic-ratelimit-output-tokens-limit:
-          - "800000"
-        anthropic-ratelimit-output-tokens-remaining:
-          - "800000"
-        anthropic-ratelimit-output-tokens-reset:
-          - "2026-03-17T18:21:55Z"
-        anthropic-ratelimit-requests-limit:
-          - "4000"
-        anthropic-ratelimit-requests-remaining:
-          - "3999"
-        anthropic-ratelimit-requests-reset:
-          - "2026-03-17T18:21:54Z"
-        anthropic-ratelimit-tokens-limit:
-          - "4800000"
-        anthropic-ratelimit-tokens-remaining:
-          - "4800000"
-        anthropic-ratelimit-tokens-reset:
-          - "2026-03-17T18:21:55Z"
-        cf-cache-status:
-          - DYNAMIC
-        request-id:
-          - req_011CZ97kRrx7ZCKb2gn8YZXe
-        server-timing:
-          - proxy;dur=855
-        strict-transport-security:
-          - max-age=31536000; includeSubDomains; preload
-        x-envoy-upstream-service-time:
-          - "855"
+        X-Content-Type-Options:
+          - nosniff
+        alt-svc:
+          - h3=":443"; ma=86400
+        openai-organization:
+          - future-house-xr4tdh
+        openai-processing-ms:
+          - "817"
+        openai-project:
+          - proj_Jt6Hc8GI0Cv9yaRVy35owwje
+        openai-version:
+          - "2020-10-01"
+        x-openai-proxy-wasm:
+          - v0.1
+        x-ratelimit-limit-requests:
+          - "10000"
+        x-ratelimit-limit-tokens:
+          - "30000000"
+        x-ratelimit-remaining-requests:
+          - "9998"
+        x-ratelimit-remaining-tokens:
+          - "29999691"
+        x-ratelimit-reset-requests:
+          - 9ms
+        x-ratelimit-reset-tokens:
+          - 0s
+        x-request-id:
+          - req_afa200be4b13405bb03527cdd206a47d
       status:
         code: 200
         message: OK

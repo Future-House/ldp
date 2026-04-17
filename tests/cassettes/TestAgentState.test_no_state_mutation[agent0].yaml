@@ -1,7 +1,7 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -15,13 +15,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "968"
+          - "986"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.97.0
+          - AsyncOpenAI/Python 2.30.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -31,7 +31,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.97.0
+          - 2.30.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -41,25 +41,29 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.8
+          - 3.13.7
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFPBbtswDL37KwRedkkKx2ni1sdtXbBhO6xFuwJLYSgSbSuTJU2S12VB
-          /n2wkthO2gHzwRD0+MjHR2obEQKCQ0aAVdSz2sjxu/nnh0e/0PQ2ublZfH1eP149fzDvZ2Jx+7CC
-          UcvQqzUyf2RdMF0biV5otYeZReqxzTpJZ7N5cjVPrwNQa46ypZXGjy/1OImTy/FkMk7iA7HSgqGD
-          jHyPCCFkG/6tRMXxN2QkHh1vanSOlghZF0QIWC3bG6DOCeep8jDqQaaVR9WqVo2UA8BrLXNGpewL
-          77/t4Nz7RKXM335L00/rotxQdy2rj+L+7me8+nJfDertU29MEFQ0inX+DPDuPjsrRggoWgeusUL5
-          3HltN2d0QoDasqlR+VY6bJcQwpaQLeGuolw/O8KpYshJozhaUmutpCgr/8aRkv7BiyXs4CTnLnrt
-          /DSwy2LROCpf+kiV0p627QQjnw7IrpuZ1KWxeuXOqFAIJVyVW6QuWDGcSHQUEiRAczJ0MFbXxude
-          /8BQdDI9bAj0O9mjSXIAvfZUDlizI3CSL+foqQhb0S0io6xC3lP7haQNF3oARIPeX6p5Lfe+f6HK
-          /0nfA4yh8chzY5ELdtpxH2axfbL/CutcDoLBof0lGOZeoG3nwbGgjdy/JnAb57HOC6FKtGE5w4ab
-          vIhxGqezacoh2kV/AQAA//8DAGsGwjBbBAAA
+          H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdQnL8/DLywYAAAD//4xTy27bMBC86ysEXnqx
+          A8lx/MgtDYIGiOtLD25RBwRNriW2FKmQVGvH8L+HpKyHnRSoDpa8s7PcnR2uZuZ+tVvOF4vHH9fJ
+          1/z1aclnORp4htr8Amob1hVVjgeWK1nDVAOx4Kum0+lkPJnPJ/MAFIqB8LSstMOxGo6S0XiYpu59
+          IuaKUzAu46f7G8eH8OtblAx2LpwMmkgBxpAMXKxJckGthI8gYgw3lkiLBh1IlbQgfdeyEqIHWKUE
+          pkSI7uD6OfS+O51cIp6+fL5b7sgDv7cP1V3xffX05XGRZC+98+rS+zI0tK0kbfXp4W389uIwh0lS
+          BG6pubTYWKX3F3SXRHRWFW4q3zo6rFFIW6PbNfqWE6b+mpgRSYHFlVNQx4VSUvAst59MnJFXuFqj
+          IzqreYw++n7uyaVhWxki3utIpFSW+HGCkM8n5NjuTKis1GpjLqhoyyU3OXauMUGK/kaippHQAqrO
+          lu60cdaz2KrfEA5Nr08OQZ0nO3Q0OoHW9Sl6rJsGOKuHGVjCgytaI1JCc2AdtTMkqRhXPSDqzf6+
+          m49q1/Nzmf1P+Q6gFEp323CpgXF6PnGXpsFf2X+ltSqHhpEB/cddRGw5aL8PBltSifo2IbM3Fgrs
+          lpaBDuYMDi/xZjpJbyCZsRRFx+gNAAD//wMAJgSW1FsEAAA=
       headers:
-        CF-RAY:
-          - 971bc3ee4aeb67e5-SJC
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-Ray:
+          - 9edf587b7b715f02-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -67,37 +71,31 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 19 Aug 2025 18:38:00 GMT
+          - Fri, 17 Apr 2026 23:52:49 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=i1TYXdOqljYpt4HTeeRujMXbdZmniHW598LDB3lPshg-1755628680-1.0.1.1-ZASPBRIr6dRUqUOoPMxjXHnDCyKVbi19S0sk3pAjrwmimn35vxfsdy4Eozy6lrTCb39.rVZQtkwXUAkvFAlWFumm20BevcYiFfcDCziZ_7E;
-            path=/; expires=Tue, 19-Aug-25 19:08:00 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=caOxPa4hAmmSqlVqEEzeQ2cyMW0tCFagpPh4ZBGmPsc-1755628680317-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+          - __cf_bm=a7zg5locttAgZvfJQPCUx6DYHwU.ja66q.D1hoC9uLc-1776469969.1990185-1.0.1.1-gXTgGjItBf.6dvCMWzdZj32HnVHeUmUwNl9W8Xubut3dckfidAH..rkT_8RKMo_7vFU3J.p.IGfcSUTeENmsnwkHdRuHZ.bBKah2YYFwnXnzdvz68E_ctmNh8ZEEj2zr;
+            HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Sat, 18 Apr 2026
+            00:22:49 GMT
         Strict-Transport-Security:
           - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "604"
+          - "344"
         openai-project:
-          - proj_RpeV6PrPclPHBb5GlExPXSBj
+          - proj_Jt6Hc8GI0Cv9yaRVy35owwje
         openai-version:
           - "2020-10-01"
-        x-envoy-upstream-service-time:
-          - "817"
+        x-openai-proxy-wasm:
+          - v0.1
         x-ratelimit-limit-requests:
           - "10000"
         x-ratelimit-limit-tokens:
@@ -111,7 +109,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_5fcdee4ce129473fb4ccbaae132e3379
+          - req_29453eabb0784884a1bea34f90fbd615
       status:
         code: 200
         message: OK
