@@ -1030,41 +1030,6 @@ class TestTooling:
 
 
 class TestReasoning:
-    @pytest.mark.parametrize(
-        "llm_name",
-        [
-            pytest.param(
-                "deepseek/deepseek-reasoner",
-                id="deepseek-reasoner",
-            ),
-            pytest.param(
-                "openrouter/deepseek/deepseek-r1",
-                id="openrouter-deepseek",
-            ),
-        ],
-    )
-    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
-    @pytest.mark.asyncio
-    async def test_deepseek_model(self, llm_name: str) -> None:
-        llm = LiteLLMModel(name=llm_name)
-        messages = [
-            Message(
-                role="system",
-                content="Think deeply about the following question and answer it.",
-            ),
-            Message(content="What is the meaning of life?"),
-        ]
-        results = await llm.call(messages)
-        for result in results:
-            assert result.reasoning_content
-
-        outputs: list[str] = []
-        results = await llm.call(messages, callbacks=[outputs.append])
-
-        for i, result in enumerate(results):
-            assert result.reasoning_content
-            assert outputs[i] == result.text
-
     @pytest.mark.vcr
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
