@@ -4,8 +4,8 @@ An `LLMConfig` is an ordered chain of `ModelSpec` entries. `models[0]` is the
 primary model; `models[1:]` are fallbacks tried in order when the primary
 fails in ways that another model might handle.
 
-`LLMConfig.from_legacy_dict` accepts the older dict-shaped configuration
-(`{model_list, fallbacks, router_kwargs}`) for backward compatibility.
+`LLMConfig.from_legacy_dict` accepts the dict-shaped configuration
+(`{model_list, fallbacks, router_kwargs}`) that mirrors litellm's Router layout.
 """
 
 from __future__ import annotations

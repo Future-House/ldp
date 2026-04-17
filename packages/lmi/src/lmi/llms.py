@@ -368,12 +368,12 @@ class DispatchPath(StrEnum):
 
 
 async def _commit_stream(gen: AsyncIterable[LLMResult]) -> AsyncIterable[LLMResult]:
-    """Advance `gen` to its first yield, then return an iterator that replays it.
+    """Advance `gen` to its first yield and return an iterator that replays it.
 
-    Exceptions raised before the first yield propagate to the caller (so a
-    retry/fallback loop can react). Once the first chunk has been produced
-    the returned iterator yields it and then forwards the rest of `gen`
-    verbatim; any mid-stream error surfaces unmodified to the consumer.
+    Exceptions raised before the first yield propagate to the caller. Once the
+    first chunk has been produced the returned iterator yields it and then
+    forwards the rest of `gen` verbatim; any mid-stream error surfaces
+    unmodified to the consumer.
     """
     iterator = aiter(gen)
     try:
@@ -521,19 +521,18 @@ class LLMModel(ABC, BaseModel):
     async def acompletion(
         self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
     ) -> list[LLMResult]:
-        """Single-attempt completion against one model.
+        """Issue one completion request against the model given by `spec`.
 
-        `spec` selects the model and its per-request kwargs (api_base, api_key,
-        timeout, extra_params, ...). When None, subclasses default to the
-        primary entry in `llm_config`. Retry and fallback are handled by
-        `call()`, not by this primitive.
+        `spec` supplies the model name and per-request kwargs (api_base,
+        api_key, timeout, extra_params). When None, subclasses default to the
+        primary entry in `llm_config`.
         """
         raise NotImplementedError
 
     async def acompletion_iter(
         self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
     ) -> AsyncIterable[LLMResult]:
-        """Single-attempt streaming completion against one model.
+        """Stream one completion from the model given by `spec`.
 
         See `acompletion` for the `spec` contract.
         """
@@ -1169,13 +1168,13 @@ class LiteLLMModel(LLMModel):
         previous_response_id: str | None = None,
         **chat_kwargs,
     ) -> list[LLMResult] | AsyncIterable[LLMResult]:
-        """Single attempt at `spec` via the specified path.
+        """Dispatch one request to `spec` via the given path.
 
-        For streaming paths, the returned iterator has already produced its
-        first chunk — pre-first-chunk errors (stream-open failure, an immediate
-        refusal) therefore surface as exceptions from this coroutine and the
-        caller can retry/fall back. Mid-stream errors after the first chunk
-        propagate unmodified when the caller iterates the result.
+        Non-streaming paths return a list of `LLMResult`s. Streaming paths
+        return an async iterator that has already produced its first chunk;
+        errors before the first chunk (stream-open failure, an immediate
+        refusal) surface as exceptions from this coroutine, while mid-stream
+        errors propagate unmodified when the caller iterates the result.
         """
         if path is DispatchPath.CHAT:
             return await self.acompletion(messages, spec=spec, **chat_kwargs)
