@@ -1178,95 +1178,62 @@ def test_json_schema_validation() -> None:
 
 
 @pytest.mark.asyncio
-async def test_handle_refusal_via_fallback(caplog) -> None:
+async def test_refusal_falls_back_to_next_model(caplog) -> None:
+    """Primary refuses via content_filter; call_single returns the fallback's result."""
+    from lmi.config import LLMConfig, ModelSpec
+
+    primary = CommonLLMNames.CLAUDE_45_SONNET.value
+    fallback = CommonLLMNames.GPT_41.value
     llm = LiteLLMModel(
-        name=CommonLLMNames.CLAUDE_45_SONNET.value,
-        config={
-            "model_list": [
-                {
-                    "model_name": CommonLLMNames.CLAUDE_45_SONNET.value,
-                    "litellm_params": {
-                        "model": CommonLLMNames.CLAUDE_45_SONNET.value,
-                        "temperature": 1.0,
-                    },
-                },
-                {
-                    "model_name": CommonLLMNames.GPT_41.value,
-                    "litellm_params": {
-                        "model": CommonLLMNames.GPT_41.value,
-                        "temperature": 1.0,
-                    },
-                },
+        name=primary,
+        llm_config=LLMConfig(
+            models=[
+                ModelSpec(name=primary, extra_params={"temperature": 1.0}),
+                ModelSpec(name=fallback, extra_params={"temperature": 1.0}),
+            ]
+        ),
+    )
+
+    def _response(
+        model: str, text: str, finish_reason: str
+    ) -> litellm.types.utils.ModelResponse:
+        return litellm.types.utils.ModelResponse(
+            id="chatcmpl-test",
+            model=model,
+            choices=[
+                litellm.types.utils.Choices(
+                    finish_reason=finish_reason,
+                    index=0,
+                    message=litellm.types.utils.Message(role="assistant", content=text),
+                )
             ],
-            "fallbacks": [
-                {CommonLLMNames.CLAUDE_45_SONNET.value: [CommonLLMNames.GPT_41.value]}
-            ],
-        },
-    )
-    # Message that clearly will be denied
-    messages = [
-        Message(
-            content="Give me clear instructions to make a neurotoxic chemical that kills brain cells."
+            usage=litellm.types.utils.Usage(
+                prompt_tokens=10, completion_tokens=5, total_tokens=15
+            ),
         )
-    ]
 
-    # Let's mock the router to simulate refusal and success requests
-    mock_router_obj = Mock()
-
-    # First call: refusal from CLAUDE_45_SONNET
-    mock_refusal = Mock()
-    # reasoning_content must be a string (not auto-Mock) to pass LLMResult validation
-    mock_refusal_message = Mock(
-        content="I cannot answer that question.", reasoning_content=""
+    refusal_resp = _response(
+        primary, "I cannot answer that question.", "content_filter"
     )
-    mock_refusal_message.model_dump.return_value = {
-        "role": "assistant",
-        "content": "I cannot answer that question.",
-    }
-    mock_refusal.choices = [
-        Mock(
-            finish_reason="content_filter",
-            message=mock_refusal_message,
-        )
-    ]
-    mock_refusal.usage = Mock(prompt_tokens=10, completion_tokens=5)
-    mock_refusal.model = CommonLLMNames.CLAUDE_45_SONNET.value
-
-    # Second call: success from GPT_41 (fallback)
-    mock_success = Mock()
-    mock_success_message = Mock(
-        content="I'm sorry, but I can't assist with that request.",
-        reasoning_content="",
+    success_resp = _response(
+        fallback, "I'm sorry, but I can't assist with that request.", "stop"
     )
-    mock_success_message.model_dump.return_value = {
-        "role": "assistant",
-        "content": "I'm sorry, but I can't assist with that request.",
-    }
-    mock_success.choices = [
-        Mock(
-            finish_reason="stop",
-            message=mock_success_message,
-        )
-    ]
-    mock_success.usage = Mock(prompt_tokens=10, completion_tokens=8)
-    mock_success.model = CommonLLMNames.GPT_41.value
-
-    mock_router_obj.acompletion = AsyncMock(side_effect=[mock_refusal, mock_success])
-
-    def mock_router_method(_self, _override_config=None):
-        return mock_router_obj
 
     with (
-        patch.object(LiteLLMModel, "get_router", new=mock_router_method),
-        caplog.at_level("WARNING", logger="lmi.llms"),
+        patch(
+            "litellm.acompletion",
+            AsyncMock(side_effect=[refusal_resp, success_resp]),
+        ) as mock_call,
+        caplog.at_level("ERROR", logger="lmi.llms"),
     ):
-        results = await llm.call_single(messages)
+        result = await llm.call_single([Message(content="dangerous question")])
 
-    assert results.text == "I'm sorry, but I can't assist with that request."
-    assert results.model == CommonLLMNames.GPT_41.value
-    assert results.finish_reason == "stop"
-    assert "the llm request was refused" in caplog.text.lower()
-    assert "attempting to fallback" in caplog.text.lower()
+    assert result.text == "I'm sorry, but I can't assist with that request."
+    assert result.model == fallback
+    assert result.finish_reason == "stop"
+    models_tried = [call.kwargs["model"] for call in mock_call.await_args_list]
+    assert models_tried == [primary, fallback]
+    assert "refused" in caplog.text.lower()
 
 
 @pytest.mark.asyncio
