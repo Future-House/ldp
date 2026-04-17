@@ -74,6 +74,7 @@ class TestShouldFallback:
             litellm.ContentPolicyViolationError,
             litellm.AuthenticationError,
             litellm.PermissionDeniedError,
+            litellm.BadRequestError,
         ],
     )
     def test_stable_errors_fallback(self, cls) -> None:
@@ -84,22 +85,6 @@ class TestShouldFallback:
             "refused", model="gpt-4o-mini", finish_reason="content_filter"
         )
         assert should_fallback(exc) is True
-
-    def test_anthropic_too_much_media_falls_back(self) -> None:
-        exc = litellm.BadRequestError(
-            message="Too much media: 0 document pages + 108 images > 100",
-            model="claude-3-5-sonnet-20241022",
-            llm_provider="anthropic",
-        )
-        assert should_fallback(exc) is True
-
-    def test_generic_bad_request_does_not_fall_back(self) -> None:
-        exc = litellm.BadRequestError(
-            message="Malformed request",
-            model="gpt-4o-mini",
-            llm_provider="openai",
-        )
-        assert should_fallback(exc) is False
 
     @pytest.mark.parametrize(
         "cls",

@@ -125,13 +125,10 @@ class TestRunWithFallbacks:
     @pytest.mark.asyncio
     async def test_fatal_exception_propagates(self) -> None:
         model = _model()
-        # A plain BadRequestError (malformed request, not a provider-limit one)
-        # indicates a caller bug; it can't be fixed by another model.
-        bad = litellm.BadRequestError(
-            message="malformed request", model=PRIMARY, llm_provider="openai"
-        )
-        attempt = AsyncMock(side_effect=[bad])
-        with pytest.raises(litellm.BadRequestError):
+        # An uncategorized exception (caller bug, malformed Message, etc.) is
+        # neither retryable nor fallback-able; it propagates immediately.
+        attempt = AsyncMock(side_effect=[ValueError("caller bug")])
+        with pytest.raises(ValueError, match="caller bug"):
             await model._run_with_fallbacks(attempt)
         # Did not fall back to the second model.
         assert attempt.call_count == 1
@@ -315,13 +312,13 @@ class TestCallEndToEnd:
     @pytest.mark.asyncio
     async def test_fatal_exception_propagates_unwrapped(self) -> None:
         model = _model()
-        # Plain BadRequestError = malformed request / caller bug; not fallback-able.
-        bad = litellm.BadRequestError(
-            message="malformed request", model=PRIMARY, llm_provider="openai"
-        )
+        # Uncategorized exceptions (caller bug, Python-level error) propagate
+        # without being wrapped in AllModelsExhaustedError.
         with (
-            patch("litellm.acompletion", AsyncMock(side_effect=[bad])) as mock_call,
-            pytest.raises(litellm.BadRequestError),
+            patch(
+                "litellm.acompletion", AsyncMock(side_effect=[ValueError("caller bug")])
+            ) as mock_call,
+            pytest.raises(ValueError, match="caller bug"),
         ):
             await model.call([Message(content="hi")])
         assert mock_call.await_count == 1

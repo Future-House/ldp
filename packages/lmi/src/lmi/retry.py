@@ -40,6 +40,10 @@ _FALLBACKABLE: tuple[type[BaseException], ...] = (
     # shouldn't block the others.
     litellm.AuthenticationError,
     litellm.PermissionDeniedError,
+    # Providers reject requests for schema reasons that differ across
+    # providers (e.g. image count limits, unsupported field combinations); a
+    # sibling model may accept the same input.
+    litellm.BadRequestError,
     ModelRefusalError,
 )
 
@@ -51,13 +55,7 @@ def should_retry(exc: BaseException) -> bool:
 
 def should_fallback(exc: BaseException) -> bool:
     """True if another model might succeed where this one failed."""
-    if isinstance(exc, _FALLBACKABLE):
-        return True
-    # Anthropic returns a 400 when >100 images are sent; behaves like an overflow.
-    return bool(
-        isinstance(exc, litellm.BadRequestError)
-        and "too much media" in str(exc).lower()
-    )
+    return isinstance(exc, _FALLBACKABLE)
 
 
 def backoff_seconds(attempt: int) -> float:
