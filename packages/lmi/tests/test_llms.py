@@ -485,48 +485,23 @@ class TestLiteLLMModel:
                 await llm.call_single("Test message")
 
     @pytest.mark.vcr
-    @pytest.mark.parametrize(
-        ("config", "bypassed_router"),
-        [
-            pytest.param(
-                {
-                    "model_list": [
-                        {
-                            "model_name": CommonLLMNames.OPENAI_TEST.value,
-                            "litellm_params": {
-                                "model": CommonLLMNames.OPENAI_TEST.value,
-                                "max_tokens": 3,
-                            },
-                        }
-                    ]
-                },
-                False,
-                id="with-router",
-            ),
-            pytest.param(
-                {"pass_through_router": True, "router_kwargs": {"max_tokens": 3}},
-                True,
-                id="without-router",
-            ),
-        ],
-    )
     @pytest.mark.asyncio
-    async def test_max_token_truncation(
-        self, config: dict[str, Any], bypassed_router: bool
-    ) -> None:
-        llm = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value, config=config)
-        with patch(
-            "litellm.Router.acompletion",
-            side_effect=litellm.Router.acompletion,
-            autospec=True,
-        ) as mock_completion:
-            completions = await llm.acompletion([
-                Message(content="Please tell me a story")
-            ])
-        if bypassed_router:
-            mock_completion.assert_not_awaited()
-        else:
-            mock_completion.assert_awaited_once()
+    async def test_max_token_truncation(self) -> None:
+        llm = LiteLLMModel(
+            name=CommonLLMNames.OPENAI_TEST.value,
+            config={
+                "model_list": [
+                    {
+                        "model_name": CommonLLMNames.OPENAI_TEST.value,
+                        "litellm_params": {
+                            "model": CommonLLMNames.OPENAI_TEST.value,
+                            "max_tokens": 3,
+                        },
+                    }
+                ]
+            },
+        )
+        completions = await llm.acompletion([Message(content="Please tell me a story")])
         assert isinstance(completions, list)
         completion = completions[0]
         assert completion.completion_count == 3
@@ -556,10 +531,7 @@ class TestLiteLLMModel:
             rehydrated_llm = pickle.load(f)
         assert llm.name == rehydrated_llm.name
         assert llm.config == rehydrated_llm.config
-        assert (
-            llm.get_router().deployment_names
-            == rehydrated_llm.get_router().deployment_names
-        )
+        assert llm.llm_config == rehydrated_llm.llm_config
 
     @pytest.mark.asyncio
     async def test_acompletion_iter_logprobs_edge_cases(self) -> None:

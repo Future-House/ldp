@@ -89,7 +89,6 @@ from lmi.retry import (
     should_retry,
 )
 from lmi.types import LLMResult
-from lmi.utils import get_litellm_retrying_config
 
 from . import (
     litellm_patches as _litellm_patches,  # noqa: F401 - In-place apply patches at import
@@ -389,12 +388,6 @@ async def _commit_stream(gen: AsyncIterable[LLMResult]) -> AsyncIterable[LLMResu
     return replay()
 
 
-class OverrideRouterConfig(BaseModel):
-    model_list: list[dict[str, Any]]
-    router_kwargs: dict[str, Any]
-    fallbacks: list[dict[str, Any]]
-
-
 def sum_logprobs(choice: litellm.utils.Choices | list[float]) -> float | None:
     """Calculate the sum of the log probabilities of an LLM completion (a Choices object).
 
@@ -609,8 +602,6 @@ class LLMModel(ABC, BaseModel):
         n = chat_kwargs.get("n", self.config.get("n", 1))
         if n < 1:
             raise ValueError("Number of completions (n) must be >= 1.")
-        if "fallbacks" not in chat_kwargs and "fallbacks" in self.config:
-            chat_kwargs["fallbacks"] = self.config.get("fallbacks", [])
 
         # deal with tools
         if tools:
@@ -631,7 +622,7 @@ class LLMModel(ABC, BaseModel):
 
         # deal with specifying output type
         if isinstance(output_type, Mapping):  # Use structured outputs
-            model_name: str = chat_kwargs.get("model") or self.name
+            model_name: str = chat_kwargs.get("model", self.name)
             if not litellm.supports_response_schema(model_name, None):
                 raise ValueError(f"Model {model_name} does not support JSON schema.")
 
@@ -676,7 +667,6 @@ class LLMModel(ABC, BaseModel):
             )
             for m in messages
         ]
-        results: list[LLMResult] = []
 
         start_clock = asyncio.get_running_loop().time()
         streaming = callbacks is not None
@@ -698,7 +688,6 @@ class LLMModel(ABC, BaseModel):
                     raise NotImplementedError(
                         "Using tools with callbacks is not supported"
                     )
-                n = chat_kwargs.get("n", self.config.get("n", 1))
                 if n > 1:
                     raise NotImplementedError(
                         "Multiple completions with callbacks is not supported"
@@ -715,6 +704,7 @@ class LLMModel(ABC, BaseModel):
             assert callbacks is not None
             sync_callbacks = [f for f in callbacks if not is_coroutine_callable(f)]
             async_callbacks = [f for f in callbacks if is_coroutine_callable(f)]
+            results: list[LLMResult] = []
             async for result in dispatch_result:
                 if result.text:
                     if result.seconds_to_first_token == 0:
@@ -963,19 +953,11 @@ class LiteLLMModel(LLMModel):
     config: dict = Field(
         default_factory=dict,
         description=(
-            "Configuration of this model containing several important keys. The"
-            " optional `model_list` key stores a list of all model configurations"
-            " (SEE: https://docs.litellm.ai/docs/routing). The optional"
-            " `router_kwargs` key is keyword arguments to pass to the Router class."
-            " Inclusion of a key `pass_through_router` with a truthy value will lead"
-            " to using not using LiteLLM's Router, instead just LiteLLM's free"
-            f" functions (see {PassThroughRouter.__name__}). Rate limiting applies"
-            " regardless of `pass_through_router` being present. The optional"
-            " `rate_limit` key is a dictionary keyed by model group name with values"
-            " of type limits.RateLimitItem (in tokens / minute) or valid"
-            " limits.RateLimitItem string for parsing. The optional `request_limit`"
-            " key is a dictionary keyed by model group name with values representing"
-            " the maximum number of requests per minute."
+            "Legacy dict-shaped configuration for backward compatibility. Accepts"
+            " a `model_list` entry (litellm Router layout) plus optional"
+            " `rate_limit` / `request_limit` dicts keyed by model group name for"
+            " tokens-per-minute and requests-per-minute throttling. New code"
+            " should use `llm_config` instead."
         ),
     )
     llm_config: LLMConfig | None = Field(
@@ -986,11 +968,10 @@ class LiteLLMModel(LLMModel):
             " passing the legacy `config` dict still work."
         ),
     )
-    _router: litellm.Router | None = None
 
     @model_validator(mode="before")
     @classmethod
-    def maybe_set_config_attribute(cls, input_data: dict[str, Any]) -> dict[str, Any]:  # noqa: C901
+    def maybe_set_config_attribute(cls, input_data: dict[str, Any]) -> dict[str, Any]:
         """
         Set the config attribute if it is not provided.
 
@@ -1055,16 +1036,6 @@ class LiteLLMModel(LLMModel):
                 ],
             } | data["config"]
 
-        if "router_kwargs" not in data["config"]:
-            data["config"]["router_kwargs"] = {}
-        data["config"]["router_kwargs"] = (
-            get_litellm_retrying_config() | data["config"]["router_kwargs"]
-        )
-        if not data["config"].get("pass_through_router"):
-            data["config"]["router_kwargs"] = {"retry_after": 5} | data["config"][
-                "router_kwargs"
-            ]
-
         if "tool_parser" in data["config"]:
             data["tool_parser"] = data["config"].pop("tool_parser")
 
@@ -1095,49 +1066,6 @@ class LiteLLMModel(LLMModel):
     TOOL_CHOICE_REQUIRED: ClassVar[str] = "required"
     # None means we won't provide a tool_choice to the LLM API
     UNSPECIFIED_TOOL_CHOICE: ClassVar[None] = None
-
-    def __getstate__(self):
-        # Prevent _router from being pickled, SEE: https://stackoverflow.com/a/2345953
-        state = super().__getstate__()
-        state["__dict__"] = state["__dict__"].copy()
-        state["__dict__"].pop("_router", None)
-        return state
-
-    def get_router(
-        self, override_config: OverrideRouterConfig | None = None
-    ) -> litellm.Router:
-        """Get the router, optionally with an override configuration.
-
-        Args:
-            override_config: Optional configuration to override the default router settings.
-                Should contain 'model_list' and 'router_kwargs' keys.
-
-        Returns:
-            A litellm.Router instance.
-        """
-        if override_config:
-            override_model_list = override_config.model_list
-            override_router_kwargs = override_config.router_kwargs
-
-            can_override = override_model_list and override_router_kwargs
-            if not can_override:
-                logger.warning(
-                    "Cannot override router with provided config. Will use default config."
-                )
-            else:
-                return litellm.Router(
-                    model_list=override_model_list, **override_router_kwargs
-                )
-
-        if self._router is None:
-            router_kwargs: dict = self.config.get("router_kwargs", {})
-            if self.config.get("pass_through_router"):
-                self._router = PassThroughRouter(**router_kwargs)
-            else:
-                self._router = litellm.Router(
-                    model_list=self.config["model_list"], **router_kwargs
-                )
-        return self._router
 
     async def check_request_limit(self, **kwargs) -> None:
         """Check if the request is within the request rate limit."""
@@ -1230,52 +1158,6 @@ class LiteLLMModel(LLMModel):
                         break
                     raise
         raise AllModelsExhaustedError(last_exc) from last_exc
-
-    async def _handle_refusal_via_fallback(
-        self, messages: list[Message], kwargs: dict[str, Any]
-    ) -> list[LLMResult]:
-        # Let's remove the current model from the configuration
-        current_model = self.name
-        override_config = OverrideRouterConfig(
-            model_list=kwargs.pop("model_list", self.config["model_list"]),
-            router_kwargs=kwargs.pop("router_kwargs", self.config["router_kwargs"]),
-            fallbacks=kwargs.pop("fallbacks", self.config["fallbacks"]),
-        )
-
-        new_model_list = [
-            model
-            for model in override_config.model_list
-            if model.get("model_name") != current_model
-        ]
-
-        new_fallbacks = []
-        for fallback in override_config.fallbacks:
-            if current_model not in fallback:
-                new_fallbacks.append(fallback)
-            else:
-                target_model = fallback[current_model][0]
-                new_fallbacks.append({target_model: fallback[current_model][1:]})
-
-        # Now we update the configuration
-        # Here I am resetting all the configuration I think the user needs to set
-        # But it is possible there is a user misconfiguration that I'd be fixing here
-        # We use model name to make the request. Will reset it after the request
-        self.name = new_model_list[0].get("model_name") or ""
-        if "fallbacks" in kwargs:
-            kwargs["fallbacks"] = new_fallbacks
-        kwargs["override_config"] = {
-            "model_list": new_model_list,
-            "router_kwargs": override_config.router_kwargs
-            | {
-                "fallbacks": new_fallbacks,
-            },
-            "fallbacks": new_fallbacks,
-        }
-
-        results = await self.acompletion(messages, **kwargs)
-        # Put the object back to the original state
-        self.name = current_model
-        return results
 
     # the order should be first request and then rate(token)
     @request_limited
@@ -1670,7 +1552,12 @@ class LiteLLMModel(LLMModel):
         self, *selection_args, **selection_kwargs
     ) -> ToolRequestMessage:
         """Shim to aviary.core.ToolSelector that supports tool schemae."""
+        primary = cast("LLMConfig", self.llm_config).models[0]
+
+        async def _acompletion(**kw: Any) -> Any:
+            return await litellm.acompletion(**primary.to_litellm_kwargs(), **kw)
+
         tool_selector = ToolSelector(
-            model_name=self.name, acompletion=track_costs(self.get_router().acompletion)
+            model_name=self.name, acompletion=track_costs(_acompletion)
         )
         return await tool_selector(*selection_args, **selection_kwargs)
