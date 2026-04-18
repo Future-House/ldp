@@ -18,7 +18,7 @@ from openai.types.responses import (
 )
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
-from lmi.exceptions import JSONSchemaValidationError
+from lmi.exceptions import AllModelsExhaustedError, JSONSchemaValidationError
 from lmi.llms import (
     CommonLLMNames,
     LiteLLMModel,
@@ -816,9 +816,12 @@ class TestMultipleCompletion:
             Message(content="Hello, how are you?"),
         ]
         if request.node.callspec.id == "anthropic":
-            # Anthropic does not support multiple completions
-            with pytest.raises(litellm.BadRequestError, match="anthropic"):
+            # Anthropic does not support multiple completions; the single-model
+            # chain exhausts on `UnsupportedParamsError` (a BadRequestError).
+            with pytest.raises(AllModelsExhaustedError) as excinfo:
                 await model.call(messages)
+            assert isinstance(excinfo.value.last_exc, litellm.BadRequestError)
+            assert "anthropic" in str(excinfo.value.last_exc)
         else:
             results = await model.call(messages)  # noqa: FURB120
             assert len(results) == self.NUM_COMPLETIONS
