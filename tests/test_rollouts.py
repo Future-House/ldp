@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock
 import pytest
 from aviary.core import Environment, Frame, Message, Tool, ToolRequestMessage
 from litellm import AuthenticationError
+from lmi.exceptions import AllModelsExhaustedError
 from pydantic import BaseModel
 
 from ldp.agent import Agent, SimpleAgent, SimpleAgentState
@@ -127,48 +128,23 @@ async def test_rollout(training: bool) -> None:
 @pytest.mark.parametrize("fallback", [True, False])
 @pytest.mark.asyncio
 async def test_fallbacks_working(fallback: bool) -> None:
-    AGENT_MODEL_LIST = [
-        {
-            "model_name": "openai/gpt-4o-mini",
-            "litellm_params": {"model": "openai/gpt-4o-mini", "api_key": "abc123"},
+    primary = {
+        "model_name": "openai/gpt-4o-mini",
+        "litellm_params": {
+            "model": "openai/gpt-4o-mini",
+            "api_key": "abc123",  # pragma: allowlist secret
         },
-        {
-            "model_name": "openai/gpt-4o",
-            "litellm_params": {
-                "model": "openai/gpt-4o",
-            },
-        },
-    ]
-    AGENT_ROUTER_KWARGS: dict[str, bool | list[dict[str, list[str]]]] = {
-        "set_verbose": True,
+    }
+    secondary = {
+        "model_name": "openai/gpt-4o",
+        "litellm_params": {"model": "openai/gpt-4o"},
+    }
+    llm_config_dict: dict[str, object] = {
+        "model_list": [primary, secondary] if fallback else [primary],
     }
     if fallback:
-        AGENT_ROUTER_KWARGS["fallbacks"] = [
-            {
-                "openai/gpt-4o-mini": [
-                    "openai/gpt-4o",
-                ]
-            }
-        ]
-
-    AGENT_CONFIG = {
-        "llm_model": {
-            "name": "openai/gpt-4o-mini",
-            "config": {
-                "model_list": AGENT_MODEL_LIST,
-                "router_kwargs": AGENT_ROUTER_KWARGS,
-            },
-        }
-    }
-    if fallback:
-        AGENT_CONFIG["llm_model"]["config"]["fallbacks"] = [  # type: ignore[index]
-            {
-                "openai/gpt-4o-mini": [
-                    "openai/gpt-4o",
-                ]
-            }
-        ]
-    agent = SimpleAgent(**AGENT_CONFIG)
+        llm_config_dict["fallbacks"] = [{"openai/gpt-4o-mini": ["openai/gpt-4o"]}]
+    agent = SimpleAgent(llm_config=llm_config_dict)
     callback = DummyCallback()
 
     rollout_manager = RolloutManager(
@@ -182,8 +158,11 @@ async def test_fallbacks_working(fallback: bool) -> None:
             environments=[env], max_steps=2
         )
     else:
-        with pytest.raises(AuthenticationError):
+        # With no fallback entry, the single-model chain exhausts on auth
+        # failure; the original AuthenticationError is chained as `last_exc`.
+        with pytest.raises(AllModelsExhaustedError) as excinfo:
             await rollout_manager.sample_trajectories(environments=[env], max_steps=2)
+        assert isinstance(excinfo.value.last_exc, AuthenticationError)
     env.close_mock.assert_awaited_once_with()
 
 

@@ -1,7 +1,7 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
+        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
         a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
         the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
@@ -15,13 +15,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "968"
+          - "986"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.97.0
+          - AsyncOpenAI/Python 2.30.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -31,7 +31,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.97.0
+          - 2.30.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -41,25 +41,29 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.8
+          - 3.13.7
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA4xTXWvbMBR9968Q92UvTXGcpC15XGEU1m6FsUBZirmRrm2lsqRIcr9C/vuw8mEn
-          7WB+MELnnnPP/dA6YQykgCkDXmHgtVWD64vb2cPKK3r/vpTpj9XKSls+iJub28XyHs5ahlksiYc9
-          65yb2ioK0ugtzB1hoFZ1eDmZXGRXF1dpBGojSLW00obB2AyyNBsPhsNBlu6IlZGcPEzZn4Qxxtbx
-          31rUgl5hyqJMvKnJeywJpocgxsAZ1d4Aei99QB3grAO50YF061o3SvWAYIzKOSrVJd5+69656xMq
-          lX/F33hXPb3O7tPn62KcvXy7m/2cNdjLt5V+s9FQ0Wh+6E8PP9xPT5IxBhrryLVO6pD7YNzbCZ0x
-          QFc2NenQWof1HGLYHKZz+FWhMC+eCdScBGu0IMdqY7SSZRW+eFbiO53PYQNHmpvks/Njr12Oisaj
-          +thH1NoEbMuJjXzcIZvDzJQprTMLf0KFQmrpq9wR+tiK/kSSvZFoAZqjoYN1prYhD+aJYtLhaLch
-          0O1kh2bZDgwmoOqxJnvgSC8XFFDGrTgsIkdekeio3UJiI6TpAUmv9o9uPtPe1i91+T/yHcA52UAi
-          t46E5McVd2GO2if7r7BDl6Nh8OSeJac8SHLtPAQV2KjtawL/5gPVeSF1SS4uZ9xwmxcpjdLLyehS
-          QLJJ/gIAAP//AwCSrU8gWwQAAA==
+          H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdQnLCzbIMAQAAAD//4xT227aQBB95yusfYYI
+          qIE0b40UtZWi3hS1UktkDeux2bLetfZi4iD+vbtrfIEkUv2AzZw5s2dmzm7vvhW/v79X+2rzvPxU
+          Phh2n38EMvYMufmL1LSsKyodDw2TooGpQjDoq85Wq2W8mi7n1wEoZIrc0/LSTGI5mU/n8WQ2c+8T
+          cSsZRe0y/ri/UXQIv16iSPHJhafjNlKg1pCji7VJLqgk9xECWjNtQBgy7kEqhUHhVQvL+QAwUvKE
+          Auf9wc1zGHz3c3KJSXX780P+BSp794M+fN49V79q2H99gsF5Tem6DIIyK2g3nwHexW8uDnOYgCJw
+          S8WESbSRqr6guyRQuS1cV146OaxJSFuTmzW5l9pEO6z1OMqkFWkkcB9BWrlkq1BfrcmRnFU7jl77
+          fhwMSmFmNfCXEwQhpAHfSBjh4wk5dtviMi+V3OgLKsmYYHqbOL/oMIThLkatkCCB2LN1u6k405nE
+          yB2GQ2fvTt4gvRt7dN6CxunkA9aiBc7qJSkaYMEPnQUp0C2mPbW3ItiUyQEwGvT+Us1rtZv+mcj/
+          p3wPUIqlu2dJqTBl9LzjPk2hv6xvpXVTDoKJRlW5K5gYhsrvI8UMLG/uEdG1Nlgkbmk5qmDL4O0y
+          ia+XMSxgs6BkdBz9AwAA//8DAC9q0x1VBAAA
       headers:
-        CF-RAY:
-          - 971bc3f49b2fce94-SJC
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-Ray:
+          - 9edf68918bc1faf8-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -67,37 +71,31 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 19 Aug 2025 18:38:00 GMT
+          - Sat, 18 Apr 2026 00:03:48 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=_r3iAmktJsYh5pzd4I3TjV.36LGQYKfRcxQ3M.uVc.8-1755628680-1.0.1.1-ypnRht_Mq6CIb_L_afX9mHAmHgzmfFNMDbg3pC.jH1Eeqv8f4quubV8gHu2_oJ18QtSz1oMjumFuzfgvJhSM9GkCLy6v3HIZewezOn6e35U;
-            path=/; expires=Tue, 19-Aug-25 19:08:00 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=CqDiwXgeBe8OdYex4sKUnwfPUgVkX17odTeaMaFtKXo-1755628680994-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+          - __cf_bm=DY5IouMEp1PBuuc9mCTruRhKtooDRqe9IuYyQKTxuTo-1776470628.0867078-1.0.1.1-alwcYEHP8i.A7huxOamkYrDanhnVWEedc_KjWvZ0KoAfU0QjKkpp4qz6u7UPvjD1dHebhXYGGid8geFVLZRyRXaW3K1tRrQRUvOwMwshIX.LsVIjZofaz3pOaQAyPFCF;
+            HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Sat, 18 Apr 2026
+            00:33:48 GMT
         Strict-Transport-Security:
           - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         openai-organization:
           - future-house-xr4tdh
         openai-processing-ms:
-          - "469"
+          - "385"
         openai-project:
-          - proj_RpeV6PrPclPHBb5GlExPXSBj
+          - proj_Jt6Hc8GI0Cv9yaRVy35owwje
         openai-version:
           - "2020-10-01"
-        x-envoy-upstream-service-time:
-          - "490"
+        x-openai-proxy-wasm:
+          - v0.1
         x-ratelimit-limit-requests:
           - "10000"
         x-ratelimit-limit-tokens:
@@ -111,7 +109,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_6bac1cacf50a47bcb98217f6c7959c37
+          - req_a3f76a4d340941cbba6eeba5a268e565
       status:
         code: 200
         message: OK

@@ -2,12 +2,12 @@ interactions:
   - request:
       body:
         '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":[{"type":"text","text":"Write
-        a 5 word story via print_story"}]}],"temperature":0.1,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
-        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
-        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
-        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
-        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
-        a random integer in 1 to 10."}],"tool_choice":{"type":"any"},"max_tokens":64000}'
+        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"type":"custom","description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"type":"custom","description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"type":"custom","description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"type":"custom","description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"}}'
       headers:
         accept:
           - application/json
@@ -18,28 +18,28 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "902"
+          - "965"
         content-type:
           - application/json
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.82.1
+          - litellm/1.82.6
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA3RRyU7DMBD9lWjODkq6UfnI0gNLDwiEBEKWsaeJqWOn9rgSqvLvyIUKCuLot8x7
-          M95B5zVa4KCsTBrLVpp1KifltBxVo2ldVTUwMBo4dLERVX33cDY269liNRufXurlvFlsbrEFBvTe
-          Y1ZhjLJBYBC8zYCM0USSjoCB8o7QEfDn3UFP3luRIh5S8juJqj7Xj/VTc32tW3fzOt/cXi3Gy8UF
-          MHCyy74+GEcikg/v2er6RMB38AlwuG+xUJKKt9T1qAu/xVBQi8UKncITGBgoaS2G7Plqok1ARTAM
-          LyyP6UVAGb077rgnIm5SngPcJWsZpP3GfPdZQ5Bfo4vA55NZjlEtChVQkvFOHCuqAx9Q6v+4gzcH
-          YN9ih0FaMe3+6r/Zuv3NDgx8op/QZMwgYtgahYJMPgXkf9Iy6P1FVxjykqJBDxycJyG30lj5ahGG
-          4QMAAP//AwCPNEO7OQIAAA==
+          H4sIAAAAAAAAA3RRS08CMRD+K6Rn1uwi+OBmEONFo4SLGtPUdmAr3XZppxAk+9+drmwUjYcmne8x
+          zz2rnALDxkwaERVkpdCrmA2zUTbIB6MizwvWZ1qRoApLnhdzWZ7b6Wp2t9tMFpPVJRTrevtOGtzV
+          kFQQglgCAd6ZBIgQdEBhkSDpLAL9xi/7To/OGR4DdFVSHKlO8XB9P5tsrx4LOX8qp/65+ri5FaSy
+          okq+2muLPKDzu2S1daS0e/YFjNm8hJ4U2Av0nO0hhZXAE9ZQE8IY8El8aEFpDxJZ07z2k7/mHkRw
+          9ri5lgiwjmAlmWw05gAqQKFN6LDYjk/Z2544uhVYIi+GZ6m0LIFLyo/aWX6syDueaPUf13lTAahL
+          qMALw0fVX/03W5S/WdqCi/gTGp7SNOA3WgJHndbD0tGU8Kpd7wJ8GpwvwRFlHXKxoanFG924aT4B
+          AAD//wMAd+BbJkYCAAA=
       headers:
         CF-RAY:
-          - 9dde052b3b01f9ed-SJC
+          - 9edf688aea51174e-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -49,9 +49,12 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 17 Mar 2026 18:21:57 GMT
+          - Sat, 18 Apr 2026 00:03:47 GMT
         Server:
           - cloudflare
+        Set-Cookie:
+          - _cfuvid=MW6ZniQF8DMZW_9llxT_NFPG5CLHklqR9lKOFYtOkwc-1776470627.0297155-1.0.1.1-FOBCH8qepIJK3xD3mM.Do9Ipkl0sRPSR.zx9MamM9EE;
+            HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
         Transfer-Encoding:
           - chunked
         Vary:
@@ -65,35 +68,35 @@ interactions:
         anthropic-ratelimit-input-tokens-remaining:
           - "4000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2026-03-17T18:21:56Z"
+          - "2026-04-18T00:03:47Z"
         anthropic-ratelimit-output-tokens-limit:
           - "800000"
         anthropic-ratelimit-output-tokens-remaining:
           - "800000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2026-03-17T18:21:56Z"
+          - "2026-04-18T00:03:47Z"
         anthropic-ratelimit-requests-limit:
-          - "4000"
+          - "20000"
         anthropic-ratelimit-requests-remaining:
-          - "3999"
+          - "19999"
         anthropic-ratelimit-requests-reset:
-          - "2026-03-17T18:21:56Z"
+          - "2026-04-18T00:03:47Z"
         anthropic-ratelimit-tokens-limit:
           - "4800000"
         anthropic-ratelimit-tokens-remaining:
           - "4800000"
         anthropic-ratelimit-tokens-reset:
-          - "2026-03-17T18:21:56Z"
+          - "2026-04-18T00:03:47Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_011CZ97kYbkrxBP8N2wfUUaR
+          - req_011CaAFtrtyDTtYke5kWk989
         server-timing:
-          - proxy;dur=699
+          - x-originResponse;dur=567
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
         x-envoy-upstream-service-time:
-          - "698"
+          - "565"
       status:
         code: 200
         message: OK

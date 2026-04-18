@@ -9,6 +9,7 @@ import tree
 from aviary.core import Message
 from lmi import CommonLLMNames
 from lmi import LiteLLMModel as LLMModel
+from lmi.config import LLMConfig
 from pydantic import BaseModel, Field, JsonValue
 
 from ldp.agent import Agent, MemoryAgent, ReActAgent
@@ -95,8 +96,12 @@ class SquaredErrorLoss(Op[int]):
 async def test_ape_optimizer() -> None:
     sys_prompt_op = PromptOp("Guess a number based on the input word.")
     package_msg_op = FxnOp(append_to_sys)
-    config = {"max_retries": 3}  # we seem to be hitting rate limits frequently
-    llm = LLMModel(config=config)
+    # We seem to be hitting rate limits frequently, so bump per-model retries.
+    config = LLMConfig.coerce({
+        "name": CommonLLMNames.GPT_4O.value,
+        "max_retries": 3,
+    })
+    llm = LLMModel(llm_config=config)
     llm_call_op = LLMCallOp()
     strip_op = FxnOp(lambda x: x.content)
     loss_op = SquaredErrorLoss()
@@ -189,11 +194,11 @@ class NumberGuesserModule:
         mems = await self.mem_op(query)
         msgs = await self.package_msg_op(mems, query)
         c = await self.llm_call_op(
-            config={
+            config=LLMConfig.coerce({
                 "name": "gpt-4-turbo",  # this is flaky, so use a smarter model
                 "temperature": 0,
                 "max_retries": 3,
-            },
+            }),
             msgs=msgs,
         )
         return await self.strip_op(c), msgs.value
@@ -297,7 +302,9 @@ class TestMemoryOpt:
 
         This test is loosely based on Reflexion (https://arxiv.org/abs/2303.11366).
         """
-        memory_distiller = LLMModel(config={"name": CommonLLMNames.OPENAI_TEST.value})
+        memory_distiller = LLMModel(
+            llm_config=LLMConfig.coerce({"name": CommonLLMNames.OPENAI_TEST.value})
+        )
 
         class LessonEntry(BaseModel):
             """Entry for a lesson created from some example data."""

@@ -11,7 +11,7 @@ import tenacity
 import tree
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
 from lmi import CommonLLMNames, LLMResult
-from lmi import LiteLLMModel as LLMModel
+from lmi.config import LLMConfig
 
 from ldp.graph import (
     CallID,
@@ -144,7 +144,7 @@ class TestLLMCallOp:
 
         env = LLMCallingEnv()
         obs, tools = await env.reset()
-        config = {"name": model_name, "temperature": 0.1}
+        config = LLMConfig.coerce({"name": model_name, "temperature": 0.1})
         llm_op = LLMCallOp()
 
         # Perform one step
@@ -164,7 +164,7 @@ class TestLLMCallOp:
     async def test_empty_tools(self) -> None:
         llm_call_op = LLMCallOp()
         message_result = await llm_call_op(
-            LLMModel.model_fields["config"].default_factory(),  # type: ignore[call-arg, misc]
+            LLMConfig.coerce({"name": CommonLLMNames.GPT_4O.value}),
             msgs=[Message(content="Hello")],
             tools=[],
         )
@@ -175,11 +175,11 @@ class TestLLMCallOp:
     @pytest.mark.asyncio
     @pytest.mark.parametrize("temperature", [0.0, 0.5, 1.0])
     async def test_compute_logprob(self, temperature) -> None:
-        config = {
+        config = LLMConfig.coerce({
             "name": CommonLLMNames.OPENAI_TEST.value,
             "temperature": temperature,
             "logprobs": True,
-        }
+        })
         llm_op = LLMCallOp()
         output = await llm_op(config, msgs=[Message(content="Hello")])
         logp = llm_op.ctx.get(output.call_id, "logprob")
@@ -194,13 +194,19 @@ class TestLLMCallOp:
     @pytest.mark.vcr
     @pytest.mark.asyncio
     async def test_validation(self) -> None:
-        config = {"name": CommonLLMNames.OPENAI_TEST.value, "num_retries": 1}
+        config = LLMConfig.coerce({
+            "name": CommonLLMNames.OPENAI_TEST.value,
+            "num_retries": 1,
+        })
         validator = StatefulValidator()
         llm_op = LLMCallOp(response_validator=validator)
         await llm_op(config, msgs=[Message(content="Hello")])
         assert validator.counter == 2  # first attempt should have failed
 
-        config = {"name": CommonLLMNames.OPENAI_TEST.value, "num_retries": 0}
+        config = LLMConfig.coerce({
+            "name": CommonLLMNames.OPENAI_TEST.value,
+            "num_retries": 0,
+        })
         llm_op = LLMCallOp(response_validator=StatefulValidator())
         with pytest.raises(tenacity.RetryError, match="ResponseValidationError"):
             await llm_op(config, msgs=[Message(content="Hello")])
@@ -242,12 +248,12 @@ async def test_llm_call_graph() -> None:
     user_prompt_op = PromptOp("What is the result of this math equation: {equation}?")
 
     package_msg_op = FxnOp(append_to_sys)
-    config = {
+    config = LLMConfig.coerce({
         "name": "gpt-3.5-turbo-0125",
         "temperature": 0.1,
         "logprobs": True,
         "top_logprobs": 1,
-    }
+    })
     config_op = ConfigOp(config=config)
 
     # Now forward pass
@@ -264,9 +270,10 @@ async def test_llm_call_graph() -> None:
     output_grad = -2.0  # some grad accrued from result
     result.compute_grads([output_grad])
 
-    # check some grads are present
+    # check some grads are present. `config` is an LLMConfig (Pydantic object),
+    # so the tree estimator treats it as a scalar leaf.
     _, g = llm_op.get_input_grads(result.call_id)
-    assert g["config"] == dict.fromkeys(config, 0.0)
+    assert g["config"] == 0.0
     assert g["msgs"] == 0.0
 
     _, g = config_op.get_input_grads(c.call_id)

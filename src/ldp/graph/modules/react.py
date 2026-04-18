@@ -14,6 +14,7 @@ from aviary.core import (
     ToolRequestMessage,
 )
 from aviary.message import EMPTY_CONTENT_BASE_MSG
+from lmi.config import LLMConfig
 
 from ldp.graph import FxnOp, LLMCallOp, OpResult, PromptOp, compute_graph
 from ldp.llms import prepend_sys
@@ -279,16 +280,16 @@ class ReActModuleSinglePrompt:
 
     def __init__(
         self,
-        llm_model: dict[str, Any],
+        llm_config: LLMConfig,
         sys_prompt: str = REACT_DEFAULT_SINGLE_PROMPT_TEMPLATE,
         tool_description_method: ToolDescriptionMethods = ToolDescriptionMethods.STR,
     ):
         self.prompt_op = PromptOp(sys_prompt)
         self._tool_description_method = tool_description_method
-        llm_model["stop"] = ["Observation:"]
         self.package_msg_op = FxnOp(prepend_sys)
         self.tool_select_module = ParsedLLMCallModule[ToolRequestMessage](
-            llm_model=llm_model, parser=self.parse_message
+            llm_config=llm_config.with_extra_params(stop=["Observation:"]),
+            parser=self.parse_message,
         )
 
     @property
@@ -323,13 +324,12 @@ def postprocess_and_concat_resoning_msg(
 class ReActModule(ReActModuleSinglePrompt):
     def __init__(
         self,
-        llm_model: dict[str, Any],
+        llm_config: LLMConfig,
         sys_prompt: str = REACT_DEFAULT_PROMPT_TEMPLATE,
         tool_description_method: ToolDescriptionMethods = ToolDescriptionMethods.STR,
     ):
         self._tool_description_method = tool_description_method
-        llm_model["stop"] = ["Observation:", "Action:"]
-        self.llm_config = llm_model
+        self.llm_config = llm_config.with_extra_params(stop=["Observation:", "Action:"])
         self._llm_call_op = LLMCallOp()
         self.prompt_op = PromptOp(sys_prompt)
         self.package_msg_op = FxnOp(prepend_sys)

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Self, cast
+from typing import Self, cast
 
 from aviary.core import (
     MalformedMessageError,
@@ -8,6 +8,7 @@ from aviary.core import (
     ToolResponseMessage,
 )
 from lmi import CommonLLMNames
+from lmi.config import LLMConfig, LLMConfigField, ModelSpec
 from pydantic import BaseModel, ConfigDict, Field
 from tenacity import (
     Future,
@@ -79,14 +80,18 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
     # passed around) or in the internal Ops
     model_config = ConfigDict(frozen=True)
 
-    llm_model: dict[str, Any] = Field(
-        default={
-            "name": CommonLLMNames.GPT_4O.value,
-            "temperature": 0.1,
-            "logprobs": True,
-            "top_logprobs": 1,
-            "timeout": DEFAULT_LLM_COMPLETION_TIMEOUT,
-        },
+    llm_config: LLMConfigField = Field(
+        default_factory=lambda: LLMConfig(
+            models=[
+                ModelSpec.from_name(
+                    CommonLLMNames.GPT_4O.value,
+                    temperature=0.1,
+                    logprobs=True,
+                    top_logprobs=1,
+                    timeout=DEFAULT_LLM_COMPLETION_TIMEOUT,
+                )
+            ]
+        ),
         description="Starting configuration for the LLM model.",
     )
     sys_prompt: str = Field(
@@ -151,11 +156,11 @@ class ReActAgent(BaseModel, Agent[SimpleAgentState]):
         super().__init__(**kwargs)
         if self.single_prompt:
             self._react_module = ReActModuleSinglePrompt(
-                self.llm_model, self.sys_prompt, self.tool_description_method
+                self.llm_config, self.sys_prompt, self.tool_description_method
             )
         else:
             self._react_module = ReActModule(
-                self.llm_model, self.sys_prompt, self.tool_description_method
+                self.llm_config, self.sys_prompt, self.tool_description_method
             )
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:

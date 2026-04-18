@@ -19,6 +19,7 @@ from lmi import (
     SparseEmbeddingModel,
 )
 from lmi import LiteLLMModel as LLMModel
+from lmi.config import LLMConfig
 from pydantic import BaseModel
 
 from .memory import Memory, MemoryModel, UIndexMemoryModel
@@ -243,7 +244,7 @@ class LLMCallOp(Op[Message]):
     @overload
     async def forward(
         self,
-        config: dict,
+        config: LLMConfig,
         msgs: list[Message],
         tools: list[Tool] = ...,
         tool_choice: Tool | str | None = ...,
@@ -252,7 +253,7 @@ class LLMCallOp(Op[Message]):
     @overload
     async def forward(
         self,
-        config: dict,
+        config: LLMConfig,
         msgs: list[Message],
         tools: None = None,
         tool_choice: str | None = ...,
@@ -260,7 +261,7 @@ class LLMCallOp(Op[Message]):
 
     async def forward(
         self,
-        config: dict,
+        config: LLMConfig,
         msgs: list[Message],
         tools: list[Tool] | None = None,
         tool_choice: Tool | str | None = None,
@@ -268,7 +269,9 @@ class LLMCallOp(Op[Message]):
         """Calls the LLM.
 
         Args:
-            config: Configuration passed to LLMModel.
+            config: Typed model chain used to build the `LLMModel` and to
+                source per-model request defaults (temperature, max_tokens,
+                etc. from `models[0].extra_params`).
             msgs: Input messages to prompt model with.
             tools: A list of Tools that the model may call, if supported.
             tool_choice: Configures how the model should choose a tool.
@@ -281,7 +284,8 @@ class LLMCallOp(Op[Message]):
         Returns:
             Output message from the model.
         """
-        model = LLMModel(config=config)
+        model = LLMModel(llm_config=config)
+        primary_spec = config.models[0]
 
         if not tools:
             # if no tools are provided, tool_choice must be 'none'
@@ -294,16 +298,12 @@ class LLMCallOp(Op[Message]):
             messages=msgs,
             tools=tools,
             tool_choice=tool_choice,
-            # Since config is shared between our LLMModel and our `call` options
-            # we need to ensure we remove keys which work with LLMModel
-            # but not `call`.
-            **{k: v for k, v in config.items() if k != "router_kwargs"},
+            num_retries=primary_spec.extra_params.get("num_retries", 0),
         )
         if result.messages is None:
             raise ValueError("No messages returned")
 
-        # if not set, assume temp = 1. TODO: when would it not be set?
-        temperature: float = config.get("temperature", 1.0)
+        temperature: float = primary_spec.extra_params.get("temperature", 1.0)
 
         # Compute a Monte Carlo estimate of the logprob of this sequence at the given temperature.
         logprob = await self.compute_logprob(
