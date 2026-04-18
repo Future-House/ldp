@@ -74,7 +74,6 @@ from lmi.constants import (
     CHARACTERS_PER_TOKEN_ASSUMPTION,
     DEFAULT_VERTEX_SAFETY_SETTINGS,
     IS_PYTHON_BELOW_312,
-    USE_RESPONSES_API,
 )
 from lmi.cost_tracker import track_costs, track_costs_iter
 from lmi.exceptions import (
@@ -355,15 +354,6 @@ class CommonLLMNames(StrEnum):
     ANTHROPIC_TEST = (  # Cheap, fast, and not Anthropic's cutting edge
         "claude-haiku-4-5-20251001"
     )
-
-
-class DispatchPath(StrEnum):
-    """Selects which underlying primitive `LiteLLMModel._dispatch` invokes."""
-
-    CHAT = "chat"
-    CHAT_STREAM = "chat_stream"
-    RESPONSES = "responses"
-    RESPONSES_STREAM = "responses_stream"
 
 
 async def _commit_stream(gen: AsyncIterable[LLMResult]) -> AsyncIterable[LLMResult]:
@@ -670,33 +660,18 @@ class LLMModel(ABC, BaseModel):
 
         start_clock = asyncio.get_running_loop().time()
         streaming = callbacks is not None
-        dispatch_kwargs: dict[str, Any] = {"messages": messages}
-        if USE_RESPONSES_API:
-            previous_response_id, messages_to_send = _extract_previous_response_id(
-                messages
-            )
-            dispatch_kwargs["messages"] = messages_to_send
-            dispatch_kwargs["tools_for_api"] = chat_kwargs.pop("tools", None)
-            dispatch_kwargs["previous_response_id"] = previous_response_id
-            path = (
-                DispatchPath.RESPONSES_STREAM if streaming else DispatchPath.RESPONSES
-            )
-        else:
-            path = DispatchPath.CHAT_STREAM if streaming else DispatchPath.CHAT
-            if streaming:
-                if tools:
-                    raise NotImplementedError(
-                        "Using tools with callbacks is not supported"
-                    )
-                if n > 1:
-                    raise NotImplementedError(
-                        "Multiple completions with callbacks is not supported"
-                    )
+        if streaming:
+            if tools:
+                raise NotImplementedError("Using tools with callbacks is not supported")
+            if n > 1:
+                raise NotImplementedError(
+                    "Multiple completions with callbacks is not supported"
+                )
 
         dispatch_result = await self._run_with_fallbacks(  # type: ignore[attr-defined]
             self._dispatch,  # type: ignore[attr-defined]
-            path=path,
-            **dispatch_kwargs,
+            messages=messages,
+            streaming=streaming,
             **chat_kwargs,
         )
 
@@ -1090,13 +1065,11 @@ class LiteLLMModel(LLMModel):
         self,
         spec: ModelSpec,
         *,
-        path: "DispatchPath",
         messages: list[Message],
-        tools_for_api: list[dict] | None = None,
-        previous_response_id: str | None = None,
+        streaming: bool = False,
         **chat_kwargs,
     ) -> list[LLMResult] | AsyncIterable[LLMResult]:
-        """Dispatch one request to `spec` via the given path.
+        """Dispatch one request to `spec`, choosing Chat vs Responses per `spec.responses_api`.
 
         Non-streaming paths return a list of `LLMResult`s. Streaming paths
         return an async iterator that has already produced its first chunk;
@@ -1104,29 +1077,23 @@ class LiteLLMModel(LLMModel):
         refusal) surface as exceptions from this coroutine, while mid-stream
         errors propagate unmodified when the caller iterates the result.
         """
-        if path is DispatchPath.CHAT:
-            return await self.acompletion(messages, spec=spec, **chat_kwargs)
-        if path is DispatchPath.CHAT_STREAM:
+        if spec.responses_api:
+            previous_response_id, messages = _extract_previous_response_id(messages)
+            tools = chat_kwargs.pop("tools", None)
+            if streaming:
+                gen = await self._aresponses_iter(
+                    messages, tools, previous_response_id, spec=spec, **chat_kwargs
+                )
+                return await _commit_stream(gen)
+            return await self._aresponses(
+                messages, tools, previous_response_id, spec=spec, **chat_kwargs
+            )
+
+        # Chat Completions path: `tools` stays in chat_kwargs.
+        if streaming:
             gen = await self.acompletion_iter(messages, spec=spec, **chat_kwargs)
             return await _commit_stream(gen)
-        if path is DispatchPath.RESPONSES:
-            return await self._aresponses(
-                messages,
-                tools_for_api,
-                previous_response_id,
-                spec=spec,
-                **chat_kwargs,
-            )
-        if path is DispatchPath.RESPONSES_STREAM:
-            gen = await self._aresponses_iter(
-                messages,
-                tools_for_api,
-                previous_response_id,
-                spec=spec,
-                **chat_kwargs,
-            )
-            return await _commit_stream(gen)
-        raise ValueError(f"Unknown dispatch path: {path!r}")
+        return await self.acompletion(messages, spec=spec, **chat_kwargs)
 
     async def _run_with_fallbacks(
         self,

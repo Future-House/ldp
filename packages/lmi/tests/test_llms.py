@@ -1436,17 +1436,28 @@ class TestResponsesAPI:
 class TestResponsesAPIIntegration:
     """Tests for Responses API call-level behavior with real API calls (VCR-recorded)."""
 
+    @staticmethod
+    def _responses_model() -> LiteLLMModel:
+        from lmi.config import LLMConfig, ModelSpec
+
+        name = CommonLLMNames.OPENAI_TEST.value
+        return LiteLLMModel(
+            name=name,
+            llm_config=LLMConfig(
+                models=[ModelSpec.from_name(name, responses_api=True)]
+            ),
+        )
+
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
     async def test_basic_call(self) -> None:
         """First turn: full history sent, response_id returned."""
-        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+        model = self._responses_model()
         messages = [
             Message(role="system", content="Respond with single words."),
             Message(role="user", content="What color is the sky?"),
         ]
-        with patch("lmi.llms.USE_RESPONSES_API", new=True):
-            results = await model.call(messages)
+        results = await model.call(messages)
 
         assert len(results) == 1
         result = results[0]
@@ -1461,14 +1472,13 @@ class TestResponsesAPIIntegration:
     @pytest.mark.asyncio
     async def test_multi_turn_stateful(self) -> None:
         """Second turn uses previous_response_id, sends only delta."""
-        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+        model = self._responses_model()
 
         messages_turn1 = [
             Message(role="system", content="Respond with single words."),
             Message(role="user", content="What color is the sky?"),
         ]
-        with patch("lmi.llms.USE_RESPONSES_API", new=True):
-            results1 = await model.call(messages_turn1)
+        results1 = await model.call(messages_turn1)
 
         assert results1[0].response_id is not None
         assert results1[0].messages is not None
@@ -1479,8 +1489,7 @@ class TestResponsesAPIIntegration:
             first_response_msg,
             Message(role="user", content="And grass?"),
         ]
-        with patch("lmi.llms.USE_RESPONSES_API", new=True):
-            results2 = await model.call(messages_turn2)
+        results2 = await model.call(messages_turn2)
 
         assert len(results2) == 1
         assert results2[0].text
@@ -1490,7 +1499,7 @@ class TestResponsesAPIIntegration:
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
     async def test_responses_api_off_ignores_response_id(self) -> None:
-        """When USE_RESPONSES_API is off, response_id in Message.info is inert."""
+        """When a model's `responses_api` is False, response_id in Message.info is inert."""
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
         messages = [
             Message(role="user", content="Hello"),
@@ -1501,8 +1510,7 @@ class TestResponsesAPIIntegration:
             ),
             Message(role="user", content="How are you?"),
         ]
-        with patch("lmi.llms.USE_RESPONSES_API", new=False):
-            results = await model.call(messages)
+        results = await model.call(messages)
 
         assert len(results) == 1
         assert results[0].response_id is None

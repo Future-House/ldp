@@ -20,7 +20,7 @@ from litellm.types.utils import Message as LiteLLMMessage
 
 from lmi.config import LLMConfig, ModelSpec
 from lmi.exceptions import AllModelsExhaustedError, ModelRefusalError
-from lmi.llms import DispatchPath, LiteLLMModel, _commit_stream
+from lmi.llms import LiteLLMModel, _commit_stream
 from lmi.types import LLMResult
 
 
@@ -349,57 +349,75 @@ class TestCallEndToEnd:
         assert call_kwargs["max_tokens"] == 42
 
 
-class TestDispatchPathSelection:
-    """Verify `call()` picks the correct DispatchPath.
+class TestDispatchPrimitiveSelection:
+    """Verify `_dispatch` routes to the right primitive.
 
-    We stub `_dispatch` rather than the primitives so we can inspect the path
-    argument directly. The selection depends on USE_RESPONSES_API and whether
-    `callbacks` was passed.
+    Routing depends on `spec.responses_api` and whether `streaming=True` was passed.
     """
 
     @pytest.mark.asyncio
     async def test_chat_non_streaming(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr("lmi.llms.USE_RESPONSES_API", False)
         model = _model()
         seen: dict[str, Any] = {}
 
-        # Bound-method replacement: first arg is `self` (the LiteLLMModel instance).
-        async def fake_dispatch(  # noqa: RUF029
+        async def fake_acompletion(  # noqa: RUF029
             _self: LiteLLMModel,
-            spec: ModelSpec,
+            messages: Any,  # noqa: ARG001
             *,
-            path: DispatchPath,
-            **_: Any,
+            spec: ModelSpec,
+            **_kwargs: Any,
         ) -> list[Any]:
-            seen["path"] = path
+            seen["primitive"] = "acompletion"
             seen["spec"] = spec
             return []
 
-        monkeypatch.setattr(LiteLLMModel, "_dispatch", fake_dispatch)
+        monkeypatch.setattr(LiteLLMModel, "acompletion", fake_acompletion)
         await model.call([Message(content="hi")])
-        assert seen["path"] is DispatchPath.CHAT
+        assert seen["primitive"] == "acompletion"
         assert seen["spec"].name == PRIMARY
 
     @pytest.mark.asyncio
     async def test_chat_streaming(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr("lmi.llms.USE_RESPONSES_API", False)
         model = _model()
         seen: dict[str, Any] = {}
 
-        async def empty_iter() -> AsyncIterator[Any]:  # noqa: RUF029
-            return
-            yield  # pragma: no cover
+        async def one_chunk() -> AsyncIterator[LLMResult]:  # noqa: RUF029
+            yield _chunk("ok")
 
-        async def fake_dispatch(  # noqa: RUF029
+        async def fake_acompletion_iter(  # noqa: RUF029
             _self: LiteLLMModel,
-            _spec: ModelSpec,
+            messages: Any,  # noqa: ARG001
             *,
-            path: DispatchPath,
-            **_: Any,
-        ) -> AsyncIterator[Any]:
-            seen["path"] = path
-            return empty_iter()
+            spec: ModelSpec,  # noqa: ARG001
+            **_kwargs: Any,
+        ) -> AsyncIterator[LLMResult]:
+            seen["primitive"] = "acompletion_iter"
+            return one_chunk()
 
-        monkeypatch.setattr(LiteLLMModel, "_dispatch", fake_dispatch)
+        monkeypatch.setattr(LiteLLMModel, "acompletion_iter", fake_acompletion_iter)
         await model.call([Message(content="hi")], callbacks=[lambda *_a, **_k: None])
-        assert seen["path"] is DispatchPath.CHAT_STREAM
+        assert seen["primitive"] == "acompletion_iter"
+
+    @pytest.mark.asyncio
+    async def test_responses_non_streaming(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        cfg = LLMConfig(models=[ModelSpec(name=PRIMARY, responses_api=True)])
+        model = LiteLLMModel(name=PRIMARY, llm_config=cfg)
+        seen: dict[str, Any] = {}
+
+        async def fake_aresponses(  # noqa: RUF029
+            _self: LiteLLMModel,
+            messages: Any,  # noqa: ARG001
+            tools: Any,  # noqa: ARG001
+            previous_response_id: Any = None,  # noqa: ARG001
+            *,
+            spec: ModelSpec,  # noqa: ARG001
+            **_kwargs: Any,
+        ) -> list[Any]:
+            seen["primitive"] = "_aresponses"
+            return []
+
+        monkeypatch.setattr(LiteLLMModel, "_aresponses", fake_aresponses)
+        await model.call([Message(content="hi")])
+        assert seen["primitive"] == "_aresponses"

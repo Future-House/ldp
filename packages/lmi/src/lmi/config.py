@@ -49,6 +49,14 @@ class ModelSpec(BaseModel):
             " e.g. temperature, max_tokens, safety_settings, vertex_project."
         ),
     )
+    responses_api: bool = Field(
+        default=False,
+        description=(
+            "If True, dispatch this model via OpenAI's stateful Responses API"
+            " (`litellm.aresponses`) instead of the Chat Completions API"
+            " (`litellm.acompletion`)."
+        ),
+    )
 
     @classmethod
     def from_name(cls, name: str, **overrides: Any) -> ModelSpec:
