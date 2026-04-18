@@ -1,255 +1,212 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"system","content":"Answer the following questions
-        as best you can, using the provided tools.\n\nUse the following format:\n\nThought:
-        you should always think about what to do\nAction: the action to take, should
-        be one of the provided tools with necessary arguments\nObservation: the result
-        of the action\n... (this Thought/Action/Observation can repeat N times)\n\nExample:\n\nThought:
-        I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
-        The 7 day forecast for New York is [...]"},{"role":"user","content":"Write a
-        5 word story via print_story"}],"model":"gpt-4o-2024-11-20","logprobs":true,"max_tokens":4096,"n":1,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"none","tools":[{"type":"function","function":{"name":"print_story","description":"Print
-        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
-        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
-        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
-        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}],"top_logprobs":1}'
+        '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"stop_sequences":["Observation:","Action:"],"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"type":"custom","description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"type":"custom","description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"type":"custom","description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"type":"custom","description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"none"},"system":[{"type":"text","text":"Answer
+        the following questions as best you can, using the provided tools.\n\nUse the
+        following format:\n\nThought: you should always think about what to do\nAction:
+        the action to take, should be one of the provided tools with necessary arguments\nObservation:
+        the result of the action\n... (this Thought/Action/Observation can repeat N
+        times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction: get_weather(\"New
+        York\", 7)\nObservation: The 7 day forecast for New York is [...]"}]}'
       headers:
         accept:
           - application/json
         accept-encoding:
           - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
         connection:
           - keep-alive
         content-length:
-          - "1574"
+          - "1541"
         content-type:
           - application/json
         host:
-          - api.openai.com
+          - api.anthropic.com
         user-agent:
-          - AsyncOpenAI/Python 2.30.0
-        x-stainless-arch:
-          - arm64
-        x-stainless-async:
-          - async:asyncio
-        x-stainless-lang:
-          - python
-        x-stainless-os:
-          - MacOS
-        x-stainless-package-version:
-          - 2.30.0
-        x-stainless-raw-response:
-          - "true"
-        x-stainless-read-timeout:
-          - "120.0"
-        x-stainless-retry-count:
-          - "0"
-        x-stainless-runtime:
-          - CPython
-        x-stainless-runtime-version:
-          - 3.13.7
+          - litellm/1.82.6
       method: POST
-      uri: https://api.openai.com/v1/chat/completions
+      uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAA/7xYy07bQBTd8xWjrBM070eWbRegtmoXUVUJEDK2SUwdTxRPBAjx7x07PIw9fsQw
-          ZOHIdx6595zjucd5OAJgkkSTOZiEq8CE6006+/YnO/m1/psso2gBb4KTr3c/fl6vySL5/mXxezIt
-          Vuirmzg0z6uOQ23XxSbR2X443MaBiYtdkRCccqUELAfWOorTYtlyY2ZUzzDEdIaQ/X5auNJJGOd2
-          xpm9BeChvBYpZlF8Z8PlNmVkHed5sIxt7HmSDW51WkQmQZ4nuQkyM5m+DoY6M3FWZr1Y6d1yZebg
-          FNwmaQr2CYMAsNmt3kYgN3p7D4IsArs8BmYVg802yczlPm60Tu0FREm+SYN7kJhjAM6z6m9t4+td
-          HhSlZrs0rQwEWaZNUEBVVnnxNPL4Uleql5utvsrfFvaa+9lLEFQmlJOM/hdnlfIqCVW3tjNm8Bgy
-          LoniXGAOLUUS1yZf3ZsKEa8fSae1CILNEELNkGguJIP24m8iF9N61ZvLCmj1fB9q9/04HYxVJ15u
-          zFpqbcGuBb8WDDv35o3oRS3yeNQ2+jgdoL15u+oskANFxqQvyufdZDdS7OW2lqoHRMFp94MMieQU
-          I4wUpUxwNhBj0lCxIL5Qb5RwcBm9PBDsEnytJB/sFA2kkyCOBZaCQQGZQFKp0fwgpJrnJWuGpCPk
-          jVlH+YdCMJJbBxwtkLTA4oLGh0L27qJTI4IjBDGUkFCGGJGjNdLEFiFHx260GCUcfdexzpuOnCAd
-          CtRIJSm3kFBL23b2ZyVaGm7LHt5VF/R0DSSpwFQwRaxZsPaGjNec8KaKYEDf6ClkrCaEd4Z6/LmC
-          xNYkMSGICDScHm9kDPDJnTkPYMI35uxD3Kk3n8Q+3J169z/lC3O3kjFDiGDMJWWS20d0IMyUDTFA
-          rjdNR8ODvihz1X8wBr08UnaIA2p7g2zpZ9D7SVf+b9LTjyAUGApCMcWEKsnJO3wyG2JmhikH+7M8
-          LlRGIDOywTlQakFqhKbwJ/ibrOfYgVJRiThB2HYkhSV/h8FpKgV+4hnjqPXwesfI5D8AAAD//9xa
-          226jMBB95ytWfEBlG1/w1yAEprGUNgicSn3ov+9AsgspBmyIE7UPfamJ5TNnPHPGM3/mdS16Viw5
-          t8ulFErBABJKBFCDHP7ojjgiXEJLwKJoitUb7+boIHyCxgPqGXNY4R2yKpMgQBOOOdQBBO8gnrs8
-          TAckfgrWH/Bm5rnPi/IDmO97LysSM2GplJQnREL9wfkO6omTnmQuGSFc58JqE2+7bPYQ4qUvmU8G
-          Cd+hyNzUKGaQQ6lkNOWYISpdfUqyH6pHM3c9umKbVb+S7Dcq0q4vvOhWhKSie6oCjcZAyCfsrhnK
-          5j/4ka0AC35vG9w5ac35CH5WL8CcVgIPR2lX6hEhMJdgrDu7SEDyHSLHMri7cx+czesEyHL7LwF1
-          zihBEDGJwGQ7oQg56RDmommm3TBLkRvw7cNuOV/rbfUYhLyUCvNRQfY+40wZ/YCspM2q1KHdvUQE
-          U5EIybDYIZ9tDhlOBWvjJFdW8G32IvYkBfuyrDKE4CzlApQQ4gI5P7cHo+llXRQsHnmVHxrc4t/m
-          +6YIIEIxyG+864Ahien212vbpQp2gaawvKFtvD1zd2oPk5HFRN9GMSfzlpV+1+0ha1TennqbQBVU
-          x9G//fqd4vPNqGkMtnmrTdabsUNNkmtEiYdJ2PHqddGcTH4c/Z9duze3+2WlMrk+jgdA4yIvDqoc
-          fjqMwebnUp9GC9EI3fQ0tr0vyPX7q8v2w0JRqNrAmepGlbq4RTx81qhuUHjus/9W7g8ct6r50IXK
-          jFZNx0Spqvx8vIT4uP1sjXrLgK5X1VxeP+CTqs54XhUVr3JK4+gr+gsAAP//AwDY24Yv0SwAAA==
+          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
       headers:
-        Access-Control-Expose-Headers:
-          - X-Request-ID
-        CF-Cache-Status:
-          - DYNAMIC
-        CF-Ray:
-          - 9edf5883aedafa9a-SJC
+        CF-RAY:
+          - 9edf68905a15236e-SJC
         Connection:
           - keep-alive
         Content-Encoding:
           - gzip
+        Content-Security-Policy:
+          - default-src 'none'; frame-ancestors 'none'
         Content-Type:
           - application/json
         Date:
-          - Fri, 17 Apr 2026 23:52:50 GMT
+          - Sat, 18 Apr 2026 00:03:48 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=kAPiN4gBriPsgeIV_LhRxghzS51mWN68tVZ9KnoDoSE-1776469970.5059128-1.0.1.1-Pg2YYliBr6UyGhP80IwzTqhHdGddxvuCDckkkE8G4FzDBS9gFwdAPYb.EIIQ8QVyyd1moAjkJKID9KnvuIz1tu0hwxVSMThVCeNu19WcGTfGzowyMQ08GX5x00EMb_YN;
-            HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Sat, 18 Apr 2026
-            00:22:50 GMT
-        Strict-Transport-Security:
-          - max-age=31536000; includeSubDomains; preload
+          - _cfuvid=l_PK3Rv1x8Oo1lA1HBTadnFymOp8B6wfkp3bUBl6PC0-1776470627.8951516-1.0.1.1-FiDyWOUah3UeV_yyUWyN18IOp_TcF8jtpdwyLYsPPqk;
+            HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
         Transfer-Encoding:
           - chunked
-        X-Content-Type-Options:
-          - nosniff
-        alt-svc:
-          - h3=":443"; ma=86400
-        openai-organization:
-          - future-house-xr4tdh
-        openai-processing-ms:
-          - "424"
-        openai-project:
-          - proj_Jt6Hc8GI0Cv9yaRVy35owwje
-        openai-version:
-          - "2020-10-01"
-        x-openai-proxy-wasm:
-          - v0.1
-        x-ratelimit-limit-requests:
-          - "10000"
-        x-ratelimit-limit-tokens:
-          - "30000000"
-        x-ratelimit-remaining-requests:
-          - "9999"
-        x-ratelimit-remaining-tokens:
-          - "29999868"
-        x-ratelimit-reset-requests:
-          - 6ms
-        x-ratelimit-reset-tokens:
-          - 0s
-        x-request-id:
-          - req_265b758d8cd747b79aded0278d2324e9
+        Vary:
+          - Accept-Encoding
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - 569b7dde-84c5-41d2-a238-92eabce6c127
+        anthropic-ratelimit-input-tokens-limit:
+          - "4000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "4000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2026-04-18T00:03:48Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "800000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "800000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2026-04-18T00:03:48Z"
+        anthropic-ratelimit-requests-limit:
+          - "20000"
+        anthropic-ratelimit-requests-remaining:
+          - "19999"
+        anthropic-ratelimit-requests-reset:
+          - "2026-04-18T00:03:47Z"
+        anthropic-ratelimit-tokens-limit:
+          - "4800000"
+        anthropic-ratelimit-tokens-remaining:
+          - "4800000"
+        anthropic-ratelimit-tokens-reset:
+          - "2026-04-18T00:03:48Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CaAFtvdT8UpSfpMMEU9FV
+        server-timing:
+          - x-originResponse;dur=502
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "497"
       status:
         code: 200
         message: OK
   - request:
       body:
-        '{"messages":[{"role":"system","content":"Answer the following questions
-        as best you can, using the provided tools.\n\nUse the following format:\n\nThought:
-        you should always think about what to do\nAction: the action to take, should
-        be one of the provided tools with necessary arguments\nObservation: the result
-        of the action\n... (this Thought/Action/Observation can repeat N times)\n\nExample:\n\nThought:
-        I need to use the get_weather tool\nAction: get_weather(\"New York\", 7)\nObservation:
-        The 7 day forecast for New York is [...]"},{"role":"user","content":"Write a
-        5 word story via print_story"},{"role":"assistant","content":"Thought: I will
-        create a 5-word story and use the print_story tool to display it.  \n"},{"role":"user","content":"Continue..."}],"model":"gpt-4o-2024-11-20","logprobs":true,"max_tokens":4096,"n":1,"stop":["Observation:","Action:"],"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
-        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
-        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
-        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
-        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}],"top_logprobs":1}'
+        '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]},{"role":"assistant","content":[{"type":"text","text":"Thought:
+        I need to write a 5 word story and print it using the print_story function."}]},{"role":"user","content":[{"type":"text","text":"Continue..."}]}],"temperature":0.1,"stop_sequences":["Observation:","Action:"],"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"type":"custom","description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"type":"custom","description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"type":"custom","description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"type":"custom","description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"},"system":[{"type":"text","text":"Answer
+        the following questions as best you can, using the provided tools.\n\nUse the
+        following format:\n\nThought: you should always think about what to do\nAction:
+        the action to take, should be one of the provided tools with necessary arguments\nObservation:
+        the result of the action\n... (this Thought/Action/Observation can repeat N
+        times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction: get_weather(\"New
+        York\", 7)\nObservation: The 7 day forecast for New York is [...]"}]}'
       headers:
         accept:
           - application/json
         accept-encoding:
           - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
         connection:
           - keep-alive
         content-length:
-          - "1737"
+          - "1748"
         content-type:
           - application/json
         host:
-          - api.openai.com
+          - api.anthropic.com
         user-agent:
-          - AsyncOpenAI/Python 2.30.0
-        x-stainless-arch:
-          - arm64
-        x-stainless-async:
-          - async:asyncio
-        x-stainless-lang:
-          - python
-        x-stainless-os:
-          - MacOS
-        x-stainless-package-version:
-          - 2.30.0
-        x-stainless-raw-response:
-          - "true"
-        x-stainless-read-timeout:
-          - "120.0"
-        x-stainless-retry-count:
-          - "0"
-        x-stainless-runtime:
-          - CPython
-        x-stainless-runtime-version:
-          - 3.13.7
+          - litellm/1.82.6
       method: POST
-      uri: https://api.openai.com/v1/chat/completions
+      uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAA/41T246bMBB95yuQn5NViCgpeW23F220qqqmldKskGMGcGNsZA9p0yj/vsYkATZZ
-          aXkAM2fO+Mzt4Pk+4SmZ+4QVFFlZifHHn/LLtxUsBcdfu0n1OPmvvudxeP9jtfsUk1HDUJs/wPDM
-          umPK8gC5ki3MNFCEJmowm0VhFMezwAGlSkE0tLzCcajG08k0HAeB/Z6IheIMjPX4bX99/+DejUSZ
-          wj9rnozOlhKMoTlY29nJGrUSjYVQY7hBKpGMOpApiSAb1bIWogegUiJhVIju4vY59M5dnaxjEkwe
-          l+HDNs4/LNjy7+Lzw0auvk5nq959beh95QRltWSX+vTwi33+4jKLSVo6bqW5xMSg0vsXdOtEdV6X
-          NqtGOjmsiXNbk/maLJRBfwt745uK6q1f8lTyvECfpjtLqDXcrcmRDAIevVvnp16tNGS1oeK6iFRK
-          hbTJxVXx6YQcLw0TKq+02phhx15tyvCiq2gZl9wUiR0046rXb6J3lu+Ek3owJ7acdloxQbUFJ3Ua
-          RW1U0o1xhwbxCUSbneix3r8b3YiXpICUi36SdmBYAWlH7WaY1ilXPcDr5Xit5lbsNn8u87eE7wDG
-          oLILmlQaUs6GGXduGpotf83tUmUnmBjQO7u7CXLQTT9SyGgt2gUkZm8QysQ2LQft5tktRZVENGNZ
-          lNEwJN7RewZrRq2DjgQAAA==
+          H4sIAAAAAAAAA3RRy07DMBD8lcjnBqWPSDQ3KIUDCAQq4iVkmWTbWHXs1F4HlSr/zjo0goK42TOz
+          s7uzO1aZAhTLWK6ELyAuhVz7eBKn8SgZpcMkGbIBkwUJKrfiyXBxf5c2eDZtzpcLP3+6tLPaPqxJ
+          g9saggqcEysgwBoVAOGcdCg0EpQbjUCv7GXX69EYxb2Dvkv4e+rzePFxvfBus7l6Lu3tvLHj09nJ
+          klRaVKGutlIjd2jsNpTq2pPtjn0BGbvROUS+NjoSEcoKIizBQvQu3BFraRChFNhQsB+jkBZyZG37
+          OggeNbcgnNGHA3aEg40HcmeZ9krtwQJQSOV6zHcRkHs3F0ezBk3kdHocWucl8Jz8URrNDxVJzxNd
+          /Mf1taEB1CVUYIXiafVX/80Oy98spWA8/oQmY9oGbCNz4ChDPCwcrhC26CJeUoK0OF+BIUob5KKh
+          rcUb3bltPwEAAP//AwC02XJdSgIAAA==
       headers:
-        Access-Control-Expose-Headers:
-          - X-Request-ID
-        CF-Cache-Status:
-          - DYNAMIC
-        CF-Ray:
-          - 9edf5886d8f6fa9a-SJC
+        CF-RAY:
+          - 9edf68940cf4236e-SJC
         Connection:
           - keep-alive
         Content-Encoding:
           - gzip
+        Content-Security-Policy:
+          - default-src 'none'; frame-ancestors 'none'
         Content-Type:
           - application/json
         Date:
-          - Fri, 17 Apr 2026 23:52:51 GMT
+          - Sat, 18 Apr 2026 00:03:49 GMT
         Server:
           - cloudflare
-        Strict-Transport-Security:
-          - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
-        X-Content-Type-Options:
-          - nosniff
-        alt-svc:
-          - h3=":443"; ma=86400
-        openai-organization:
-          - future-house-xr4tdh
-        openai-processing-ms:
-          - "458"
-        openai-project:
-          - proj_Jt6Hc8GI0Cv9yaRVy35owwje
-        openai-version:
-          - "2020-10-01"
-        x-openai-proxy-wasm:
-          - v0.1
-        x-ratelimit-limit-requests:
-          - "10000"
-        x-ratelimit-limit-tokens:
-          - "30000000"
-        x-ratelimit-remaining-requests:
-          - "9999"
-        x-ratelimit-remaining-tokens:
-          - "29999842"
-        x-ratelimit-reset-requests:
-          - 6ms
-        x-ratelimit-reset-tokens:
-          - 0s
-        x-request-id:
-          - req_7c743661ecb444f18ec12a536aeef64b
+        Vary:
+          - Accept-Encoding
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - 569b7dde-84c5-41d2-a238-92eabce6c127
+        anthropic-ratelimit-input-tokens-limit:
+          - "4000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "4000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2026-04-18T00:03:48Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "800000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "800000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2026-04-18T00:03:49Z"
+        anthropic-ratelimit-requests-limit:
+          - "20000"
+        anthropic-ratelimit-requests-remaining:
+          - "19999"
+        anthropic-ratelimit-requests-reset:
+          - "2026-04-18T00:03:48Z"
+        anthropic-ratelimit-tokens-limit:
+          - "4800000"
+        anthropic-ratelimit-tokens-remaining:
+          - "4800000"
+        anthropic-ratelimit-tokens-reset:
+          - "2026-04-18T00:03:48Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CaAFty7HQKxcLNSrgeGkn
+        server-timing:
+          - x-originResponse;dur=559
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "557"
       status:
         code: 200
         message: OK

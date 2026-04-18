@@ -1,115 +1,102 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
-        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
-        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
-        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
-        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+        '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        to print.","title":"Story","type":"string"}},"required":["story"]},"type":"custom","description":"Print
+        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"type":"custom","description":"Cast
+        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"type":"custom","description":"Cast
+        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"type":"custom","description":"Get
+        a random integer in 1 to 10."}],"tool_choice":{"type":"any"}}'
       headers:
         accept:
           - application/json
         accept-encoding:
           - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
         connection:
           - keep-alive
         content-length:
-          - "986"
+          - "965"
         content-type:
           - application/json
         host:
-          - api.openai.com
+          - api.anthropic.com
         user-agent:
-          - AsyncOpenAI/Python 2.30.0
-        x-stainless-arch:
-          - arm64
-        x-stainless-async:
-          - async:asyncio
-        x-stainless-lang:
-          - python
-        x-stainless-os:
-          - MacOS
-        x-stainless-package-version:
-          - 2.30.0
-        x-stainless-raw-response:
-          - "true"
-        x-stainless-read-timeout:
-          - "120.0"
-        x-stainless-retry-count:
-          - "0"
-        x-stainless-runtime:
-          - CPython
-        x-stainless-runtime-version:
-          - 3.13.7
+          - litellm/1.82.6
       method: POST
-      uri: https://api.openai.com/v1/chat/completions
+      uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdQnL8/DL9wIAAAD//4xTy27bMBC86ysEXnKx
-          A0t+55ZDkRY1kgJBDkEdCDS5klhTpEpSdVXD/16Ssh52UqA6WPLOznJ3djjd17slbFb3n15e8Otr
-          +i0ihw1DI8eQux9ATMu6JdLywDApGpgowAZc1Wi5XMwW6/Vi7YFCUuCOlpVmPJPjeBLPxlFk32di
-          LhkBbTO+279hePS/rkVB4bcNT0ZtpACtcQY21ibZoJLcRRDWmmmDhUGjHiRSGBCua1FxPgCMlDwh
-          mPP+4OY5Dr57nWxiQh/0180Trb9M4/Xh8+PzPP359PC4Xw3Oa0rXpW8orQTp9BngXfzu6jCLCVx4
-          bqmYMIk2UtVXdJuEVVYVdirXOjpukU/borstes4xlQcdUiwI0LCyCqqwkFJwluXmRocZ/gO3W3RC
-          FzVPwUffbwO5FKSVxvy9jlgIabAbxwv5dkZO3c64zEold/qKilImmM4T6xrtpRhuJGgb8S2g6mLp
-          VhtrPZMYuQd/aDQ9OwT1nuzROD6DxvbJB6x5C1zUSygYzLwrOiMSTHKgPbU3JK4okwMgGMz+vpuP
-          ajfzM5H9T/keIARKe9uSUgFl5HLiPk2Bu7L/SutU9g0jDeqXvYiJYaDcPiikuOLNbUK61gaKxC4t
-          A+XN6R1eJrvlIprDZEUjFJyCvwAAAP//AwAtVj4XWwQAAA==
+          H4sIAAAAAAAAA3RRXU/CMBT9K0ufxWwTiOENjcQXE41IFGOasl5YoWtne0sEsv/u7WRRNL6155x7
+          zv04sMpK0GzECi2ChF4p1Cb0+r1BL0/zQZamGTtjSpKg8iueZs/VBF6Wi/V4NsyuZ9XULMe4iBrc
+          1RBV4L1YAQHO6ggI75VHYZCgwhoEeo1eD50erdU8eOhS4j9QzsPHfu/mV/n01s3D4/1qcvN0N89J
+          ZUQV62qnDHKP1u1iqakD2R7YFzBi0xKSQmCyDlUNMrFbcAkStgRTwDlrqBehNbhYc+xEKgcFsqZ5
+          O4s2NXcgvDWnPbaEh/cQfdjIBK2PoAQUSvsOC+0WyL1tjaPdgCHysj+M0UUJvCB/VNbwU0Xa8UTL
+          /7iuNgZAXUIFTmg+qP7qv9ms/M3SFmzAn1D/gqYBt1UFcFRxPSzeTgon2y0vwcXB+QosUcYiF1ua
+          Wizo1E3zCQAA//8DAABtahlNAgAA
       headers:
-        Access-Control-Expose-Headers:
-          - X-Request-ID
-        CF-Cache-Status:
-          - DYNAMIC
-        CF-Ray:
-          - 9edf587b88cf6804-SJC
+        CF-RAY:
+          - 9edf688afe27cfa8-SJC
         Connection:
           - keep-alive
         Content-Encoding:
           - gzip
+        Content-Security-Policy:
+          - default-src 'none'; frame-ancestors 'none'
         Content-Type:
           - application/json
         Date:
-          - Fri, 17 Apr 2026 23:52:49 GMT
+          - Sat, 18 Apr 2026 00:03:47 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=O9OxkMDPIU45jMpq4VoAKrZWKN70fHUI4VyoWPyBMXA-1776469969.202803-1.0.1.1-JhhAVZ2eqA8QOBz0ICor4WgyBOZgHBUtYKX4dMCIp4jGq.8d2s0KUkfWlSdrEGfyc7HeTYH.Gjo3CeyVXf7T8i6SpADP0c8GWKbNAlbWLhy7BuTVnL0zgfXOFVir4x7e;
-            HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Sat, 18 Apr 2026
-            00:22:49 GMT
-        Strict-Transport-Security:
-          - max-age=31536000; includeSubDomains; preload
+          - _cfuvid=hR5hvBhRCJVs4FF363TqEl93YXoBhyYLptlRh1KVUKA-1776470627.0410423-1.0.1.1-6PGi3Wn8KTcmRhraLZwlCUmvIAeAeRdKIYFoOFkeZGY;
+            HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
         Transfer-Encoding:
           - chunked
-        X-Content-Type-Options:
-          - nosniff
-        alt-svc:
-          - h3=":443"; ma=86400
-        openai-organization:
-          - future-house-xr4tdh
-        openai-processing-ms:
-          - "321"
-        openai-project:
-          - proj_Jt6Hc8GI0Cv9yaRVy35owwje
-        openai-version:
-          - "2020-10-01"
-        x-openai-proxy-wasm:
-          - v0.1
-        x-ratelimit-limit-requests:
-          - "10000"
-        x-ratelimit-limit-tokens:
-          - "30000000"
-        x-ratelimit-remaining-requests:
-          - "9999"
-        x-ratelimit-remaining-tokens:
-          - "29999989"
-        x-ratelimit-reset-requests:
-          - 6ms
-        x-ratelimit-reset-tokens:
-          - 0s
-        x-request-id:
-          - req_ce643d2d40db4f488a2a9e8709e5e393
+        Vary:
+          - Accept-Encoding
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - 569b7dde-84c5-41d2-a238-92eabce6c127
+        anthropic-ratelimit-input-tokens-limit:
+          - "4000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "4000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2026-04-18T00:03:47Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "800000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "800000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2026-04-18T00:03:47Z"
+        anthropic-ratelimit-requests-limit:
+          - "20000"
+        anthropic-ratelimit-requests-remaining:
+          - "19998"
+        anthropic-ratelimit-requests-reset:
+          - "2026-04-18T00:03:47Z"
+        anthropic-ratelimit-tokens-limit:
+          - "4800000"
+        anthropic-ratelimit-tokens-remaining:
+          - "4800000"
+        anthropic-ratelimit-tokens-reset:
+          - "2026-04-18T00:03:47Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CaAFtrxSdEdmgFnukThrx
+        server-timing:
+          - x-originResponse;dur=631
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "630"
       status:
         code: 200
         message: OK

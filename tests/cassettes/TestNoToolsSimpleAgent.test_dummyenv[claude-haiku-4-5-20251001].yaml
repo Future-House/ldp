@@ -1,108 +1,97 @@
 interactions:
   - request:
-      body: '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4o-2024-11-20","max_tokens":4096,"n":1,"temperature":0.1}'
+      body:
+        '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":[{"type":"text","text":"Write
+        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096}'
       headers:
         accept:
           - application/json
         accept-encoding:
           - gzip, deflate
+        anthropic-version:
+          - "2023-06-01"
         connection:
           - keep-alive
         content-length:
-          - "149"
+          - "176"
         content-type:
           - application/json
         host:
-          - api.openai.com
+          - api.anthropic.com
         user-agent:
-          - AsyncOpenAI/Python 2.30.0
-        x-stainless-arch:
-          - arm64
-        x-stainless-async:
-          - async:asyncio
-        x-stainless-lang:
-          - python
-        x-stainless-os:
-          - MacOS
-        x-stainless-package-version:
-          - 2.30.0
-        x-stainless-raw-response:
-          - "true"
-        x-stainless-read-timeout:
-          - "120.0"
-        x-stainless-retry-count:
-          - "0"
-        x-stainless-runtime:
-          - CPython
-        x-stainless-runtime-version:
-          - 3.13.7
+          - litellm/1.82.6
       method: POST
-      uri: https://api.openai.com/v1/chat/completions
+      uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAA/41TwW7UMBC971cYX2ilbNWUTdpU4oDgUKQKhCqVA1tlXXuSuE1sYztdVtX+O2Nn
-          t8lCkbg4ybx5b8bzJs8zQqgU9JJQ3jDPO9POP92qqy+fbz8UH3lXGVlV1+xmnT78zPtv37/SJDD0
-          /QNwv2edcI088FKrAeYWmIegmp6f54u8KPIiAp0W0AZabfx8oednp2eLeZric0dstOTgMOMHfhLy
-          HM/QohLwC8OnyT7SgXOsBoztkzBodRsilDknnWfK02QEuVYeVOz6prfwhlyBhbeOMJLN19oK4ry2
-          G9I7qWoMVr3i4UqXS7VUq9XKbHyj8VVARYyVypcx/+gYE4L+wH5PlvRaO08eYeMSUuleCaJgTZh4
-          wuJY150s6cCIKkeRdxyKHKjGmtP2LVS9Y2F6qm/bCcCU0p6FVuPg7nbI9mVUra6N1ffuDyqtpJKu
-          KdEsh87hWLC0oRHd4nkXLekPpkxRqDO+9PoRYrk0H+TouAMj+K7YgR4bbMd4liWvqJUCPJOtm1hK
-          OeMNiJE5+s96IfUEmE3u/Hczr2kP90az/0d+BDgHg8tdGgtC8sMLj2kWwh/yr7SXGceGqQP7hHtf
-          egk2+IArxvp2WF7qNs5DV6JZNdi4IiGlMuWCZ2nBiovsgs62s98BzWvdygMAAA==
+          H4sIAAAAAAAAA4xSwWobMRD9FaFeEmOH3SQL8UIOLS301BwCCaVbZEUae9XIo600MnGN/72jrd2S
+          lEB0kfa9N2/2DbOT62DBy1Yar7OFWa/dY55dzprZeXXe1FVVy6l0lgXrtFJV/en+o6k/X8yvvn6A
+          X+/nfYP1lx93rKHtAEUFKekVMBCDL4BOySXSSAyZgAT8ar/tjnqCp8KMVyvfiUbch2jFLYW47bDD
+          xWIxbKkP/LSwFEN0SCoV9uS07VDwGb/EtejkbQ9iGTJa4cMGhEOREZ4GMARWDF4bSGed/FM1Op2M
+          tael0TPnsW9BJ5ObTEOmdjI5YG/qUaRy/30q2W9QEXQKyPEAraIcUR6IBD8zoOE5YPb+AFog7Xw6
+          YnkcZ7uTDvk/FIVHQCbrKx6nNj0ow/bkAqrngurIM21f4461xR+GHtYQtVfN+n/9P7buX7L7qQzj
+          lP5CzZzDQNw4A4ocRM5edsDqaMs64RJiya1WEJjCQEpvOLR+4JXZ738DAAD//wMADWrtWJUCAAA=
       headers:
-        Access-Control-Expose-Headers:
-          - X-Request-ID
-        CF-Cache-Status:
-          - DYNAMIC
-        CF-Ray:
-          - 9edf587b782edf0a-SJC
+        CF-RAY:
+          - 9edf688aefda7a73-SJC
         Connection:
           - keep-alive
         Content-Encoding:
           - gzip
+        Content-Security-Policy:
+          - default-src 'none'; frame-ancestors 'none'
         Content-Type:
           - application/json
         Date:
-          - Fri, 17 Apr 2026 23:52:49 GMT
+          - Sat, 18 Apr 2026 00:03:47 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=CeTCRq5oXYIkdm6OLq4cmMZj2LLMV3tmGSGYCzKFRWE-1776469969.1923773-1.0.1.1-8K6dTKhboQBnFx.f6ZhFy.0gjzKd8TFhE086nRlItubI3he5iZCKiejxeioLllEfDBDX7IuyvLKQ_MNGs4LshIJWreQceBojn0atSY2u4TOfXCI0GOVlKPaLzFnILY.1;
-            HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Sat, 18 Apr 2026
-            00:22:49 GMT
-        Strict-Transport-Security:
-          - max-age=31536000; includeSubDomains; preload
+          - _cfuvid=6MZmHfm587ySHN5CfnKGWXQezo1wXYCze8UkTiAuA3Q-1776470627.0297177-1.0.1.1-35ISxD3hAqseUD5SrMRYZgCahb98Z_kiwEH7Hu61tO4;
+            HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
         Transfer-Encoding:
           - chunked
-        X-Content-Type-Options:
-          - nosniff
-        alt-svc:
-          - h3=":443"; ma=86400
-        openai-organization:
-          - future-house-xr4tdh
-        openai-processing-ms:
-          - "398"
-        openai-project:
-          - proj_Jt6Hc8GI0Cv9yaRVy35owwje
-        openai-version:
-          - "2020-10-01"
-        x-openai-proxy-wasm:
-          - v0.1
-        x-ratelimit-limit-requests:
-          - "10000"
-        x-ratelimit-limit-tokens:
-          - "30000000"
-        x-ratelimit-remaining-requests:
-          - "9999"
-        x-ratelimit-remaining-tokens:
-          - "29999989"
-        x-ratelimit-reset-requests:
-          - 6ms
-        x-ratelimit-reset-tokens:
-          - 0s
-        x-request-id:
-          - req_b95dcfb4c3654270b73c675ea3bf598f
+        Vary:
+          - Accept-Encoding
+        X-Robots-Tag:
+          - none
+        anthropic-organization-id:
+          - 569b7dde-84c5-41d2-a238-92eabce6c127
+        anthropic-ratelimit-input-tokens-limit:
+          - "4000000"
+        anthropic-ratelimit-input-tokens-remaining:
+          - "4000000"
+        anthropic-ratelimit-input-tokens-reset:
+          - "2026-04-18T00:03:47Z"
+        anthropic-ratelimit-output-tokens-limit:
+          - "800000"
+        anthropic-ratelimit-output-tokens-remaining:
+          - "800000"
+        anthropic-ratelimit-output-tokens-reset:
+          - "2026-04-18T00:03:47Z"
+        anthropic-ratelimit-requests-limit:
+          - "20000"
+        anthropic-ratelimit-requests-remaining:
+          - "19998"
+        anthropic-ratelimit-requests-reset:
+          - "2026-04-18T00:03:47Z"
+        anthropic-ratelimit-tokens-limit:
+          - "4800000"
+        anthropic-ratelimit-tokens-remaining:
+          - "4800000"
+        anthropic-ratelimit-tokens-reset:
+          - "2026-04-18T00:03:47Z"
+        cf-cache-status:
+          - DYNAMIC
+        request-id:
+          - req_011CaAFtrvD8kKyncPU1ULfp
+        server-timing:
+          - x-originResponse;dur=835
+        strict-transport-security:
+          - max-age=31536000; includeSubDomains; preload
+        x-envoy-upstream-service-time:
+          - "833"
       status:
         code: 200
         message: OK
