@@ -39,7 +39,7 @@ class TestShouldRetry:
         ],
     )
     def test_transient_errors_retry(self, cls) -> None:
-        assert should_retry(_litellm_exc(cls)) is True
+        assert should_retry(_litellm_exc(cls))
 
     @pytest.mark.parametrize(
         "cls",
@@ -53,16 +53,16 @@ class TestShouldRetry:
         ],
     )
     def test_terminal_errors_dont_retry(self, cls) -> None:
-        assert should_retry(_litellm_exc(cls)) is False
+        assert not should_retry(_litellm_exc(cls))
 
     def test_model_refusal_does_not_retry(self) -> None:
         exc = ModelRefusalError(
             "refused", model="gpt-4o-mini", finish_reason="content_filter"
         )
-        assert should_retry(exc) is False
+        assert not should_retry(exc)
 
     def test_generic_exception_does_not_retry(self) -> None:
-        assert should_retry(ValueError("nope")) is False
+        assert not should_retry(ValueError("nope"))
 
 
 class TestShouldFallback:
@@ -78,13 +78,13 @@ class TestShouldFallback:
         ],
     )
     def test_stable_errors_fallback(self, cls) -> None:
-        assert should_fallback(_litellm_exc(cls)) is True
+        assert should_fallback(_litellm_exc(cls))
 
     def test_model_refusal_falls_back(self) -> None:
         exc = ModelRefusalError(
             "refused", model="gpt-4o-mini", finish_reason="content_filter"
         )
-        assert should_fallback(exc) is True
+        assert should_fallback(exc)
 
     @pytest.mark.parametrize(
         "cls",
@@ -94,7 +94,7 @@ class TestShouldFallback:
         ],
     )
     def test_retryable_errors_do_not_fall_back(self, cls) -> None:
-        assert should_fallback(_litellm_exc(cls)) is False
+        assert not should_fallback(_litellm_exc(cls))
 
 
 class TestBackoff:
