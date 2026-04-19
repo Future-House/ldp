@@ -2,7 +2,7 @@ interactions:
   - request:
       body:
         '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":[{"type":"text","text":"Write
-        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":4096}'
+        a 5 word story via print_story"}]}],"temperature":0.1,"max_tokens":64000}'
       headers:
         accept:
           - application/json
@@ -13,28 +13,28 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "176"
+          - "177"
         content-type:
           - application/json
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.82.6
+          - litellm/1.82.1
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA4xSwWobMRD9FaFeEmOH3SQL8UIOLS301BwCCaVbZEUae9XIo600MnGN/72jrd2S
-          lEB0kfa9N2/2DbOT62DBy1Yar7OFWa/dY55dzprZeXXe1FVVy6l0lgXrtFJV/en+o6k/X8yvvn6A
-          X+/nfYP1lx93rKHtAEUFKekVMBCDL4BOySXSSAyZgAT8ar/tjnqCp8KMVyvfiUbch2jFLYW47bDD
-          xWIxbKkP/LSwFEN0SCoV9uS07VDwGb/EtejkbQ9iGTJa4cMGhEOREZ4GMARWDF4bSGed/FM1Op2M
-          tael0TPnsW9BJ5ObTEOmdjI5YG/qUaRy/30q2W9QEXQKyPEAraIcUR6IBD8zoOE5YPb+AFog7Xw6
-          YnkcZ7uTDvk/FIVHQCbrKx6nNj0ow/bkAqrngurIM21f4461xR+GHtYQtVfN+n/9P7buX7L7qQzj
-          lP5CzZzDQNw4A4ocRM5edsDqaMs64RJiya1WEJjCQEpvOLR+4JXZ738DAAD//wMADWrtWJUCAAA=
+          H4sIAAAAAAAAA4ySQWsbMRCF/4qYXhIjl93QhUTQS6G3Qg+mTaBbZFUae0XkkSyN3Bjj/160jVvS
+          UuhJ6H1v5jEjnWAXHQZQYIOpDpeT8Y91+WY5LG+6m6Hvuh4keAcKdmWru/7BfYhls7o/fH84Dubd
+          /tPd7f79Z5DAx4TNhaWYLYKEHEMTTCm+sCEGCTYSIzGoL6eLn/GpkflQ8EoM4j5mJ1Yc83Gkkdbr
+          dTryFGkkhxuRsifWpdGrazWSEELMN/FWjLCaUGxiJSdCPKDwJCrhU0LL6EQKxmJ5PcLPqrnT1Vx7
+          3YJedJ5zm7pYfKycKqvF4ln7r4xmhfNXCYVj0hlNiQQKkJzmmgmeQcF9RbIIimoIEuq8OnUCT6my
+          5viIVED1txKssRNqm9Gwj6RfGroLz2jcv9iltvXHNOEOswl62P3t/0376U96lhDnjfyShjsJBfPB
+          W9TsMYOC9t7OZNe+Dm0wtxn1FiMooMjaHIwP5ltAOJ9/AAAA//8DACzuyNyBAgAA
       headers:
         CF-RAY:
-          - 9edf688aefda7a73-SJC
+          - 9dde05312a88ffb8-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -44,12 +44,9 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Sat, 18 Apr 2026 00:03:47 GMT
+          - Tue, 17 Mar 2026 18:21:58 GMT
         Server:
           - cloudflare
-        Set-Cookie:
-          - _cfuvid=6MZmHfm587ySHN5CfnKGWXQezo1wXYCze8UkTiAuA3Q-1776470627.0297177-1.0.1.1-35ISxD3hAqseUD5SrMRYZgCahb98Z_kiwEH7Hu61tO4;
-            HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
         Transfer-Encoding:
           - chunked
         Vary:
@@ -63,35 +60,35 @@ interactions:
         anthropic-ratelimit-input-tokens-remaining:
           - "4000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2026-04-18T00:03:47Z"
+          - "2026-03-17T18:21:57Z"
         anthropic-ratelimit-output-tokens-limit:
           - "800000"
         anthropic-ratelimit-output-tokens-remaining:
           - "800000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2026-04-18T00:03:47Z"
+          - "2026-03-17T18:21:58Z"
         anthropic-ratelimit-requests-limit:
-          - "20000"
+          - "4000"
         anthropic-ratelimit-requests-remaining:
-          - "19998"
+          - "3999"
         anthropic-ratelimit-requests-reset:
-          - "2026-04-18T00:03:47Z"
+          - "2026-03-17T18:21:57Z"
         anthropic-ratelimit-tokens-limit:
           - "4800000"
         anthropic-ratelimit-tokens-remaining:
           - "4800000"
         anthropic-ratelimit-tokens-reset:
-          - "2026-04-18T00:03:47Z"
+          - "2026-03-17T18:21:57Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_011CaAFtrvD8kKyncPU1ULfp
+          - req_011CZ97kcgKzhCaG9ktyc4yd
         server-timing:
-          - x-originResponse;dur=835
+          - proxy;dur=890
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
         x-envoy-upstream-service-time:
-          - "833"
+          - "890"
       status:
         code: 200
         message: OK

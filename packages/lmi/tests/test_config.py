@@ -58,7 +58,7 @@ class TestModelSpec:
 
     def test_from_name_openai_defaults(self) -> None:
         spec = ModelSpec.from_name("gpt-4o-mini")
-        assert spec.extra_params == {"temperature": 1.0, "max_tokens": 4096}
+        assert spec.extra_params == {"temperature": 1.0}
 
     def test_from_name_gemini_adds_safety_settings(self) -> None:
         spec = ModelSpec.from_name("gemini-1.5-pro")

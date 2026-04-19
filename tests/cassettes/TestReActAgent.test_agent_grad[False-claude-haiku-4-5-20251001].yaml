@@ -2,7 +2,7 @@ interactions:
   - request:
       body:
         '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":[{"type":"text","text":"Write
-        a 5 word story via print_story"}]}],"temperature":0.1,"stop_sequences":["Observation:","Action:"],"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        a 5 word story via print_story"}]}],"temperature":0.1,"stop_sequences":["Observation:","Action:"],"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]},"type":"custom","description":"Print
         a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"type":"custom","description":"Cast
         the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"type":"custom","description":"Cast
@@ -13,7 +13,7 @@ interactions:
         the action to take, should be one of the provided tools with necessary arguments\nObservation:
         the result of the action\n... (this Thought/Action/Observation can repeat N
         times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction: get_weather(\"New
-        York\", 7)\nObservation: The 7 day forecast for New York is [...]"}]}'
+        York\", 7)\nObservation: The 7 day forecast for New York is [...]"}],"max_tokens":64000}'
       headers:
         accept:
           - application/json
@@ -24,27 +24,27 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1541"
+          - "1542"
         content-type:
           - application/json
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.82.6
+          - litellm/1.82.3
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA3SRzW7DIBCEXwVxjis7qpvKt9zaY9RK/VOFqNkYFHtxYElqRX73giOrTaueYOeb
-          ZRk48c4qaHnF61YGBZmWZhey66zMlvmyLPK84AtuVDR0vhF5cbd5phfa43oIr0PQCt3Tw2YVPTT0
-          kFzgvWwgCs62SZDeG08SKUq1RYK4q95Os5/gM5FpqfijtqHRVLF7hgCKkWVHZwiYZCU7WqeYJ+sG
-          JlGx3hkkZogFb7BhpOEsibNlG7AmY/GKj+8LHrVeOJDeYhwzVR72AbBOV72sK76eOquZKCBpWs8r
-          DG274GEKWJ24wT6QILsDjPB2VcaEstYg6jgpnSAuHfnMI1b/sbk3DYBeQwdOtqLs/vq/aaF/03HB
-          baCf0vImpgF3MDUIMuCmZ4jvKJ1KP4xbcCm9aMBGhJaEPMTU8iP+4jh+AQAA//8DAJoRfQwoAgAA
+          H4sIAAAAAAAAA3SRTUsDMRCG/0qY865si6uSW8EerOJBvKhImG6mu7G7yZpM+kHZ/y7ZUrSKpzDv
+          8wzJSw7QOU0tSKhajJryBs065pd5mU+LaTkpiglkYDRI6EKtislTuVu8Lm79fD77mC4fy82Dv38h
+          yID3PSWLQsA6Bd61KcAQTGC0DBlUzjJZBvl2OPlMu0TGQ8Jz42LdsBR3whJpwU5svWESKEqxdV6L
+          wM7vBVotem8sC8MiBmNrwQ0dI3VUVtFWbJy9gOE9g8CuV54wOAvyOAX6jGSr9NTzWcJs3JSQQRzL
+          yAMY20dW7NZkA8ib6zKDCquGVOUJk63OjeLEPaH+j5120wXUN9SRx1aV3V//m06a33TIwEX+GU2v
+          MgjkN6YixYb8WBmtRq/Tb9oV+dRU1eRAgnWscIOmxWVLMAxfAAAA//8DAGcMa50UAgAA
       headers:
         CF-RAY:
-          - 9edf68905a15236e-SJC
+          - 9de5bd462a54053a-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -54,11 +54,11 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Sat, 18 Apr 2026 00:03:48 GMT
+          - Wed, 18 Mar 2026 16:50:58 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - _cfuvid=l_PK3Rv1x8Oo1lA1HBTadnFymOp8B6wfkp3bUBl6PC0-1776470627.8951516-1.0.1.1-FiDyWOUah3UeV_yyUWyN18IOp_TcF8jtpdwyLYsPPqk;
+          - _cfuvid=BcjdMP2gWIwkhXAxs3LTo7uh4nDueqbPvJyqvB8cqF8-1773852657.627367-1.0.1.1-o.2Bb9xAUJZWKp1DUW7D0yV8ySlJRENLccrgE4Y4kkc;
             HttpOnly; SameSite=None; Secure; Path=/; Domain=api.anthropic.com
         Transfer-Encoding:
           - chunked
@@ -73,35 +73,35 @@ interactions:
         anthropic-ratelimit-input-tokens-remaining:
           - "4000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2026-04-18T00:03:48Z"
+          - "2026-03-18T16:50:58Z"
         anthropic-ratelimit-output-tokens-limit:
           - "800000"
         anthropic-ratelimit-output-tokens-remaining:
           - "800000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2026-04-18T00:03:48Z"
+          - "2026-03-18T16:50:58Z"
         anthropic-ratelimit-requests-limit:
-          - "20000"
+          - "4000"
         anthropic-ratelimit-requests-remaining:
-          - "19999"
+          - "3999"
         anthropic-ratelimit-requests-reset:
-          - "2026-04-18T00:03:47Z"
+          - "2026-03-18T16:50:58Z"
         anthropic-ratelimit-tokens-limit:
           - "4800000"
         anthropic-ratelimit-tokens-remaining:
           - "4800000"
         anthropic-ratelimit-tokens-reset:
-          - "2026-04-18T00:03:48Z"
+          - "2026-03-18T16:50:58Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_011CaAFtvdT8UpSfpMMEU9FV
+          - req_011CZAtd5qz1R6GxyNJ4wCDE
         server-timing:
-          - x-originResponse;dur=502
+          - proxy;dur=1119
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
         x-envoy-upstream-service-time:
-          - "497"
+          - "1119"
       status:
         code: 200
         message: OK
@@ -109,7 +109,7 @@ interactions:
       body:
         '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":[{"type":"text","text":"Write
         a 5 word story via print_story"}]},{"role":"assistant","content":[{"type":"text","text":"Thought:
-        I need to write a 5 word story and print it using the print_story function."}]},{"role":"user","content":[{"type":"text","text":"Continue..."}]}],"temperature":0.1,"stop_sequences":["Observation:","Action:"],"max_tokens":4096,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
+        I need to write a 5 word story and print it using the print_story function."}]},{"role":"user","content":[{"type":"text","text":"Continue..."}]}],"temperature":0.1,"stop_sequences":["Observation:","Action:"],"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
         to print.","title":"Story","type":"string"}},"required":["story"]},"type":"custom","description":"Print
         a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"type":"custom","description":"Cast
         the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"type":"custom","description":"Cast
@@ -120,7 +120,7 @@ interactions:
         the action to take, should be one of the provided tools with necessary arguments\nObservation:
         the result of the action\n... (this Thought/Action/Observation can repeat N
         times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction: get_weather(\"New
-        York\", 7)\nObservation: The 7 day forecast for New York is [...]"}]}'
+        York\", 7)\nObservation: The 7 day forecast for New York is [...]"}],"max_tokens":64000}'
       headers:
         accept:
           - application/json
@@ -131,28 +131,28 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "1748"
+          - "1749"
         content-type:
           - application/json
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.82.6
+          - litellm/1.82.3
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA3RRy07DMBD8lcjnBqWPSDQ3KIUDCAQq4iVkmWTbWHXs1F4HlSr/zjo0goK42TOz
-          s7uzO1aZAhTLWK6ELyAuhVz7eBKn8SgZpcMkGbIBkwUJKrfiyXBxf5c2eDZtzpcLP3+6tLPaPqxJ
-          g9saggqcEysgwBoVAOGcdCg0EpQbjUCv7GXX69EYxb2Dvkv4e+rzePFxvfBus7l6Lu3tvLHj09nJ
-          klRaVKGutlIjd2jsNpTq2pPtjn0BGbvROUS+NjoSEcoKIizBQvQu3BFraRChFNhQsB+jkBZyZG37
-          OggeNbcgnNGHA3aEg40HcmeZ9krtwQJQSOV6zHcRkHs3F0ezBk3kdHocWucl8Jz8URrNDxVJzxNd
-          /Mf1taEB1CVUYIXiafVX/80Oy98spWA8/oQmY9oGbCNz4ChDPCwcrhC26CJeUoK0OF+BIUob5KKh
-          rcUb3bltPwEAAP//AwC02XJdSgIAAA==
+          H4sIAAAAAAAAA3RRyU7DMBD9lWjOLkq6iOIjUjlQAWovUBCyBmfaGBw72OMCqvLvyIWKTRz9Fr83
+          MztofU0WJGiLqaZBg+YpDcaDyWBYDidVWVYgwNQgoY0bVVaL+eNseDy8Wc27+WWYbf16VGEHAvit
+          o6yiGHFDICB4mwGM0URGxyBAe8fkGOTd7qBn761KkQ4p+Z1UWZ1OF+ejtabl7ep6eXNxcbbU9WtW
+          OWyzrwvGsYrsw1u2ui4xyB18ABKunKYidd4VWLBpqeCGAhUvGI+gF6DRWgrZ8FmjNoE0Q9/fi/xH
+          pwJh9O5nwT0R6TmR0wTSJWsFpP24cvfRQbF/IhdBnpxMc4xuSOlAyMY79VNRHvhAWP/HHbw5gLqG
+          Wgpo1aT9q/9iq+Y32wvwib9D45GASGFrNCk2eRWQj1RjqPfrXFPIQ6oNeZDgPCvcorH4YAn6/h0A
+          AP//AwCip0htNgIAAA==
       headers:
         CF-RAY:
-          - 9edf68940cf4236e-SJC
+          - 9de5bd4dbcbd053a-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -162,7 +162,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Sat, 18 Apr 2026 00:03:49 GMT
+          - Wed, 18 Mar 2026 16:51:01 GMT
         Server:
           - cloudflare
         Transfer-Encoding:
@@ -178,35 +178,35 @@ interactions:
         anthropic-ratelimit-input-tokens-remaining:
           - "4000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2026-04-18T00:03:48Z"
+          - "2026-03-18T16:51:01Z"
         anthropic-ratelimit-output-tokens-limit:
           - "800000"
         anthropic-ratelimit-output-tokens-remaining:
           - "800000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2026-04-18T00:03:49Z"
+          - "2026-03-18T16:51:01Z"
         anthropic-ratelimit-requests-limit:
-          - "20000"
+          - "4000"
         anthropic-ratelimit-requests-remaining:
-          - "19999"
+          - "3999"
         anthropic-ratelimit-requests-reset:
-          - "2026-04-18T00:03:48Z"
+          - "2026-03-18T16:50:59Z"
         anthropic-ratelimit-tokens-limit:
           - "4800000"
         anthropic-ratelimit-tokens-remaining:
           - "4800000"
         anthropic-ratelimit-tokens-reset:
-          - "2026-04-18T00:03:48Z"
+          - "2026-03-18T16:51:01Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_011CaAFty7HQKxcLNSrgeGkn
+          - req_011CZAtdAXmHjr7R5bq3Srks
         server-timing:
-          - x-originResponse;dur=559
+          - proxy;dur=2921
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
         x-envoy-upstream-service-time:
-          - "557"
+          - "2921"
       status:
         code: 200
         message: OK

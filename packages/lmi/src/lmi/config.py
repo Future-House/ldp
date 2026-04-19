@@ -22,7 +22,6 @@ from lmi.types import LLMResult
 ResponseValidator = Callable[[LLMResult], Awaitable[None] | None]
 
 _DEFAULT_TEMPERATURE = 1.0
-_DEFAULT_MAX_TOKENS = 4096
 _OPENAI_ONLY_PARAMS = frozenset({"logprobs", "top_logprobs"})
 
 # Per-call retry kwargs that LiteLLM honors via its own internal retry loop. LMI
@@ -87,7 +86,6 @@ class ModelSpec(BaseModel):
         if "gemini" in name:
             extra["safety_settings"] = DEFAULT_VERTEX_SAFETY_SETTINGS
         extra["temperature"] = _DEFAULT_TEMPERATURE
-        extra["max_tokens"] = _DEFAULT_MAX_TOKENS
 
         spec_field_overrides: dict[str, Any] = {}
         extra_overrides: dict[str, Any] = {}
