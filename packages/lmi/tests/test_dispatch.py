@@ -151,9 +151,9 @@ class TestRunWithFallbacks:
         # Every attempt rate-limited on both models.
         attempt = AsyncMock(
             side_effect=[
-                _rate_limit_exc(PRIMARY),
-                _rate_limit_exc(PRIMARY),
-                _rate_limit_exc(PRIMARY),
+                _rate_limit_exc(),
+                _rate_limit_exc(),
+                _rate_limit_exc(),
                 _rate_limit_exc(FALLBACK),
                 _rate_limit_exc(FALLBACK),
             ]
@@ -234,8 +234,7 @@ def _fake_chat_response(
         choices=[
             Choices(
                 finish_reason=finish_reason,
-                index=0,
-                message=LiteLLMMessage(role="assistant", content=text),
+                message=LiteLLMMessage(content=text),
             )
         ],
         usage=Usage(prompt_tokens=5, completion_tokens=3, total_tokens=8),

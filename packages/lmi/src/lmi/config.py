@@ -102,8 +102,7 @@ class ModelSpec(BaseModel):
         out: dict[str, Any] = {
             "model": self.name,
             "timeout": self.timeout,
-            **self.extra_params,
-        }
+        } | self.extra_params
         if self.api_base is not None:
             out["api_base"] = self.api_base
         if self.api_key is not None:
@@ -167,7 +166,7 @@ class LLMConfig(BaseModel):
         return self.model_copy(
             update={
                 "models": [
-                    m.model_copy(update={"extra_params": {**m.extra_params, **params}})
+                    m.model_copy(update={"extra_params": m.extra_params | params})
                     for m in self.models
                 ]
             }

@@ -14,7 +14,7 @@ class TestModelSpec:
         assert spec.name == "gpt-4o-mini"
         assert spec.timeout == 60.0
         assert spec.max_retries == 3
-        assert spec.extra_params == {}
+        assert not spec.extra_params
         assert spec.api_key is None
         assert spec.api_base is None
 
@@ -26,8 +26,7 @@ class TestModelSpec:
             timeout=10.0,
             extra_params={"temperature": 0.3},
         )
-        kwargs = spec.to_litellm_kwargs()
-        assert kwargs == {
+        assert spec.to_litellm_kwargs() == {
             "model": "gpt-4o-mini",
             "timeout": 10.0,
             "temperature": 0.3,
