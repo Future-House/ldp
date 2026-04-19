@@ -17,7 +17,7 @@ import random
 
 import litellm
 
-from lmi.exceptions import ModelRefusalError
+from lmi.exceptions import ModelRefusalError, ResponseValidationError
 
 BACKOFF_INITIAL = 1.0
 BACKOFF_CAP = 30.0
@@ -29,6 +29,7 @@ _RETRYABLE: tuple[type[BaseException], ...] = (
     litellm.APIConnectionError,
     litellm.InternalServerError,
     litellm.ServiceUnavailableError,
+    ResponseValidationError,
 )
 
 _FALLBACKABLE: tuple[type[BaseException], ...] = (

@@ -26,6 +26,15 @@ class ModelRefusalError(RuntimeError):
         self.response = response
 
 
+class ResponseValidationError(RuntimeError):
+    """Raised when an `LLMConfig.response_validator` rejects an `LLMResult`.
+
+    Treated as transient by the retry/fallback loop so the validator gets a
+    fresh attempt at the same model (up to `ModelSpec.max_retries`) before
+    advancing to the next model.
+    """
+
+
 class AllModelsExhaustedError(RuntimeError):
     """Raised when every model in an `LLMConfig.models` chain has failed or been skipped."""
 

@@ -10,16 +10,26 @@ fails in ways that another model might handle.
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from typing import Annotated, Any
 
 import litellm
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, SecretStr
 
 from lmi.constants import DEFAULT_VERTEX_SAFETY_SETTINGS
+from lmi.types import LLMResult
+
+ResponseValidator = Callable[[LLMResult], Awaitable[None] | None]
 
 _DEFAULT_TEMPERATURE = 1.0
 _DEFAULT_MAX_TOKENS = 4096
 _OPENAI_ONLY_PARAMS = frozenset({"logprobs", "top_logprobs"})
+
+# Per-call retry kwargs that LiteLLM honors via its own internal retry loop. LMI
+# owns retries through `_run_with_fallbacks` + `ModelSpec.max_retries`, so these
+# must never reach `litellm.acompletion`/`litellm.aresponses` regardless of how
+# they ended up in `ModelSpec.extra_params`.
+_LITELLM_RETRY_KWARGS = frozenset({"num_retries", "max_retries"})
 
 
 class ModelSpec(BaseModel):
@@ -99,10 +109,13 @@ class ModelSpec(BaseModel):
 
     def to_litellm_kwargs(self) -> dict[str, Any]:
         """Flatten into kwargs for `litellm.acompletion` / `litellm.aresponses`."""
+        sanitized_extra = {
+            k: v for k, v in self.extra_params.items() if k not in _LITELLM_RETRY_KWARGS
+        }
         out: dict[str, Any] = {
             "model": self.name,
             "timeout": self.timeout,
-        } | self.extra_params
+        } | sanitized_extra
         if self.api_base is not None:
             out["api_base"] = self.api_base
         if self.api_key is not None:
@@ -113,7 +126,7 @@ class ModelSpec(BaseModel):
 class LLMConfig(BaseModel):
     """Ordered model chain: `models[0]` is primary, `models[1:]` are fallbacks."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     models: list[ModelSpec] = Field(
         min_length=1,
@@ -122,6 +135,16 @@ class LLMConfig(BaseModel):
             " entries are tried in order when earlier models fail in ways that"
             " another model might handle (context overflow, content policy,"
             " model-unavailable, or exhausted retries)."
+        ),
+    )
+    response_validator: ResponseValidator | None = Field(
+        default=None,
+        exclude=True,
+        description=(
+            "Optional callable invoked on each successful `LLMResult`. Raises"
+            " any exception to reject the response; we convert that into"
+            " `ResponseValidationError` and let the retry/fallback loop"
+            " handle it."
         ),
     )
 

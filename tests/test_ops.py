@@ -7,11 +7,11 @@ from uuid import UUID
 import litellm
 import numpy as np
 import pytest
-import tenacity
 import tree
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
 from lmi import CommonLLMNames, LLMResult
 from lmi.config import LLMConfig
+from lmi.exceptions import AllModelsExhaustedError, ResponseValidationError
 
 from ldp.graph import (
     CallID,
@@ -194,22 +194,26 @@ class TestLLMCallOp:
     @pytest.mark.vcr
     @pytest.mark.asyncio
     async def test_validation(self) -> None:
+        # Validator failure raises ResponseValidationError, which LMI's loop
+        # treats as transient: it retries against the same model up to
+        # ModelSpec.max_retries before exhausting the chain.
         config = LLMConfig.coerce({
             "name": CommonLLMNames.OPENAI_TEST.value,
-            "num_retries": 1,
+            "max_retries": 1,
         })
         validator = StatefulValidator()
         llm_op = LLMCallOp(response_validator=validator)
         await llm_op(config, msgs=[Message(content="Hello")])
         assert validator.counter == 2  # first attempt should have failed
 
-        config = LLMConfig.coerce({
+        always_fail_config = LLMConfig.coerce({
             "name": CommonLLMNames.OPENAI_TEST.value,
-            "num_retries": 0,
+            "max_retries": 0,
         })
         llm_op = LLMCallOp(response_validator=StatefulValidator())
-        with pytest.raises(tenacity.RetryError, match="ResponseValidationError"):
-            await llm_op(config, msgs=[Message(content="Hello")])
+        with pytest.raises(AllModelsExhaustedError) as excinfo:
+            await llm_op(always_fail_config, msgs=[Message(content="Hello")])
+        assert isinstance(excinfo.value.last_exc, ResponseValidationError)
 
 
 class StatefulValidator:

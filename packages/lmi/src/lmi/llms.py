@@ -14,7 +14,6 @@ __all__ = [
 
 import asyncio
 import contextlib
-import copy
 import functools
 import json
 import logging
@@ -80,6 +79,7 @@ from lmi.exceptions import (
     AllModelsExhaustedError,
     JSONSchemaValidationError,
     ModelRefusalError,
+    ResponseValidationError,
 )
 from lmi.rate_limiter import GLOBAL_LIMITER
 from lmi.retry import (
@@ -584,7 +584,10 @@ class LLMModel(ABC, BaseModel):
             ValueError: If the LLM type is unknown.
         """
         messages = self._maybe_patch_gemini3_tool_response_messages(messages)
-        chat_kwargs = copy.deepcopy(kwargs)
+        # Shallow copy because downstream code only mutates top-level keys.
+        # Trying to avoid a deepcopy if not needed. If a future edit adds
+        # a nested in-place mutation here, this needs revisiting.
+        chat_kwargs = dict(kwargs)
         # if using the config for an LLMModel,
         # there may be a nested 'config' key
         # that can't be used by chat
@@ -946,14 +949,19 @@ class LiteLLMModel(LLMModel):
 
     @model_validator(mode="before")
     @classmethod
-    def maybe_set_config_attribute(cls, input_data: dict[str, Any]) -> dict[str, Any]:
+    def maybe_set_config_attribute(cls, input_data: dict[str, Any]) -> dict[str, Any]:  # noqa: C901
         """
         Set the config attribute if it is not provided.
 
         If name is not provided, uses the default name.
         If a user only gives a name, make a sensible config dict for them.
         """
-        data = copy.deepcopy(input_data)
+        # Shallow copy: we only mutate top-level keys (`update` / `pop` on `data["config"]`); everything
+        # nested below is read or replaced wholesale. If a future edit adds
+        # a nested in-place mutation here, this needs revisiting.
+        data = dict(input_data)
+        if "config" in data:
+            data["config"] = dict(data["config"])
 
         # unnest the config key if it's nested
         if "config" in data and "config" in data["config"]:
@@ -1246,7 +1254,28 @@ class LiteLLMModel(LLMModel):
                     finish_reason=choice.finish_reason,
                 )
             )
+        await self._maybe_validate(results)
         return results
+
+    async def _maybe_validate(self, results: list[LLMResult]) -> None:
+        """Run `llm_config.response_validator` against each result, if attached.
+
+        Any exception from the validator is wrapped as `ResponseValidationError`
+        so the retry/fallback loop can re-attempt the same model (up to
+        `ModelSpec.max_retries`) and then advance to the next.
+        """
+        validator = cast("LLMConfig", self.llm_config).response_validator
+        if not validator:
+            return
+        for result in results:
+            try:
+                outcome = validator(result)
+                if isawaitable(outcome):
+                    await outcome
+            except Exception as exc:
+                raise ResponseValidationError(
+                    f"response_validator {validator!r} rejected {result!r}"
+                ) from exc
 
     # the order should be first request and then rate(token)
     @request_limited

@@ -39,6 +39,19 @@ class TestModelSpec:
         assert "api_key" not in kwargs
         assert "api_base" not in kwargs
 
+    def test_to_litellm_kwargs_strips_litellm_retry_kwargs(self) -> None:
+        # `num_retries` / `max_retries` are LiteLLM's internal retry knobs; LMI
+        # owns retries, so they must not flow through to litellm.acompletion
+        # even when callers stuff them into extra_params via legacy configs.
+        spec = ModelSpec(
+            name="gpt-4o-mini",
+            extra_params={"num_retries": 5, "max_retries": 7, "temperature": 0.3},
+        )
+        kwargs = spec.to_litellm_kwargs()
+        assert "num_retries" not in kwargs
+        assert "max_retries" not in kwargs
+        assert kwargs["temperature"] == 0.3
+
     def test_extra_forbidden(self) -> None:
         with pytest.raises(ValidationError):
             ModelSpec(name="gpt-4o-mini", unknown_field=1)  # type: ignore[call-arg]
