@@ -1120,18 +1120,45 @@ class LiteLLMModel(LLMModel):
         """
         llm_config = cast("LLMConfig", self.llm_config)  # populated by after-validator
         last_exc: BaseException | None = None
-        for spec in llm_config.models:
+        for spec_idx, spec in enumerate(llm_config.models):
             for i in range(spec.max_retries + 1):
                 try:
-                    return await attempt(spec, *args, **kwargs)
+                    result = await attempt(spec, *args, **kwargs)
                 except Exception as exc:
                     last_exc = exc
                     if should_retry(exc) and i < spec.max_retries:
-                        await asyncio.sleep(backoff_seconds(i))
+                        delay = backoff_seconds(i)
+                        logger.info(
+                            "Retrying %s (attempt %d/%d) after %s in %.2fs",
+                            spec.name,
+                            i + 2,
+                            spec.max_retries + 1,
+                            type(exc).__name__,
+                            delay,
+                        )
+                        await asyncio.sleep(delay)
                         continue
                     if should_retry(exc) or should_fallback(exc):
+                        if spec_idx + 1 < len(llm_config.models):
+                            logger.info(
+                                "Advancing from %s to %s after %s",
+                                spec.name,
+                                llm_config.models[spec_idx + 1].name,
+                                type(exc).__name__,
+                            )
                         break
                     raise
+                else:
+                    if i > 0 or spec_idx > 0:
+                        logger.info(
+                            "%s succeeded (spec %d/%d, attempt %d/%d)",
+                            spec.name,
+                            spec_idx + 1,
+                            len(llm_config.models),
+                            i + 1,
+                            spec.max_retries + 1,
+                        )
+                    return result
         raise AllModelsExhaustedError(last_exc) from last_exc
 
     # the order should be first request and then rate(token)
