@@ -1085,6 +1085,12 @@ class LiteLLMModel(LLMModel):
         refusal) surface as exceptions from this coroutine, while mid-stream
         errors propagate unmodified when the caller iterates the result.
         """
+        logger.info(
+            "Dispatching %s via %s%s",
+            spec.name,
+            "responses" if spec.responses_api else "chat",
+            " (stream)" if streaming else "",
+        )
         if spec.responses_api:
             previous_response_id, messages = _extract_previous_response_id(messages)
             tools = chat_kwargs.pop("tools", None)
