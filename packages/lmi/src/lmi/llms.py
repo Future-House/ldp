@@ -587,7 +587,7 @@ class LLMModel(ABC, BaseModel):
         # Shallow copy because downstream code only mutates top-level keys.
         # Trying to avoid a deepcopy if not needed. If a future edit adds
         # a nested in-place mutation here, this needs revisiting.
-        chat_kwargs = dict(kwargs)
+        chat_kwargs = kwargs.copy()
         # if using the config for an LLMModel,
         # there may be a nested 'config' key
         # that can't be used by chat
@@ -959,9 +959,9 @@ class LiteLLMModel(LLMModel):
         # Shallow copy: we only mutate top-level keys (`update` / `pop` on `data["config"]`); everything
         # nested below is read or replaced wholesale. If a future edit adds
         # a nested in-place mutation here, this needs revisiting.
-        data = dict(input_data)
+        data = input_data.copy()
         if "config" in data:
-            data["config"] = dict(data["config"])
+            data["config"] = data["config"].copy()
 
         # unnest the config key if it's nested
         if "config" in data and "config" in data["config"]:

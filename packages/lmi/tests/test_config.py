@@ -43,11 +43,10 @@ class TestModelSpec:
         # `num_retries` / `max_retries` are LiteLLM's internal retry knobs; LMI
         # owns retries, so they must not flow through to litellm.acompletion
         # even when callers stuff them into extra_params via legacy configs.
-        spec = ModelSpec(
+        kwargs = ModelSpec(
             name="gpt-4o-mini",
             extra_params={"num_retries": 5, "max_retries": 7, "temperature": 0.3},
-        )
-        kwargs = spec.to_litellm_kwargs()
+        ).to_litellm_kwargs()
         assert "num_retries" not in kwargs
         assert "max_retries" not in kwargs
         assert kwargs["temperature"] == 0.3
