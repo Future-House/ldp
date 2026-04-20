@@ -28,12 +28,13 @@ def configure_llm_logs() -> None:
     # Set sane default LiteLLM logging configuration
     # SEE: https://docs.litellm.ai/docs/observability/telemetry
     litellm.telemetry = False
-    if (
+    verbose = (
         logging.getLevelNamesMapping().get(
             os.environ.get("LITELLM_LOG", ""), logging.WARNING
         )
         < logging.WARNING
-    ):
+    )
+    if verbose:
         # If LITELLM_LOG is DEBUG or INFO, don't change the LiteLLM log levels
         litellm_loggers_config: dict[str, Any] = {}
     else:
@@ -51,6 +52,10 @@ def configure_llm_logs() -> None:
             "httpx": {"level": "WARNING"},
             "httpcore.connection": {"level": "WARNING"},  # For TCP connection events
             "httpcore.http11": {"level": "WARNING"},  # For request send/receive events
+            # Surface our own retry/fallback orchestration logs when the user
+            # opts into verbose mode via LITELLM_LOG; otherwise rely on
+            # root/WARNING defaults.
+            "lmi": {"level": "INFO" if verbose else "WARNING"},
         }
         | litellm_loggers_config,
     })
