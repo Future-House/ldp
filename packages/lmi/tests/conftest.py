@@ -7,16 +7,25 @@ from typing import Any
 import httpx_aiohttp
 import litellm.llms.custom_httpx.aiohttp_transport
 import pytest
+import vcr.request
 import vcr.stubs.httpcore_stubs
 from dotenv import load_dotenv
 from google.cloud.storage import Client
 
 from lmi.utils import (
     ANTHROPIC_API_KEY_HEADER,
+    ANTHROPIC_ORGANIZATION_HEADER,
+    COOKIE_HEADER,
     CROSSREF_KEY_HEADER,
+    OAUTH_POST_DATA_FILTER,
     OPENAI_API_KEY_HEADER,
+    OPENAI_ORGANIZATION_HEADER,
+    OPENAI_PROJECT_HEADER,
     SEMANTIC_SCHOLAR_KEY_HEADER,
+    SET_COOKIE_HEADER,
     filter_api_keys,
+    filter_gcp_project,
+    filter_vcr_response,
     update_litellm_max_callbacks,
 )
 
@@ -30,6 +39,11 @@ def _load_env() -> None:
     load_dotenv()
 
 
+def _filter_vcr_request(request: vcr.request.Request) -> vcr.request.Request:
+    """Scrub Gemini API keys (query params) and GCP project IDs from request URIs."""
+    return filter_gcp_project(filter_api_keys(request))
+
+
 @pytest.fixture(scope="session", name="vcr_config")
 def fixture_vcr_config() -> dict[str, Any]:
     return {
@@ -37,10 +51,16 @@ def fixture_vcr_config() -> dict[str, Any]:
             CROSSREF_KEY_HEADER,
             SEMANTIC_SCHOLAR_KEY_HEADER,
             OPENAI_API_KEY_HEADER,
+            OPENAI_ORGANIZATION_HEADER,
+            OPENAI_PROJECT_HEADER,
             ANTHROPIC_API_KEY_HEADER,
-            "cookie",
+            ANTHROPIC_ORGANIZATION_HEADER,
+            SET_COOKIE_HEADER,
+            COOKIE_HEADER,
         ],
-        "before_record_request": filter_api_keys,
+        "filter_post_data_parameters": OAUTH_POST_DATA_FILTER,
+        "before_record_request": _filter_vcr_request,
+        "before_record_response": filter_vcr_response,
         "record_mode": "once",
         "allow_playback_repeats": True,
         "cassette_library_dir": str(CASSETTES_DIR),
