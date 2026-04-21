@@ -14,13 +14,9 @@ from aviary.core import DummyEnv
 from lmi import configure_llm_logs
 from lmi.utils import (
     ANTHROPIC_API_KEY_HEADER,
-    ANTHROPIC_ORGANIZATION_HEADER,
     COOKIE_HEADER,
     OAUTH_POST_DATA_FILTER,
     OPENAI_API_KEY_HEADER,
-    OPENAI_ORGANIZATION_HEADER,
-    OPENAI_PROJECT_HEADER,
-    SET_COOKIE_HEADER,
     filter_api_keys,
     filter_gcp_project,
     filter_vcr_response,
@@ -75,11 +71,7 @@ def fixture_vcr_config() -> dict[str, Any]:
     return {
         "filter_headers": [
             OPENAI_API_KEY_HEADER,
-            OPENAI_ORGANIZATION_HEADER,
-            OPENAI_PROJECT_HEADER,
             ANTHROPIC_API_KEY_HEADER,
-            ANTHROPIC_ORGANIZATION_HEADER,
-            SET_COOKIE_HEADER,
             COOKIE_HEADER,
         ],
         "filter_post_data_parameters": OAUTH_POST_DATA_FILTER,

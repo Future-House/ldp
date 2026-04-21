@@ -104,17 +104,17 @@ async def gather_with_concurrency(
 
 OPENAI_API_KEY_HEADER = "authorization"
 ANTHROPIC_API_KEY_HEADER = "x-api-key"
-ANTHROPIC_ORGANIZATION_HEADER = "anthropic-organization-id"
+ANTHROPIC_ORGANIZATION_RESPONSE_HEADER = "anthropic-organization-id"
 CROSSREF_KEY_HEADER = "Crossref-Plus-API-Token"
 SEMANTIC_SCHOLAR_KEY_HEADER = "x-api-key"
 OPENALEX_API_KEY_HEADER = "api_key"
-OPENAI_ORGANIZATION_HEADER = "openai-organization"
-OPENAI_PROJECT_HEADER = "openai-project"
+OPENAI_ORGANIZATION_RESPONSE_HEADER = "openai-organization"
+OPENAI_PROJECT_RESPONSE_HEADER = "openai-project"
 # Scrubbed because Cloudflare sets its `__cf_bm` bot-management cookie on responses
 # from vendor APIs served through its edge (e.g. api.openai.com)
 # SEE: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie
 # SEE: https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/
-SET_COOKIE_HEADER = "Set-Cookie"
+SET_COOKIE_RESPONSE_HEADER = "Set-Cookie"
 # Clients echo `__cf_bm` back on follow-up requests so Cloudflare can tie them to
 # the same session and keep its per-request bot-likelihood score stable
 # SEE: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cookie
@@ -138,13 +138,34 @@ OAUTH_POST_DATA_FILTER: list[tuple[str, str]] = [
 # SEE: https://github.com/kevin1024/vcrpy/blob/v6.0.1/vcr/config.py#L43
 VCR_DEFAULT_MATCH_ON = "method", "scheme", "host", "port", "path", "query"
 
+# Response headers to scrub via VCR `before_record_response`.
+# VCR's `filter_headers` config only acts on request headers,
+# so these enable scrubbing of response-side headers
+# (org/project identifiers, Cloudflare bot-management cookies)
+RESPONSE_FILTER_HEADERS: frozenset[str] = frozenset({
+    ANTHROPIC_ORGANIZATION_RESPONSE_HEADER,
+    OPENAI_ORGANIZATION_RESPONSE_HEADER,
+    OPENAI_PROJECT_RESPONSE_HEADER,
+    SET_COOKIE_RESPONSE_HEADER,
+})
+
 
 def filter_vcr_response(response: dict) -> dict:
-    """Filter sensitive data from VCR response bodies.
+    """Filter sensitive data from VCR response headers and body.
 
-    Scrubs OAuth tokens (access_token, id_token) from JSON response bodies.
+    Scrubs:
+    - Response headers listed in `RESPONSE_FILTER_HEADERS`
+      (`filter_headers` in `vcr_config` only covers the request side).
+    - OAuth tokens (`access_token`, `id_token`) from JSON response bodies.
+
     Gzipped or otherwise non-UTF-8 bodies are left untouched.
     """
+    headers = response.get("headers") or {}
+    lowered_targets = {h.lower() for h in RESPONSE_FILTER_HEADERS}
+    for header_name in list(headers):  # list() since we mutate
+        if header_name.lower() in lowered_targets:
+            headers[header_name] = [FILTERED]
+
     body = response.get("body", {}).get("string")
     if not body:
         return response
