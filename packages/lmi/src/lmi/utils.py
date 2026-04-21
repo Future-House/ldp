@@ -1,9 +1,11 @@
 import asyncio
 import base64
 import contextlib
+import json
 import logging
 import logging.config
 import os
+import re
 from collections.abc import Awaitable, Iterable
 from typing import TYPE_CHECKING, Any, TypeVar
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -102,11 +104,67 @@ async def gather_with_concurrency(
 
 OPENAI_API_KEY_HEADER = "authorization"
 ANTHROPIC_API_KEY_HEADER = "x-api-key"
+ANTHROPIC_ORGANIZATION_HEADER = "anthropic-organization-id"
 CROSSREF_KEY_HEADER = "Crossref-Plus-API-Token"
 SEMANTIC_SCHOLAR_KEY_HEADER = "x-api-key"
+OPENALEX_API_KEY_HEADER = "api_key"
+OPENAI_ORGANIZATION_HEADER = "openai-organization"
+OPENAI_PROJECT_HEADER = "openai-project"
+# Scrubbed because Cloudflare sets its `__cf_bm` bot-management cookie on responses
+# from vendor APIs served through its edge (e.g. api.openai.com)
+# SEE: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie
+# SEE: https://developers.cloudflare.com/fundamentals/reference/policies-compliances/cloudflare-cookies/
+SET_COOKIE_HEADER = "Set-Cookie"
+# Clients echo `__cf_bm` back on follow-up requests so Cloudflare can tie them to
+# the same session and keep its per-request bot-likelihood score stable
+# SEE: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cookie
+# SEE: https://developers.cloudflare.com/bots/concepts/bot-score/
+COOKIE_HEADER = "Cookie"
+FILTERED = "<FILTERED>"  # Could be header, token, or something else
+
+# Returned in the response body by Google's OAuth 2.0/OpenID Connect token endpoint.
+# E.g. when Vertex AI authenticates via a service account or `refresh_token` flow
+# SEE: https://developers.google.com/identity/protocols/oauth2/openid-connect
+OAUTH_RESPONSE_SECRETS = {"access_token", "id_token"}
+# Sent in the POST body to Google's OAuth 2.0 token endpoint
+# to authenticate the client and request a new access token
+# SEE: https://developers.google.com/identity/protocols/oauth2/web-server#offline
+OAUTH_POST_DATA_FILTER: list[tuple[str, str]] = [
+    ("client_id", FILTERED),
+    ("client_secret", FILTERED),
+    ("refresh_token", FILTERED),
+]
 
 # SEE: https://github.com/kevin1024/vcrpy/blob/v6.0.1/vcr/config.py#L43
 VCR_DEFAULT_MATCH_ON = "method", "scheme", "host", "port", "path", "query"
+
+
+def filter_vcr_response(response: dict) -> dict:
+    """Filter sensitive data from VCR response bodies.
+
+    Scrubs OAuth tokens (access_token, id_token) from JSON response bodies.
+    Gzipped or otherwise non-UTF-8 bodies are left untouched.
+    """
+    body = response.get("body", {}).get("string")
+    if not body:
+        return response
+    if not isinstance(body, bytes):  # YAGNI
+        raise NotImplementedError(f"Didn't yet handle body type {type(body).__name__}.")
+    try:
+        text = body.decode("utf-8")
+    except UnicodeDecodeError:
+        return response  # No secrets to scrub when gzip'd or binary response body
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        return response  # Body is an HTML string (e.g. not JSON)
+    if isinstance(data, dict) and data.keys() & OAUTH_RESPONSE_SECRETS:
+        for key in OAUTH_RESPONSE_SECRETS:
+            if key in data:
+                data[key] = FILTERED
+        filtered = json.dumps(data)
+        response["body"]["string"] = filtered.encode()
+    return response
 
 
 def filter_api_keys(request: "vcr.request.Request") -> "vcr.request.Request":
@@ -117,12 +175,22 @@ def filter_api_keys(request: "vcr.request.Request") -> "vcr.request.Request":
 
         # Filter out the Google Gemini API key, if present
         if "key" in query_params:
-            query_params["key"] = ["<FILTERED>"]
+            query_params["key"] = [FILTERED]
 
         # Rebuild the URI, with filtered parameters
         filtered_query = urlencode(query_params, doseq=True)
         request.uri = parsed_uri._replace(query=filtered_query).geturl()
 
+    return request
+
+
+# SEE: https://regex101.com/r/Q461WZ/1
+GCP_PROJECT_PATTERN = re.compile(r"/projects/[^/]+/")
+
+
+def filter_gcp_project(request: "vcr.request.Request") -> "vcr.request.Request":
+    """Scrub GCP project IDs from Vertex AI request URIs."""
+    request.uri = GCP_PROJECT_PATTERN.sub(f"/projects/{FILTERED}/", request.uri)
     return request
 
 
