@@ -13,6 +13,7 @@ from aviary.core import (
     ToolResponseMessage,
 )
 from lmi import CommonLLMNames
+from lmi.exceptions import AllModelsExhaustedError
 
 from ldp.agent import SimpleAgent
 
@@ -112,10 +113,7 @@ class TestParallelism:
         env = ParallelizedDummyEnv(right_hand_broken=True)
         obs, tools = await env.reset()
         right_hand_tool = tools[1]
-        agent = SimpleAgent(
-            llm_model=SimpleAgent.model_fields["llm_model"].default
-            | {"name": model_name}
-        )
+        agent = SimpleAgent(llm_config={"name": model_name})
         agent_state = await agent.init_state(tools=tools)
 
         # 1. Let's DIY create a ToolRequestMessage for test determinism
@@ -137,14 +135,15 @@ class TestParallelism:
             raise AssertionError("Should have blown up per the test logic.")
 
         # 2. Well, it looks like both Anthropic and OpenAI don't like DIY-style
-        #    (using a bare Message) because they expect a tool call ID and tool name
-        with pytest.raises(
-            litellm.BadRequestError,
-            match=(
-                "invalid" if version(litellm.__name__) < "1.45.0" else "tool_call_id"
-            ),
-        ):
+        #    (using a bare Message) because they expect a tool call ID and tool name.
+        #    Single-model chain exhausts on the provider's BadRequestError.
+        expected_match = (
+            "invalid" if version(litellm.__name__) < "1.45.0" else "tool_call_id"
+        )
+        with pytest.raises(AllModelsExhaustedError) as excinfo:
             await agent.get_asv(agent_state, obs)
+        assert isinstance(excinfo.value.last_exc, litellm.BadRequestError)
+        assert expected_match in str(excinfo.value.last_exc)
 
         # 3. Alright, let's check the agent doesn't blow up if we use a
         #    ToolResponseMessage as Anthropic and OpenAI expect

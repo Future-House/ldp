@@ -14,7 +14,6 @@ __all__ = [
 
 import asyncio
 import contextlib
-import copy
 import functools
 import json
 import logging
@@ -69,17 +68,26 @@ from pydantic import (
     model_validator,
 )
 
+from lmi.config import LLMConfig, ModelSpec
 from lmi.constants import (
     CHARACTERS_PER_TOKEN_ASSUMPTION,
     DEFAULT_VERTEX_SAFETY_SETTINGS,
     IS_PYTHON_BELOW_312,
-    USE_RESPONSES_API,
 )
 from lmi.cost_tracker import track_costs, track_costs_iter
-from lmi.exceptions import JSONSchemaValidationError
+from lmi.exceptions import (
+    AllModelsExhaustedError,
+    JSONSchemaValidationError,
+    ModelRefusalError,
+    ResponseValidationError,
+)
 from lmi.rate_limiter import GLOBAL_LIMITER
+from lmi.retry import (
+    backoff_seconds,
+    should_fallback,
+    should_retry,
+)
 from lmi.types import LLMResult
-from lmi.utils import get_litellm_retrying_config
 
 from . import (
     litellm_patches as _litellm_patches,  # noqa: F401 - In-place apply patches at import
@@ -348,10 +356,26 @@ class CommonLLMNames(StrEnum):
     )
 
 
-class OverrideRouterConfig(BaseModel):
-    model_list: list[dict[str, Any]]
-    router_kwargs: dict[str, Any]
-    fallbacks: list[dict[str, Any]]
+async def _commit_stream(gen: AsyncIterable[LLMResult]) -> AsyncIterable[LLMResult]:
+    """Advance `gen` to its first yield and return an iterator that replays it.
+
+    Exceptions raised before the first yield propagate to the caller. Once the
+    first chunk has been produced the returned iterator yields it and then
+    forwards the rest of `gen` verbatim; any mid-stream error surfaces
+    unmodified to the consumer.
+    """
+    iterator = aiter(gen)
+    try:
+        first = await anext(iterator)
+    except StopAsyncIteration as exc:
+        raise RuntimeError("Stream closed before producing any output.") from exc
+
+    async def replay() -> AsyncIterable[LLMResult]:
+        yield first
+        async for item in iterator:
+            yield item
+
+    return replay()
 
 
 def sum_logprobs(choice: litellm.utils.Choices | list[float]) -> float | None:
@@ -477,16 +501,23 @@ class LLMModel(ABC, BaseModel):
     )
     config: dict = Field(default_factory=dict)
 
-    async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:
-        """Return the completion as string and the number of tokens in the prompt and completion."""
+    async def acompletion(
+        self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
+    ) -> list[LLMResult]:
+        """Issue one completion request against the model given by `spec`.
+
+        `spec` supplies the model name and per-request kwargs (api_base,
+        api_key, timeout, extra_params). When None, subclasses default to the
+        primary entry in `llm_config`.
+        """
         raise NotImplementedError
 
     async def acompletion_iter(
-        self, messages: list[Message], **kwargs
+        self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
     ) -> AsyncIterable[LLMResult]:
-        """Return an async generator that yields completions.
+        """Stream one completion from the model given by `spec`.
 
-        Only the last tuple will be non-zero.
+        See `acompletion` for the `spec` contract.
         """
         raise NotImplementedError
 
@@ -553,16 +584,17 @@ class LLMModel(ABC, BaseModel):
             ValueError: If the LLM type is unknown.
         """
         messages = self._maybe_patch_gemini3_tool_response_messages(messages)
-        chat_kwargs = copy.deepcopy(kwargs)
+        # Shallow copy because downstream code only mutates top-level keys.
+        # Trying to avoid a deepcopy if not needed. If a future edit adds
+        # a nested in-place mutation here, this needs revisiting.
+        chat_kwargs = kwargs.copy()
         # if using the config for an LLMModel,
         # there may be a nested 'config' key
         # that can't be used by chat
         chat_kwargs.pop("config", None)
-        n = chat_kwargs.get("n") or self.config.get("n", 1)
+        n = chat_kwargs.get("n", self.config.get("n", 1))
         if n < 1:
             raise ValueError("Number of completions (n) must be >= 1.")
-        if "fallbacks" not in chat_kwargs and "fallbacks" in self.config:
-            chat_kwargs["fallbacks"] = self.config.get("fallbacks", [])
 
         # deal with tools
         if tools:
@@ -583,7 +615,7 @@ class LLMModel(ABC, BaseModel):
 
         # deal with specifying output type
         if isinstance(output_type, Mapping):  # Use structured outputs
-            model_name: str = chat_kwargs.get("model") or self.name
+            model_name: str = chat_kwargs.get("model", self.name)
             if not litellm.supports_response_schema(model_name, None):
                 raise ValueError(f"Model {model_name} does not support JSON schema.")
 
@@ -628,71 +660,41 @@ class LLMModel(ABC, BaseModel):
             )
             for m in messages
         ]
-        results: list[LLMResult] = []
 
         start_clock = asyncio.get_running_loop().time()
-        if USE_RESPONSES_API:
-            previous_response_id, messages_to_send = _extract_previous_response_id(
-                messages
-            )
-            tools_for_api = chat_kwargs.pop("tools", None)
-            override_config = chat_kwargs.pop("override_config", None)
-            if override_config:
-                override_config = OverrideRouterConfig(**override_config)
-            router = self.get_router(override_config)  # type: ignore[attr-defined]
-            if callbacks is not None:
-                sync_callbacks = [f for f in callbacks if not is_coroutine_callable(f)]
-                async_callbacks = [f for f in callbacks if is_coroutine_callable(f)]
-                stream_results = self._aresponses_iter(  # type: ignore[attr-defined]
-                    messages_to_send,
-                    router,
-                    tools_for_api,
-                    previous_response_id=previous_response_id,
-                    **chat_kwargs,
-                )
-                async for result in stream_results:
-                    if result.text:
-                        if result.seconds_to_first_token == 0:
-                            result.seconds_to_first_token = (
-                                asyncio.get_running_loop().time() - start_clock
-                            )
-                        await do_callbacks(
-                            async_callbacks, sync_callbacks, result.text, name
-                        )
-                    results.append(result)
-            else:
-                results = await self._aresponses(  # type: ignore[attr-defined]
-                    messages_to_send,
-                    router,
-                    tools_for_api,
-                    previous_response_id=previous_response_id,
-                    **chat_kwargs,
-                )
-        elif callbacks is None:
-            results = await self.acompletion(messages, **chat_kwargs)
-        else:
+        streaming = callbacks is not None
+        if streaming:
             if tools:
                 raise NotImplementedError("Using tools with callbacks is not supported")
-            n = chat_kwargs.get("n") or self.config.get("n", 1)
             if n > 1:
                 raise NotImplementedError(
                     "Multiple completions with callbacks is not supported"
                 )
+
+        dispatch_result = await self._run_with_fallbacks(  # type: ignore[attr-defined]
+            self._dispatch,  # type: ignore[attr-defined]
+            messages=messages,
+            streaming=streaming,
+            **chat_kwargs,
+        )
+
+        if streaming:
+            assert callbacks is not None
             sync_callbacks = [f for f in callbacks if not is_coroutine_callable(f)]
             async_callbacks = [f for f in callbacks if is_coroutine_callable(f)]
-            stream_results = await self.acompletion_iter(messages, **chat_kwargs)
-            text_result = []
-            async for result in stream_results:
+            results: list[LLMResult] = []
+            async for result in dispatch_result:
                 if result.text:
                     if result.seconds_to_first_token == 0:
                         result.seconds_to_first_token = (
                             asyncio.get_running_loop().time() - start_clock
                         )
-                    text_result.append(result.text)
                     await do_callbacks(
                         async_callbacks, sync_callbacks, result.text, name
                     )
                 results.append(result)
+        else:
+            results = dispatch_result
 
         for result in results:
             if not result.completion_count and result.text is not None:
@@ -929,22 +931,21 @@ class LiteLLMModel(LLMModel):
     config: dict = Field(
         default_factory=dict,
         description=(
-            "Configuration of this model containing several important keys. The"
-            " optional `model_list` key stores a list of all model configurations"
-            " (SEE: https://docs.litellm.ai/docs/routing). The optional"
-            " `router_kwargs` key is keyword arguments to pass to the Router class."
-            " Inclusion of a key `pass_through_router` with a truthy value will lead"
-            " to using not using LiteLLM's Router, instead just LiteLLM's free"
-            f" functions (see {PassThroughRouter.__name__}). Rate limiting applies"
-            " regardless of `pass_through_router` being present. The optional"
-            " `rate_limit` key is a dictionary keyed by model group name with values"
-            " of type limits.RateLimitItem (in tokens / minute) or valid"
-            " limits.RateLimitItem string for parsing. The optional `request_limit`"
-            " key is a dictionary keyed by model group name with values representing"
-            " the maximum number of requests per minute."
+            "Legacy dict-shaped configuration for backward compatibility. Accepts"
+            " a `model_list` entry (litellm Router layout) plus optional"
+            " `rate_limit` / `request_limit` dicts keyed by model group name for"
+            " tokens-per-minute and requests-per-minute throttling. New code"
+            " should use `llm_config` instead."
         ),
     )
-    _router: litellm.Router | None = None
+    llm_config: LLMConfig | None = Field(
+        default=None,
+        description=(
+            "Typed model chain. When unset, this is synthesized from `config`"
+            " (via `LLMConfig.from_legacy_dict`) during validation, so callers"
+            " passing the legacy `config` dict still work."
+        ),
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -955,7 +956,12 @@ class LiteLLMModel(LLMModel):
         If name is not provided, uses the default name.
         If a user only gives a name, make a sensible config dict for them.
         """
-        data = copy.deepcopy(input_data)
+        # Shallow copy: we only mutate top-level keys (`update` / `pop` on `data["config"]`); everything
+        # nested below is read or replaced wholesale. If a future edit adds
+        # a nested in-place mutation here, this needs revisiting.
+        data = input_data.copy()
+        if "config" in data:
+            data["config"] = data["config"].copy()
 
         # unnest the config key if it's nested
         if "config" in data and "config" in data["config"]:
@@ -1013,16 +1019,6 @@ class LiteLLMModel(LLMModel):
                 ],
             } | data["config"]
 
-        if "router_kwargs" not in data["config"]:
-            data["config"]["router_kwargs"] = {}
-        data["config"]["router_kwargs"] = (
-            get_litellm_retrying_config() | data["config"]["router_kwargs"]
-        )
-        if not data["config"].get("pass_through_router"):
-            data["config"]["router_kwargs"] = {"retry_after": 5} | data["config"][
-                "router_kwargs"
-            ]
-
         if "tool_parser" in data["config"]:
             data["tool_parser"] = data["config"].pop("tool_parser")
 
@@ -1038,6 +1034,12 @@ class LiteLLMModel(LLMModel):
 
         return data
 
+    @model_validator(mode="after")
+    def _populate_llm_config(self) -> "LiteLLMModel":
+        if self.llm_config is None:
+            self.llm_config = LLMConfig.from_legacy_dict(self.config)
+        return self
+
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
     # > `none` means the model will not call any tool and instead generates a message.
     # > `auto` means the model can pick between generating a message or calling one or more tools.
@@ -1047,49 +1049,6 @@ class LiteLLMModel(LLMModel):
     TOOL_CHOICE_REQUIRED: ClassVar[str] = "required"
     # None means we won't provide a tool_choice to the LLM API
     UNSPECIFIED_TOOL_CHOICE: ClassVar[None] = None
-
-    def __getstate__(self):
-        # Prevent _router from being pickled, SEE: https://stackoverflow.com/a/2345953
-        state = super().__getstate__()
-        state["__dict__"] = state["__dict__"].copy()
-        state["__dict__"].pop("_router", None)
-        return state
-
-    def get_router(
-        self, override_config: OverrideRouterConfig | None = None
-    ) -> litellm.Router:
-        """Get the router, optionally with an override configuration.
-
-        Args:
-            override_config: Optional configuration to override the default router settings.
-                Should contain 'model_list' and 'router_kwargs' keys.
-
-        Returns:
-            A litellm.Router instance.
-        """
-        if override_config:
-            override_model_list = override_config.model_list
-            override_router_kwargs = override_config.router_kwargs
-
-            can_override = override_model_list and override_router_kwargs
-            if not can_override:
-                logger.warning(
-                    "Cannot override router with provided config. Will use default config."
-                )
-            else:
-                return litellm.Router(
-                    model_list=override_model_list, **override_router_kwargs
-                )
-
-        if self._router is None:
-            router_kwargs: dict = self.config.get("router_kwargs", {})
-            if self.config.get("pass_through_router"):
-                self._router = PassThroughRouter(**router_kwargs)
-            else:
-                self._router = litellm.Router(
-                    model_list=self.config["model_list"], **router_kwargs
-                )
-        return self._router
 
     async def check_request_limit(self, **kwargs) -> None:
         """Check if the request is within the request rate limit."""
@@ -1110,60 +1069,112 @@ class LiteLLMModel(LLMModel):
                 **kwargs,
             )
 
-    async def _handle_refusal_via_fallback(
-        self, messages: list[Message], kwargs: dict[str, Any]
-    ) -> list[LLMResult]:
-        # Let's remove the current model from the configuration
-        current_model = self.name
-        override_config = OverrideRouterConfig(
-            model_list=kwargs.pop("model_list", self.config["model_list"]),
-            router_kwargs=kwargs.pop("router_kwargs", self.config["router_kwargs"]),
-            fallbacks=kwargs.pop("fallbacks", self.config["fallbacks"]),
+    async def _dispatch(
+        self,
+        spec: ModelSpec,
+        *,
+        messages: list[Message],
+        streaming: bool = False,
+        **chat_kwargs,
+    ) -> list[LLMResult] | AsyncIterable[LLMResult]:
+        """Dispatch one request to `spec`, choosing Chat vs Responses per `spec.responses_api`.
+
+        Non-streaming paths return a list of `LLMResult`s. Streaming paths
+        return an async iterator that has already produced its first chunk;
+        errors before the first chunk (stream-open failure, an immediate
+        refusal) surface as exceptions from this coroutine, while mid-stream
+        errors propagate unmodified when the caller iterates the result.
+        """
+        logger.info(
+            "Dispatching %s via %s%s",
+            spec.name,
+            "responses" if spec.responses_api else "chat",
+            " (stream)" if streaming else "",
         )
+        if spec.responses_api:
+            previous_response_id, messages = _extract_previous_response_id(messages)
+            tools = chat_kwargs.pop("tools", None)
+            if streaming:
+                gen = await self._aresponses_iter(
+                    messages, tools, previous_response_id, spec=spec, **chat_kwargs
+                )
+                return await _commit_stream(gen)
+            return await self._aresponses(
+                messages, tools, previous_response_id, spec=spec, **chat_kwargs
+            )
 
-        new_model_list = [
-            model
-            for model in override_config.model_list
-            if model.get("model_name") != current_model
-        ]
+        # Chat Completions path: `tools` stays in chat_kwargs.
+        if streaming:
+            gen = await self.acompletion_iter(messages, spec=spec, **chat_kwargs)
+            return await _commit_stream(gen)
+        return await self.acompletion(messages, spec=spec, **chat_kwargs)
 
-        new_fallbacks = []
-        for fallback in override_config.fallbacks:
-            if current_model not in fallback:
-                new_fallbacks.append(fallback)
-            else:
-                target_model = fallback[current_model][0]
-                new_fallbacks.append({target_model: fallback[current_model][1:]})
+    async def _run_with_fallbacks(
+        self,
+        attempt: Callable[..., Coroutine[Any, Any, Any]],
+        /,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Any:
+        """Drive a single-attempt coroutine across the `LLMConfig.models` chain.
 
-        # Now we update the configuration
-        # Here I am resetting all the configuration I think the user needs to set
-        # But it is possible there is a user misconfiguration that I'd be fixing here
-        # We use model name to make the request. Will reset it after the request
-        self.name = new_model_list[0].get("model_name") or ""
-        if "fallbacks" in kwargs:
-            kwargs["fallbacks"] = new_fallbacks
-        kwargs["override_config"] = {
-            "model_list": new_model_list,
-            "router_kwargs": override_config.router_kwargs
-            | {
-                "fallbacks": new_fallbacks,
-            },
-            "fallbacks": new_fallbacks,
-        }
-
-        results = await self.acompletion(messages, **kwargs)
-        # Put the object back to the original state
-        self.name = current_model
-        return results
+        `attempt(spec, *args, **kwargs)` must run one try at the model described
+        by `spec` and raise on failure. Retries within a single model use
+        exponential jitter backoff (see `retry.backoff_seconds`). Exceptions
+        classified by `should_fallback` (or retry exhaustion on a retryable
+        exception) advance to the next spec; anything else propagates.
+        """
+        llm_config = cast("LLMConfig", self.llm_config)  # populated by after-validator
+        last_exc: BaseException | None = None
+        for spec_idx, spec in enumerate(llm_config.models):
+            for i in range(spec.max_retries + 1):
+                try:
+                    result = await attempt(spec, *args, **kwargs)
+                except Exception as exc:
+                    last_exc = exc
+                    if should_retry(exc) and i < spec.max_retries:
+                        delay = backoff_seconds(i)
+                        logger.info(
+                            "Retrying %s (attempt %d/%d) after %s in %.2fs",
+                            spec.name,
+                            i + 2,
+                            spec.max_retries + 1,
+                            type(exc).__name__,
+                            delay,
+                        )
+                        await asyncio.sleep(delay)
+                        continue
+                    if should_retry(exc) or should_fallback(exc):
+                        if spec_idx + 1 < len(llm_config.models):
+                            logger.info(
+                                "Advancing from %s to %s after %s",
+                                spec.name,
+                                llm_config.models[spec_idx + 1].name,
+                                type(exc).__name__,
+                            )
+                        break
+                    raise
+                else:
+                    if i > 0 or spec_idx > 0:
+                        logger.info(
+                            "%s succeeded (spec %d/%d, attempt %d/%d)",
+                            spec.name,
+                            spec_idx + 1,
+                            len(llm_config.models),
+                            i + 1,
+                            spec.max_retries + 1,
+                        )
+                    return result
+        raise AllModelsExhaustedError(last_exc) from last_exc
 
     # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
-    async def acompletion(self, messages: list[Message], **kwargs) -> list[LLMResult]:  # noqa: C901
-        override_config = kwargs.pop("override_config", None)
-        if override_config:
-            override_config = OverrideRouterConfig(**override_config)
-        router = self.get_router(override_config)
+    async def acompletion(  # noqa: C901
+        self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
+    ) -> list[LLMResult]:
+        if spec is None:
+            spec = cast("LLMConfig", self.llm_config).models[0]
         tools = kwargs.get("tools")
         if not tools:
             # OpenAI, Anthropic and potentially other LLM providers
@@ -1186,9 +1197,12 @@ class LiteLLMModel(LLMModel):
             )
             kwargs["tool_choice"] = self.NO_TOOL_CHOICE
 
-        completions = await track_costs(router.acompletion)(
-            self.name, prompts, **kwargs
-        )
+        call_kwargs = {**spec.to_litellm_kwargs(), **kwargs, "messages": prompts}
+        try:
+            completions = await track_costs(litellm.acompletion)(**call_kwargs)
+        except Exception:
+            logger.exception("acompletion attempt failed on %s.", spec.name)
+            raise
 
         finish_reason = (
             getattr(completions.choices[0], "finish_reason", None)
@@ -1196,26 +1210,16 @@ class LiteLLMModel(LLMModel):
             else None
         )
         if completions.choices and finish_reason in REFUSAL_REASON:
-            logger.warning(
-                f"The LLM request was refused with finish reason '{finish_reason}' "
-                f"for model {self.name}. "
-                "Attempting to fallback to next model in the list."
+            refusal = ModelRefusalError(
+                f"Model {spec.name} refused with finish_reason={finish_reason!r}.",
+                model=spec.name,
+                finish_reason=finish_reason,
+                response=completions,
             )
-            if override_config is not None:
-                # Case we had a previous refusal
-                kwargs["model_list"] = override_config.model_list
-                kwargs["router_kwargs"] = override_config.router_kwargs
-                kwargs["fallbacks"] = override_config.fallbacks
+            logger.error("Model %s refused.", spec.name, exc_info=refusal)
+            raise refusal
 
-            model_list = kwargs.get("model_list") or self.config.get("model_list", None)
-            if model_list and len(model_list) > 1:
-                return await self._handle_refusal_via_fallback(messages, kwargs)
-            logger.warning(
-                f"No fallback models available after refusal for model {self.name}. "
-                "Will return a LLMResult with the refusal completion."
-            )
-
-        used_model = completions.model or self.name
+        used_model = completions.model
         results: list[LLMResult] = []
 
         # Use getattr because ModelResponse.usage not in LiteLLM's type hints
@@ -1283,18 +1287,37 @@ class LiteLLMModel(LLMModel):
                     finish_reason=choice.finish_reason,
                 )
             )
+        await self._maybe_validate(results)
         return results
+
+    async def _maybe_validate(self, results: list[LLMResult]) -> None:
+        """Run `llm_config.response_validator` against each result, if attached.
+
+        Any exception from the validator is wrapped as `ResponseValidationError`
+        so the retry/fallback loop can re-attempt the same model (up to
+        `ModelSpec.max_retries`) and then advance to the next.
+        """
+        validator = cast("LLMConfig", self.llm_config).response_validator
+        if not validator:
+            return
+        for result in results:
+            try:
+                outcome = validator(result)
+                if isawaitable(outcome):
+                    await outcome
+            except Exception as exc:
+                raise ResponseValidationError(
+                    f"response_validator {validator!r} rejected {result!r}"
+                ) from exc
 
     # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
-    async def acompletion_iter(
-        self, messages: list[Message], **kwargs
+    async def acompletion_iter(  # noqa: C901
+        self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
     ) -> AsyncIterable[LLMResult]:
-        override_config = kwargs.pop("override_config", None)
-        if override_config:
-            override_config = OverrideRouterConfig(**override_config)
-        router = self.get_router(override_config)
+        if spec is None:
+            spec = cast("LLMConfig", self.llm_config).models[0]
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
         prompts = cast(
             "list[litellm.types.llms.openai.AllMessageValues]",
@@ -1307,13 +1330,20 @@ class LiteLLMModel(LLMModel):
         if kwargs.get("include_reasoning"):
             stream_options["include_reasoning"] = True
 
-        stream_completions = await track_costs_iter(router.acompletion)(
-            self.name,
-            prompts,
-            stream=True,
-            stream_options=stream_options,
+        call_kwargs = {
+            **spec.to_litellm_kwargs(),
             **kwargs,
-        )
+            "messages": prompts,
+            "stream": True,
+            "stream_options": stream_options,
+        }
+        try:
+            stream_completions = await track_costs_iter(litellm.acompletion)(
+                **call_kwargs
+            )
+        except Exception:
+            logger.exception("acompletion_iter failed to open stream on %s.", spec.name)
+            raise
         start_clock = asyncio.get_running_loop().time()
         outputs = []
         logprobs = []
@@ -1323,7 +1353,7 @@ class LiteLLMModel(LLMModel):
         used_model = None
         async for completion in stream_completions:
             if not used_model:
-                used_model = completion.model or self.name
+                used_model = completion.model
             choice = completion.choices[0]
             delta = choice.delta
             # logprobs can be None, or missing a content attribute,
@@ -1372,6 +1402,16 @@ class LiteLLMModel(LLMModel):
                 asyncio.get_running_loop().time() - start_clock
             )
 
+        if finish_reason in REFUSAL_REASON:
+            refusal = ModelRefusalError(
+                f"Model {spec.name} refused with finish_reason={finish_reason!r}.",
+                model=spec.name,
+                finish_reason=finish_reason,
+                response=result,
+            )
+            logger.error("Model %s refused.", spec.name, exc_info=refusal)
+            raise refusal
+
         yield result
 
     @request_limited
@@ -1379,27 +1419,35 @@ class LiteLLMModel(LLMModel):
     async def _aresponses(
         self,
         messages: list[Message],
-        router: litellm.Router | PassThroughRouter,
         tools: list[dict] | None,
         previous_response_id: str | None = None,
+        *,
+        spec: ModelSpec | None = None,
         **kwargs,
     ) -> list[LLMResult]:
         """Call the Responses API (non-streaming)."""
+        if spec is None:
+            spec = cast("LLMConfig", self.llm_config).models[0]
         responses_input = _convert_to_responses_input(messages)
         responses_tools = _convert_tools_for_responses(tools)
 
         call_kwargs: dict[str, Any] = {
-            "model": self.name,
+            **spec.to_litellm_kwargs(),
             "input": responses_input,
             "tools": responses_tools,
             "store": True,
-        } | kwargs
+            **kwargs,
+        }
         if previous_response_id is not None:
             call_kwargs["previous_response_id"] = previous_response_id
 
-        response = await track_costs(router.aresponses)(**call_kwargs)
+        try:
+            response = await track_costs(litellm.aresponses)(**call_kwargs)
+        except Exception:
+            logger.exception("aresponses attempt failed on %s.", spec.name)
+            raise
 
-        used_model = response.model or self.name
+        used_model = response.model
         usage = getattr(response, "usage", None)
         prompt_count = usage.input_tokens if usage else None
         completion_count = usage.output_tokens if usage else None
@@ -1430,7 +1478,9 @@ class LiteLLMModel(LLMModel):
         ]
 
     def _build_result_from_response(
-        self, response: ResponsesAPIResponse, messages: list[Message]
+        self,
+        response: ResponsesAPIResponse,
+        messages: list[Message],
     ) -> LLMResult:
         """Build an LLMResult from a completed Responses API response."""
         text, output_messages = _parse_responses_output(response.output)  # type: ignore[arg-type]
@@ -1440,7 +1490,7 @@ class LiteLLMModel(LLMModel):
             msg.info = {**(msg.info or {}), "response_id": response.id}
 
         return LLMResult(
-            model=response.model or self.name,
+            model=response.model,
             text=text,
             messages=output_messages or [Message(role="assistant", content=text)],
             prompt=messages,
@@ -1451,35 +1501,43 @@ class LiteLLMModel(LLMModel):
 
     @request_limited
     @rate_limited
-    async def _aresponses_iter(
+    async def _aresponses_iter(  # noqa: C901
         self,
         messages: list[Message],
-        router: litellm.Router | PassThroughRouter,
         tools: list[dict] | None,
         previous_response_id: str | None = None,
+        *,
+        spec: ModelSpec | None = None,
         **kwargs,
     ) -> AsyncIterable[LLMResult]:
         """Stream results from the Responses API."""
+        if spec is None:
+            spec = cast("LLMConfig", self.llm_config).models[0]
         responses_input = _convert_to_responses_input(messages)
         responses_tools = _convert_tools_for_responses(tools)
 
         call_kwargs: dict[str, Any] = {
-            "model": self.name,
+            **spec.to_litellm_kwargs(),
             "input": responses_input,
             "tools": responses_tools,
             "store": True,
             "stream": True,
-        } | kwargs
+            **kwargs,
+        }
         if previous_response_id is not None:
             call_kwargs["previous_response_id"] = previous_response_id
 
-        stream = await track_costs_iter(router.aresponses)(**call_kwargs)
+        try:
+            stream = await track_costs_iter(litellm.aresponses)(**call_kwargs)
+        except Exception:
+            logger.exception("aresponses_iter failed to open stream on %s.", spec.name)
+            raise
 
         completed_response: ResponsesAPIResponse | None = None
         incomplete_response: ResponsesAPIResponse | None = None
         async for event in stream:
             if isinstance(event, OutputTextDeltaEvent):
-                yield LLMResult(model=self.name, text=event.delta, prompt=messages)
+                yield LLMResult(model=spec.name, text=event.delta, prompt=messages)
             elif isinstance(event, ResponseCompletedEvent):
                 completed_response = event.response
             elif isinstance(event, ResponseIncompleteEvent):
@@ -1501,7 +1559,7 @@ class LiteLLMModel(LLMModel):
             yield self._build_result_from_response(completed_response, messages)
         elif incomplete_response:
             logger.warning(
-                f"Responses API returned incomplete response for model {self.name}."
+                f"Responses API returned incomplete response for model {spec.name}."
             )
             yield self._build_result_from_response(incomplete_response, messages)
         else:
@@ -1523,7 +1581,12 @@ class LiteLLMModel(LLMModel):
         self, *selection_args, **selection_kwargs
     ) -> ToolRequestMessage:
         """Shim to aviary.core.ToolSelector that supports tool schemae."""
+        primary = cast("LLMConfig", self.llm_config).models[0]
+
+        async def _acompletion(**kw: Any) -> Any:
+            return await litellm.acompletion(**primary.to_litellm_kwargs(), **kw)
+
         tool_selector = ToolSelector(
-            model_name=self.name, acompletion=track_costs(self.get_router().acompletion)
+            model_name=self.name, acompletion=track_costs(_acompletion)
         )
         return await tool_selector(*selection_args, **selection_kwargs)

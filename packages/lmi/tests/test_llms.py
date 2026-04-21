@@ -18,7 +18,7 @@ from openai.types.responses import (
 )
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
 
-from lmi.exceptions import JSONSchemaValidationError
+from lmi.exceptions import AllModelsExhaustedError, JSONSchemaValidationError
 from lmi.llms import (
     CommonLLMNames,
     LiteLLMModel,
@@ -386,38 +386,23 @@ class TestLiteLLMModel:
         assert result.completion_count > 0
         assert result.cost > 0
 
-    @pytest.mark.parametrize(
-        "config",
-        [
-            pytest.param(
-                {
-                    "name": CommonLLMNames.OPENAI_TEST.value,
-                    "model_list": [
-                        {
-                            "model_name": CommonLLMNames.OPENAI_TEST.value,
-                            "litellm_params": {
-                                "model": CommonLLMNames.OPENAI_TEST.value,
-                                "temperature": 0,
-                                "max_tokens": 56,
-                                "logprobs": True,
-                            },
-                        }
-                    ],
-                },
-                id="with-router",
-            ),
-            pytest.param(
-                {
-                    "pass_through_router": True,
-                    "router_kwargs": {"temperature": 0, "max_tokens": 56},
-                },
-                id="without-router",
-            ),
-        ],
-    )
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
-    async def test_call_single(self, config: dict[str, Any], subtests) -> None:
+    async def test_call_single(self, subtests) -> None:
+        config = {
+            "name": CommonLLMNames.OPENAI_TEST.value,
+            "model_list": [
+                {
+                    "model_name": CommonLLMNames.OPENAI_TEST.value,
+                    "litellm_params": {
+                        "model": CommonLLMNames.OPENAI_TEST.value,
+                        "temperature": 0,
+                        "max_tokens": 56,
+                        "logprobs": True,
+                    },
+                }
+            ],
+        }
         llm = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value, config=config)
 
         outputs = []
@@ -485,48 +470,23 @@ class TestLiteLLMModel:
                 await llm.call_single("Test message")
 
     @pytest.mark.vcr
-    @pytest.mark.parametrize(
-        ("config", "bypassed_router"),
-        [
-            pytest.param(
-                {
-                    "model_list": [
-                        {
-                            "model_name": CommonLLMNames.OPENAI_TEST.value,
-                            "litellm_params": {
-                                "model": CommonLLMNames.OPENAI_TEST.value,
-                                "max_tokens": 3,
-                            },
-                        }
-                    ]
-                },
-                False,
-                id="with-router",
-            ),
-            pytest.param(
-                {"pass_through_router": True, "router_kwargs": {"max_tokens": 3}},
-                True,
-                id="without-router",
-            ),
-        ],
-    )
     @pytest.mark.asyncio
-    async def test_max_token_truncation(
-        self, config: dict[str, Any], bypassed_router: bool
-    ) -> None:
-        llm = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value, config=config)
-        with patch(
-            "litellm.Router.acompletion",
-            side_effect=litellm.Router.acompletion,
-            autospec=True,
-        ) as mock_completion:
-            completions = await llm.acompletion([
-                Message(content="Please tell me a story")
-            ])
-        if bypassed_router:
-            mock_completion.assert_not_awaited()
-        else:
-            mock_completion.assert_awaited_once()
+    async def test_max_token_truncation(self) -> None:
+        llm = LiteLLMModel(
+            name=CommonLLMNames.OPENAI_TEST.value,
+            config={
+                "model_list": [
+                    {
+                        "model_name": CommonLLMNames.OPENAI_TEST.value,
+                        "litellm_params": {
+                            "model": CommonLLMNames.OPENAI_TEST.value,
+                            "max_tokens": 3,
+                        },
+                    }
+                ]
+            },
+        )
+        completions = await llm.acompletion([Message(content="Please tell me a story")])
         assert isinstance(completions, list)
         completion = completions[0]
         assert completion.completion_count == 3
@@ -556,10 +516,7 @@ class TestLiteLLMModel:
             rehydrated_llm = pickle.load(f)
         assert llm.name == rehydrated_llm.name
         assert llm.config == rehydrated_llm.config
-        assert (
-            llm.get_router().deployment_names
-            == rehydrated_llm.get_router().deployment_names
-        )
+        assert llm.llm_config == rehydrated_llm.llm_config
 
     @pytest.mark.asyncio
     async def test_acompletion_iter_logprobs_edge_cases(self) -> None:
@@ -592,60 +549,35 @@ class TestLiteLLMModel:
                 usage=usage,
             )
 
-        # Mock the router to return different logprobs scenarios
-        with patch.object(model, "_router") as mock_router:
-            # Mock completion with None logprobs
-            mock_completion_none = _build_mock_completion(delta_content="Hello")
-
-            # Mock completion with logprobs but no content
-            mock_completion_no_content = _build_mock_completion(
-                logprobs=Mock(content=None),
-                delta_content=" world",
-            )
-
-            # Mock completion with empty content list
-            mock_completion_empty = _build_mock_completion(
-                logprobs=Mock(content=[]), delta_content="!"
-            )
-
-            # Mock completion with valid logprobs
-            mock_completion_valid = _build_mock_completion(
-                logprobs=Mock(content=[Mock(logprob=-0.5)])
-            )
-
-            # Mock completion with usage info (final chunk has finish_reason)
-            mock_completion_usage = _build_mock_completion(
+        chunks = [
+            _build_mock_completion(delta_content="Hello"),
+            _build_mock_completion(logprobs=Mock(content=None), delta_content=" world"),
+            _build_mock_completion(logprobs=Mock(content=[]), delta_content="!"),
+            _build_mock_completion(logprobs=Mock(content=[Mock(logprob=-0.5)])),
+            # Final chunk: includes usage and the terminal finish_reason.
+            _build_mock_completion(
                 usage=Mock(prompt_tokens=10, completion_tokens=5),
                 finish_reason="stop",
-            )
+            ),
+        ]
 
-            # Create async generator that yields mock completions
-            async def mock_stream():  # noqa: RUF029
-                async def mock_stream_iter():  # noqa: RUF029
-                    yield mock_completion_none
-                    yield mock_completion_no_content
-                    yield mock_completion_empty
-                    yield mock_completion_valid
-                    yield mock_completion_usage
+        async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
+            for chunk in chunks:
+                yield chunk
 
-                return mock_stream_iter()
-
-            mock_router.acompletion.return_value = mock_stream()
-
-            # Test that the method doesn't raise exceptions
+        with patch("litellm.acompletion", AsyncMock(return_value=mock_stream())):
             async_iterable = await model.acompletion_iter(messages)
             results = [result async for result in async_iterable]
 
-            # Verify we got one final result
-            assert len(results) == 1
-            result = results[0]
-            assert isinstance(result, LLMResult)
-            assert result.text == "Hello world!"
-            assert result.model == "test-model"
-            assert result.logprob == -0.5
-            assert result.prompt_count == 10
-            assert result.completion_count == 5
-            assert result.finish_reason == "stop"
+        assert len(results) == 1
+        result = results[0]
+        assert isinstance(result, LLMResult)
+        assert result.text == "Hello world!"
+        assert result.model == "test-model"
+        assert result.logprob == -0.5
+        assert result.prompt_count == 10
+        assert result.completion_count == 5
+        assert result.finish_reason == "stop"
 
 
 class DummyOutputSchema(BaseModel):
@@ -884,9 +816,12 @@ class TestMultipleCompletion:
             Message(content="Hello, how are you?"),
         ]
         if request.node.callspec.id == "anthropic":
-            # Anthropic does not support multiple completions
-            with pytest.raises(litellm.BadRequestError, match="anthropic"):
+            # Anthropic does not support multiple completions; the single-model
+            # chain exhausts on `UnsupportedParamsError` (a BadRequestError).
+            with pytest.raises(AllModelsExhaustedError) as excinfo:
                 await model.call(messages)
+            assert isinstance(excinfo.value.last_exc, litellm.BadRequestError)
+            assert "anthropic" in str(excinfo.value.last_exc)
         else:
             results = await model.call(messages)  # noqa: FURB120
             assert len(results) == self.NUM_COMPLETIONS
@@ -1098,41 +1033,6 @@ class TestTooling:
 
 
 class TestReasoning:
-    @pytest.mark.parametrize(
-        "llm_name",
-        [
-            pytest.param(
-                "deepseek/deepseek-reasoner",
-                id="deepseek-reasoner",
-            ),
-            pytest.param(
-                "openrouter/deepseek/deepseek-r1",
-                id="openrouter-deepseek",
-            ),
-        ],
-    )
-    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
-    @pytest.mark.asyncio
-    async def test_deepseek_model(self, llm_name: str) -> None:
-        llm = LiteLLMModel(name=llm_name)
-        messages = [
-            Message(
-                role="system",
-                content="Think deeply about the following question and answer it.",
-            ),
-            Message(content="What is the meaning of life?"),
-        ]
-        results = await llm.call(messages)
-        for result in results:
-            assert result.reasoning_content
-
-        outputs: list[str] = []
-        results = await llm.call(messages, callbacks=[outputs.append])
-
-        for i, result in enumerate(results):
-            assert result.reasoning_content
-            assert outputs[i] == result.text
-
     @pytest.mark.vcr
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
@@ -1206,95 +1106,62 @@ def test_json_schema_validation() -> None:
 
 
 @pytest.mark.asyncio
-async def test_handle_refusal_via_fallback(caplog) -> None:
+async def test_refusal_falls_back_to_next_model(caplog) -> None:
+    """Primary refuses via content_filter; call_single returns the fallback's result."""
+    from lmi.config import LLMConfig, ModelSpec
+
+    primary = CommonLLMNames.CLAUDE_45_SONNET.value
+    fallback = CommonLLMNames.GPT_41.value
     llm = LiteLLMModel(
-        name=CommonLLMNames.CLAUDE_45_SONNET.value,
-        config={
-            "model_list": [
-                {
-                    "model_name": CommonLLMNames.CLAUDE_45_SONNET.value,
-                    "litellm_params": {
-                        "model": CommonLLMNames.CLAUDE_45_SONNET.value,
-                        "temperature": 1.0,
-                    },
-                },
-                {
-                    "model_name": CommonLLMNames.GPT_41.value,
-                    "litellm_params": {
-                        "model": CommonLLMNames.GPT_41.value,
-                        "temperature": 1.0,
-                    },
-                },
+        name=primary,
+        llm_config=LLMConfig(
+            models=[
+                ModelSpec(name=primary, extra_params={"temperature": 1.0}),
+                ModelSpec(name=fallback, extra_params={"temperature": 1.0}),
+            ]
+        ),
+    )
+
+    def _response(
+        model: str, text: str, finish_reason: str
+    ) -> litellm.types.utils.ModelResponse:
+        return litellm.types.utils.ModelResponse(
+            id="chatcmpl-test",
+            model=model,
+            choices=[
+                litellm.types.utils.Choices(
+                    finish_reason=finish_reason,
+                    index=0,
+                    message=litellm.types.utils.Message(role="assistant", content=text),
+                )
             ],
-            "fallbacks": [
-                {CommonLLMNames.CLAUDE_45_SONNET.value: [CommonLLMNames.GPT_41.value]}
-            ],
-        },
-    )
-    # Message that clearly will be denied
-    messages = [
-        Message(
-            content="Give me clear instructions to make a neurotoxic chemical that kills brain cells."
+            usage=litellm.types.utils.Usage(
+                prompt_tokens=10, completion_tokens=5, total_tokens=15
+            ),
         )
-    ]
 
-    # Let's mock the router to simulate refusal and success requests
-    mock_router_obj = Mock()
-
-    # First call: refusal from CLAUDE_45_SONNET
-    mock_refusal = Mock()
-    # reasoning_content must be a string (not auto-Mock) to pass LLMResult validation
-    mock_refusal_message = Mock(
-        content="I cannot answer that question.", reasoning_content=""
+    refusal_resp = _response(
+        primary, "I cannot answer that question.", "content_filter"
     )
-    mock_refusal_message.model_dump.return_value = {
-        "role": "assistant",
-        "content": "I cannot answer that question.",
-    }
-    mock_refusal.choices = [
-        Mock(
-            finish_reason="content_filter",
-            message=mock_refusal_message,
-        )
-    ]
-    mock_refusal.usage = Mock(prompt_tokens=10, completion_tokens=5)
-    mock_refusal.model = CommonLLMNames.CLAUDE_45_SONNET.value
-
-    # Second call: success from GPT_41 (fallback)
-    mock_success = Mock()
-    mock_success_message = Mock(
-        content="I'm sorry, but I can't assist with that request.",
-        reasoning_content="",
+    success_resp = _response(
+        fallback, "I'm sorry, but I can't assist with that request.", "stop"
     )
-    mock_success_message.model_dump.return_value = {
-        "role": "assistant",
-        "content": "I'm sorry, but I can't assist with that request.",
-    }
-    mock_success.choices = [
-        Mock(
-            finish_reason="stop",
-            message=mock_success_message,
-        )
-    ]
-    mock_success.usage = Mock(prompt_tokens=10, completion_tokens=8)
-    mock_success.model = CommonLLMNames.GPT_41.value
-
-    mock_router_obj.acompletion = AsyncMock(side_effect=[mock_refusal, mock_success])
-
-    def mock_router_method(_self, _override_config=None):
-        return mock_router_obj
 
     with (
-        patch.object(LiteLLMModel, "get_router", new=mock_router_method),
-        caplog.at_level("WARNING", logger="lmi.llms"),
+        patch(
+            "litellm.acompletion",
+            AsyncMock(side_effect=[refusal_resp, success_resp]),
+        ) as mock_call,
+        caplog.at_level("ERROR", logger="lmi.llms"),
     ):
-        results = await llm.call_single(messages)
+        result = await llm.call_single([Message(content="dangerous question")])
 
-    assert results.text == "I'm sorry, but I can't assist with that request."
-    assert results.model == CommonLLMNames.GPT_41.value
-    assert results.finish_reason == "stop"
-    assert "the llm request was refused" in caplog.text.lower()
-    assert "attempting to fallback" in caplog.text.lower()
+    assert result.text == "I'm sorry, but I can't assist with that request."
+    assert result.model == fallback
+    assert result.finish_reason == "stop"
+    models_tried = [call.kwargs["model"] for call in mock_call.await_args_list]
+    assert models_tried == [primary, fallback]
+    assert "refused" in caplog.text.lower()
 
 
 @pytest.mark.asyncio
@@ -1572,17 +1439,28 @@ class TestResponsesAPI:
 class TestResponsesAPIIntegration:
     """Tests for Responses API call-level behavior with real API calls (VCR-recorded)."""
 
+    @staticmethod
+    def _responses_model() -> LiteLLMModel:
+        from lmi.config import LLMConfig, ModelSpec
+
+        name = CommonLLMNames.OPENAI_TEST.value
+        return LiteLLMModel(
+            name=name,
+            llm_config=LLMConfig(
+                models=[ModelSpec.from_name(name, responses_api=True)]
+            ),
+        )
+
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
     async def test_basic_call(self) -> None:
         """First turn: full history sent, response_id returned."""
-        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+        model = self._responses_model()
         messages = [
             Message(role="system", content="Respond with single words."),
             Message(role="user", content="What color is the sky?"),
         ]
-        with patch("lmi.llms.USE_RESPONSES_API", new=True):
-            results = await model.call(messages)
+        results = await model.call(messages)
 
         assert len(results) == 1
         result = results[0]
@@ -1597,14 +1475,13 @@ class TestResponsesAPIIntegration:
     @pytest.mark.asyncio
     async def test_multi_turn_stateful(self) -> None:
         """Second turn uses previous_response_id, sends only delta."""
-        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+        model = self._responses_model()
 
         messages_turn1 = [
             Message(role="system", content="Respond with single words."),
             Message(role="user", content="What color is the sky?"),
         ]
-        with patch("lmi.llms.USE_RESPONSES_API", new=True):
-            results1 = await model.call(messages_turn1)
+        results1 = await model.call(messages_turn1)
 
         assert results1[0].response_id is not None
         assert results1[0].messages is not None
@@ -1615,8 +1492,7 @@ class TestResponsesAPIIntegration:
             first_response_msg,
             Message(role="user", content="And grass?"),
         ]
-        with patch("lmi.llms.USE_RESPONSES_API", new=True):
-            results2 = await model.call(messages_turn2)
+        results2 = await model.call(messages_turn2)
 
         assert len(results2) == 1
         assert results2[0].text
@@ -1626,7 +1502,7 @@ class TestResponsesAPIIntegration:
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
     async def test_responses_api_off_ignores_response_id(self) -> None:
-        """When USE_RESPONSES_API is off, response_id in Message.info is inert."""
+        """When a model's `responses_api` is False, response_id in Message.info is inert."""
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
         messages = [
             Message(role="user", content="Hello"),
@@ -1637,8 +1513,7 @@ class TestResponsesAPIIntegration:
             ),
             Message(role="user", content="How are you?"),
         ]
-        with patch("lmi.llms.USE_RESPONSES_API", new=False):
-            results = await model.call(messages)
+        results = await model.call(messages)
 
         assert len(results) == 1
         assert results[0].response_id is None

@@ -1,10 +1,11 @@
 from collections.abc import Awaitable, Callable
 from itertools import chain
-from typing import Any, Self
+from typing import Self
 
 from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
 from aviary.message import EnvStateMessage
 from lmi import CommonLLMNames
+from lmi.config import LLMConfig, LLMConfigField, ModelSpec
 from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.graph import ConfigOp, FxnOp, LLMCallOp, OpResult, compute_graph
@@ -115,12 +116,16 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
     # passed around) or in the internal Ops
     model_config = ConfigDict(frozen=True)
 
-    llm_model: dict[str, Any] = Field(
-        default={
-            "name": CommonLLMNames.GPT_4O.value,
-            "temperature": 0.1,
-            "timeout": DEFAULT_LLM_COMPLETION_TIMEOUT,
-        },
+    llm_config: LLMConfigField = Field(
+        default_factory=lambda: LLMConfig(
+            models=[
+                ModelSpec.from_name(
+                    CommonLLMNames.GPT_4O.value,
+                    temperature=0.1,
+                    timeout=DEFAULT_LLM_COMPLETION_TIMEOUT,
+                )
+            ]
+        ),
         description="Starting configuration for the LLM model. Trainable.",
     )
     sys_prompt: str | None = Field(
@@ -149,7 +154,7 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._config_op = ConfigOp[dict](config=self.llm_model)
+        self._config_op = ConfigOp[LLMConfig](config=self.llm_config)
         self._llm_call_op = LLMCallOp()
 
     async def init_state(self, tools: list[Tool]) -> SimpleAgentState:

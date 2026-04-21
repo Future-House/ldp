@@ -19,7 +19,7 @@ from ldp.graph.modules import (
 @pytest.mark.vcr
 async def test_reflect_module() -> None:
     config = ReflectModuleConfig(
-        llm_model={
+        llm_config={
             "name": CommonLLMNames.ANTHROPIC_TEST.value,
             "temperature": 0,  # Lower temperature for more deterministic responses
         }
@@ -46,12 +46,12 @@ class TestReActModule:
     @pytest.mark.parametrize("single_prompt", [True, False])
     async def test_templating(self, dummy_env: DummyEnv, single_prompt: bool) -> None:
         obs, tools = await dummy_env.reset()
-        if single_prompt:
-            module = ReActModuleSinglePrompt(
-                ReActAgent.model_fields["llm_model"].default
-            )
-        else:
-            module = ReActModule(ReActAgent.model_fields["llm_model"].default)
+        default_llm_config = ReActAgent().llm_config
+        module = (
+            ReActModuleSinglePrompt(default_llm_config)
+            if single_prompt
+            else ReActModule(default_llm_config)
+        )
         with patch(
             "ldp.graph.common_ops.LLMCallOp.forward",
             return_value=ToolRequestMessage(
