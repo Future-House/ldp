@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # For setuptools-scm, replace with fetch-tags after https://github.com/actions/checkout/issues/1471
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v8.0.0
         with:
           enable-cache: true
           python-version: ${{ matrix.python-version }}
@@ -37,7 +37,7 @@ jobs:
         python-version: [3.11, 3.14] # Our min and max supported Python versions
     steps:
       - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v8.0.0
         with:
           enable-cache: true
           cache-local-path: /tmp/baipp-uv_cache_dir # Work around https://github.com/hynek/build-and-inspect-python-package/issues/181
@@ -73,7 +73,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v8.0.0
         with:
           enable-cache: true
       - name: Confirm dependency compilation
@@ -82,7 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v8.0.0
         with:
           enable-cache: true
       - run: uv sync
@@ -103,7 +103,7 @@ jobs:
       - uses: google-github-actions/auth@v3
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v8.0.0
         with:
           enable-cache: true
       - run: uv sync
