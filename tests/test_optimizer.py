@@ -9,6 +9,7 @@ import tree
 from aviary.core import Message
 from lmi import CommonLLMNames
 from lmi import LiteLLMModel as LLMModel
+from lmi.utils import VCR_DEFAULT_MATCH_ON
 from pydantic import BaseModel, Field, JsonValue
 
 from ldp.agent import Agent, MemoryAgent, ReActAgent
@@ -41,7 +42,6 @@ from ldp.graph.gradient_estimators import (
 )
 from ldp.graph.ops import GradInType
 from ldp.llms.prompts import append_to_sys
-from tests.conftest import VCR_DEFAULT_MATCH_ON
 
 
 @pytest.mark.parametrize(

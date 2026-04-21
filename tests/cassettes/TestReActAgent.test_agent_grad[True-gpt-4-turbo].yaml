@@ -1,7 +1,7 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"system","content":"Answer the following questions
+        '{"messages": [{"role": "system", "content": "Answer the following questions
         as best you can. You have access to the following tools:\n\nNAME: print_story\n\nSYNOPSIS:\n    print_story(string
         story)\n\nDESCRIPTION:\n    Print a story.\n\nPARAMETERS:\n    story (string):
         Story to print.\n\nNAME: cast_float\n\nSYNOPSIS:\n    cast_float(string x)\n\nDESCRIPTION:\n    Cast
@@ -16,7 +16,9 @@ interactions:
         of the action\n... (this Thought/Action/Action Input/Observation can repeat
         N times)\n\nExample:\n\nThought: I need to use the get_weather tool\nAction:
         get_weather\nAction Input: \"New York\", 7\nObservation: The 7 day forecast
-        for New York is [...]"},{"role":"user","content":"Write a 5 word story via print_story"}],"model":"gpt-4-turbo","n":1,"stop":["Observation:"],"temperature":0.1}'
+        for New York is [...]"}, {"role": "user", "content": "Write a 5 word story via
+        print_story"}], "model": "gpt-4-turbo", "n": 1, "stop": ["Observation:"], "temperature":
+        0.1}'
       headers:
         accept:
           - application/json
@@ -31,7 +33,7 @@ interactions:
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.97.0
+          - AsyncOpenAI/Python 2.30.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -41,7 +43,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.97.0
+          - 2.30.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -51,24 +53,28 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.8
+          - 3.13.5
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA4xTTWvcMBC9+1cMOrWwXjb74e36tpQeQlMCpYRCNhitNLKV2BojjdMsIf+9yJtd
-          O20Kvegwb97TmzfScwIgrBY5CFVJVk1bp5+zq5ufjfl+2OD99trQt69u625Mdr35MpdiEhm0v0fF
-          J9ZUUdPWyJbcEVYeJWNUvVivVtn8U7be9EBDGutIK1tOlyl3fk/pfDZfprNlOtu8siuyCoPI4TYB
-          AHjuz+jTaXwSOcwmp0qDIcgSRX5uAhCe6lgRMgQbWDoWkwFU5Bhdb/1HRV1ZcQ6X4BA1MMHROEjY
-          e4sGApM/gCIXhawrgQzgk1RcH8DYR4Rf5HWY7txWxeFzaL11XPS0UxEuXdtxDh924ooCwwMeAhjq
-          nIbOafQQyMjpTnzcubFPj6YLMmbluroeAdI5YhmV+4TuXpGXcyY1la2nffiDKox1NlSFRxnIxfkD
-          Uyt69CUBuOuz797EKVpPTcsF0wP21y1mi6OeGFY+Qk8gE8t6XM8m7+gVGlnaOoy2J5RUFeqBOqxa
-          dtrSCEhGU//t5j3t4+TWlf8jPwBKYcuoi9ajturtxEObx/gj/tV2Trk3LAL6R6uwYIs+bkKjkV19
-          fKciHAJjUxjrSvT9g4otpi00zheri3WGKJKX5DcAAAD//wMAoUh07boDAAA=
+          H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdYlwsvAIDwEAAAD//4xTy27bMBC8+ysInlrA
+          NhTbtavc2h7aADn2UKAOBJpcSWxkrkAu4wiF/71LOYqUNAUKSAS0szOcfWhrP//o1ClSdJ0qv9zG
+          7uu39UnOEwMPv0DTwFpqZB6QRXeBtQdFkFSvdrvtLs/zj3kPHNFAk2hVS4vNgqI/4GKVrTaLjJ/8
+          iV2j1RA47Sd/CvG7P5NPZ+CRw9l8iBwhBFUBx4YkDnpsUkSqEGwg5UjOR1CjI3C99e81xqqma3Ej
+          HIARhOJiXChx8BZKEQh9J5iShKyrBJYCHpWmphOlfQBxQm/Ccu8+6VT8tWi9dVT0tCEoblwb+ZJ3
+          e3mLgcQ9dEGUGJ0R/IIXAUu13Mv3ezf16aGMQaVeudg0E0A5h6SSct+huyfk/NyTBqvW4yG8osrS
+          OhvqgisMPCeun222skfPfN71vY8v2ilZ6NhSQXgP/XXrbH3Rk+PIJ+gAEjtspvHt/A29wgAp24TJ
+          9KRWugYzUsdRq2gsToDZpOq/3bylfamcx/g/8iOgNbS8zEXrwVj9suIxzUP6I/6V9tzl3rAM4B94
+          xQuy4NMkDJQqNpc9laELBMeCx1WB7xcqpZRtkW2uzCZffciMnJ1nfwAAAP//AwDRFcJFugMAAA==
       headers:
-        CF-RAY:
-          - 971bc3ee690dcf11-SJC
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-Ray:
+          - 9efed1a0bfc2236e-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -76,37 +82,29 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 19 Aug 2025 18:38:00 GMT
+          - Tue, 21 Apr 2026 19:33:13 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=GlRXd1t5dESm7ivK3ZQHQebg._JHwAK5T4GrM.IEc.c-1755628680-1.0.1.1-Zd1x12phgyO8vd90_m.IPUhhlNXf.jGwNE9l1pX7UVyMyaR3ZP5EWmMqcRkOAPJXHNoT3ENk0AmQOzgvcVFfdJp.PxMf1WJHKteC668jwbo;
-            path=/; expires=Tue, 19-Aug-25 19:08:00 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=ESHY2GEIyp7Lk20vZ6AQkG.hdQNrkBfoSiAyUPTgvgU-1755628680829-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+          - <FILTERED>
         Strict-Transport-Security:
           - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         openai-organization:
-          - future-house-xr4tdh
+          - <FILTERED>
         openai-processing-ms:
-          - "1298"
+          - "3647"
         openai-project:
-          - proj_RpeV6PrPclPHBb5GlExPXSBj
+          - <FILTERED>
         openai-version:
           - "2020-10-01"
-        x-envoy-upstream-service-time:
-          - "1332"
+        x-openai-proxy-wasm:
+          - v0.1
         x-ratelimit-limit-requests:
           - "10000"
         x-ratelimit-limit-tokens:
@@ -120,7 +118,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 9ms
         x-request-id:
-          - req_ad42de7a3ff14489b695c048e72e9bac
+          - req_124de76ae6c740779101445b0d7e1077
       status:
         code: 200
         message: OK

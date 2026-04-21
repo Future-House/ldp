@@ -1,11 +1,7 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"system","content":"You are analyzing a large document.
-        You are analyzing a large document. You are analyzing a large document. You
-        are analyzing a large document. You are analyzing a large document. You are
-        analyzing a large document. You are analyzing a large document. You are analyzing
-        a large document. You are analyzing a large document. You are analyzing a large
+        '{"messages": [{"role": "system", "content": "You are analyzing a large
         document. You are analyzing a large document. You are analyzing a large document.
         You are analyzing a large document. You are analyzing a large document. You
         are analyzing a large document. You are analyzing a large document. You are
@@ -115,7 +111,13 @@ interactions:
         You are analyzing a large document. You are analyzing a large document. You
         are analyzing a large document. You are analyzing a large document. You are
         analyzing a large document. You are analyzing a large document. You are analyzing
-        a large document. "},{"role":"user","content":"Summarize your task in one sentence."}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0}'
+        a large document. You are analyzing a large document. You are analyzing a large
+        document. You are analyzing a large document. You are analyzing a large document.
+        You are analyzing a large document. You are analyzing a large document. You
+        are analyzing a large document. You are analyzing a large document. You are
+        analyzing a large document. "}, {"role": "user", "content": "Summarize your
+        task in one sentence."}], "model": "gpt-4o-2024-11-20", "n": 1, "temperature":
+        0}'
       headers:
         accept:
           - application/json
@@ -130,7 +132,7 @@ interactions:
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 2.7.2
+          - AsyncOpenAI/Python 2.24.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -140,7 +142,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 2.7.2
+          - 2.24.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -150,26 +152,28 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.8
+          - 3.13.5
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA3RSwW7bMAy9+ysInZPCMbImzW1LMbToacDQy1AYjETbWmRRkJiiWZF/H+Skibu1
-          FwPm43t6j+RrAaCsUStQukPRfXDTNe7d+vaHeVzfb+/W8QG/fb1Lt9vvj9vlzwc1yQze/CYtb6wr
-          zX1wJJb9EdaRUCirzhbX1U11My+vB6BnQy7T2iDTOU+rsppPZ7NpVZ6IHVtNSa3gVwEA8Dp8s0Vv
-          6EWtoJy8VXpKCVtSq3MTgIrsckVhSjYJelGTC6jZC/nB9T1gD+jR7f9Y3wJ6AyGyppTyr3QEp2bg
-          BhAcxpbAsN71uSYM9CIRtUAkR8/oBaxvOPaYZwAcwfpk207S1dhApGaXMOf3O+dGAHrPMnCH6E8n
-          5HAO67gNkTfpH6pqrLepqyNhYp+DJeGgBvRQADwNQ929m5MKkfsgtfCWhudmi8XsKKguexzByxMo
-          LOjGtOXN5APF2pCgdWm0GKVRd2RG3LKanzPgzli+YGUxiv6/o4/kj/Gtb0cqn8pfAK0pCJk6RDJW
-          v099aYuUT/2ztvOoB8MqUXy2mmqxFPM6DDW4c8crVGmfhPq6sb6lGKI9nmIT6k25qb405UaTKg7F
-          XwAAAP//AwCBrbzWkwMAAA==
+          H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdYlwKvVJKwUAAAD//3RSwW7bMAy95ysEnZMi
+          drM2Oe6wQ4EO2IYNGDAUhirRtlZZVCW6aDbk30fZSex27UW2+Pie+Ejuv7iPobz8cYPfL8vbT9/8
+          49efj5/lMjPw/jdoOrEuNDIPyKIfYR1BEWTV4vr6arsud1e7AejQgMu0JtBqg6tyXW5WRcHfI7FF
+          qyFxxi++CvF3OHOJ3sAzh9fLU6SDlFQDHDslcTCiyxGpUrKJlCe5nECNnsAPVd8I1Qnlldv/sb7h
+          PyNCRH455Su1II7JAmuhhFOxAWFQ912OEQp4pqg0iQgOnvgdYX2NsVO5BwIjX5NtWkoX8wIi1H1S
+          2b/vnZsBynukgTtYvzsih7NZhw3Xd59eUWVtvU1txe1O3Hs2lgiDHNADn3dDU/sXfZIs1AWqCB9g
+          eI5HVIyCcprjDN4eQeIS3Zy23S3fUKwMkLIuzQYjtdItmBmXx372oHpjccLWi5n1/yt6S360z5Ob
+          qbwrPwFaQ+AtrUIEY/VL11NahLzq76WdWz0ULBPEJ17giizEPA4DterduIUy7RNBV/HMGogh2nEV
+          61CZD6quN4XelnJxWPwDAAD//wMAbT7WnpMDAAA=
       headers:
         Access-Control-Expose-Headers:
           - X-Request-ID
-        CF-RAY:
-          - 99d404552d442832-SJC
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-Ray:
+          - 9eff1a612cb9e8d8-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -177,15 +181,11 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Wed, 12 Nov 2025 06:36:47 GMT
+          - Tue, 21 Apr 2026 20:22:50 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=x1VzvR3fKE_YAoAG0RRUlR8ztwTSFGUPw1CvaQ4zgA8-1762929407-1.0.1.1-VGhlmj5DwyT7cB.oftD0F7c63GVKKXNzG7swn8p4BHKvgHndJTlME7r.gNqxL7DlN55dXnW6paLfK03FS0aEHqHQcHsXMijKz9f73i8sXtc;
-            path=/; expires=Wed, 12-Nov-25 07:06:47 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=0UzhgaRlJNosr8AiRXnKK2v9D2RzzUIRPlEEiApmKV8-1762929407623-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+          - <FILTERED>
         Strict-Transport-Security:
           - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
@@ -194,18 +194,14 @@ interactions:
           - nosniff
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         openai-organization:
-          - future-house-xr4tdh
+          - <FILTERED>
         openai-processing-ms:
-          - "1215"
+          - "464"
         openai-project:
-          - proj_gjPFWJzxsj6depZLFdKd2Yk4
+          - <FILTERED>
         openai-version:
           - "2020-10-01"
-        x-envoy-upstream-service-time:
-          - "1229"
         x-openai-proxy-wasm:
           - v0.1
         x-ratelimit-limit-requests:
@@ -221,17 +217,13 @@ interactions:
         x-ratelimit-reset-tokens:
           - 4ms
         x-request-id:
-          - req_d569bb932f8e4b06b186666c29773fcc
+          - req_2d6da5a1b4904a3eb7314f52f8be1233
       status:
         code: 200
         message: OK
   - request:
       body:
-        '{"messages":[{"role":"system","content":"You are analyzing a large document.
-        You are analyzing a large document. You are analyzing a large document. You
-        are analyzing a large document. You are analyzing a large document. You are
-        analyzing a large document. You are analyzing a large document. You are analyzing
-        a large document. You are analyzing a large document. You are analyzing a large
+        '{"messages": [{"role": "system", "content": "You are analyzing a large
         document. You are analyzing a large document. You are analyzing a large document.
         You are analyzing a large document. You are analyzing a large document. You
         are analyzing a large document. You are analyzing a large document. You are
@@ -341,7 +333,12 @@ interactions:
         You are analyzing a large document. You are analyzing a large document. You
         are analyzing a large document. You are analyzing a large document. You are
         analyzing a large document. You are analyzing a large document. You are analyzing
-        a large document. "},{"role":"user","content":"What is your objective?"}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0}'
+        a large document. You are analyzing a large document. You are analyzing a large
+        document. You are analyzing a large document. You are analyzing a large document.
+        You are analyzing a large document. You are analyzing a large document. You
+        are analyzing a large document. You are analyzing a large document. You are
+        analyzing a large document. "}, {"role": "user", "content": "What is your objective?"}],
+        "model": "gpt-4o-2024-11-20", "n": 1, "temperature": 0}'
       headers:
         accept:
           - application/json
@@ -356,7 +353,7 @@ interactions:
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 2.7.2
+          - AsyncOpenAI/Python 2.24.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -366,7 +363,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 2.7.2
+          - 2.24.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -376,28 +373,30 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.8
+          - 3.13.5
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//dFPLbtswELz7K7a89CIHsuBH4mPSS/oAEvQFpAgEmlpJbCguS67suoH/
-          vaDkWEqbXARhZ2c4w10+TgCELsQahKolq8aZ6ZXcm3cf7m7Sr3e3d1/UZ7N4f7X8try8ub5tLkUS
-          GbT5iYqfWGeKGmeQNdkeVh4lY1SdrZbZRXYxT1cd0FCBJtIqx9M5TbM0m09ns2mWHok1aYVBrOHH
-          BADgsftGi7bA32INafJUaTAEWaFYn5oAhCcTK0KGoANLyyIZQEWW0XauP+2hj6C3CDoAE/QUkLYA
-          52mrCwSpVOslYwI1Gle2Julgjwa30jJoW5JvZMwN5CGQaeN/J7en1sOvFkNfIQ8sw0M4g+81co0e
-          NL8NIG3Yode2GloTCG3TSK//xPLoiAQqtOgld/UCZUiibLQWKzvNdXS+MdhMA5mttlUCzR4qkuaY
-          MbTOkedoDrAs+/xm36XCstRKo2WzP4OPyNAgPFjaQU07uAYlbXfUm/GNeizbIONAbWvMCJDWEneu
-          u1neH5HDaXqGqug1/EMVpbY61LlHGcjGSQUmJzr0MAG477akfTZ44Tw1jnOmB+yOm62Wq15QDIs5
-          wIvzI8jE0oxo59kieUExL5ClNmG0aUJJVWMx4i6X81MG2RaaBiydjKL/7+gl+T6+ttVI5VX5AVAK
-          HWORO4+FVs9TD20e4+K/1na66s6wCOi3WmHOGn0cR4GlbE3/rETYB8YmL7Wt0Duv+7dVunyTbrJF
-          mW4Uislh8hcAAP//AwD1oo+UZAQAAA==
+          H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdYlwKvXNywYAAAD//3RTTY/TMBC991eYXLik
+          VRv1izscVgLBAWkl0Cpy7UnirWMHj90lRf3vjJ1uk4XdQ5xk3rzneZ7xN3eH2+Lx66eP5+/CF4cl
+          3p+bH1keGfbwCMI/sxbCEg+8smaAhQPuIaqudrvtfll82C0T0FoJOtLqzs/Xdl4si/V8taL3ldhY
+          JQAp4yf9MvYnrbFEI+E3hZNMirSAyGug2HMSBZ3VMZJxRIWeG5/lIyis8WBS1V96NlhQJ2AKmbds
+          oDBuJOucPSkJjAsRHBnJWQO6q4LOE+xAw4m0mTKVdS2Pvpl1DK0O8TvJ9TY49isADhGCPccjLth9
+          A74Bx5R/jySHT+CUqWOqU4BxB677cwxJ7nnOajBARcTA1UAe1WxVDcQ6KMmNoCLbntWW66sfDF1n
+          nY+FMKDk5FX3yQH9K6FISvcL9hk8a4EdjX1iDT13THCTHL+bnp6DKiCPzTNB6wnAjbE+HULq28MV
+          udw6pW1NJ3rAf6hZpYzCpqRZQRoc6gp622UJvdD6kCYivGhyRkJt50tvj5C2W+22u0EwG4dwhDeb
+          K+ipRD2h7Ysif0WxlOC50jiZqkxw0YCccGlmbx54kMqO2HI2sf5/Ra/JD/apkxOVN+VHQAjo6IqV
+          nQOpxEvXY5qDOORvpd2OOhWcIbgT3b7SK3CxHRIqHvRwhTLs0UNbUs9qcB1NXrpHVVfKDa+q9Urs
+          i2x2mf0FAAD//wMAPpyn11AEAAA=
       headers:
         Access-Control-Expose-Headers:
           - X-Request-ID
-        CF-RAY:
-          - 99d4045dd8812832-SJC
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-Ray:
+          - 9eff1a654ff1e8d8-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -405,7 +404,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Wed, 12 Nov 2025 06:36:49 GMT
+          - Tue, 21 Apr 2026 20:22:51 GMT
         Server:
           - cloudflare
         Strict-Transport-Security:
@@ -416,18 +415,14 @@ interactions:
           - nosniff
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         openai-organization:
-          - future-house-xr4tdh
+          - <FILTERED>
         openai-processing-ms:
-          - "1430"
+          - "731"
         openai-project:
-          - proj_gjPFWJzxsj6depZLFdKd2Yk4
+          - <FILTERED>
         openai-version:
           - "2020-10-01"
-        x-envoy-upstream-service-time:
-          - "1444"
         x-openai-proxy-wasm:
           - v0.1
         x-ratelimit-limit-requests:
@@ -443,7 +438,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 4ms
         x-request-id:
-          - req_0a39496859e84c4fa6678f0653f702ba
+          - req_183f14fcca8f4eac8118564910f241a7
       status:
         code: 200
         message: OK

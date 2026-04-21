@@ -1,19 +1,27 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"user","content":"Write a 5 word story via print_story"},{"role":"user","content":"<episode-memories>\n<description>\nThese
-        are relevant memories from previous attempts at similar tasks, along with the
-        action taken and the discounted cumulative reward from that action. A negative
-        reward is failure, a positive reward is success.\n</description><memory>\n  <obs>\n    Write
+        '{"messages": [{"role": "user", "content": "Write a 5 word story via print_story"},
+        {"role": "user", "content": "<episode-memories>\n<description>\nThese are relevant
+        memories from previous attempts at similar tasks, along with the action taken
+        and the discounted cumulative reward from that action. A negative reward is
+        failure, a positive reward is success.\n</description><memory>\n  <obs>\n    Write
         a 5 word story and call print\n  </obs>\n  <action>\n    Tool request message
         \"Stories that start with ''Once there was'' are always interesting.\" for tool
-        calls: print_story(story=''Once there were was nothing.'') [id=08fddceb3]\n  </action>\n  <reward>\n    1000.0\n  </reward>\n</memory></episode-memories>\n\nConsidering
-        the memories, choose the next action."}],"model":"gpt-4o-mini-2024-07-18","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"print_story","description":"Print
-        a story.","parameters":{"type":"object","properties":{"story":{"description":"Story
-        to print.","title":"Story","type":"string"}},"required":["story"]}}},{"type":"function","function":{"name":"cast_float","description":"Cast
-        the input argument x to a float.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]}}},{"type":"function","function":{"name":"cast_int","description":"Cast
-        the input argument x to an integer.","parameters":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]}}},{"type":"function","function":{"name":"get_random_int","description":"Get
-        a random integer in 1 to 10.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+        calls: print_story(story=''Once there were was nothing.'') [id=9f49ac942]\n  </action>\n  <reward>\n    1000.0\n  </reward>\n</memory></episode-memories>\n\nConsidering
+        the memories, choose the next action."}], "model": "gpt-4o-mini-2024-07-18",
+        "n": 1, "temperature": 0.1, "tool_choice": "required", "tools": [{"type": "function",
+        "function": {"name": "print_story", "description": "Print a story.", "parameters":
+        {"type": "object", "properties": {"story": {"description": "Story to print.",
+        "title": "Story", "type": "string"}}, "required": ["story"]}}}, {"type": "function",
+        "function": {"name": "cast_float", "description": "Cast the input argument x
+        to a float.", "parameters": {"type": "object", "properties": {"x": {"title":
+        "X", "type": "string"}}, "required": ["x"]}}}, {"type": "function", "function":
+        {"name": "cast_int", "description": "Cast the input argument x to an integer.",
+        "parameters": {"type": "object", "properties": {"x": {"title": "X", "type":
+        "number"}}, "required": ["x"]}}}, {"type": "function", "function": {"name":
+        "get_random_int", "description": "Get a random integer in 1 to 10.", "parameters":
+        {"type": "object", "properties": {}, "required": []}}}]}'
       headers:
         accept:
           - application/json
@@ -28,7 +36,7 @@ interactions:
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.97.0
+          - AsyncOpenAI/Python 2.30.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -38,7 +46,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.97.0
+          - 2.30.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -48,25 +56,29 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.8
+          - 3.13.5
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFNNj9MwEL3nV1hzblZtadI0N1iQWgQCLksRXUVeZ5IYHNvYDuxu1f+O
-          4rRJ2i0SOUTWPL83bz68DwgBnkNKgFXUsVqL8Db+cLfN397erb9ttq9nSTJrKvp1824dqXoDk5ah
-          Hn4gcyfWDVO1Fui4kh3MDFKHrepsGUXxPImXKw/UKkfR0krtwoUKay55OJ/OF+F0Gc6SI7tSnKGF
-          lHwPCCFk7/+tT5njI6RkOjlFarSWlghpf4kQMEq0EaDWcuuodDAZQKakQ9lal40QI8ApJTJGhRgS
-          d99+dB6aRYXIhN7m2481fb8qWfX8+dGt1/GvL+rNKF8n/aS9oaKRrG/SCO/j6UUyQkDS2nO14dJl
-          1inzdEEnBKgpmxqla63Dfgf+2g7SHXySDImr0CD5Qy2RylVcljc7OMCZyCG4dr4f9cdg0VgqXjaO
-          Sqkcbf37zt0fkUM/JKFKbdSDvaBCwSW3VWaQWl/7eATByYi3AM3ZlEEbVWuXOfUTfdJ5EneqMGzi
-          gM6SI+iUo2KIv5ouJlf0shwd5X4N+s1jlFWYD9RhA2mTczUCglHtL91c0+7q57L8H/kBYAy1wzzT
-          BnPOziserhlsH+q/rvVd9obBovnNGWaOo2nnkWNBG9E9H7BP1mGdFVyWaPw2+pXWWRRPaRFjFK0g
-          OAR/AQAA//8DANWJtndRBAAA
+          H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdYlwMq/08gQAAAD//4xTXW+bMBR951cgP4cq
+          IVkJfWs3ZVKladq67jOV5doX4s3YzDbdWJT/PmMSTNJMGg8I7rnn3nO/xOpP8+n6w9fVx5/vr7/c
+          tW9e69unFk06hnr8DtQeWBdUOR5YrmQPUw3EQhd1lmWXWZ7n2dQDlWIgOlpZ22ShkopLnqTTdJFM
+          s2S23LM3ilMwzu2b+43jrX93OiWD387sY3lLBcaQEpzt4OSMWonOgogx3FgiLZoEkCppQXbSZSPE
+          CLBKCUyJECFx/2xH36FZzhG/fHdDbuldNv9MUpvfpKv7pb5/la1G+frQbe0FFY2kQ5NG+GC/Oknm
+          MEkqz601lxYbq3R7QndORJdN5arqpKPtGnm3Nbpao7eSQmw3oCH+RUxMYuZGU12s0Q4dBdlF574f
+          Rv3RUDSGiOeNI1IqSzr9vnMPe2Q3DEmostbq0ZxQUeGGbzbYCTK+9vEIooMQLwE1R1N2zXALZ7FV
+          P8AnTZeXfVQUNjGgs3wPWqdTBPt8+mJyJh5mYAn3azBsHiV0AyxQwwaShnE1AqJR7c/VnIvd189l
+          +T/hA0Ap1O7GcK2BcXpccXDT0B3qv9yGLnvByIB+cpeHLQfdzYNBQRrRnw8yrbFQYTe0ErTfRr/S
+          NV7OIWVsvigoinbRXwAAAP//AwAipC9nUQQAAA==
       headers:
-        CF-RAY:
-          - 971bc3ee5ad52700-SJC
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-Ray:
+          - 9efed1256f9d6037-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -74,37 +86,29 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 19 Aug 2025 18:38:00 GMT
+          - Tue, 21 Apr 2026 19:32:50 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=QWyrVjYE.XWQpd6aEvOmrfwQdHy.bRuwrpT2xhOqrsY-1755628680-1.0.1.1-feF5Q9mgesppe3Q3H1UqGPTvx2Z9J4maw79iDaGtOcLurkXWnnCYKrswEQZGcONM5Jjw9O5MFXoRLKzFHwMt6SL2k3f8OhnotYKjg8WQ6Fg;
-            path=/; expires=Tue, 19-Aug-25 19:08:00 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=i5zN1p97gBzbsasXItQIT0DaAIOh_6w_mc8QhPHT6nQ-1755628680055-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+          - <FILTERED>
         Strict-Transport-Security:
           - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         openai-organization:
-          - future-house-xr4tdh
+          - <FILTERED>
         openai-processing-ms:
-          - "563"
+          - "505"
         openai-project:
-          - proj_RpeV6PrPclPHBb5GlExPXSBj
+          - <FILTERED>
         openai-version:
           - "2020-10-01"
-        x-envoy-upstream-service-time:
-          - "580"
+        x-openai-proxy-wasm:
+          - v0.1
         x-ratelimit-limit-requests:
           - "30000"
         x-ratelimit-limit-tokens:
@@ -118,7 +122,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_5b598a86b6f6441f8e2f8461d067e1ca
+          - req_a3606af8a0764868ae76f5b50751f38f
       status:
         code: 200
         message: OK

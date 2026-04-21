@@ -1,13 +1,19 @@
 interactions:
   - request:
       body:
-        '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":[{"type":"text","text":"Write
-        a 5 word story via print_story"}]}],"temperature":0.1,"tools":[{"name":"print_story","input_schema":{"type":"object","properties":{"story":{"description":"Story
-        to print.","title":"Story","type":"string"}},"required":["story"]},"description":"Print
-        a story."},{"name":"cast_float","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"string"}},"required":["x"]},"description":"Cast
-        the input argument x to a float."},{"name":"cast_int","input_schema":{"type":"object","properties":{"x":{"title":"X","type":"number"}},"required":["x"]},"description":"Cast
-        the input argument x to an integer."},{"name":"get_random_int","input_schema":{"type":"object","properties":{},"required":[]},"description":"Get
-        a random integer in 1 to 10."}],"tool_choice":{"type":"any"},"max_tokens":64000}'
+        '{"model": "claude-haiku-4-5-20251001", "messages": [{"role": "user", "content":
+        [{"type": "text", "text": "Write a 5 word story via print_story"}]}], "temperature":
+        0.1, "tools": [{"name": "print_story", "input_schema": {"type": "object", "properties":
+        {"story": {"description": "Story to print.", "title": "Story", "type": "string"}},
+        "required": ["story"]}, "type": "custom", "description": "Print a story."},
+        {"name": "cast_float", "input_schema": {"type": "object", "properties": {"x":
+        {"title": "X", "type": "string"}}, "required": ["x"]}, "type": "custom", "description":
+        "Cast the input argument x to a float."}, {"name": "cast_int", "input_schema":
+        {"type": "object", "properties": {"x": {"title": "X", "type": "number"}}, "required":
+        ["x"]}, "type": "custom", "description": "Cast the input argument x to an integer."},
+        {"name": "get_random_int", "input_schema": {"type": "object", "properties":
+        {}, "required": []}, "type": "custom", "description": "Get a random integer
+        in 1 to 10."}], "tool_choice": {"type": "any"}, "max_tokens": 64000}'
       headers:
         accept:
           - application/json
@@ -18,28 +24,28 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "902"
+          - "966"
         content-type:
           - application/json
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.82.1
+          - litellm/1.82.6
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA3RRyU7DMBD9lWjOLkogRchXEAcWCdGWRQhZxhkaE8dOx+MKVOXfkQsVmzj6LX5v
-          ZjbQhwYdSDBOpwYnrbZdmtST6WS/3J9WZVmBANuAhD4uVVndvNyeXs5mhyfHq/XidX7WzQ7qgUAA
-          vw2YVRijXiIIoOAyoGO0kbVnEGCCZ/QM8mGz03MITqWIu5T8Tqqs7hb03N2f3NKq9ouL60V3ej6n
-          KxDgdZ99A1nPKnKgt2z1Q2KQG/gAJMxbLIzm4iX1AzZFWCMV3GLRh+D3YBRgtHNI2fJZpLGEhmEc
-          H0X+ZVCEOgb/s+KWiLhK6A2C9Mk5AWk7sNx8tFAcOvQR5FF9mGNMi8oQarbBq5+KcscT6uY/bufN
-          ATi02CNpp6b9X/0XW7W/2VFASPwdqg8ERKS1NajY5lVAPlOjqdku9BkpD6mWGECCD6z0WlunnxzC
-          OL4DAAD//wMA7e6ExDgCAAA=
+          H4sIAAAAAAAA/3VRy04CMRT9FdI1mAGBADuJDxbKAjW+YpraXphCpx3bW5CQ+XdvkYmicdeec+45
+          97FjhVNg2IhJI6KCVi70Kra6rV6rk3V67SxrsybTigRFWPCs/WjBDbuD5c04f3gKOL3f3Eo/Jw1u
+          S0gqCEEsgADvTAJECDqgsEiQdBaBXqOXXa1H5wyPAeqU9I+UM8XZ81l+2d+6zexjfX41vJhMxtek
+          sqJIdaXXFnlA57ep1JaRbHfsCxixuxwaUmBjGYsSVMOtwTeQsDlYCSesol6EMeBTzaETpT1IZFX1
+          2kw2JfcggrPHPe6JAO8x+bCRjcYcQAUotAk1FvdbIPd9axzdCiyRg24/RcscuCR/1M7yY0VW80Sr
+          /7i6NgVAmUMBXhjeK/7qv9l2/pulLbiIP6HuKU0Dfq0lcNRpPSzdTgmv9lueg0+D8wU4oqxDLtY0
+          tXijU1fVJ+Xf43dNAgAA
       headers:
         CF-RAY:
-          - 9dde05215e2aed35-SJC
+          - 9efed0ec9953c65e-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -49,51 +55,51 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 17 Mar 2026 18:21:55 GMT
+          - Tue, 21 Apr 2026 19:32:41 GMT
         Server:
           - cloudflare
+        Set-Cookie:
+          - <FILTERED>
         Transfer-Encoding:
           - chunked
-        Vary:
-          - Accept-Encoding
         X-Robots-Tag:
           - none
         anthropic-organization-id:
-          - 569b7dde-84c5-41d2-a238-92eabce6c127
+          - <FILTERED>
         anthropic-ratelimit-input-tokens-limit:
           - "4000000"
         anthropic-ratelimit-input-tokens-remaining:
           - "4000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2026-03-17T18:21:55Z"
+          - "2026-04-21T19:32:41Z"
         anthropic-ratelimit-output-tokens-limit:
           - "800000"
         anthropic-ratelimit-output-tokens-remaining:
           - "800000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2026-03-17T18:21:55Z"
+          - "2026-04-21T19:32:41Z"
         anthropic-ratelimit-requests-limit:
-          - "4000"
+          - "20000"
         anthropic-ratelimit-requests-remaining:
-          - "3999"
+          - "19999"
         anthropic-ratelimit-requests-reset:
-          - "2026-03-17T18:21:54Z"
+          - "2026-04-21T19:32:41Z"
         anthropic-ratelimit-tokens-limit:
           - "4800000"
         anthropic-ratelimit-tokens-remaining:
           - "4800000"
         anthropic-ratelimit-tokens-reset:
-          - "2026-03-17T18:21:55Z"
+          - "2026-04-21T19:32:41Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_011CZ97kRqDcJuLnLJJi7muG
+          - req_011CaHUTVLXdho15TKQoqHrK
         server-timing:
-          - proxy;dur=608
+          - x-originResponse;dur=647
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
         x-envoy-upstream-service-time:
-          - "607"
+          - "645"
       status:
         code: 200
         message: OK

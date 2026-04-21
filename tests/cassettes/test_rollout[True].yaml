@@ -1,9 +1,11 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"user","content":"Hello!"}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"talk","description":"Say
-        something to me.","parameters":{"type":"object","properties":{"message":{"description":"what
-        you want to say","title":"Message","type":"string"}},"required":["message"]}}}]}'
+        '{"messages": [{"role": "user", "content": "Hello!"}], "model": "gpt-4o-2024-11-20",
+        "n": 1, "temperature": 0.1, "tool_choice": "required", "tools": [{"type": "function",
+        "function": {"name": "talk", "description": "Say something to me.", "parameters":
+        {"type": "object", "properties": {"message": {"description": "what you want
+        to say", "title": "Message", "type": "string"}}, "required": ["message"]}}}]}'
       headers:
         accept:
           - application/json
@@ -18,7 +20,7 @@ interactions:
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.97.0
+          - AsyncOpenAI/Python 2.30.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -28,7 +30,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.97.0
+          - 2.30.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -38,24 +40,29 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.8
+          - 3.13.5
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAA4xTUW/aMBB+z6/w7hkmkkKgeZtQNzTxUqmaKo0qMs4lcevYnu0gOsR/n+JAEiiV
-          lofIuu++u+++sw8BIcAzSAiwkjpWaTFexutf5fd5NA+fVjJ8iub0cffwY7e+f3Q/Sxg1DLV9RebO
-          rK9MVVqg40q2MDNIHTZVw/lsFkeLeHHvgUplKBpaod14qsbRJJqOw3AcTU7EUnGGFhLyOyCEkIP/
-          NxJlhntIyGR0jlRoLS0Qki6JEDBKNBGg1nLrqHQw6kGmpEPZqJa1EAPAKSVSRoXoG7ffYXDufaJC
-          pHa5/lavnpd7xvPnv/uJ0vxPOZ3wQb+29Lv2gvJass6fAd7Fk6tmhICklec6Kt6ueIQANUVdoXSN
-          Zjhszn5sINnACoVQXzZwhAvWMbh1fhk4YTCvLRUfLaJSKkcbpd6jlxNy7NYhVKGN2torKuRcclum
-          Bqn1Uw7NDs5CvASoL/YJ2qhKu9SpN/RNZ3dtUehvWw+GsxPolKOij8eL0Y1qaYaOcr/u7oYxykrM
-          emZ/02idcTUAgsHkH8Xcqt1Oz2XxP+V7gDHUDrNUG8w4uxy4TzPYvMXP0jqPvWCwaHacYeo4mmYb
-          Gea0Fu0zAftuHVZpzmWBRhvu3wrkOo23Gc3ju+kMITgG/wAAAP//AwCNQ5tPNAQAAA==
+          H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdYlwMk3L9gAAAAD//4xTXW+bMBR951d0fk6m
+          QEJp+tZqbTNpUqTtZdpSIWNfiBdjI9ts7aL899omYJJm0ngAc8891+d+tY+Lu++r3df4Yfm0gvU9
+          0Kd7kaCJY8jiFxDTsz4SaXlgmBQdTBRgAy5qnGXX2XJ5k2QeqCUF7mhVY6YLOU1myWIax/Z7JG4l
+          I6Ctx0/7e3W1928nUVB4sebZpLfUoDWuwNp6J2tUkjsLwlozbbAwaBJAIoUB4VSLlvMRYKTkOcGc
+          h4u7Zz86hzpZx/xPcgd/RfF5/U1mj1/Y+gf9pOqHl3R0Xxf6tfGCylaQoT4jfLDfnl1mMYFrzzWY
+          7854FsWqamubjtOM9pu+Hht0u0Er4Fx+2KADOmEdokvn51ElFJStxvx9ibAQ0mCn1Nfo+YgchnZw
+          WTVKFvqMikommN7mdiC0z3Jc7KgX4iWg9qSfyIarG5MbuQN/aTrvgqIwbQGM0yNorEwe7Nc3kwvR
+          cgoGM9/uYcIIJluggRkmDbeUyREQjTJ/L+ZS7C57Jqr/CR8AQqCxa5Q3CigjpwkHNwVuF//lNtTY
+          C0Ya1G+7YblhoFw3KJS45d2aIP2qDdS5bVkFqlHM7woqm7yg89k8nRcpRtEhegMAAP//AwAvWbzz
+          NAQAAA==
       headers:
-        CF-RAY:
-          - 971bc42a09e3cfd9-SJC
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-Ray:
+          - 9efecda988ddf017-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -63,37 +70,29 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 19 Aug 2025 18:38:09 GMT
+          - Tue, 21 Apr 2026 19:30:28 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=bJPLUH1AFTEbVSwqU_.wLLf.IlazGF1AThCliquCGqc-1755628689-1.0.1.1-YlhGxBn37cs6eAF.b.flsCFi2SFOL4bDx7fAT5WZtkKVSCpJA4xeU5lYGnGyvr7gyz0c78cXCXZoQwXQGWkgu8rhFz2puFw_kiX03w9bD0E;
-            path=/; expires=Tue, 19-Aug-25 19:08:09 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=Ub3mn0ctD4BEnJmx4Apm.KQyJ8DLOcrakmiK9XRH1KA-1755628689586-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+          - <FILTERED>
         Strict-Transport-Security:
           - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         openai-organization:
-          - future-house-xr4tdh
+          - <FILTERED>
         openai-processing-ms:
-          - "512"
+          - "371"
         openai-project:
-          - proj_RpeV6PrPclPHBb5GlExPXSBj
+          - <FILTERED>
         openai-version:
           - "2020-10-01"
-        x-envoy-upstream-service-time:
-          - "543"
+        x-openai-proxy-wasm:
+          - v0.1
         x-ratelimit-limit-requests:
           - "10000"
         x-ratelimit-limit-tokens:
@@ -107,15 +106,17 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_32c3b6174d1b4856a4a34975765ab78a
+          - req_0344796bf0d640338780b31a9321d178
       status:
         code: 200
         message: OK
   - request:
       body:
-        '{"messages":[{"role":"user","content":"Hello!"}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"talk","description":"Say
-        something to me.","parameters":{"type":"object","properties":{"message":{"description":"what
-        you want to say","title":"Message","type":"string"}},"required":["message"]}}}]}'
+        '{"messages": [{"role": "user", "content": "Hello!"}], "model": "gpt-4o-2024-11-20",
+        "n": 1, "temperature": 0.1, "tool_choice": "required", "tools": [{"type": "function",
+        "function": {"name": "talk", "description": "Say something to me.", "parameters":
+        {"type": "object", "properties": {"message": {"description": "what you want
+        to say", "title": "Message", "type": "string"}}, "required": ["message"]}}}]}'
       headers:
         accept:
           - application/json
@@ -130,7 +131,7 @@ interactions:
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.97.0
+          - AsyncOpenAI/Python 2.30.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -140,7 +141,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.97.0
+          - 2.30.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -150,24 +151,29 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.8
+          - 3.13.5
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//jFNNj9MwEL3nV5g5t6hfCW1uCMFyWBBCYoWgq8h1Jql3J7ZlOy1L1f++
-          irNN0m6RyCGy5vnNvHkzPkSMgcwhZSC23IvK0PhDcnu3vfmyuN0lO6L9aj79W36/uXv4tf8qCUYN
-          Q28eUPgT663QlSH0UqsWFha5xybr9F0cJ7NlslwFoNI5UkMrjR8v9Hg2mS3G0+l4NnkhbrUU6CBl
-          vyPGGDuEfyNR5fgHUjYZnSIVOsdLhLS7xBhYTU0EuHPSea48jHpQaOVRNapVTTQAvNaUCU7UF26/
-          w+Dc+8SJsvnHjZG7+f5TvPBGrVB/+7GPf74f1mtTP5kgqKiV6PwZ4F08vSjGGCheBa7n9HjBYwy4
-          LesKlW80w2F98mMN6Ro+I5F+s4YjnLGO0bXz/cAJi0XtOL22iCulPW+UBo/uX5BjNw7SpbF64y6o
-          UEgl3TazyF3ocmh2dBISJEB9Nk8wVlfGZ14/Yigaz9uk0G9bD07jF9Brz6mPJ8vRlWxZjp7LMO5u
-          wwQXW8x7Zr9pvM6lHgDRoPPXYq7lbruXqvyf9D0gBBqPeWYs5lKcN9xfs9i8xX9d6zwOgsGh3UmB
-          mZdom2nkWPCa2rUF9+Q8VlkhVYnWWBneChQmSzY5L5L5IkaIjtEzAAAA//8DAAWlXME0BAAA
+          H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdYlwMk0zCQAAAAD//4xT247TMBB9z1csfm5R
+          b+ll31ZaoZVYAQIJHujKmjqT1KxjR7ZTWqr+O7bTxGm3SOQhcebMGZ+5rb7suVzmGp7mHx5/p+Y7
+          Pzyzkgw8Q21+IbMt6z1TjoeWK9nATCNY9FHHi8V8sVotJ4sAlCpD4WlFZYczNZyMJrPheOy+Z+JW
+          cYbGefx0v3d3x/D2EmWGe2ceDVpLicZAgc7WOjmjVsJbCBjDjQVpySCCTEmL0quWtRA9wColKAMh
+          4sXNc+ydY52cI12N6oc/Pz4d9rvnnZrb3Wd4mH38+u2xd18T+lAFQXktWVefHt7Z768uc5iEMnAt
+          iNcrnkNBF3Xp0vGayXHd1mNN7tfkCYVQ79bkRC5Yp+TW+aVXCY15bUC8LRFIqSx4paFGL2fk1LVD
+          qKLSamOuqCTnkpstdQNhQpb9YietkCCB1Bf9JC5cWVlq1SuGS9NpE5TEaYvgOD2D1skU0T5fDm5E
+          oxla4KHd3YQxYFvMIjNOGtQZVz0g6WX+Vsyt2E32XBb/Ez4CjGHl1ohWGjPOLhOObhr9Lv7Lratx
+          EEwM6p3bMGo5at+NDHOoRbMmxByMxZK6lhWoK83DrpC8optsOpqm000KJDklfwEAAP//AwBOUNf3
+          NAQAAA==
       headers:
-        CF-RAY:
-          - 971bc42a0d03ce9c-SJC
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-Ray:
+          - 9efecda988ba67f5-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -175,37 +181,29 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 19 Aug 2025 18:38:09 GMT
+          - Tue, 21 Apr 2026 19:30:28 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=eYXygxwVq07qr7JLUQexY9onCk.B_ycl1ZZ5hwH9z9Q-1755628689-1.0.1.1-4fmhmM2DaLbn7_Qk5U9p1ShpiY7xHNrKDd6bxa40QA6VQOJTYR1.kt6vYEUj2wOUuKPwHvSThn.YLamaPkKRiDsxeDICNZ9IiZoPUZfhato;
-            path=/; expires=Tue, 19-Aug-25 19:08:09 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=v5zD9i06CQ9rShkHgtA0yKCoeACJNrdpZACzHCtyK1g-1755628689620-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+          - <FILTERED>
         Strict-Transport-Security:
           - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         openai-organization:
-          - future-house-xr4tdh
+          - <FILTERED>
         openai-processing-ms:
-          - "570"
+          - "743"
         openai-project:
-          - proj_RpeV6PrPclPHBb5GlExPXSBj
+          - <FILTERED>
         openai-version:
           - "2020-10-01"
-        x-envoy-upstream-service-time:
-          - "583"
+        x-openai-proxy-wasm:
+          - v0.1
         x-ratelimit-limit-requests:
           - "10000"
         x-ratelimit-limit-tokens:
@@ -219,7 +217,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_14a0a415c7b64d00b7557e3d405f7d22
+          - req_c585a4885dff4913b0ea520975915460
       status:
         code: 200
         message: OK
