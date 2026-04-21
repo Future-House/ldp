@@ -1,14 +1,20 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"user","content":"You are the president of the United
-        States of America. Please move both hands at the same time, and then smile and
-        wave."}],"model":"gpt-4o-2024-11-20","n":1,"temperature":0.1,"tool_choice":"required","tools":[{"type":"function","function":{"name":"move_left_hand","description":"Move
-        your left hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
-        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"move_right_hand","description":"Move
-        your right hand forward or backward.","parameters":{"type":"object","properties":{"distance":{"description":"Integer
-        distance to move (mm), where forward is positive.","title":"Distance","type":"integer"}},"required":["distance"]}}},{"type":"function","function":{"name":"smile_and_wave","description":"Smile
-        and wave.","parameters":{"type":"object","properties":{},"required":[]}}}]}'
+        '{"messages": [{"role": "user", "content": "You are the president of the
+        United States of America. Please move both hands at the same time, and then
+        smile and wave."}], "model": "gpt-4o-2024-11-20", "n": 1, "temperature": 0.1,
+        "tool_choice": "required", "tools": [{"type": "function", "function": {"name":
+        "move_left_hand", "description": "Move your left hand forward or backward.",
+        "parameters": {"type": "object", "properties": {"distance": {"description":
+        "Integer distance to move (mm), where forward is positive.", "title": "Distance",
+        "type": "integer"}}, "required": ["distance"]}}}, {"type": "function", "function":
+        {"name": "move_right_hand", "description": "Move your right hand forward or
+        backward.", "parameters": {"type": "object", "properties": {"distance": {"description":
+        "Integer distance to move (mm), where forward is positive.", "title": "Distance",
+        "type": "integer"}}, "required": ["distance"]}}}, {"type": "function", "function":
+        {"name": "smile_and_wave", "description": "Smile and wave.", "parameters": {"type":
+        "object", "properties": {}, "required": []}}}]}'
       headers:
         accept:
           - application/json
@@ -23,7 +29,7 @@ interactions:
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.97.0
+          - AsyncOpenAI/Python 2.30.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -33,7 +39,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.97.0
+          - 2.30.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -43,25 +49,29 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.8
+          - 3.13.5
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//tFTbTuMwEH3PV1jz3K6SphfaV1itVNgLLLBoFxQZe5IYHNuynS5V1X9H
-          cS9Jy67EC3mIbB+fmXPGY68iQkBwmBFgJfWsMrJ/Or64vXseX6bnTE/sz4Hn5c0iTUcmRXyCXsPQ
-          j0/I/I71ienKSPRCqw3MLFKPTdRkMhqNByfjyTQAleYoG1phfH+o+4N4MOwnSX8Qb4mlFgwdzMif
-          iBBCVuHfSFQcX2BG4t5upULnaIEw228iBKyWzQpQ54TzVHnotSDTyqNqVKtayg7gtZYZo1K2iTff
-          qjNu60SlzK5MdZucfZ6P3K9v02ly9XeJLp1fnHTybUIvTRCU14rt69PB9+uzo2SEgKJV4FZ6gZnE
-          3GclVfwoAiFAbVFXqHyjHlb3wIN1hvdN/eN4DQeEdWe27r3L7O98fnP943vO8fS8FncvZ3iZu6/X
-          Xz7MrBVF+QFu9+OHzuFbzGtH5duuoEppTxu9oS0eoqOagdSFsfrRHVEhF0q4MrNIXfDa7a9oJyRI
-          gPqghcFYXRmfef2MIWky3PY7tDesRYfjLei1p7LDOtkBB/Eyjp6K0OP7a8UoK5G31PZ60ZoL3QGi
-          jve3av4Ve+NfqOI94VuAMTQeeWYscsEOHbfbLDYP0P+27ascBINDuxAMMy/QNufBMae13LwN4JbO
-          Y5XlQhVojRXhgYDcZHmMaTwZpRMO0Tp6BQAA//8DAICPX6IpBQAA
+          H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdYlwMs2KMAcAAAD//7RUUU/bMBB+z69Afm6n
+          pE1TskdgE0OaKjQxxgayXPuSeHPsyHYQpep/x3bbJC1M4oU8JM59952/O5/vR1tPntIFufh1J9WX
+          ZHp9cT6pr9HIM9TyL1C7Z32iyvHAciW3MNVALPioyXyezfP8dJoEoFYMhKeVjR2najyJJ+k4Sdx3
+          R6wUp2Ccxx/3e3KyDm8vUTJ4cuZ4tLfUYAwpwdn2Ts6olfAWRIzhxhJp0agHqZIWpFctWyEGgFVK
+          YEqE6DfePuvBuq+Tc8SlFc/s68+8qIrV7Kb9FovfkyYtrgb7bUOvmiCoaCXt6jPAO/vno80cJkkd
+          uLV6BCygsLgikh1FcH5El23tEvPq0foesZA6hXtf/zjeoAPCZvC3Gb0r2bvZ98tnszibXpF6md/e
+          ZpeLs5uMxx+WrOZl9QHZduuHweFrKFpDxOuuIFIqS7ze0BYP0VHNkFBlo9XSHFFRwSU3FXZ3wIRc
+          h/0V7YUECag9aGHkwtWNxVb9g7Bpku76HfU3rEfTbAdap1MMWKd74CAeZmAJDz3eXStKaAWsp/bX
+          i7SMqwEQDXJ/reat2Nv8uSzfE74HKIXGzQ7caGCcHmbcu2nwA+h/bl2Vg2BkQD+6sYItB+3Pg0FB
+          WrGdDcisjIUau0MrQTeahwGBigZnJM9pMmN5jqJN9AIAAP//AwAO0maXKQUAAA==
       headers:
-        CF-RAY:
-          - 971bc3ee5cd7cec5-SJC
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-Ray:
+          - 9efecdc0eeadeb1e-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -69,37 +79,29 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 19 Aug 2025 18:37:59 GMT
+          - Tue, 21 Apr 2026 19:30:32 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=w3toNYAOAx8JYdaarTeFNGnpGUfiJhzgQdvW2oXuYg4-1755628679-1.0.1.1-K8bjaNiq3idW2_NBf00UIbmh7mJh47ylaehw7g1RyU.k6YhhJS.8h9msjcwgl9khcZIbw2uAnEE9ChRKOxtNr0PRNjg4IIkf07JTT37o8jY;
-            path=/; expires=Tue, 19-Aug-25 19:07:59 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=IjfGJ1rippIHB5z..gCzTB.BKeGMGXIu1xQ02VVdUwA-1755628679954-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+          - <FILTERED>
         Strict-Transport-Security:
           - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         openai-organization:
-          - future-house-xr4tdh
+          - <FILTERED>
         openai-processing-ms:
-          - "433"
+          - "864"
         openai-project:
-          - proj_RpeV6PrPclPHBb5GlExPXSBj
+          - <FILTERED>
         openai-version:
           - "2020-10-01"
-        x-envoy-upstream-service-time:
-          - "464"
+        x-openai-proxy-wasm:
+          - v0.1
         x-ratelimit-limit-requests:
           - "10000"
         x-ratelimit-limit-tokens:
@@ -113,7 +115,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_7edc8a803e9c4902bd763ec12bc792b8
+          - req_41c39ca229a241de890fbd56b895f9df
       status:
         code: 200
         message: OK
