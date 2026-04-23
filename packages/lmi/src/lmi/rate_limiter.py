@@ -116,7 +116,10 @@ class GlobalRateLimiter:
         """
         self.rate_config = RATE_CONFIG if rate_config is None else rate_config
         self.use_in_memory = use_in_memory
-        self.redis_url = redis_url
+        self.redis_url = redis_url or os.environ.get("REDIS_URL", "")
+        self.redis_tls = self.redis_url.startswith("rediss://")
+        self.redis_scheme = "async+rediss" if self.redis_tls else "async+redis"
+        self.redis_bare_url = self._strip_scheme(self.redis_url)
         self._storage: RedisStorage | MemoryStorage | None = None
         self._rate_limiter: MovingWindowRateLimiter | None = None
         self._current_ip: str | None = None
@@ -134,25 +137,8 @@ class GlobalRateLimiter:
         return None
 
     @staticmethod
-    def _wants_tls(redis_url: str) -> bool:
-        if redis_url.startswith("rediss://"):
-            return True
-        if redis_url.startswith("redis://"):
-            return False
-        return os.environ.get("REDIS_USE_TLS", "").lower() in {
-            "1",
-            "true",
-            "yes",
-            "on",
-        }
-
-    @staticmethod
     def _strip_scheme(redis_url: str) -> str:
-        if redis_url.startswith("rediss://"):
-            return redis_url[len("rediss://") :]
-        if redis_url.startswith("redis://"):
-            return redis_url[len("redis://") :]
-        return redis_url
+        return redis_url.removeprefix("rediss://").removeprefix("redis://")
 
     async def outbount_ip(self) -> str:
         if self._current_ip is None:
@@ -171,13 +157,10 @@ class GlobalRateLimiter:
     @property
     def storage(self) -> RedisStorage | MemoryStorage:
         if self._storage is None:
-            redis_url = self.redis_url or os.environ.get("REDIS_URL")
-            if redis_url and not self.use_in_memory:
-                use_tls = self._wants_tls(redis_url)
-                bare_url = self._strip_scheme(redis_url)
-                scheme = "rediss" if use_tls else "redis"
-                self._storage = RedisStorage(f"async+{scheme}://{bare_url}")
-                logger.info("Connected to redis instance for rate limiting.")
+            if self.redis_url and not self.use_in_memory:
+                conn = f"{self.redis_scheme}://{self.redis_bare_url}"
+                self._storage = RedisStorage(conn)
+                logger.info(f"Connected to redis instance for rate limiting: {conn}")
             else:
                 self._storage = MemoryStorage()
                 logger.info("Using in-memory rate limiter.")
@@ -293,47 +276,19 @@ class GlobalRateLimiter:
         self, cursor_scan_count: int = 100
     ) -> list[tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]]:
         """Returns a list of current RateLimitItems with tuples of namespace and primary key."""
-        redis_url = self.redis_url or os.environ.get("REDIS_URL", ":")
-        if redis_url is None:
-            raise ValueError("Redis URL is not set correctly.")
-
-        # Support scheme-prefixed URLs (redis://, rediss://) and bare
-        # "host:port" / ":password@host:port" forms. The bare-form URL needs
-        # a synthetic `redis://` prefix before urlparse can extract
-        # host/port/password; TLS selection comes from the explicit scheme
-        # or a narrow REDIS_USE_TLS env override for bare URLs.
-        use_tls = self._wants_tls(redis_url)
-        bare_url = self._strip_scheme(redis_url)
-
-        try:
-            parsed = urlparse(f"redis://{bare_url}")
-        except ValueError as exc:
-            raise ValueError(
-                f"Failed to parse host and port from Redis URL {redis_url!r},"
-                " correctly pass at initialization or set env variable REDIS_URL."
-            ) from exc
-
-        if not (parsed.hostname and parsed.port):
-            raise ValueError(
-                f"Failed to parse host and port from Redis URL {redis_url!r},"
-                " correctly pass at initialization or set env variable REDIS_URL."
-            )
-
-        storage = self.storage
-        if not isinstance(storage, RedisStorage):
+        # urlparse requires a scheme prefix to extract host/port/password from
+        # bare "host:port" or ":password@host:port" URLs.
+        parsed = urlparse(f"{self.redis_scheme}://{self.redis_bare_url}")
+        if not isinstance(self.storage, RedisStorage):
             raise NotImplementedError(
                 "get_rate_limit_keys only works with RedisStorage."
             )
 
-        # ssl=use_tls is required because the bare host/port constructor
-        # does not inherit TLS config from the URL-based storage client.
-        # Without it, a TLS-only Redis endpoint accepts the TCP handshake
-        # and then hangs waiting for a ClientHello that never arrives.
         client = Redis(
             host=parsed.hostname,
             port=parsed.port,
             password=parsed.password,
-            ssl=use_tls,
+            ssl=self.redis_tls,
         )
 
         try:
@@ -342,7 +297,7 @@ class GlobalRateLimiter:
             while cursor:
                 cursor, keys = await client.scan(
                     int(cursor),
-                    match=f"{storage.bridge.key_prefix}*",
+                    match=f"{self.storage.bridge.key_prefix}*",
                     count=cursor_scan_count,
                 )
                 matching_keys.extend(list(keys))
