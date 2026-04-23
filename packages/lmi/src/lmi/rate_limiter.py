@@ -117,12 +117,12 @@ class GlobalRateLimiter:
         self.rate_config = RATE_CONFIG if rate_config is None else rate_config
         self.use_in_memory = use_in_memory
         self.redis_url = redis_url or os.environ.get("REDIS_URL")
-        if not self.redis_url:
+        if not self.redis_url and not use_in_memory:
             raise ValueError("You must specify a `redis_url` or set the REDIS_URL environment variable.")
-        self.redis_tls = self.redis_url.startswith("rediss://")
+        self.redis_tls = self.redis_url.startswith("rediss://") if self.redis_url else False
         # Redis over SSL when possible.
         self.redis_scheme = "async+rediss" if self.redis_tls else "async+redis"
-        self.redis_bare_url = self._strip_scheme(self.redis_url)
+        self.redis_bare_url = self._strip_scheme(self.redis_url) if self.redis_url else ""
         self._storage: RedisStorage | MemoryStorage | None = None
         self._rate_limiter: MovingWindowRateLimiter | None = None
         self._current_ip: str | None = None
@@ -443,4 +443,4 @@ class GlobalRateLimiter:
             acquire_timeout = max(acquire_timeout - elapsed, 1.0)
 
 
-GLOBAL_LIMITER = GlobalRateLimiter()
+GLOBAL_LIMITER = GlobalRateLimiter(use_in_memory=not os.environ.get("REDIS_URL"))
