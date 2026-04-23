@@ -118,6 +118,7 @@ class GlobalRateLimiter:
         self.use_in_memory = use_in_memory
         self.redis_url = redis_url or os.environ.get("REDIS_URL", "")
         self.redis_tls = self.redis_url.startswith("rediss://")
+        # Redis over SSL when possible.
         self.redis_scheme = "async+rediss" if self.redis_tls else "async+redis"
         self.redis_bare_url = self._strip_scheme(self.redis_url)
         self._storage: RedisStorage | MemoryStorage | None = None
@@ -278,7 +279,14 @@ class GlobalRateLimiter:
         """Returns a list of current RateLimitItems with tuples of namespace and primary key."""
         # urlparse requires a scheme prefix to extract host/port/password from
         # bare "host:port" or ":password@host:port" URLs.
-        parsed = urlparse(f"{self.redis_scheme}://{self.redis_bare_url}")
+        try:
+            parsed = urlparse(f"{self.redis_scheme}://{self.redis_bare_url}")
+        except ValueError as exc:
+            raise ValueError(
+                f"Failed to parse host and port from Redis URL {self.redis_bare_url!r},"
+                " correctly pass at initialization or set env variable REDIS_URL."
+            ) from exc
+
         if not isinstance(self.storage, RedisStorage):
             raise NotImplementedError(
                 "get_rate_limit_keys only works with RedisStorage."

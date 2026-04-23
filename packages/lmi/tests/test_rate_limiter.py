@@ -429,7 +429,7 @@ class TestGlobalRateLimiter:
     async def test_get_rate_limit_keys_parses_redis_url(
         self, redis_url_factory, expected_redis_kwargs
     ) -> None:
-        """Test that get_rate_limit_keys parses Redis URLs and configures TLS correctly."""
+        """Test that get_rate_limit_keys correctly parses both plain and password-protected Redis URLs."""
         redis_url = redis_url_factory()
         if callable(expected_redis_kwargs):
             expected_redis_kwargs = expected_redis_kwargs(redis_url)
