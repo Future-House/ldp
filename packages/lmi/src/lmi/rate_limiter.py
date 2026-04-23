@@ -133,6 +133,27 @@ class GlobalRateLimiter:
             logger.warning(f"Error occurred while connecting to {url}.", exc_info=True)
         return None
 
+    @staticmethod
+    def _wants_tls(redis_url: str) -> bool:
+        if redis_url.startswith("rediss://"):
+            return True
+        if redis_url.startswith("redis://"):
+            return False
+        return os.environ.get("REDIS_USE_TLS", "").lower() in {
+            "1",
+            "true",
+            "yes",
+            "on",
+        }
+
+    @staticmethod
+    def _strip_scheme(redis_url: str) -> str:
+        if redis_url.startswith("rediss://"):
+            return redis_url[len("rediss://") :]
+        if redis_url.startswith("redis://"):
+            return redis_url[len("redis://") :]
+        return redis_url
+
     async def outbount_ip(self) -> str:
         if self._current_ip is None:
             async with aiohttp.ClientSession() as session:
@@ -152,7 +173,10 @@ class GlobalRateLimiter:
         if self._storage is None:
             redis_url = self.redis_url or os.environ.get("REDIS_URL")
             if redis_url and not self.use_in_memory:
-                self._storage = RedisStorage(f"async+redis://{redis_url}")
+                use_tls = self._wants_tls(redis_url)
+                bare_url = self._strip_scheme(redis_url)
+                scheme = "rediss" if use_tls else "redis"
+                self._storage = RedisStorage(f"async+{scheme}://{bare_url}")
                 logger.info("Connected to redis instance for rate limiting.")
             else:
                 self._storage = MemoryStorage()
@@ -273,11 +297,16 @@ class GlobalRateLimiter:
         if redis_url is None:
             raise ValueError("Redis URL is not set correctly.")
 
-        # parse redis_url which may be "host:port" or ":password@host:port"
-        # the prefixed : looks like a bug waiting to happen but this is how
-        # the redis client handles uris without a username this way
+        # Support scheme-prefixed URLs (redis://, rediss://) and bare
+        # "host:port" / ":password@host:port" forms. The bare-form URL needs
+        # a synthetic `redis://` prefix before urlparse can extract
+        # host/port/password; TLS selection comes from the explicit scheme
+        # or a narrow REDIS_USE_TLS env override for bare URLs.
+        use_tls = self._wants_tls(redis_url)
+        bare_url = self._strip_scheme(redis_url)
+
         try:
-            parsed = urlparse(f"redis://{redis_url}")
+            parsed = urlparse(f"redis://{bare_url}")
         except ValueError as exc:
             raise ValueError(
                 f"Failed to parse host and port from Redis URL {redis_url!r},"
@@ -296,7 +325,16 @@ class GlobalRateLimiter:
                 "get_rate_limit_keys only works with RedisStorage."
             )
 
-        client = Redis(host=parsed.hostname, port=parsed.port, password=parsed.password)
+        # ssl=use_tls is required because the bare host/port constructor
+        # does not inherit TLS config from the URL-based storage client.
+        # Without it, a TLS-only Redis endpoint accepts the TCP handshake
+        # and then hangs waiting for a ClientHello that never arrives.
+        client = Redis(
+            host=parsed.hostname,
+            port=parsed.port,
+            password=parsed.password,
+            ssl=use_tls,
+        )
 
         try:
             cursor: int | bytes = b"0"

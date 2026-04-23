@@ -396,30 +396,61 @@ async def test_rpm_concurrent_requests(llm_config_w_request_limits: dict[str, An
 
 class TestGlobalRateLimiter:
     @pytest.mark.parametrize(
-        ("redis_url_factory", "expected_redis_kwargs"),
+        ("redis_url_factory", "tls_env", "expected_redis_kwargs"),
         [
             pytest.param(
                 lambda: "10.58.188.212:6379",
-                {"host": "10.58.188.212", "port": 6379, "password": None},
+                None,
+                {"host": "10.58.188.212", "port": 6379, "password": None, "ssl": False},
                 id="plain-host-port",
             ),
             pytest.param(
                 lambda: f":{uuid.uuid4()}@10.58.188.212:6379",
+                None,
                 lambda url: {
                     "host": "10.58.188.212",
                     "port": 6379,
                     "password": urlparse(f"redis://{url}").password,
+                    "ssl": False,
                 },
                 id="password-protected",
+            ),
+            pytest.param(
+                lambda: "redis://10.58.188.212:6379",
+                None,
+                {"host": "10.58.188.212", "port": 6379, "password": None, "ssl": False},
+                id="redis-scheme",
+            ),
+            pytest.param(
+                lambda: "rediss://10.58.188.212:6379",
+                None,
+                {"host": "10.58.188.212", "port": 6379, "password": None, "ssl": True},
+                id="rediss-scheme",
+            ),
+            pytest.param(
+                lambda: "10.58.188.212:6379",
+                "true",
+                {"host": "10.58.188.212", "port": 6379, "password": None, "ssl": True},
+                id="bare-host-port-env-tls-enabled",
+            ),
+            pytest.param(
+                lambda: "10.58.188.212:6379",
+                "0",
+                {"host": "10.58.188.212", "port": 6379, "password": None, "ssl": False},
+                id="bare-host-port-env-tls-disabled",
             ),
         ],
     )
     @pytest.mark.asyncio
     async def test_get_rate_limit_keys_parses_redis_url(
-        self, redis_url_factory, expected_redis_kwargs
+        self, redis_url_factory, tls_env, expected_redis_kwargs, monkeypatch
     ) -> None:
-        """Test that get_rate_limit_keys correctly parses both plain and password-protected Redis URLs."""
+        """Test that get_rate_limit_keys parses Redis URLs and configures TLS correctly."""
         redis_url = redis_url_factory()
+        if tls_env is None:
+            monkeypatch.delenv("REDIS_USE_TLS", raising=False)
+        else:
+            monkeypatch.setenv("REDIS_USE_TLS", tls_env)
         if callable(expected_redis_kwargs):
             expected_redis_kwargs = expected_redis_kwargs(redis_url)
         limiter = GlobalRateLimiter(redis_url=redis_url)
@@ -429,6 +460,54 @@ class TestGlobalRateLimiter:
             mock_client.quit = AsyncMock()
             await limiter.get_rate_limit_keys()
             mock_redis_cls.assert_called_once_with(**expected_redis_kwargs)
+
+    @pytest.mark.parametrize(
+        ("redis_url", "tls_env", "expected_storage_url"),
+        [
+            pytest.param(
+                "10.58.188.212:6379",
+                None,
+                "async+redis://10.58.188.212:6379",
+                id="plain-host-port",
+            ),
+            pytest.param(
+                "redis://10.58.188.212:6379",
+                None,
+                "async+redis://10.58.188.212:6379",
+                id="redis-scheme",
+            ),
+            pytest.param(
+                "rediss://10.58.188.212:6379",
+                None,
+                "async+rediss://10.58.188.212:6379",
+                id="rediss-scheme",
+            ),
+            pytest.param(
+                "10.58.188.212:6379",
+                "true",
+                "async+rediss://10.58.188.212:6379",
+                id="bare-host-port-env-tls-enabled",
+            ),
+            pytest.param(
+                "10.58.188.212:6379",
+                "0",
+                "async+redis://10.58.188.212:6379",
+                id="bare-host-port-env-tls-disabled",
+            ),
+        ],
+    )
+    def test_storage_uses_expected_redis_scheme(
+        self, redis_url, tls_env, expected_storage_url, monkeypatch
+    ) -> None:
+        if tls_env is None:
+            monkeypatch.delenv("REDIS_USE_TLS", raising=False)
+        else:
+            monkeypatch.setenv("REDIS_USE_TLS", tls_env)
+
+        with patch("lmi.rate_limiter.RedisStorage") as mock_redis_storage:
+            limiter = GlobalRateLimiter(redis_url=redis_url)
+            _ = limiter.storage
+            mock_redis_storage.assert_called_once_with(expected_storage_url)
 
     @pytest.mark.asyncio
     async def test_parsing_namespace(self) -> None:
