@@ -116,7 +116,9 @@ class GlobalRateLimiter:
         """
         self.rate_config = RATE_CONFIG if rate_config is None else rate_config
         self.use_in_memory = use_in_memory
-        self.redis_url = redis_url or os.environ.get("REDIS_URL", "")
+        self.redis_url = redis_url or os.environ.get("REDIS_URL")
+        if not self.redis_url:
+            raise ValueError("You must specify a `redis_url` or set the REDIS_URL environment variable.")
         self.redis_tls = self.redis_url.startswith("rediss://")
         # Redis over SSL when possible.
         self.redis_scheme = "async+rediss" if self.redis_tls else "async+redis"
@@ -280,12 +282,10 @@ class GlobalRateLimiter:
         # urlparse requires a scheme prefix to extract host/port/password from
         # bare "host:port" or ":password@host:port" URLs.
         try:
-            parsed = urlparse(f"{self.redis_scheme}://{self.redis_bare_url}")
+            url = f"{self.redis_scheme}://{self.redis_bare_url}"
+            parsed = urlparse(url)
         except ValueError as exc:
-            raise ValueError(
-                f"Failed to parse host and port from Redis URL {self.redis_bare_url!r},"
-                " correctly pass at initialization or set env variable REDIS_URL."
-            ) from exc
+            raise ValueError(f"Failed to parse host and port from Redis URL {url!r}.") from exc
 
         if not isinstance(self.storage, RedisStorage):
             raise NotImplementedError(
