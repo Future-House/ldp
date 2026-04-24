@@ -107,12 +107,15 @@ class GlobalRateLimiter:
         Args:
             rate_config: Optional dictionary mapping (namespace, primary_key) tuples to
                 RateLimitItem instances. If not provided, the default RATE_CONFIG is used.
-            use_in_memory: If True, use in-memory storage instead of Redis, even if
-                Redis URL is available.
+            use_in_memory: If True, force in-memory storage even if a Redis URL
+                is available. When False (the default), in-memory storage is still
+                used as a fallback if no Redis URL is provided via `redis_url` or
+                the `REDIS_URL` environment variable.
             redis_url: Optional Redis URL to use for storage. If not provided, the
-                REDIS_URL environment variable will be used. This parameter allows
-                direct specification of the Redis URL without relying on environment
-                variables.
+                `REDIS_URL` environment variable will be used. Supports
+                `redis://host:port` (plaintext), `rediss://host:port` (TLS, e.g.
+                AWS ElastiCache with in-transit encryption), and bare `host:port`
+                (treated as plaintext).
         """
         self._rate_config = RATE_CONFIG if rate_config is None else rate_config
         self._redis_url = redis_url or os.environ.get("REDIS_URL")
