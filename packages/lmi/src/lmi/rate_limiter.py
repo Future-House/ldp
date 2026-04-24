@@ -114,15 +114,17 @@ class GlobalRateLimiter:
                 direct specification of the Redis URL without relying on environment
                 variables.
         """
-        self.rate_config = RATE_CONFIG if rate_config is None else rate_config
-        self.use_in_memory = use_in_memory
-        self.redis_url = redis_url or os.environ.get("REDIS_URL")
-        if not self.redis_url and not use_in_memory:
-            raise ValueError("You must specify a `redis_url` or set the REDIS_URL environment variable.")
-        self.redis_tls = self.redis_url.startswith("rediss://") if self.redis_url else False
+        self._rate_config = RATE_CONFIG if rate_config is None else rate_config
+        self._redis_url = redis_url or os.environ.get("REDIS_URL")
+        self._use_in_memory = use_in_memory or not self._redis_url
+        self._redis_tls = (
+            self._redis_url.startswith("rediss://") if self._redis_url else False
+        )
         # Redis over SSL when possible.
-        self.redis_scheme = "async+rediss" if self.redis_tls else "async+redis"
-        self.redis_bare_url = self._strip_scheme(self.redis_url) if self.redis_url else ""
+        self._redis_scheme = "async+rediss" if self._redis_tls else "async+redis"
+        self._redis_bare_url = (
+            self._strip_scheme(self._redis_url) if self._redis_url else ""
+        )
         self._storage: RedisStorage | MemoryStorage | None = None
         self._rate_limiter: MovingWindowRateLimiter | None = None
         self._current_ip: str | None = None
@@ -160,13 +162,13 @@ class GlobalRateLimiter:
     @property
     def storage(self) -> RedisStorage | MemoryStorage:
         if self._storage is None:
-            if self.redis_url and not self.use_in_memory:
-                conn = f"{self.redis_scheme}://{self.redis_bare_url}"
-                self._storage = RedisStorage(conn)
-                logger.info(f"Connected to redis instance for rate limiting: {conn}")
-            else:
+            if self._use_in_memory:
                 self._storage = MemoryStorage()
                 logger.info("Using in-memory rate limiter.")
+            else:
+                conn = f"{self._redis_scheme}://{self._redis_bare_url}"
+                self._storage = RedisStorage(conn)
+                logger.info(f"Connected to redis instance for rate limiting: {conn}")
 
         return self._storage
 
@@ -231,27 +233,27 @@ class GlobalRateLimiter:
 
         # here we want to use namespace_w_machine_id_stripped -- the rate should be shared
         # this needs to be checked first, since it's more specific than the stub machine id
-        if (namespace_w_machine_id_stripped, primary_key) in self.rate_config:
+        if (namespace_w_machine_id_stripped, primary_key) in self._rate_config:
             return (
-                self.rate_config[namespace_w_machine_id_stripped, primary_key],
+                self._rate_config[namespace_w_machine_id_stripped, primary_key],
                 namespace_w_machine_id_stripped,
             )
         # we keep the old namespace if we match on the namespace_w_stub_machine_id
-        if (namespace_w_stub_machine_id, primary_key) in self.rate_config:
+        if (namespace_w_stub_machine_id, primary_key) in self._rate_config:
             return (
-                self.rate_config[namespace_w_stub_machine_id, primary_key],
+                self._rate_config[namespace_w_stub_machine_id, primary_key],
                 namespace,
             )
         # again we only want the original namespace, keep the old namespace
-        if (namespace_w_stub_machine_id, MATCH_ALL) in self.rate_config:
+        if (namespace_w_stub_machine_id, MATCH_ALL) in self._rate_config:
             return (
-                self.rate_config[namespace_w_stub_machine_id, MATCH_ALL],
+                self._rate_config[namespace_w_stub_machine_id, MATCH_ALL],
                 namespace,
             )
         # again we want to use the stripped namespace if it matches
-        if (namespace_w_machine_id_stripped, MATCH_ALL) in self.rate_config:
+        if (namespace_w_machine_id_stripped, MATCH_ALL) in self._rate_config:
             return (
-                self.rate_config[namespace_w_machine_id_stripped, MATCH_ALL],
+                self._rate_config[namespace_w_machine_id_stripped, MATCH_ALL],
                 namespace_w_machine_id_stripped,
             )
         return FALLBACK_RATE_LIMIT, namespace
@@ -282,10 +284,12 @@ class GlobalRateLimiter:
         # urlparse requires a scheme prefix to extract host/port/password from
         # bare "host:port" or ":password@host:port" URLs.
         try:
-            url = f"{self.redis_scheme}://{self.redis_bare_url}"
+            url = f"{self._redis_scheme}://{self._redis_bare_url}"
             parsed = urlparse(url)
         except ValueError as exc:
-            raise ValueError(f"Failed to parse host and port from Redis URL {url!r}.") from exc
+            raise ValueError(
+                f"Failed to parse host and port from Redis URL {url!r}."
+            ) from exc
 
         if not isinstance(self.storage, RedisStorage):
             raise NotImplementedError(
@@ -296,7 +300,7 @@ class GlobalRateLimiter:
             host=parsed.hostname,
             port=parsed.port,
             password=parsed.password,
-            ssl=self.redis_tls,
+            ssl=self._redis_tls,
         )
 
         try:
@@ -327,10 +331,9 @@ class GlobalRateLimiter:
     async def get_limit_keys(
         self,
     ) -> list[tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]]:
-        redis_url = self.redis_url or os.environ.get("REDIS_URL")
-        if redis_url and not self.use_in_memory:
-            return await self.get_rate_limit_keys()
-        return self.get_in_memory_limit_keys()
+        if self._use_in_memory:
+            return self.get_in_memory_limit_keys()
+        return await self.get_rate_limit_keys()
 
     async def rate_limit_status(self):
         limit_status = {}
@@ -443,4 +446,4 @@ class GlobalRateLimiter:
             acquire_timeout = max(acquire_timeout - elapsed, 1.0)
 
 
-GLOBAL_LIMITER = GlobalRateLimiter(use_in_memory=not os.environ.get("REDIS_URL"))
+GLOBAL_LIMITER = GlobalRateLimiter()
