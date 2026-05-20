@@ -12,6 +12,7 @@ import tree
 from aviary.core import DummyEnv, Message, Tool, ToolRequestMessage
 from lmi import CommonLLMNames, LLMResult
 from lmi import LiteLLMModel as LLMModel
+from lmi.utils import VCR_DEFAULT_MATCH_ON
 
 from ldp.graph import (
     CallID,
@@ -204,6 +205,41 @@ class TestLLMCallOp:
         llm_op = LLMCallOp(response_validator=StatefulValidator())
         with pytest.raises(tenacity.RetryError, match="ResponseValidationError"):
             await llm_op(config, msgs=[Message(content="Hello")])
+
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
+    @pytest.mark.asyncio
+    async def test_tool_parser_with_required_tool_choice(self) -> None:
+        def parse_text_tool_calls(
+            choice: litellm.utils.Choices,
+            tools: list[dict] | None,  # noqa: ARG001
+        ) -> Message:
+            # Stand-in for a vLLM-without-auto-tool-choice style parser that
+            # would extract <tool_call> blocks from message.content
+            return Message(role="assistant", content=choice.message.content)
+
+        def echo(x: int) -> int:
+            """Echo the integer back.
+
+            Args:
+                x: An integer to echo.
+            """
+            return x
+
+        config = {
+            "name": CommonLLMNames.OPENAI_TEST.value,
+            "tool_parser": parse_text_tool_calls,
+        }
+        llm_op = LLMCallOp()
+        async with compute_graph():
+            op_result = await llm_op(
+                config,
+                msgs=[Message(content="Call echo with x=1")],
+                tools=[Tool.from_function(echo)],
+            )
+
+        assert isinstance(op_result.value, Message), (
+            "Expected the custom tool_parser's Message back"
+        )
 
 
 class StatefulValidator:
