@@ -21,6 +21,7 @@ from aviary.message import EnvStateMessage
 from httpx import ASGITransport, AsyncClient
 from lmi import CommonLLMNames
 from lmi import LiteLLMModel as LLMModel
+from lmi.utils import VCR_DEFAULT_MATCH_ON
 from pydantic import BaseModel, Field
 
 from ldp.agent import (
@@ -44,7 +45,7 @@ from ldp.graph.modules import (
     ToolDescriptionMethods,
 )
 
-from .conftest import IN_GITHUB_ACTIONS, VCR_DEFAULT_MATCH_ON
+from .conftest import IN_GITHUB_ACTIONS
 
 HERE = Path(__file__).parent
 

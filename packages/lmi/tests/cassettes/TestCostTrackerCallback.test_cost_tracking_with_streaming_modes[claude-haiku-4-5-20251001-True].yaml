@@ -20,24 +20,24 @@ interactions:
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.81.12
+          - litellm/1.82.6
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string:
-          "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_01VrWiiNHrKEEqsq4LF723wu\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":9,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":3,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"}}
-          \        }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}
-          \ }\n\nevent: ping\ndata: {\"type\": \"ping\"}\n\nevent: content_block_delta\ndata:
+          "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"model\":\"claude-haiku-4-5-20251001\",\"id\":\"msg_018PoeQ1rzzP9KA8Q6p6wvJK\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":9,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":3,\"service_tier\":\"standard\",\"inference_geo\":\"not_available\"}}}\n\nevent:
+          content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}
+          \             }\n\nevent: ping\ndata: {\"type\": \"ping\"}\n\nevent: content_block_delta\ndata:
           {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"Hello!
-          \"}               }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"\U0001F44B
-          How can I help you\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"
-          today?\"}           }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0
-          \   }\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"input_tokens\":9,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":16}
-          }\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"     }\n\n"
+          \"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"\U0001F44B
+          How can I help you today?\"}             }\n\nevent: content_block_stop\ndata:
+          {\"type\":\"content_block_stop\",\"index\":0  }\n\nevent: message_delta\ndata:
+          {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null},\"usage\":{\"input_tokens\":9,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":16}
+          \   }\n\nevent: message_stop\ndata: {\"type\":\"message_stop\" }\n\n"
       headers:
         CF-RAY:
-          - 9d0905195e7112a1-SJC
+          - 9efec65c8e3467ff-SJC
         Cache-Control:
           - no-cache
         Connection:
@@ -47,47 +47,51 @@ interactions:
         Content-Type:
           - text/event-stream; charset=utf-8
         Date:
-          - Thu, 19 Feb 2026 21:57:27 GMT
+          - Tue, 21 Apr 2026 19:25:29 GMT
         Server:
           - cloudflare
+        Set-Cookie:
+          - <FILTERED>
         Transfer-Encoding:
           - chunked
         X-Robots-Tag:
           - none
         anthropic-organization-id:
-          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+          - <FILTERED>
         anthropic-ratelimit-input-tokens-limit:
           - "4000000"
         anthropic-ratelimit-input-tokens-remaining:
           - "4000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2026-02-19T21:57:26Z"
+          - "2026-04-21T19:25:28Z"
         anthropic-ratelimit-output-tokens-limit:
           - "800000"
         anthropic-ratelimit-output-tokens-remaining:
           - "800000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2026-02-19T21:57:26Z"
+          - "2026-04-21T19:25:28Z"
         anthropic-ratelimit-requests-limit:
-          - "4000"
+          - "20000"
         anthropic-ratelimit-requests-remaining:
-          - "3999"
+          - "19999"
         anthropic-ratelimit-requests-reset:
-          - "2026-02-19T21:57:26Z"
+          - "2026-04-21T19:25:28Z"
         anthropic-ratelimit-tokens-limit:
           - "4800000"
         anthropic-ratelimit-tokens-remaining:
           - "4800000"
         anthropic-ratelimit-tokens-reset:
-          - "2026-02-19T21:57:26Z"
+          - "2026-04-21T19:25:28Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_011CYJB9t9onN3ScnKEPtAC7
+          - req_011CaHTubg8YhSRyM6GeNVnL
+        server-timing:
+          - x-originResponse;dur=588
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
         x-envoy-upstream-service-time:
-          - "449"
+          - "577"
       status:
         code: 200
         message: OK

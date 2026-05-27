@@ -14,12 +14,17 @@ from collections.abc import Awaitable, Callable
 from typing import Annotated, Any
 
 import litellm
+from aviary.core import Message, ToolRequestMessage
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, SecretStr
 
 from lmi.constants import DEFAULT_VERTEX_SAFETY_SETTINGS
 from lmi.types import LLMResult
 
 ResponseValidator = Callable[[LLMResult], Awaitable[None] | None]
+ToolParser = (
+    Callable[[litellm.utils.Choices, list[dict] | None], Message | ToolRequestMessage]
+    | Callable[[str, list[dict] | None], Message | ToolRequestMessage]
+)
 
 _DEFAULT_TEMPERATURE = 1.0
 _OPENAI_ONLY_PARAMS = frozenset({"logprobs", "top_logprobs"})
@@ -29,6 +34,11 @@ _OPENAI_ONLY_PARAMS = frozenset({"logprobs", "top_logprobs"})
 # must never reach `litellm.acompletion`/`litellm.aresponses` regardless of how
 # they ended up in `ModelSpec.extra_params`.
 _LITELLM_RETRY_KWARGS = frozenset({"num_retries", "max_retries"})
+
+# `tool_parser` is an LMI-level callable handled on `LiteLLMModel`; if it ever
+# ends up in `extra_params` (e.g. via a name-shape dict that wasn't unpacked
+# through `LLMConfig.coerce`), filter it before dispatching to litellm.
+_NON_LITELLM_EXTRA_PARAMS = _LITELLM_RETRY_KWARGS | frozenset({"tool_parser"})
 
 
 class ModelSpec(BaseModel):
@@ -108,7 +118,9 @@ class ModelSpec(BaseModel):
     def to_litellm_kwargs(self) -> dict[str, Any]:
         """Flatten into kwargs for `litellm.acompletion` / `litellm.aresponses`."""
         sanitized_extra = {
-            k: v for k, v in self.extra_params.items() if k not in _LITELLM_RETRY_KWARGS
+            k: v
+            for k, v in self.extra_params.items()
+            if k not in _NON_LITELLM_EXTRA_PARAMS
         }
         out: dict[str, Any] = {
             "model": self.name,
@@ -145,6 +157,15 @@ class LLMConfig(BaseModel):
             " handle it."
         ),
     )
+    tool_parser: ToolParser | None = Field(
+        default=None,
+        exclude=True,
+        description=(
+            "Custom parser for converting LLM completions to tool requests."
+            " Lifted onto `LiteLLMModel.tool_parser` during model construction;"
+            " see that field for the accepted signatures."
+        ),
+    )
 
     @classmethod
     def coerce(cls, v: Any) -> LLMConfig:
@@ -171,7 +192,11 @@ class LLMConfig(BaseModel):
         if "name" in v:
             kwargs = dict(v)
             name = kwargs.pop("name")
-            return cls(models=[ModelSpec.from_name(name, **kwargs)])
+            tool_parser = kwargs.pop("tool_parser", None)
+            return cls(
+                models=[ModelSpec.from_name(name, **kwargs)],
+                tool_parser=tool_parser,
+            )
         raise ValueError(
             "Can't infer LLMConfig shape from dict; expected 'models',"
             " 'model_list', or 'name' key"

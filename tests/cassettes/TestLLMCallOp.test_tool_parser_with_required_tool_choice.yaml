@@ -1,8 +1,11 @@
 interactions:
   - request:
       body:
-        '{"messages": [{"role": "user", "content": "What does 42 mean?"}], "model":
-        "gpt-4o-mini-2024-07-18", "max_tokens": 56, "n": 1, "temperature": 1.0}'
+        '{"messages": [{"role": "user", "content": "Call echo with x=1"}], "model":
+        "gpt-4o-mini-2024-07-18", "n": 1, "temperature": 1.0, "tool_choice": "required",
+        "tools": [{"type": "function", "function": {"name": "echo", "description": "Echo
+        the integer back.", "parameters": {"type": "object", "properties": {"x": {"description":
+        "An integer to echo.", "title": "X", "type": "integer"}}, "required": ["x"]}}}]}'
       headers:
         accept:
           - application/json
@@ -11,13 +14,13 @@ interactions:
         connection:
           - keep-alive
         content-length:
-          - "134"
+          - "373"
         content-type:
           - application/json
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 2.30.0
+          - AsyncOpenAI/Python 2.24.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -27,7 +30,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 2.30.0
+          - 2.24.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -43,24 +46,24 @@ interactions:
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdYlwMixJKQIAAAD//4xTTW/bMAy951cIuvRi
-          F/n+OBZb1w3IZcNyWgtDkWlbiywZotTWG/LfR9lJnW0ZsIth8ZFPj3rkdv1uuZt/COXCbKVYr3bj
-          H/dfkCexwu6/g/TnqltpqQ68sqaHpQPhIbJOVqvlarNZbGYdUNscdCwrG5/ObVoro9LpeDpPx6t0
-          sj5VV1ZJQEr7RkfGfnbfqNPk8ErhcXKO1IAoSqDYOYmCzuoY4QJRoRfG82QApTUeTCf9awXMhHoP
-          js2nTCErRG0D6pYdjH0xTCDzlPLI7wy+UJK33XmnvaqpPfY5AMaemS3YVhWQ9LBRz+CQTsLk7J7+
-          W18pUz5ypgx7b0OpifguFzXeMJQKjARWKNkxITgFmNCdUdxH5WVVqQO4G2QPQeVw1vAgtHhtb4nz
-          k+kC6K1r6UpWOhuaqKhqG3Cpom61ViW1zPZAMpDtg9I5MnH5Kg6KgCI6Y4LWF4AwxnoRtXV+PJ2Q
-          45sD2paNs3v8o5QX5CxWGQ0C0lTQa2swpa94hx/p+9R5HX6zjxNV3fjM2wN0F05mPSEfJmwAF8sT
-          6EmiHuLLTXKFLcvBC6XxYla4FLKCfKgcBkuEXNkLYHTR9d9irnH3ndOL/w/9AEgJDa1O1jjI+6G4
-          luYg7t+/0t7euBPMaaieaaEyr8BFJ3IoRND9VnBs0UOdkV0luMapfjWKJpP5gvZ2MpvO+eg4+gUA
-          AP//AwCU/3mcKAQAAA==
+          H4sIAAAAAAAA/6rmUlBQykxRslJQSs5ILEnOLcjRdcnIyC0LCQYAAAD//4xTTW+jMBC98ysqn8OK
+          QBua3rrSdjdSVa3UPVTaVsgxA3FrbGSbbqIo/33HJsEkTaVyQDBv3sybrzUs/txnj/W/TZpcUba6
+          W/xefn8gE8dQy1dg9sD6xhTywHIle5hpoBZc1Gmez7PkOp/nHmhUCcLR6tbGlypuuORxmqSXcZLH
+          0+s9e6U4A4Nuf/H34mLr306nLGGN5mRysDRgDK0BbQcnNGolnIVQY7ixVFoyCSBT0oJ00mUnxAiw
+          SomCUSFC4v7Zjr5Ds9CxYOnPBb39sf6VZU+bOlXs6XF2xx7kKF8fetN6QVUn2dCkET7Yb06SISZp
+          47mAXTnhIUp13TVYjtNMts9k/Uxupjty5LaLzn2/jErXUHWGio89oVIqS50035SXPbIb+i9U3Wq1
+          NCdUUuFczarANTC+rHF3o4MQL4F0RwMkGK5pbWHVG/ikV7M+KAk7FsBptgctyhTBPptPzkQrSrCU
+          +/kOK8VwsaEMzLBatCu5GgHRqPKPYs7F7qvnsv5K+AAwBi0eT9FqKDk7Lji4aXAX+Jnb0GMvmBjQ
+          73hSheWg3TRKqGgn+rsgZmMsNAWOrAbdau6Pg1RtMaMlZPMqryoS7aL/AAAA//8DACpxsLoqBAAA
       headers:
         Access-Control-Expose-Headers:
           - X-Request-ID
+          - CF-Ray
+          - CF-Ray
         CF-Cache-Status:
           - DYNAMIC
         CF-Ray:
-          - 9efec7f45aba5e55-SJC
+          - 9fee13ce7fc0fbec-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -68,7 +71,7 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 21 Apr 2026 19:26:35 GMT
+          - Wed, 20 May 2026 20:26:38 GMT
         Server:
           - cloudflare
         Set-Cookie:
@@ -84,7 +87,7 @@ interactions:
         openai-organization:
           - <FILTERED>
         openai-processing-ms:
-          - "1452"
+          - "640"
         openai-project:
           - <FILTERED>
         openai-version:
@@ -98,13 +101,13 @@ interactions:
         x-ratelimit-remaining-requests:
           - "29999"
         x-ratelimit-remaining-tokens:
-          - "149999992"
+          - "149999995"
         x-ratelimit-reset-requests:
           - 2ms
         x-ratelimit-reset-tokens:
           - 0s
         x-request-id:
-          - req_c3c8fcc2079a4256854c9b2106e97fa6
+          - req_3233ddb00018466e93b38f5fb00a7382
       status:
         code: 200
         message: OK

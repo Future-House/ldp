@@ -1,11 +1,13 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"system","content":"Respond following this JSON schema:\n\n{\"properties\":
-        {\"name\": {\"title\": \"Name\", \"type\": \"string\"}, \"age\": {\"description\":
-        \"Age in years.\", \"title\": \"Age\", \"type\": \"integer\"}}, \"required\":
-        [\"name\", \"age\"], \"title\": \"DummyOutputSchema\", \"type\": \"object\"}"},{"role":"user","content":"My
-        name is Claude and I am 1 year old. What is my name and age?"}],"model":"gpt-3.5-turbo-0125","n":2,"response_format":{"type":"json_object"},"temperature":1.0}'
+        '{"messages": [{"role": "system", "content": "Respond following this JSON
+        schema:\n\n{\"properties\": {\"name\": {\"title\": \"Name\", \"type\": \"string\"},
+        \"age\": {\"description\": \"Age in years.\", \"title\": \"Age\", \"type\":
+        \"integer\"}}, \"required\": [\"name\", \"age\"], \"title\": \"DummyOutputSchema\",
+        \"type\": \"object\"}"}, {"role": "user", "content": "My name is Claude and
+        I am 1 year old. What is my name and age?"}], "model": "gpt-3.5-turbo-0125",
+        "n": 2, "response_format": {"type": "json_object"}, "temperature": 1.0}'
       headers:
         accept:
           - application/json
@@ -20,7 +22,7 @@ interactions:
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 1.97.0
+          - AsyncOpenAI/Python 2.30.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -30,7 +32,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 1.97.0
+          - 2.30.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -40,23 +42,27 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.8
+          - 3.13.5
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAAAwAAAP//zFM9b9swEN31K4ib5UCSY6fQViRT06kF2qEKBJo8yUwpkiBPRQ3D/70g
-          5VjKF9ChQxcN9+49vXt3PGaMgZJQMxB7TmJwenW7/XxvD9tP3+hj9V1W8l6F6sthuCvc1+4G8siw
-          u0cU9MS6EnZwGklZM8HCIyeMquXNZrOtPhTldQIGK1FHWu9otb7arGj0O7sqympzZu6tEhigZj8y
-          xhg7pm/0aCT+hpoV+VNlwBB4j1BfmhgDb3WsAA9BBeKGIJ9BYQ2hSbaPjWmoAcMHbKBmDdxqPkps
-          IJ8A3qd62ZjTUsFjNwYeJzCj1guAG2OJxwSS94czcrq41bZ33u7CCyp0yqiwbz3yYE10Fsg6yBbk
-          VxGU/yyCWHonhAn6L2LIGHtIxzE+Gxact4OjluxPTL8ri3MyMN/jjK7XZ5Ascb1gra/zN/RaicSV
-          DotsQXCxRzlT51vko1R2ASz399rNW9rT5Mr0fyM/A0KgI5St8yiVeD7x3OYxPtf32i4pJ8MQ0P9S
-          AltS6OMmJHZ81NMVQTgEwqHtlOnRO6/SKcVNZqfsDwAAAP//AwBQuoY+TAQAAA==
+          H4sIAAAAAAAA/+RTy07DMBC89ysin1PUUEoIR15CCIHECYlUkWtvUxfHjuwNAlX9d9bpIykPiTsX
+          K9nZWc/OrleDKGJKsvOIiQVHUdV6ePV8kahrcXv3cF9eXWe3qXx6dJfL52WWmhsWB4adLUHgjnUk
+          LPEAlTUbWDjgCKFqkqanaZZNzo5boLISdKCVNQ7HR5MhNm5mh6PkeLJlLqwS4CnlhX6jaNWeQaOR
+          8E7hUbyLVOA9L4FiuyQKOqtDhHHvlUdukMUdKKxBMK3sVW5CKGeGV5BTJGeXmjeSvuMdRMUDkuRm
+          3a/iYN54HrowjdY9gBtjkQcXWv3TLbLeK9a2rJ2d+S9UNldG+UVBpnlykNR5tDUb9MjfbEj+mQ10
+          TtsFaQ6aZVSoqrFA+wrtdclo6wzrdrJDxydbEEmh7rHGk/iHeoUE5Er7nrdMcLEA2VG7fSTblO0B
+          /fl9V/NT7U3nypR/Kd8BQkBNr62oHUglDjvu0hyEJ/tb2t7lVjDz4N7oHRaowIVJSJjzRm+2iPkP
+          j1AVNK4SXO1Uu0phkoP14BMAAP//AwDeM76EUAQAAA==
       headers:
-        CF-RAY:
-          - 971bb3afbbcc1668-SJC
+        Access-Control-Expose-Headers:
+          - X-Request-ID
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-Ray:
+          - 9efec7afdedf2368-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -64,37 +70,29 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Tue, 19 Aug 2025 18:26:54 GMT
+          - Tue, 21 Apr 2026 19:26:23 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=2l7WjtpmOyjNnvrvid_qQZ1jTWFqMZ9Sp26CB_Dr_kU-1755628014-1.0.1.1-3iRDI2SaX0Kq6SDSHjpFHjABiEGMGo2V50lBYAehoutZozhUm95NhrBBs1kfaOHZuf.sv3E3dEYnrYqdM_7FZVvxcDoGMX1uQaLp8H_WkIE;
-            path=/; expires=Tue, 19-Aug-25 18:56:54 GMT; domain=.api.openai.com; HttpOnly;
-            Secure; SameSite=None
-          - _cfuvid=SU0cr4JusK0D55pip2EVKI1_vobOEMvezDni0WvPUjU-1755628014623-0.0.1.1-604800000;
-            path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
+          - <FILTERED>
         Strict-Transport-Security:
           - max-age=31536000; includeSubDomains; preload
         Transfer-Encoding:
           - chunked
         X-Content-Type-Options:
           - nosniff
-        access-control-expose-headers:
-          - X-Request-ID
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         openai-organization:
-          - future-house-xr4tdh
+          - <FILTERED>
         openai-processing-ms:
-          - "468"
+          - "389"
         openai-project:
-          - proj_RpeV6PrPclPHBb5GlExPXSBj
+          - <FILTERED>
         openai-version:
           - "2020-10-01"
-        x-envoy-upstream-service-time:
-          - "498"
+        x-openai-proxy-wasm:
+          - v0.1
         x-ratelimit-limit-requests:
           - "12000"
         x-ratelimit-limit-tokens:
@@ -108,7 +106,7 @@ interactions:
         x-ratelimit-reset-tokens:
           - 4ms
         x-request-id:
-          - req_1d8bc257e47c44459d60ced4a5311a3d
+          - req_c7e98260d38a4012a38c9f7d7e0addc6
       status:
         code: 200
         message: OK

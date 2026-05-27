@@ -88,3 +88,4 @@ repos:
         entry: uv run --frozen mypy # Use --frozen to avoid mutating local venv
         language: system
         types_or: [python, pyi]
+        require_serial: true # Avoid SQLite cache contention across parallel mypy procs (python/mypy#13916)

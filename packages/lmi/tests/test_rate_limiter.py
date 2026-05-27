@@ -400,7 +400,7 @@ class TestGlobalRateLimiter:
         [
             pytest.param(
                 lambda: "10.58.188.212:6379",
-                {"host": "10.58.188.212", "port": 6379, "password": None},
+                {"host": "10.58.188.212", "port": 6379, "password": None, "ssl": False},
                 id="plain-host-port",
             ),
             pytest.param(
@@ -409,8 +409,19 @@ class TestGlobalRateLimiter:
                     "host": "10.58.188.212",
                     "port": 6379,
                     "password": urlparse(f"redis://{url}").password,
+                    "ssl": False,
                 },
                 id="password-protected",
+            ),
+            pytest.param(
+                lambda: "redis://10.58.188.212:6379",
+                {"host": "10.58.188.212", "port": 6379, "password": None, "ssl": False},
+                id="redis-scheme",
+            ),
+            pytest.param(
+                lambda: "rediss://10.58.188.212:6379",
+                {"host": "10.58.188.212", "port": 6379, "password": None, "ssl": True},
+                id="rediss-scheme",
             ),
         ],
     )
@@ -429,6 +440,34 @@ class TestGlobalRateLimiter:
             mock_client.quit = AsyncMock()
             await limiter.get_rate_limit_keys()
             mock_redis_cls.assert_called_once_with(**expected_redis_kwargs)
+
+    @pytest.mark.parametrize(
+        ("redis_url", "expected_storage_url"),
+        [
+            pytest.param(
+                "10.58.188.212:6379",
+                "async+redis://10.58.188.212:6379",
+                id="plain-host-port",
+            ),
+            pytest.param(
+                "redis://10.58.188.212:6379",
+                "async+redis://10.58.188.212:6379",
+                id="redis-scheme",
+            ),
+            pytest.param(
+                "rediss://10.58.188.212:6379",
+                "async+rediss://10.58.188.212:6379",
+                id="rediss-scheme",
+            ),
+        ],
+    )
+    def test_storage_uses_expected_redis_scheme(
+        self, redis_url, expected_storage_url
+    ) -> None:
+        with patch("lmi.rate_limiter.RedisStorage") as mock_redis_storage:
+            limiter = GlobalRateLimiter(redis_url=redis_url)
+            _ = limiter.storage
+            mock_redis_storage.assert_called_once_with(expected_storage_url)
 
     @pytest.mark.asyncio
     async def test_parsing_namespace(self) -> None:

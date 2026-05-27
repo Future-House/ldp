@@ -107,16 +107,27 @@ class GlobalRateLimiter:
         Args:
             rate_config: Optional dictionary mapping (namespace, primary_key) tuples to
                 RateLimitItem instances. If not provided, the default RATE_CONFIG is used.
-            use_in_memory: If True, use in-memory storage instead of Redis, even if
-                Redis URL is available.
+            use_in_memory: If True, force in-memory storage even if a Redis URL
+                is available. When False (the default), in-memory storage is still
+                used as a fallback if no Redis URL is provided via `redis_url` or
+                the `REDIS_URL` environment variable.
             redis_url: Optional Redis URL to use for storage. If not provided, the
-                REDIS_URL environment variable will be used. This parameter allows
-                direct specification of the Redis URL without relying on environment
-                variables.
+                `REDIS_URL` environment variable will be used. Supports
+                `redis://host:port` (plaintext), `rediss://host:port` (TLS, e.g.
+                AWS ElastiCache with in-transit encryption), and bare `host:port`
+                (treated as plaintext).
         """
-        self.rate_config = RATE_CONFIG if rate_config is None else rate_config
-        self.use_in_memory = use_in_memory
-        self.redis_url = redis_url
+        self._rate_config = RATE_CONFIG if rate_config is None else rate_config
+        self._redis_url = redis_url or os.environ.get("REDIS_URL")
+        self._use_in_memory = use_in_memory or not self._redis_url
+        self._redis_tls = (
+            self._redis_url.startswith("rediss://") if self._redis_url else False
+        )
+        # Redis over SSL when possible.
+        self._redis_scheme = "async+rediss" if self._redis_tls else "async+redis"
+        self._redis_bare_url = (
+            self._strip_scheme(self._redis_url) if self._redis_url else ""
+        )
         self._storage: RedisStorage | MemoryStorage | None = None
         self._rate_limiter: MovingWindowRateLimiter | None = None
         self._current_ip: str | None = None
@@ -132,6 +143,10 @@ class GlobalRateLimiter:
         except aiohttp.ClientError:
             logger.warning(f"Error occurred while connecting to {url}.", exc_info=True)
         return None
+
+    @staticmethod
+    def _strip_scheme(redis_url: str) -> str:
+        return redis_url.removeprefix("rediss://").removeprefix("redis://")
 
     async def outbount_ip(self) -> str:
         if self._current_ip is None:
@@ -150,13 +165,13 @@ class GlobalRateLimiter:
     @property
     def storage(self) -> RedisStorage | MemoryStorage:
         if self._storage is None:
-            redis_url = self.redis_url or os.environ.get("REDIS_URL")
-            if redis_url and not self.use_in_memory:
-                self._storage = RedisStorage(f"async+redis://{redis_url}")
-                logger.info("Connected to redis instance for rate limiting.")
-            else:
+            if self._use_in_memory:
                 self._storage = MemoryStorage()
                 logger.info("Using in-memory rate limiter.")
+            else:
+                conn = f"{self._redis_scheme}://{self._redis_bare_url}"
+                self._storage = RedisStorage(conn)
+                logger.info(f"Connected to redis instance for rate limiting: {conn}")
 
         return self._storage
 
@@ -221,27 +236,27 @@ class GlobalRateLimiter:
 
         # here we want to use namespace_w_machine_id_stripped -- the rate should be shared
         # this needs to be checked first, since it's more specific than the stub machine id
-        if (namespace_w_machine_id_stripped, primary_key) in self.rate_config:
+        if (namespace_w_machine_id_stripped, primary_key) in self._rate_config:
             return (
-                self.rate_config[namespace_w_machine_id_stripped, primary_key],
+                self._rate_config[namespace_w_machine_id_stripped, primary_key],
                 namespace_w_machine_id_stripped,
             )
         # we keep the old namespace if we match on the namespace_w_stub_machine_id
-        if (namespace_w_stub_machine_id, primary_key) in self.rate_config:
+        if (namespace_w_stub_machine_id, primary_key) in self._rate_config:
             return (
-                self.rate_config[namespace_w_stub_machine_id, primary_key],
+                self._rate_config[namespace_w_stub_machine_id, primary_key],
                 namespace,
             )
         # again we only want the original namespace, keep the old namespace
-        if (namespace_w_stub_machine_id, MATCH_ALL) in self.rate_config:
+        if (namespace_w_stub_machine_id, MATCH_ALL) in self._rate_config:
             return (
-                self.rate_config[namespace_w_stub_machine_id, MATCH_ALL],
+                self._rate_config[namespace_w_stub_machine_id, MATCH_ALL],
                 namespace,
             )
         # again we want to use the stripped namespace if it matches
-        if (namespace_w_machine_id_stripped, MATCH_ALL) in self.rate_config:
+        if (namespace_w_machine_id_stripped, MATCH_ALL) in self._rate_config:
             return (
-                self.rate_config[namespace_w_machine_id_stripped, MATCH_ALL],
+                self._rate_config[namespace_w_machine_id_stripped, MATCH_ALL],
                 namespace_w_machine_id_stripped,
             )
         return FALLBACK_RATE_LIMIT, namespace
@@ -269,34 +284,27 @@ class GlobalRateLimiter:
         self, cursor_scan_count: int = 100
     ) -> list[tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]]:
         """Returns a list of current RateLimitItems with tuples of namespace and primary key."""
-        redis_url = self.redis_url or os.environ.get("REDIS_URL", ":")
-        if redis_url is None:
-            raise ValueError("Redis URL is not set correctly.")
-
-        # parse redis_url which may be "host:port" or ":password@host:port"
-        # the prefixed : looks like a bug waiting to happen but this is how
-        # the redis client handles uris without a username this way
+        # urlparse requires a scheme prefix to extract host/port/password from
+        # bare "host:port" or ":password@host:port" URLs.
         try:
-            parsed = urlparse(f"redis://{redis_url}")
+            url = f"{self._redis_scheme}://{self._redis_bare_url}"
+            parsed = urlparse(url)
         except ValueError as exc:
             raise ValueError(
-                f"Failed to parse host and port from Redis URL {redis_url!r},"
-                " correctly pass at initialization or set env variable REDIS_URL."
+                f"Failed to parse host and port from Redis URL {url!r}."
             ) from exc
 
-        if not (parsed.hostname and parsed.port):
-            raise ValueError(
-                f"Failed to parse host and port from Redis URL {redis_url!r},"
-                " correctly pass at initialization or set env variable REDIS_URL."
-            )
-
-        storage = self.storage
-        if not isinstance(storage, RedisStorage):
+        if not isinstance(self.storage, RedisStorage):
             raise NotImplementedError(
                 "get_rate_limit_keys only works with RedisStorage."
             )
 
-        client = Redis(host=parsed.hostname, port=parsed.port, password=parsed.password)
+        client = Redis(
+            host=parsed.hostname,
+            port=parsed.port,
+            password=parsed.password,
+            ssl=self._redis_tls,
+        )
 
         try:
             cursor: int | bytes = b"0"
@@ -304,7 +312,7 @@ class GlobalRateLimiter:
             while cursor:
                 cursor, keys = await client.scan(
                     int(cursor),
-                    match=f"{storage.bridge.key_prefix}*",
+                    match=f"{self.storage.bridge.key_prefix}*",
                     count=cursor_scan_count,
                 )
                 matching_keys.extend(list(keys))
@@ -326,10 +334,9 @@ class GlobalRateLimiter:
     async def get_limit_keys(
         self,
     ) -> list[tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]]:
-        redis_url = self.redis_url or os.environ.get("REDIS_URL")
-        if redis_url and not self.use_in_memory:
-            return await self.get_rate_limit_keys()
-        return self.get_in_memory_limit_keys()
+        if self._use_in_memory:
+            return self.get_in_memory_limit_keys()
+        return await self.get_rate_limit_keys()
 
     async def rate_limit_status(self):
         limit_status = {}

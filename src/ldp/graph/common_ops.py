@@ -6,7 +6,7 @@ import inspect
 import logging
 from collections.abc import Awaitable, Callable
 from functools import lru_cache
-from typing import TYPE_CHECKING, Generic, TypeVar, cast, overload
+from typing import TYPE_CHECKING, ClassVar, Generic, TypeVar, cast, overload
 
 import numpy as np
 from aviary.core import Message, Tool, ToolRequestMessage, is_coroutine_callable
@@ -213,6 +213,12 @@ class PromptOp(FxnOp[str]):
 
 class LLMCallOp(Op[Message]):
     """An operation for LLM calls interaction."""
+
+    # Use this lookup to filter out LLMModel.config items before LLMModel.call:
+    # - Remove keys that are not call parameters (e.g. router_kwargs).
+    # - Remove lmi-specific constructs like tool_parser. Propagating it to
+    #   litellm.acompletion would send a function object and break JSON encoding.
+    CONFIG_ONLY_KEYS: ClassVar[set[str]] = {"router_kwargs", "tool_parser"}
 
     def __init__(
         self,

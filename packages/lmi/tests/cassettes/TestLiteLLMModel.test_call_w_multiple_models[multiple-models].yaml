@@ -1,8 +1,9 @@
 interactions:
   - request:
       body:
-        '{"messages":[{"role":"system","content":"Respond with single words."},{"role":"user","content":"What
-        is the meaning of the universe?"}],"model":"gpt-4o-mini-2024-07-18"}'
+        '{"messages": [{"role": "system", "content": "Respond with single words."},
+        {"role": "user", "content": "What is the meaning of the universe?"}], "model":
+        "gpt-4o-mini-2024-07-18"}'
       headers:
         accept:
           - application/json
@@ -17,7 +18,7 @@ interactions:
         host:
           - api.openai.com
         user-agent:
-          - AsyncOpenAI/Python 2.17.0
+          - AsyncOpenAI/Python 2.30.0
         x-stainless-arch:
           - arm64
         x-stainless-async:
@@ -27,7 +28,7 @@ interactions:
         x-stainless-os:
           - MacOS
         x-stainless-package-version:
-          - 2.17.0
+          - 2.30.0
         x-stainless-raw-response:
           - "true"
         x-stainless-read-timeout:
@@ -37,7 +38,7 @@ interactions:
         x-stainless-runtime:
           - CPython
         x-stainless-runtime-version:
-          - 3.12.8
+          - 3.13.5
       method: POST
       uri: https://api.openai.com/v1/chat/completions
     response:
@@ -48,8 +49,10 @@ interactions:
           \       \"type\": \"invalid_request_error\",\n        \"param\": null,\n        \"code\":
           \"invalid_api_key\"\n    }\n}\n"
       headers:
-        CF-RAY:
-          - 9d090451a8344900-SJC
+        CF-Cache-Status:
+          - DYNAMIC
+        CF-Ray:
+          - 9efec6842e9c4801-SJC
         Connection:
           - keep-alive
         Content-Length:
@@ -57,15 +60,11 @@ interactions:
         Content-Type:
           - application/json; charset=utf-8
         Date:
-          - Thu, 19 Feb 2026 21:56:54 GMT
+          - Tue, 21 Apr 2026 19:25:35 GMT
         Server:
           - cloudflare
         Set-Cookie:
-          - __cf_bm=sW.WTg5o1ZimEH6kBKnrGb.roupxSuQVXxpHUvrDX4o-1771538214.6621912-1.0.1.1-SfDr5ROdJVw_jzp_p5DjmDh3YLuGWlKfVU8EAV42pJf4VKjDcs0t2gEvdgW_0nJH_FuheNg3taXyeSgI0G.PXr3QjIc4UmwTFyPbVU.59CZYQ8fmMdhP7bHdgLhpmUQ.;
-            HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Thu, 19 Feb 2026
-            22:26:54 GMT
-          - _cfuvid=Z8i21ExpPJ1Kpe16xYx2ypcOfheGfP54eTrQVKi_gMM-1771538214.6621912-1.0.1.1-mJK7qXjzCYCaCI3XLwRovaU79QWKh7C1QyJXnESS6ys;
-            HttpOnly; SameSite=None; Secure; Path=/; Domain=api.openai.com
+          - <FILTERED>
         Strict-Transport-Security:
           - max-age=31536000; includeSubDomains; preload
         Vary:
@@ -74,20 +73,18 @@ interactions:
           - nosniff
         alt-svc:
           - h3=":443"; ma=86400
-        cf-cache-status:
-          - DYNAMIC
         x-openai-proxy-wasm:
           - v0.1
         x-request-id:
-          - req_78625562782b47fda9ffe4950605fa4d
+          - req_6050b07f0c9243efb6eb511f57297ce6
       status:
         code: 401
         message: Unauthorized
   - request:
       body:
-        '{"model":"claude-haiku-4-5-20251001","messages":[{"role":"user","content":[{"type":"text","text":"What
-        is the meaning of the universe?"}]}],"max_tokens":56,"system":[{"type":"text","text":"Respond
-        with single words."}]}'
+        '{"model": "claude-haiku-4-5-20251001", "messages": [{"role": "user", "content":
+        [{"type": "text", "text": "What is the meaning of the universe?"}]}], "max_tokens":
+        56, "system": [{"type": "text", "text": "Respond with single words."}]}'
       headers:
         accept:
           - application/json
@@ -104,23 +101,21 @@ interactions:
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.81.12
+          - litellm/1.82.6
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
         string: !!binary |
-          H4sIAAAAAAAA/3WS227bMAyGX0XQpZEMdrZsg3fbdTdDEazAimEdDNZmbCay6OpgJwjy7qOSGjth
-          V5b5fz9JUTzpnhs0utS1gdjgsgPax+Wb5Xq5ylfrIs8LvdDUCND7tsqLr+Nu5w7fPj3ffb69pdfv
-          du83DysWJhwHTBR6Dy1KwLFJAfCefAAbJFSzDSin8vtp5gMeknL5lPo+Pu2wDjTiq0f7aG9ou0Un
-          DrV10OPEbu8VWD+hU82smWOZ2Cy7r0l+aUt1lpVq0x091WCUgcmrlkd0VvUQgnjBNgotuvaocGQz
-          km1VAlSg/lo5yzYdGfY8dClJSnjHimx3badHsGL6oCZUtUMIqDg6xZN9cX9BQy1x9Ml5Q1IB1RDd
-          wF5Id/UQz/THg4wo9X6t9NBJQmlHn38stA88VIJ7tmm8cKgC79F6/SJ5fI5oa5mljcYsdLyMvzxp
-          skMMM1yuChk/1B1Wc+3qTyCfdZGb/2mzN+XHocMeHZhq3f/L/1KL7m/1vNAcw++h9Vu5DbqRaqwC
-          yc1LnXamAdek9bOXlxatRRbJcqhgBDLwJCt2Pv8EjSi0ZsUCAAA=
+          H4sIAAAAAAAAA3SRT0vEMBDFv0vOrTSLFe3ZgyCCB8WDSIjNbBuaTmoy2XUt/e5Oli3+w1PC+708
+          5k1mMXoDTjSidToZKHtth1Sel3W5qTa1rCopCmENG8bYqUpeHbZSTg+3++7jnq7TRZ3unm469tBh
+          guyCGHUHLATvsqBjtJE0EkutRwK+Nc/z6id4z+R4NOIRB/R7/ergTCwvhYjkJxVAR49MAY2iFFCc
+          QIS3BNhyDCbnTqIB0tbFVUvHaZpZWJwSKfIDIMON5Gl024NqOZ6sR/XTUK2csfmPrW9zPkw9jBC0
+          U/X41/9FZf+bLoXwib5Ll9wFws62oMhC4Op5g0YHkz8DtxBybdWBZ4SelN5x57w2sSyfAAAA//8D
+          AKKplNnTAQAA
       headers:
         CF-RAY:
-          - 9d09045289935e16-SJC
+          - 9efec6867f945e55-SJC
         Connection:
           - keep-alive
         Content-Encoding:
@@ -130,47 +125,53 @@ interactions:
         Content-Type:
           - application/json
         Date:
-          - Thu, 19 Feb 2026 21:56:56 GMT
+          - Tue, 21 Apr 2026 19:25:35 GMT
         Server:
           - cloudflare
+        Set-Cookie:
+          - <FILTERED>
         Transfer-Encoding:
           - chunked
+        Vary:
+          - Accept-Encoding
         X-Robots-Tag:
           - none
         anthropic-organization-id:
-          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+          - <FILTERED>
         anthropic-ratelimit-input-tokens-limit:
           - "4000000"
         anthropic-ratelimit-input-tokens-remaining:
           - "4000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2026-02-19T21:56:55Z"
+          - "2026-04-21T19:25:35Z"
         anthropic-ratelimit-output-tokens-limit:
           - "800000"
         anthropic-ratelimit-output-tokens-remaining:
           - "800000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2026-02-19T21:56:56Z"
+          - "2026-04-21T19:25:35Z"
         anthropic-ratelimit-requests-limit:
-          - "4000"
+          - "20000"
         anthropic-ratelimit-requests-remaining:
-          - "3999"
+          - "19999"
         anthropic-ratelimit-requests-reset:
-          - "2026-02-19T21:56:54Z"
+          - "2026-04-21T19:25:35Z"
         anthropic-ratelimit-tokens-limit:
           - "4800000"
         anthropic-ratelimit-tokens-remaining:
           - "4800000"
         anthropic-ratelimit-tokens-reset:
-          - "2026-02-19T21:56:55Z"
+          - "2026-04-21T19:25:35Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_011CYJB7Y9j2pCJczXSBiy3c
+          - req_011CaHTv6F6ikqy2n5ijq4wF
+        server-timing:
+          - x-originResponse;dur=433
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
         x-envoy-upstream-service-time:
-          - "1282"
+          - "431"
       status:
         code: 200
         message: OK
@@ -196,106 +197,82 @@ interactions:
         host:
           - api.anthropic.com
         user-agent:
-          - litellm/1.81.12
+          - litellm/1.82.6
       method: POST
       uri: https://api.anthropic.com/v1/messages
     response:
       body:
-        string: 'event: message_start
-
-          data: {"type":"message_start","message":{"model":"claude-haiku-4-5-20251001","id":"msg_01MC5gSK7uEfuugZAUpsErnt","type":"message","role":"assistant","content":[],"stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":21,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":2,"service_tier":"standard","inference_geo":"not_available"}}   }
-
-
-          event: content_block_start
-
-          data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}               }
-
-
-          event: ping
-
-          data: {"type": "ping"}
-
-
-          event: content_block_delta
-
-          data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Unkn"}            }
-
-
-          event: content_block_delta
-
-          data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"owable."}              }
-
-
-          event: content_block_stop
-
-          data: {"type":"content_block_stop","index":0}
-
-
-          event: message_delta
-
-          data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"input_tokens":21,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":8}
-          }
-
-
-          event: message_stop
-
-          data: {"type":"message_stop"      }
-
-
-          '
+        string: !!binary |
+          H4sIAAAAAAAAA3SQQWuEMBCF7/4KyVlBZb14LXstZXvYQylh1kw1GBObTIR28b93ApViS73lfc95
+          Mw9XtNTlM4YAA8pA4ClTQNDld0EfC4pOHKAo9rfo7mJ2Cg1begNRYTmCnmJ5KtuyqZq2rqqa7Vql
+          GWGQVX36vOr2/Lx6f32aHobzo77chsCeYxIL3pkkQAiaY22K7Z0lXlZ0L6+FCOQW6RGCs6Kz0Zhv
+          KeB7RNvjQVRIoE3Ytbhvr+0SSZKb0DJsas6AfkTZ82DSzsqjodo5Y/Uf2/9N83EZcUYPRrbzX/8P
+          rcffdCuEi3TYjm9Bv+oeJWn03E3qRYFXqWL7hj6dLQd0jKwjCSvfDDeucdvyw7dl2RcAAAD//0qF
+          RDs0SOOTcvKTs7FHPhYlYAtTUisgvkaWB3kaqq8ktQKkEExZKSnVwq0GAAAA//+CWl2QmZeOZpeC
+          EkhQCagGAAAA///C6jxgSitJxO88sBIU50FEUJ0FVwZ1XGhedp5SLXoQAQAAAP//oq8b8stBUaWn
+          hBlVAAAAAP//whFV+QWEYiq/AMkVMNMAAAAA//9KRc3vWP2DIqmE5H6UTKeUmpcSX1JalKdEdNar
+          pVneQ8ssFrUoQQgAAAD//0pFL+QwAw9ZTgmkBwAAAP//AwDPf1GPGQUAAA==
       headers:
         CF-RAY:
-          - 9d09045b3c65fa56-SJC
+          - 9efec689fe46efbd-SJC
         Cache-Control:
           - no-cache
         Connection:
           - keep-alive
+        Content-Encoding:
+          - gzip
         Content-Security-Policy:
           - default-src 'none'; frame-ancestors 'none'
         Content-Type:
           - text/event-stream; charset=utf-8
         Date:
-          - Thu, 19 Feb 2026 21:56:56 GMT
+          - Tue, 21 Apr 2026 19:25:36 GMT
         Server:
           - cloudflare
+        Set-Cookie:
+          - <FILTERED>
         Transfer-Encoding:
           - chunked
+        Vary:
+          - Accept-Encoding
         X-Robots-Tag:
           - none
         anthropic-organization-id:
-          - f2c99ed9-038a-406f-9cb5-1f840b758a20
+          - <FILTERED>
         anthropic-ratelimit-input-tokens-limit:
           - "4000000"
         anthropic-ratelimit-input-tokens-remaining:
           - "4000000"
         anthropic-ratelimit-input-tokens-reset:
-          - "2026-02-19T21:56:56Z"
+          - "2026-04-21T19:25:35Z"
         anthropic-ratelimit-output-tokens-limit:
           - "800000"
         anthropic-ratelimit-output-tokens-remaining:
           - "800000"
         anthropic-ratelimit-output-tokens-reset:
-          - "2026-02-19T21:56:56Z"
+          - "2026-04-21T19:25:35Z"
         anthropic-ratelimit-requests-limit:
-          - "4000"
+          - "20000"
         anthropic-ratelimit-requests-remaining:
-          - "3999"
+          - "19999"
         anthropic-ratelimit-requests-reset:
-          - "2026-02-19T21:56:56Z"
+          - "2026-04-21T19:25:35Z"
         anthropic-ratelimit-tokens-limit:
           - "4800000"
         anthropic-ratelimit-tokens-remaining:
           - "4800000"
         anthropic-ratelimit-tokens-reset:
-          - "2026-02-19T21:56:56Z"
+          - "2026-04-21T19:25:35Z"
         cf-cache-status:
           - DYNAMIC
         request-id:
-          - req_011CYJB7e6ekci4fKmSjRPHg
+          - req_011CaHTv8exaPj5n6v1nFEPg
+        server-timing:
+          - x-originResponse;dur=362
         strict-transport-security:
           - max-age=31536000; includeSubDomains; preload
         x-envoy-upstream-service-time:
-          - "311"
+          - "360"
       status:
         code: 200
         message: OK

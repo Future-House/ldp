@@ -1038,6 +1038,8 @@ class LiteLLMModel(LLMModel):
     def _populate_llm_config(self) -> "LiteLLMModel":
         if self.llm_config is None:
             self.llm_config = LLMConfig.from_legacy_dict(self.config)
+        elif self.llm_config.tool_parser is not None and self.tool_parser is None:
+            self.tool_parser = self.llm_config.tool_parser
         return self
 
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
@@ -1192,10 +1194,18 @@ class LiteLLMModel(LLMModel):
             self.NO_TOOL_CHOICE,
         }:
             logger.warning(
-                f"Custom tool parser was provided."
-                f"Setting tool_choice parameter to {self.NO_TOOL_CHOICE}."
+                f"A custom tool_parser is set together with {tool_choice=}."
+                " There are two use cases:"
+                "\n- Custom tool parser meant to handle output from a model that"
+                " wasn't told to call tools. LMI used to auto-specify"
+                f" tool_choice={self.NO_TOOL_CHOICE!r} for this case,"
+                " but this denies the second case below, so we dropped it."
+                "\n- Custom tool parser meant to extract `<tool_call>` blocks"
+                " the model emits as text in `message.content` (e.g. vLLM served"
+                f" without --enable-auto-tool-choice): keep {tool_choice=}."
+                f" Rewriting to {self.NO_TOOL_CHOICE!r} would tell the model"
+                " not to call tools and starve the parser."
             )
-            kwargs["tool_choice"] = self.NO_TOOL_CHOICE
 
         call_kwargs = {**spec.to_litellm_kwargs(), **kwargs, "messages": prompts}
         try:
