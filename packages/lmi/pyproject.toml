@@ -47,6 +47,7 @@ dev = [
     "fhlmi[image,local,progress,typing,vcr]",
     "google-auth>=2",  # Pin to keep recent
     "google-cloud-storage>=3",  # Pin to keep recent
+    "httpx",
     "httpx-aiohttp",
     "ipython>=8",  # Pin to keep recent
     "mypy>=1.8",  # Pin for mutable-override
@@ -89,7 +90,7 @@ optional_dependencies_dev_groups = ["dev", "typing"]
 [tool.deptry.per_rule_ignores]
 # Work around https://github.com/osprey-oss/deptry/issues/1533
 DEP002 = ["orjson"]  # Required at runtime by litellm for Responses API
-DEP004 = ["dotenv", "google", "httpx_aiohttp", "pytest"]
+DEP004 = ["dotenv", "google", "httpx", "httpx_aiohttp", "pytest"]
 
 [tool.ruff]
 extend = "../../pyproject.toml"
