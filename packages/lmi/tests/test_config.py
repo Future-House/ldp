@@ -63,16 +63,22 @@ class TestModelSpec:
         spec = ModelSpec.from_name("gemini-1.5-pro")
         assert spec.extra_params["safety_settings"] == DEFAULT_VERTEX_SAFETY_SETTINGS
 
-    def test_from_name_rejects_logprobs_for_non_openai(self) -> None:
-        with pytest.raises(ValueError, match="only supported on OpenAI"):
+    def test_from_name_rejects_logprobs_for_unsupported_provider(self) -> None:
+        # Anthropic doesn't support logprobs/top_logprobs per litellm.
+        with pytest.raises(ValueError, match="does not support"):
             ModelSpec.from_name("claude-3-5-sonnet-20241022", logprobs=True)
-        with pytest.raises(ValueError, match="only supported on OpenAI"):
+        with pytest.raises(ValueError, match="does not support"):
             ModelSpec.from_name("claude-3-5-sonnet-20241022", top_logprobs=5)
 
     def test_from_name_keeps_logprobs_for_openai(self) -> None:
         spec = ModelSpec.from_name("gpt-4o-mini", logprobs=True, top_logprobs=5)
         assert spec.extra_params["logprobs"] is True
         assert spec.extra_params["top_logprobs"] == 5
+
+    def test_from_name_keeps_logprobs_for_gemini(self) -> None:
+        # Gemini (provider-prefixed) supports logprobs per litellm's table.
+        spec = ModelSpec.from_name("gemini/gemini-1.5-pro", logprobs=True)
+        assert spec.extra_params["logprobs"] is True
 
     def test_from_name_override_wins_over_default(self) -> None:
         spec = ModelSpec.from_name("gpt-4o-mini", temperature=0.0)
@@ -108,6 +114,16 @@ class TestLLMConfigFromLegacy:
         assert len(cfg.models) == 1
         assert cfg.models[0].name == "gpt-4o-mini"
         assert cfg.models[0].extra_params == {"temperature": 0.5, "max_tokens": 200}
+
+    def test_unknown_fallback_name_raises(self) -> None:
+        legacy = {
+            "model_list": [
+                {"model_name": "A", "litellm_params": {"model": "gpt-4o-mini"}}
+            ],
+            "fallbacks": [{"A": ["B"]}],
+        }
+        with pytest.raises(ValueError, match="references unknown model name"):
+            LLMConfig.from_legacy_dict(legacy)
 
     def test_fallback_chain_ordered_from_primary(self) -> None:
         legacy = {

@@ -27,12 +27,12 @@ ToolParser = (
 )
 
 _DEFAULT_TEMPERATURE = 1.0
-_OPENAI_ONLY_PARAMS = frozenset({"logprobs", "top_logprobs"})
+_PROVIDER_GATED_PARAMS = frozenset({"logprobs", "top_logprobs"})
 
 # Per-call retry kwargs that LiteLLM honors via its own internal retry loop. LMI
 # owns retries through `_run_with_fallbacks` + `ModelSpec.max_retries`, so these
 # must never reach `litellm.acompletion`/`litellm.aresponses` regardless of how
-# they ended up in `ModelSpec.extra_params`.
+# they ended up in our `ModelSpec.extra_params`.
 _LITELLM_RETRY_KWARGS = frozenset({"num_retries", "max_retries"})
 
 # `tool_parser` is an LMI-level callable handled on `LiteLLMModel`; if it ever
@@ -48,7 +48,9 @@ class ModelSpec(BaseModel):
 
     name: str = Field(
         description=(
-            "LiteLLM model string, e.g. 'gpt-4o-mini' or 'claude-3-5-sonnet-20241022'."
+            "LiteLLM model string, optionally provider-prefixed, e.g."
+            " 'gpt-4o-mini', 'openai/gpt-4o-mini', or"
+            " 'claude-3-5-sonnet-20241022'."
         ),
     )
     api_base: str | None = None
@@ -81,17 +83,16 @@ class ModelSpec(BaseModel):
     def from_name(cls, name: str, **overrides: Any) -> ModelSpec:
         """Build a `ModelSpec` with provider-aware defaults for `extra_params`.
 
-        Applies: Gemini default safety settings; `temperature` / `max_tokens`
-        defaults; and silent drop of `logprobs` / `top_logprobs` for non-OpenAI
-        providers (which don't support them). Explicit values in `overrides`
-        always win over the defaults.
+        Applies: Gemini default safety settings and a `temperature` default.
+        `logprobs` / `top_logprobs` are gated per-model against litellm's
+        capability table, so passing them to a provider that doesn't support
+        them (e.g. Anthropic) raises `ValueError`. Explicit values in
+        `overrides` always win over the defaults.
 
         `overrides` may set any `ModelSpec` field, plus request-shape kwargs
         (`temperature`, `max_tokens`, `n`, `logprobs`, `top_logprobs`,
         `safety_settings`, ...) which are merged into `extra_params`.
         """
-        is_openai = _is_openai_provider(name)
-
         extra: dict[str, Any] = {}
         if "gemini" in name:
             extra["safety_settings"] = DEFAULT_VERTEX_SAFETY_SETTINGS
@@ -102,12 +103,14 @@ class ModelSpec(BaseModel):
         for key, value in overrides.items():
             if key in cls.model_fields:
                 spec_field_overrides[key] = value
-            elif key in _OPENAI_ONLY_PARAMS and not is_openai:
-                raise ValueError(
-                    f"{key!r} is only supported on OpenAI models; got {name!r}."
-                )
             else:
                 extra_overrides[key] = value
+
+        if unsupported := _unsupported_params(name, extra_overrides):
+            raise ValueError(
+                f"Model {name!r} does not support parameter(s)"
+                f" {sorted(unsupported)}; the provider rejects them."
+            )
 
         spec_field_overrides.setdefault("name", name)
         merged_extra = (
@@ -240,6 +243,13 @@ class LLMConfig(BaseModel):
             m["model_name"]: dict(m.get("litellm_params", {})) for m in model_list
         }
 
+        referenced = {fb for fbs in fallback_map.values() for fb in fbs}
+        if missing := sorted(referenced - params_by_name.keys()):
+            raise ValueError(
+                f"Legacy config 'fallbacks' references unknown model name(s)"
+                f" {missing}; they are absent from 'model_list'."
+            )
+
         primary_name = model_list[0]["model_name"]
         ordered: list[str] = [primary_name, *fallback_map.get(primary_name, [])]
         for name in params_by_name:
@@ -247,26 +257,30 @@ class LLMConfig(BaseModel):
                 ordered.append(name)
 
         router_kwargs = legacy.get("router_kwargs") or {}
-        default_timeout = router_kwargs.get("timeout", 60.0)
-        default_retries = router_kwargs.get("num_retries", 3)
-
         return cls(
             models=[
-                _spec_from_legacy_params(
-                    params_by_name.get(name, {}),
-                    default_timeout=default_timeout,
-                    default_retries=default_retries,
-                )
+                _spec_from_legacy_params(params_by_name[name], router_kwargs)
                 for name in ordered
             ]
         )
 
 
-def _is_openai_provider(name: str) -> bool:
+def _unsupported_params(name: str, params: dict[str, Any]) -> set[str]:
+    """Return the gated params (e.g. logprobs) the named model doesn't support.
+
+    Consults litellm's per-model capability table, so OpenAI and Gemini both
+    accept `logprobs`/`top_logprobs` while Anthropic does not. If litellm can't
+    resolve the model, returns an empty set and lets the request itself surface
+    any provider rejection downstream.
+    """
+    gated = {p for p in _PROVIDER_GATED_PARAMS if p in params}
+    if not gated:
+        return set()
     try:
-        return "openai" in litellm.get_llm_provider(name)
+        supported = set(litellm.get_supported_openai_params(model=name) or [])
     except litellm.BadRequestError:
-        return False
+        return set()
+    return gated - supported
 
 
 _RESERVED_LEGACY_PARAMS = frozenset({
@@ -279,22 +293,26 @@ _RESERVED_LEGACY_PARAMS = frozenset({
 
 
 def _spec_from_legacy_params(
-    params: dict[str, Any],
-    *,
-    default_timeout: float,
-    default_retries: int,
+    params: dict[str, Any], router_kwargs: dict[str, Any]
 ) -> ModelSpec:
     api_key = params.get("api_key")
-    return ModelSpec(
-        name=params["model"],
-        api_base=params.get("api_base"),
-        api_key=SecretStr(api_key) if api_key is not None else None,
-        timeout=params.get("timeout", default_timeout),
-        max_retries=params.get("max_retries", default_retries),
-        extra_params={
+    # Only forward timeout/max_retries when present so `ModelSpec`'s own field
+    # defaults remain the single source of truth (no re-injected literals).
+    spec_kwargs: dict[str, Any] = {
+        "name": params["model"],
+        "api_base": params.get("api_base"),
+        "api_key": SecretStr(api_key) if api_key is not None else None,
+        "extra_params": {
             k: v for k, v in params.items() if k not in _RESERVED_LEGACY_PARAMS
         },
-    )
+    }
+    if (timeout := params.get("timeout", router_kwargs.get("timeout"))) is not None:
+        spec_kwargs["timeout"] = timeout
+    if (
+        retries := params.get("max_retries", router_kwargs.get("num_retries"))
+    ) is not None:
+        spec_kwargs["max_retries"] = retries
+    return ModelSpec(**spec_kwargs)
 
 
 # Pydantic field annotation that accepts any input `LLMConfig.coerce` supports.
