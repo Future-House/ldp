@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from itertools import chain
-from typing import Annotated, Any
+from typing import Annotated, Any, Self
 
 import litellm
 from aviary.core import Message, ToolRequestMessage
@@ -29,6 +29,16 @@ ToolParser = (
 
 _DEFAULT_TEMPERATURE = 1.0
 _PROVIDER_GATED_PARAMS = frozenset({"logprobs", "top_logprobs"})
+
+# Legacy `litellm_params` keys that map onto dedicated `ModelSpec` fields rather
+# than flowing through into `extra_params`.
+_RESERVED_LEGACY_PARAMS = frozenset({
+    "model",
+    "api_base",
+    "api_key",
+    "timeout",
+    "max_retries",
+})
 
 # Per-call retry kwargs that LiteLLM honors via its own internal retry loop. LMI
 # owns retries through `_run_with_fallbacks` + `ModelSpec.max_retries`, so these
@@ -118,6 +128,34 @@ class ModelSpec(BaseModel):
             extra | extra_overrides | spec_field_overrides.pop("extra_params", {})
         )
         return cls(extra_params=merged_extra, **spec_field_overrides)
+
+    @classmethod
+    def from_legacy_params(
+        cls, params: dict[str, Any], router_kwargs: dict[str, Any]
+    ) -> Self:
+        """Build a spec from a legacy `litellm_params` entry plus router defaults.
+
+        `params` is one `model_list[*].litellm_params` dict; `router_kwargs` is
+        the config's `router_kwargs`. Only forwards `timeout`/`max_retries` when
+        present so this class's own field defaults remain the single source of
+        truth (no re-injected literals).
+        """
+        api_key = params.get("api_key")
+        spec_kwargs: dict[str, Any] = {
+            "name": params["model"],
+            "api_base": params.get("api_base"),
+            "api_key": SecretStr(api_key) if api_key is not None else None,
+            "extra_params": {
+                k: v for k, v in params.items() if k not in _RESERVED_LEGACY_PARAMS
+            },
+        }
+        if (timeout := params.get("timeout", router_kwargs.get("timeout"))) is not None:
+            spec_kwargs["timeout"] = timeout
+        if (
+            retries := params.get("max_retries", router_kwargs.get("num_retries"))
+        ) is not None:
+            spec_kwargs["max_retries"] = retries
+        return cls(**spec_kwargs)
 
     def to_litellm_kwargs(self) -> dict[str, Any]:
         """Flatten into kwargs for `litellm.acompletion` / `litellm.aresponses`."""
@@ -260,7 +298,7 @@ class LLMConfig(BaseModel):
         router_kwargs = legacy.get("router_kwargs") or {}
         return cls(
             models=[
-                _spec_from_legacy_params(params_by_name[name], router_kwargs)
+                ModelSpec.from_legacy_params(params_by_name[name], router_kwargs)
                 for name in ordered
             ]
         )
@@ -282,38 +320,6 @@ def _unsupported_params(name: str, params: dict[str, Any]) -> set[str]:
     except litellm.BadRequestError:
         return set()
     return gated - supported
-
-
-_RESERVED_LEGACY_PARAMS = frozenset({
-    "model",
-    "api_base",
-    "api_key",
-    "timeout",
-    "max_retries",
-})
-
-
-def _spec_from_legacy_params(
-    params: dict[str, Any], router_kwargs: dict[str, Any]
-) -> ModelSpec:
-    api_key = params.get("api_key")
-    # Only forward timeout/max_retries when present so `ModelSpec`'s own field
-    # defaults remain the single source of truth (no re-injected literals).
-    spec_kwargs: dict[str, Any] = {
-        "name": params["model"],
-        "api_base": params.get("api_base"),
-        "api_key": SecretStr(api_key) if api_key is not None else None,
-        "extra_params": {
-            k: v for k, v in params.items() if k not in _RESERVED_LEGACY_PARAMS
-        },
-    }
-    if (timeout := params.get("timeout", router_kwargs.get("timeout"))) is not None:
-        spec_kwargs["timeout"] = timeout
-    if (
-        retries := params.get("max_retries", router_kwargs.get("num_retries"))
-    ) is not None:
-        spec_kwargs["max_retries"] = retries
-    return ModelSpec(**spec_kwargs)
 
 
 # Pydantic field annotation that accepts any input `LLMConfig.coerce` supports.
