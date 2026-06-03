@@ -11,6 +11,7 @@ fails in ways that another model might handle.
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from itertools import chain
 from typing import Annotated, Any
 
 import litellm
@@ -243,7 +244,7 @@ class LLMConfig(BaseModel):
             m["model_name"]: dict(m.get("litellm_params", {})) for m in model_list
         }
 
-        referenced = {fb for fbs in fallback_map.values() for fb in fbs}
+        referenced = set(chain.from_iterable(fallback_map.values()))
         if missing := sorted(referenced - params_by_name.keys()):
             raise ValueError(
                 f"Legacy config 'fallbacks' references unknown model name(s)"
