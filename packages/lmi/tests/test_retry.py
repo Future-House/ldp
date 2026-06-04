@@ -1,5 +1,6 @@
 import litellm
 import pytest
+from tenacity import stop_after_attempt, wait_random_exponential
 
 from lmi.exceptions import ModelRefusalError
 from lmi.retry import (
@@ -112,11 +113,16 @@ class TestShouldFallback:
 
 class TestModelRetrying:
     def test_attempt_count_is_retries_plus_one(self) -> None:
-        assert model_retrying(3).stop.max_attempt_number == 4
-        assert model_retrying(0).stop.max_attempt_number == 1
+        stop = model_retrying(3).stop
+        assert isinstance(stop, stop_after_attempt)
+        assert stop.max_attempt_number == 4
+        stop = model_retrying(0).stop
+        assert isinstance(stop, stop_after_attempt)
+        assert stop.max_attempt_number == 1
 
     def test_uses_full_jitter_exponential_backoff(self) -> None:
         wait = model_retrying(3).wait
+        assert isinstance(wait, wait_random_exponential)
         assert wait.multiplier == BACKOFF_INITIAL
         assert wait.max == BACKOFF_CAP
 
