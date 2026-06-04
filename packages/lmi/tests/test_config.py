@@ -80,6 +80,14 @@ class TestModelSpec:
         spec = ModelSpec.from_name("gemini/gemini-1.5-pro", logprobs=True)
         assert spec.extra_params["logprobs"] is True
 
+    def test_direct_construction_rejects_unsupported_params(self) -> None:
+        # The gate is a model_validator, so it fires on direct construction too,
+        # not just via from_name.
+        with pytest.raises(ValueError, match="does not support"):
+            ModelSpec(
+                name="claude-3-5-sonnet-20241022", extra_params={"logprobs": True}
+            )
+
     def test_from_name_override_wins_over_default(self) -> None:
         spec = ModelSpec.from_name("gpt-4o-mini", temperature=0.0)
         assert spec.extra_params["temperature"] == 0.0

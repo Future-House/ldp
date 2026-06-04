@@ -16,7 +16,14 @@ from typing import Annotated, Any, Self
 
 import litellm
 from aviary.core import Message, ToolRequestMessage
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, SecretStr
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    SecretStr,
+    model_validator,
+)
 
 from lmi.constants import DEFAULT_VERTEX_SAFETY_SETTINGS
 from lmi.types import LLMResult
@@ -59,9 +66,8 @@ class ModelSpec(BaseModel):
 
     name: str = Field(
         description=(
-            "LiteLLM model string, optionally provider-prefixed, e.g."
-            " 'gpt-4o-mini', 'openai/gpt-4o-mini', or"
-            " 'claude-3-5-sonnet-20241022'."
+            "LiteLLM model string in 'provider/model' format, "
+            "e.g. 'openai/gpt-4o-mini' or 'anthropic/claude-3-5-sonnet-20241022'."
         ),
     )
     api_base: str | None = None
@@ -90,6 +96,20 @@ class ModelSpec(BaseModel):
         ),
     )
 
+    @model_validator(mode="after")
+    def _reject_unsupported_params(self) -> Self:
+        """Gate `logprobs`/`top_logprobs` against the model's litellm support.
+
+        Lives here rather than in `from_name` so every construction path (direct
+        instantiation, `from_legacy_params`, deserialization) is covered.
+        """
+        if unsupported := _unsupported_params(self.name, self.extra_params):
+            raise ValueError(
+                f"Model {self.name!r} does not support parameter(s)"
+                f" {sorted(unsupported)}; the provider rejects them."
+            )
+        return self
+
     @classmethod
     def from_name(cls, name: str, **overrides: Any) -> ModelSpec:
         """Build a `ModelSpec` with provider-aware defaults for `extra_params`.
@@ -116,12 +136,6 @@ class ModelSpec(BaseModel):
                 spec_field_overrides[key] = value
             else:
                 extra_overrides[key] = value
-
-        if unsupported := _unsupported_params(name, extra_overrides):
-            raise ValueError(
-                f"Model {name!r} does not support parameter(s)"
-                f" {sorted(unsupported)}; the provider rejects them."
-            )
 
         spec_field_overrides.setdefault("name", name)
         merged_extra = (
