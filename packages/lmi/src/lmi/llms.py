@@ -83,7 +83,7 @@ from lmi.exceptions import (
 )
 from lmi.rate_limiter import GLOBAL_LIMITER
 from lmi.retry import (
-    backoff_seconds,
+    model_retrying,
     should_fallback,
     should_retry,
 )
@@ -1121,52 +1121,45 @@ class LiteLLMModel(LLMModel):
         """Drive a single-attempt coroutine across the `LLMConfig.models` chain.
 
         `attempt(spec, *args, **kwargs)` must run one try at the model described
-        by `spec` and raise on failure. Retries within a single model use
-        exponential jitter backoff (see `retry.backoff_seconds`). Exceptions
-        classified by `should_fallback` (or retry exhaustion on a retryable
-        exception) advance to the next spec; anything else propagates.
+        by `spec` and raise on failure. Retries within a single model are driven
+        by tenacity (`retry.model_retrying`, full-jitter exponential backoff).
+        Exceptions classified by `should_fallback` (or retry exhaustion on a
+        retryable exception) advance to the next spec; anything else propagates.
         """
         llm_config = cast("LLMConfig", self.llm_config)  # populated by after-validator
         last_exc: BaseException | None = None
         for spec_idx, spec in enumerate(llm_config.models):
-            for i in range(spec.max_retries + 1):
-                try:
-                    result = await attempt(spec, *args, **kwargs)
-                except Exception as exc:
-                    last_exc = exc
-                    if should_retry(exc) and i < spec.max_retries:
-                        delay = backoff_seconds(i)
-                        logger.info(
-                            "Retrying %s (attempt %d/%d) after %s in %.2fs",
-                            spec.name,
-                            i + 2,
-                            spec.max_retries + 1,
-                            type(exc).__name__,
-                            delay,
-                        )
-                        await asyncio.sleep(delay)
-                        continue
-                    if should_retry(exc) or should_fallback(exc):
-                        if spec_idx + 1 < len(llm_config.models):
+            try:
+                async for retry_attempt in model_retrying(spec.max_retries):
+                    # `return` lives inside `with` so it runs only on success;
+                    # on failure tenacity's context manager swallows the error
+                    # (to retry) and execution would otherwise fall through with
+                    # `result` unbound.
+                    with retry_attempt:
+                        result = await attempt(spec, *args, **kwargs)
+                        attempt_number = retry_attempt.retry_state.attempt_number
+                        if attempt_number > 1 or spec_idx > 0:
                             logger.info(
-                                "Advancing from %s to %s after %s",
+                                "%s succeeded (spec %d/%d, attempt %d/%d)",
                                 spec.name,
-                                llm_config.models[spec_idx + 1].name,
-                                type(exc).__name__,
+                                spec_idx + 1,
+                                len(llm_config.models),
+                                attempt_number,
+                                spec.max_retries + 1,
                             )
-                        break
-                    raise
-                else:
-                    if i > 0 or spec_idx > 0:
+                        return result
+            except Exception as exc:  # tenacity reraised the final/only failure
+                last_exc = exc
+                if should_retry(exc) or should_fallback(exc):
+                    if spec_idx + 1 < len(llm_config.models):
                         logger.info(
-                            "%s succeeded (spec %d/%d, attempt %d/%d)",
+                            "Advancing from %s to %s after %s",
                             spec.name,
-                            spec_idx + 1,
-                            len(llm_config.models),
-                            i + 1,
-                            spec.max_retries + 1,
+                            llm_config.models[spec_idx + 1].name,
+                            type(exc).__name__,
                         )
-                    return result
+                    continue
+                raise
         raise AllModelsExhaustedError(last_exc) from last_exc
 
     # the order should be first request and then rate(token)

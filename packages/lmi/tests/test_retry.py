@@ -5,7 +5,7 @@ from lmi.exceptions import ModelRefusalError
 from lmi.retry import (
     BACKOFF_CAP,
     BACKOFF_INITIAL,
-    backoff_seconds,
+    model_retrying,
     should_fallback,
     should_retry,
 )
@@ -36,6 +36,7 @@ class TestShouldRetry:
             litellm.APIConnectionError,
             litellm.InternalServerError,
             litellm.ServiceUnavailableError,
+            litellm.BadGatewayError,
         ],
     )
     def test_transient_errors_retry(self, cls) -> None:
@@ -74,7 +75,6 @@ class TestShouldFallback:
             litellm.ContentPolicyViolationError,
             litellm.AuthenticationError,
             litellm.PermissionDeniedError,
-            litellm.BadRequestError,
         ],
     )
     def test_stable_errors_fallback(self, cls) -> None:
@@ -83,6 +83,19 @@ class TestShouldFallback:
     def test_model_refusal_falls_back(self) -> None:
         exc = ModelRefusalError(
             "refused", model="gpt-4o-mini", finish_reason="content_filter"
+        )
+        assert should_fallback(exc)
+
+    def test_generic_bad_request_does_not_fall_back(self) -> None:
+        # A malformed request is a terminal client error, not a provider quirk.
+        assert not should_fallback(_litellm_exc(litellm.BadRequestError))
+
+    def test_provider_limit_bad_request_falls_back(self) -> None:
+        # Anthropic's 100-image limit surfaces as a generic 400; it should fall
+        # over to a sibling model that may accept the same input.
+        exc = _litellm_exc(
+            litellm.BadRequestError,
+            message="Too much media: 0 document pages + 108 images > 100",
         )
         assert should_fallback(exc)
 
@@ -97,19 +110,15 @@ class TestShouldFallback:
         assert not should_fallback(_litellm_exc(cls))
 
 
-class TestBackoff:
-    def test_returns_non_negative_float(self) -> None:
-        for attempt in range(10):
-            delay = backoff_seconds(attempt)
-            assert 0.0 <= delay <= BACKOFF_CAP
+class TestModelRetrying:
+    def test_attempt_count_is_retries_plus_one(self) -> None:
+        assert model_retrying(3).stop.max_attempt_number == 4
+        assert model_retrying(0).stop.max_attempt_number == 1
 
-    def test_first_attempt_bounded_by_initial(self) -> None:
-        # attempt=0 -> ceiling = min(CAP, INITIAL * 2**0) = INITIAL
-        for _ in range(50):
-            assert backoff_seconds(0) <= BACKOFF_INITIAL
+    def test_uses_full_jitter_exponential_backoff(self) -> None:
+        wait = model_retrying(3).wait
+        assert wait.multiplier == BACKOFF_INITIAL
+        assert wait.max == BACKOFF_CAP
 
-    def test_ceiling_grows_with_attempt_up_to_cap(self) -> None:
-        # attempt large enough that 2**attempt * INITIAL exceeds CAP
-        # => every draw is in [0, CAP]
-        for _ in range(50):
-            assert backoff_seconds(20) <= BACKOFF_CAP
+    def test_reraises_final_failure(self) -> None:
+        assert model_retrying(3).reraise

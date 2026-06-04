@@ -97,7 +97,7 @@ async def test_ape_optimizer() -> None:
     sys_prompt_op = PromptOp("Guess a number based on the input word.")
     package_msg_op = FxnOp(append_to_sys)
     # We seem to be hitting rate limits frequently, so bump per-model retries.
-    config = LLMConfig.coerce({
+    config = LLMConfig.model_validate({
         "name": CommonLLMNames.GPT_4O.value,
         "max_retries": 3,
     })
@@ -194,7 +194,7 @@ class NumberGuesserModule:
         mems = await self.mem_op(query)
         msgs = await self.package_msg_op(mems, query)
         c = await self.llm_call_op(
-            config=LLMConfig.coerce({
+            config=LLMConfig.model_validate({
                 "name": "gpt-4-turbo",  # this is flaky, so use a smarter model
                 "temperature": 0,
                 "max_retries": 3,
@@ -303,7 +303,9 @@ class TestMemoryOpt:
         This test is loosely based on Reflexion (https://arxiv.org/abs/2303.11366).
         """
         memory_distiller = LLMModel(
-            llm_config=LLMConfig.coerce({"name": CommonLLMNames.OPENAI_TEST.value})
+            llm_config=LLMConfig.model_validate({
+                "name": CommonLLMNames.OPENAI_TEST.value
+            })
         )
 
         class LessonEntry(BaseModel):

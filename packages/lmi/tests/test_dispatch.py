@@ -59,8 +59,19 @@ def _context_overflow_exc(model: str = PRIMARY) -> litellm.ContextWindowExceeded
 
 @pytest.fixture(autouse=True)
 def _no_backoff(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Zero out the exponential-jitter sleep so tests don't wait."""
-    monkeypatch.setattr("lmi.llms.backoff_seconds", lambda _attempt: 0.0)
+    """Drop the exponential-jitter sleep from the retry policy so tests don't wait."""
+    from tenacity import AsyncRetrying, retry_if_exception, stop_after_attempt
+
+    from lmi.retry import should_retry
+
+    def instant_retrying(max_retries: int) -> AsyncRetrying:
+        return AsyncRetrying(
+            stop=stop_after_attempt(max_retries + 1),
+            retry=retry_if_exception(should_retry),
+            reraise=True,
+        )
+
+    monkeypatch.setattr("lmi.llms.model_retrying", instant_retrying)
 
 
 class TestRunWithFallbacks:

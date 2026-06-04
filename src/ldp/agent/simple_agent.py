@@ -5,7 +5,7 @@ from typing import Self
 from aviary.core import Message, Tool, ToolRequestMessage, ToolResponseMessage
 from aviary.message import EnvStateMessage
 from lmi import CommonLLMNames
-from lmi.config import LLMConfig, LLMConfigField, ModelSpec
+from lmi.config import LLMConfig, ModelSpec
 from pydantic import BaseModel, ConfigDict, Field
 
 from ldp.graph import ConfigOp, FxnOp, LLMCallOp, OpResult, compute_graph
@@ -116,7 +116,7 @@ class SimpleAgent(BaseModel, Agent[SimpleAgentState]):
     # passed around) or in the internal Ops
     model_config = ConfigDict(frozen=True)
 
-    llm_config: LLMConfigField = Field(
+    llm_config: LLMConfig = Field(
         default_factory=lambda: LLMConfig(
             models=[
                 ModelSpec.from_name(

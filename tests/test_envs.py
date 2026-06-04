@@ -13,7 +13,6 @@ from aviary.core import (
     ToolResponseMessage,
 )
 from lmi import CommonLLMNames
-from lmi.exceptions import AllModelsExhaustedError
 
 from ldp.agent import SimpleAgent
 
@@ -136,14 +135,13 @@ class TestParallelism:
 
         # 2. Well, it looks like both Anthropic and OpenAI don't like DIY-style
         #    (using a bare Message) because they expect a tool call ID and tool name.
-        #    Single-model chain exhausts on the provider's BadRequestError.
+        #    That's a generic (malformed-request) BadRequestError, which is a
+        #    terminal client error and propagates directly rather than falling over.
         expected_match = (
             "invalid" if version(litellm.__name__) < "1.45.0" else "tool_call_id"
         )
-        with pytest.raises(AllModelsExhaustedError) as excinfo:
+        with pytest.raises(litellm.BadRequestError, match=expected_match):
             await agent.get_asv(agent_state, obs)
-        assert isinstance(excinfo.value.last_exc, litellm.BadRequestError)
-        assert expected_match in str(excinfo.value.last_exc)
 
         # 3. Alright, let's check the agent doesn't blow up if we use a
         #    ToolResponseMessage as Anthropic and OpenAI expect

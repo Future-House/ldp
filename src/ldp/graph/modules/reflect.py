@@ -1,5 +1,5 @@
 from aviary.core import Message
-from lmi.config import LLMConfig, LLMConfigField, ModelSpec
+from lmi.config import LLMConfig, ModelSpec
 from pydantic import BaseModel, Field
 
 from ldp.graph import ConfigOp, FxnOp, LLMCallOp, PromptOp, compute_graph
@@ -10,7 +10,7 @@ from ldp.llms import append_to_sys, indent_xml
 class ReflectModuleConfig(BaseModel):
     """Configuration for the ReflectModuleConfig."""
 
-    llm_config: LLMConfigField = Field(
+    llm_config: LLMConfig = Field(
         default_factory=lambda: LLMConfig(
             models=[ModelSpec.from_name("gpt-3.5-turbo")]
         ),

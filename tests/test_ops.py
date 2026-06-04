@@ -145,7 +145,7 @@ class TestLLMCallOp:
 
         env = LLMCallingEnv()
         obs, tools = await env.reset()
-        config = LLMConfig.coerce({"name": model_name, "temperature": 0.1})
+        config = LLMConfig.model_validate({"name": model_name, "temperature": 0.1})
         llm_op = LLMCallOp()
 
         # Perform one step
@@ -165,7 +165,7 @@ class TestLLMCallOp:
     async def test_empty_tools(self) -> None:
         llm_call_op = LLMCallOp()
         message_result = await llm_call_op(
-            LLMConfig.coerce({"name": CommonLLMNames.GPT_4O.value}),
+            LLMConfig.model_validate({"name": CommonLLMNames.GPT_4O.value}),
             msgs=[Message(content="Hello")],
             tools=[],
         )
@@ -176,7 +176,7 @@ class TestLLMCallOp:
     @pytest.mark.asyncio
     @pytest.mark.parametrize("temperature", [0.0, 0.5, 1.0])
     async def test_compute_logprob(self, temperature) -> None:
-        config = LLMConfig.coerce({
+        config = LLMConfig.model_validate({
             "name": CommonLLMNames.OPENAI_TEST.value,
             "temperature": temperature,
             "logprobs": True,
@@ -198,7 +198,7 @@ class TestLLMCallOp:
         # Validator failure raises ResponseValidationError, which LMI's loop
         # treats as transient: it retries against the same model up to
         # ModelSpec.max_retries before exhausting the chain.
-        config = LLMConfig.coerce({
+        config = LLMConfig.model_validate({
             "name": CommonLLMNames.OPENAI_TEST.value,
             "max_retries": 1,
         })
@@ -207,7 +207,7 @@ class TestLLMCallOp:
         await llm_op(config, msgs=[Message(content="Hello")])
         assert validator.counter == 2  # first attempt should have failed
 
-        always_fail_config = LLMConfig.coerce({
+        always_fail_config = LLMConfig.model_validate({
             "name": CommonLLMNames.OPENAI_TEST.value,
             "max_retries": 0,
         })
@@ -235,7 +235,7 @@ class TestLLMCallOp:
             """
             return x
 
-        config = LLMConfig.coerce({
+        config = LLMConfig.model_validate({
             "name": CommonLLMNames.OPENAI_TEST.value,
             "tool_parser": parse_text_tool_calls,
         })
@@ -288,7 +288,7 @@ async def test_llm_call_graph() -> None:
     user_prompt_op = PromptOp("What is the result of this math equation: {equation}?")
 
     package_msg_op = FxnOp(append_to_sys)
-    config = LLMConfig.coerce({
+    config = LLMConfig.model_validate({
         "name": "gpt-3.5-turbo-0125",
         "temperature": 0.1,
         "logprobs": True,

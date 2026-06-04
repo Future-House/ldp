@@ -12,13 +12,12 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from itertools import chain
-from typing import Annotated, Any, Self
+from typing import Any, Self
 
 import litellm
 from aviary.core import Message, ToolRequestMessage
 from pydantic import (
     BaseModel,
-    BeforeValidator,
     ConfigDict,
     Field,
     SecretStr,
@@ -55,7 +54,7 @@ _LITELLM_RETRY_KWARGS = frozenset({"num_retries", "max_retries"})
 
 # `tool_parser` is an LMI-level callable handled on `LiteLLMModel`; if it ever
 # ends up in `extra_params` (e.g. via a name-shape dict that wasn't unpacked
-# through `LLMConfig.coerce`), filter it before dispatching to litellm.
+# by the `LLMConfig` before-validator), filter it before dispatching to litellm.
 _NON_LITELLM_EXTRA_PARAMS = _LITELLM_RETRY_KWARGS | frozenset({"tool_parser"})
 
 
@@ -69,15 +68,21 @@ class ModelSpec(BaseModel):
             "LiteLLM model string in 'provider/model' format, "
             "e.g. 'openai/gpt-4o-mini' or 'anthropic/claude-3-5-sonnet-20241022'."
         ),
+        examples=["openai/gpt-4o-mini"],
     )
     api_base: str | None = None
     api_key: SecretStr | None = None
-    timeout: float = Field(default=60.0, description="Per-request timeout in seconds.")
+    timeout: float | None = Field(
+        default=60.0,
+        description="Per-request timeout in seconds, or None to not set one.",
+    )
     max_retries: int = Field(
         default=3,
+        ge=0,
         description=(
             "Retries against this model before falling over to the next entry"
-            " in the chain."
+            " in the chain. 0 means attempt the model once with no retry before"
+            " falling over."
         ),
     )
     extra_params: dict[str, Any] = Field(
@@ -178,10 +183,9 @@ class ModelSpec(BaseModel):
             for k, v in self.extra_params.items()
             if k not in _NON_LITELLM_EXTRA_PARAMS
         }
-        out: dict[str, Any] = {
-            "model": self.name,
-            "timeout": self.timeout,
-        } | sanitized_extra
+        out: dict[str, Any] = {"model": self.name} | sanitized_extra
+        if self.timeout is not None:
+            out["timeout"] = self.timeout
         if self.api_base is not None:
             out["api_base"] = self.api_base
         if self.api_key is not None:
@@ -223,14 +227,16 @@ class LLMConfig(BaseModel):
         ),
     )
 
+    @model_validator(mode="before")
     @classmethod
-    def coerce(cls, v: Any) -> LLMConfig:
+    def _coerce_input(cls, v: Any) -> Any:
         """Accept an `LLMConfig` or any dict shape LMI knows about.
 
-        Supported inputs:
+        Runs before field validation so a plain `LLMConfig`-typed field accepts,
+        without any `Annotated` wrapper:
 
         - an `LLMConfig` instance (passes through)
-        - a dict with `"models"` — the typed-dict form of `LLMConfig`
+        - a dict with `"models"` — the canonical form, validated as-is
         - a dict with `"model_list"` — the legacy litellm-Router shape; see
           `from_legacy_dict`
         - a dict with `"name"` — a bare model name plus flat request-shape
@@ -241,18 +247,21 @@ class LLMConfig(BaseModel):
             return v
         if not isinstance(v, dict):
             raise TypeError(f"Cannot build an LLMConfig from {type(v).__name__}")
+        # A `mode="before"` validator must hand back a dict for core validation
+        # to build from (returning a constructed `LLMConfig` is rejected), so the
+        # non-canonical shapes are normalized to `{"models": [...]}`.
         if "models" in v:
-            return cls.model_validate(v)
+            return v
         if "model_list" in v:
-            return cls.from_legacy_dict(v)
+            return {"models": cls._models_from_legacy(v)}
         if "name" in v:
             kwargs = dict(v)
             name = kwargs.pop("name")
             tool_parser = kwargs.pop("tool_parser", None)
-            return cls(
-                models=[ModelSpec.from_name(name, **kwargs)],
-                tool_parser=tool_parser,
-            )
+            return {
+                "models": [ModelSpec.from_name(name, **kwargs)],
+                "tool_parser": tool_parser,
+            }
         raise ValueError(
             "Can't infer LLMConfig shape from dict; expected 'models',"
             " 'model_list', or 'name' key"
@@ -284,6 +293,11 @@ class LLMConfig(BaseModel):
         entries in `model_list` not reached by the primary's fallback chain are
         appended at the end.
         """
+        return cls(models=cls._models_from_legacy(legacy))
+
+    @classmethod
+    def _models_from_legacy(cls, legacy: dict[str, Any]) -> list[ModelSpec]:
+        """Flatten a legacy dict into the ordered `ModelSpec` chain."""
         model_list = legacy.get("model_list") or []
         if not model_list:
             raise ValueError("Legacy config has empty or missing model_list")
@@ -310,12 +324,10 @@ class LLMConfig(BaseModel):
                 ordered.append(name)
 
         router_kwargs = legacy.get("router_kwargs") or {}
-        return cls(
-            models=[
-                ModelSpec.from_legacy_params(params_by_name[name], router_kwargs)
-                for name in ordered
-            ]
-        )
+        return [
+            ModelSpec.from_legacy_params(params_by_name[name], router_kwargs)
+            for name in ordered
+        ]
 
 
 def _unsupported_params(name: str, params: dict[str, Any]) -> set[str]:
@@ -334,10 +346,3 @@ def _unsupported_params(name: str, params: dict[str, Any]) -> set[str]:
     except litellm.BadRequestError:
         return set()
     return gated - supported
-
-
-# Pydantic field annotation that accepts any input `LLMConfig.coerce` supports.
-# Use in place of a bare `LLMConfig` when you want the model to accept both
-# typed instances and the dict shapes LMI recognises, without writing a
-# `@field_validator` on every class.
-LLMConfigField = Annotated[LLMConfig, BeforeValidator(LLMConfig.coerce)]
