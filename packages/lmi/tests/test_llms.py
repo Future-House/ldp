@@ -927,6 +927,42 @@ class TestTooling:
             assert not result.messages[0].tool_calls
 
     @pytest.mark.asyncio
+    async def test_tool_only_params_stripped_when_no_tools(self) -> None:
+        # `parallel_tool_calls` and `tool_choice` are only valid alongside
+        # `tools`; OpenAI Chat Completions 400s if they reach the API without
+        # `tools` present. `spec.extra_params` may carry them from a
+        # tool-bearing default config, so the call path must strip them on
+        # tool-less requests.
+        from lmi.config import LLMConfig, ModelSpec
+
+        model = LiteLLMModel(
+            llm_config=LLMConfig(
+                models=[
+                    ModelSpec(
+                        name=CommonLLMNames.OPENAI_TEST.value,
+                        extra_params={
+                            "parallel_tool_calls": True,
+                            "tool_choice": LiteLLMModel.MODEL_CHOOSES_TOOL,
+                        },
+                    )
+                ]
+            )
+        )
+
+        fake_response = Mock()
+        fake_response.choices = []
+        fake_response.usage = None
+        fake_response.model = CommonLLMNames.OPENAI_TEST.value
+        with patch(
+            "litellm.acompletion", AsyncMock(return_value=fake_response)
+        ) as mock_acompletion:
+            await model.acompletion(messages=[Message(content="hi")])
+
+        call_kwargs = mock_acompletion.call_args.kwargs
+        assert "parallel_tool_calls" not in call_kwargs
+        assert "tool_choice" not in call_kwargs
+
+    @pytest.mark.asyncio
     @pytest.mark.vcr
     async def test_multi_response_warns_and_returns_first(self, caplog) -> None:
         model = LiteLLMModel(name="text-completion-openai/babbage-002")

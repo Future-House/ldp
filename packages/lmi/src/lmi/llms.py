@@ -873,6 +873,18 @@ class PassThroughRouter(litellm.Router):  # TODO: add rate_limited
         return await litellm.aresponses(*args, **(self._default_kwargs | kwargs))
 
 
+def _strip_tool_only_kwargs(call_kwargs: dict[str, Any]) -> None:
+    """Drop kwargs that are only valid alongside `tools` when no tools are set.
+
+    OpenAI Chat Completions returns 400 if `parallel_tool_calls` or
+    `tool_choice` are sent without `tools`. `ModelSpec.extra_params` may carry
+    these from a tool-bearing default config, so strip them on tool-less calls.
+    """
+    if not call_kwargs.get("tools"):
+        call_kwargs.pop("parallel_tool_calls", None)
+        call_kwargs.pop("tool_choice", None)
+
+
 def default_tool_parser(
     choice: litellm.utils.Choices, tools: list[dict] | None
 ) -> Message | ToolRequestMessage:
@@ -1201,6 +1213,7 @@ class LiteLLMModel(LLMModel):
             )
 
         call_kwargs = {**spec.to_litellm_kwargs(), **kwargs, "messages": prompts}
+        _strip_tool_only_kwargs(call_kwargs)
         try:
             completions = await track_costs(litellm.acompletion)(**call_kwargs)
         except Exception:
@@ -1340,6 +1353,7 @@ class LiteLLMModel(LLMModel):
             "stream": True,
             "stream_options": stream_options,
         }
+        _strip_tool_only_kwargs(call_kwargs)
         try:
             stream_completions = await track_costs_iter(litellm.acompletion)(
                 **call_kwargs
