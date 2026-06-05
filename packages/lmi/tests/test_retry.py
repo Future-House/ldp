@@ -24,7 +24,8 @@ def _litellm_exc(cls, message: str = "boom"):
     if cls is litellm.PermissionDeniedError:
         import httpx
 
-        kwargs["response"] = httpx.Response(403, request=httpx.Request("POST", "x"))
+        kwargs["response"] = httpx.Response(
+            403, request=httpx.Request("POST", "x"))
     return cls(**kwargs)
 
 
@@ -109,6 +110,38 @@ class TestShouldFallback:
     )
     def test_retryable_errors_do_not_fall_back(self, cls) -> None:
         assert not should_fallback(_litellm_exc(cls))
+
+    @staticmethod
+    def _bad_request(message: str, status: int) -> litellm.BadRequestError:
+        import httpx
+
+        return litellm.BadRequestError(
+            message=message,
+            model="vertex_ai/gemini-2.0-flash",
+            llm_provider="vertex_ai",
+            response=httpx.Response(
+                status_code=status,
+                request=httpx.Request("POST", "https://example.test"),
+            ),
+        )
+
+    def test_mislabelled_403_bad_request_falls_over(self) -> None:
+        # litellm collapses a Vertex 403 into a bare BadRequestError; the true
+        # status survives only on the response and should trigger fall-over.
+        exc = self._bad_request(
+            "Vertex_aiException BadRequestError - PERMISSION_DENIED 403", 403
+        )
+        assert should_fallback(exc)
+
+    def test_generic_400_bad_request_is_terminal(self) -> None:
+        exc = self._bad_request("invalid schema for function 'foo'", 400)
+        assert should_fallback(exc)
+
+    def test_provider_limit_400_still_falls_over(self) -> None:
+        exc = self._bad_request(
+            "Too much media: 0 document pages + 108 images > 100", 400
+        )
+        assert should_fallback(exc)
 
 
 class TestModelRetrying:

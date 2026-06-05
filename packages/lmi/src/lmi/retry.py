@@ -67,16 +67,36 @@ def should_retry(exc: BaseException) -> bool:
     return isinstance(exc, _RETRYABLE)
 
 
+def _response_status(exc: BaseException) -> int | None:
+    """Best-effort recovery of the upstream HTTP status.
+
+    litellm hardcodes ``BadRequestError.status_code = 400``, so the real status
+    of a mislabelled error (e.g. a Vertex 403 caught by a string branch before
+    litellm's status-code branch) survives only on the attached response.
+    """
+    return getattr(getattr(exc, "response", None), "status_code", None)
+
+
 def should_fallback(exc: BaseException) -> bool:
     """True if another model might succeed where this one failed.
 
     Provider-specific 400s (e.g. Anthropic's 100-image limit) fall over to a
     sibling model, but a generic `BadRequestError` is a terminal client error
-    (malformed request) and propagates.
+    (malformed request) and propagates. Auth/permission/not-found failures that
+    litellm mislabels as a bare `BadRequestError` are recovered via the response
+    status and treated as fall-over-able.
     """
     if isinstance(exc, _FALLBACKABLE):
         return True
     if isinstance(exc, litellm.BadRequestError):
+        # litellm sometimes collapses auth/permission/not-found failures into a
+        # bare BadRequestError instead of the dedicated subclass (e.g. a Vertex
+        # 403 whose body contains "403" matches a string branch before the
+        # status-code branch in exception_mapping_utils.py). Recover the true
+        # status and fall over on these, mirroring the AuthenticationError /
+        # PermissionDeniedError / NotFoundError entries already in _FALLBACKABLE.
+        if _response_status(exc) in {401, 403, 404}:
+            return True
         message = str(exc).lower()
         return any(pattern in message for pattern in _PROVIDER_LIMIT_PATTERNS)
     return False
