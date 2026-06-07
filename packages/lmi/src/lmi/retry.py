@@ -45,6 +45,12 @@ _RETRYABLE: tuple[type[BaseException], ...] = (
 # `BadRequestError`, so we match on the message; see `should_fallback`.
 _PROVIDER_LIMIT_PATTERNS = ("too much media",)
 
+# Content-safety refusals that litellm surfaces as a bare `BadRequestError`
+# instead of `ContentPolicyViolationError` (e.g. OpenAI's prompt-level safety
+# block, error code "invalid_prompt"). A refusal can be a false positive, so a
+# sibling model may legitimately answer — fall over rather than dead-end.
+_CONTENT_REFUSAL_PATTERNS = ("limited access to this content for safety reasons",)
+
 _FALLBACKABLE: tuple[type[BaseException], ...] = (
     litellm.NotFoundError,
     # Auth/permission failures: when a user configures a fallback chain, they
@@ -98,7 +104,10 @@ def should_fallback(exc: BaseException) -> bool:
         if _response_status(exc) in {401, 403, 404}:
             return True
         message = str(exc).lower()
-        return any(pattern in message for pattern in _PROVIDER_LIMIT_PATTERNS)
+        return any(
+            pattern in message
+            for pattern in (*_PROVIDER_LIMIT_PATTERNS, *_CONTENT_REFUSAL_PATTERNS)
+        )
     return False
 
 

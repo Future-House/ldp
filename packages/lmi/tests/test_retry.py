@@ -24,8 +24,7 @@ def _litellm_exc(cls, message: str = "boom"):
     if cls is litellm.PermissionDeniedError:
         import httpx
 
-        kwargs["response"] = httpx.Response(
-            403, request=httpx.Request("POST", "x"))
+        kwargs["response"] = httpx.Response(403, request=httpx.Request("POST", "x"))
     return cls(**kwargs)
 
 
@@ -135,11 +134,21 @@ class TestShouldFallback:
 
     def test_generic_400_bad_request_is_terminal(self) -> None:
         exc = self._bad_request("invalid schema for function 'foo'", 400)
-        assert should_fallback(exc)
+        assert not should_fallback(exc)
 
     def test_provider_limit_400_still_falls_over(self) -> None:
         exc = self._bad_request(
             "Too much media: 0 document pages + 108 images > 100", 400
+        )
+        assert should_fallback(exc)
+
+    def test_content_safety_refusal_400_falls_over(self) -> None:
+        # OpenAI's prompt-level safety block surfaces as a bare 400, not
+        # ContentPolicyViolationError; a refusal may be a false positive, so a
+        # sibling model should get a chance.
+        exc = self._bad_request(
+            "Invalid prompt: we've limited access to this content for safety reasons.",
+            400,
         )
         assert should_fallback(exc)
 
