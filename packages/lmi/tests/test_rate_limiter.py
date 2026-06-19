@@ -561,12 +561,12 @@ class TestGlobalRateLimiter:
             # Still Redis-backed until the threshold is reached. Read into a local so
             # mypy doesn't pin the attribute to a literal across the mutating _test call.
             in_memory_before = limiter._use_in_memory
-            assert in_memory_before is False
+            assert not in_memory_before
             satisfied = await limiter._test(FALLBACK_RATE_LIMIT, "client", "x", cost=1)
-            assert satisfied is True  # fails open on every failing op
+            assert satisfied  # fails open on every failing op
             assert limiter._redis_failure_count == i + 1
 
-        assert limiter._use_in_memory is True
+        assert limiter._use_in_memory
         assert isinstance(limiter.storage, MemoryStorage)
 
     @pytest.mark.asyncio
@@ -576,9 +576,7 @@ class TestGlobalRateLimiter:
         rate_limiter = limiter.rate_limiter
         limiter._redis_failure_count = RATE_LIMITER_REDIS_MAX_FAILURES - 1
         with patch.object(rate_limiter, "test", new=AsyncMock(return_value=True)):
-            assert (
-                await limiter._test(FALLBACK_RATE_LIMIT, "client", "x", cost=1) is True
-            )
+            assert await limiter._test(FALLBACK_RATE_LIMIT, "client", "x", cost=1)
         assert limiter._redis_failure_count == 0
 
     @pytest.mark.asyncio
@@ -598,4 +596,4 @@ class TestGlobalRateLimiter:
         # The wait loop retried the hit; False did not count as a Redis failure.
         assert hit_mock.await_count == 2
         assert limiter._redis_failure_count == 0
-        assert limiter._use_in_memory is True  # never degraded
+        assert limiter._use_in_memory  # never degraded
