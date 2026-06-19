@@ -617,7 +617,9 @@ class TestGlobalRateLimiter:
         """After the cooldown, a successful Redis probe re-promotes to Redis."""
         limiter = GlobalRateLimiter(redis_url="redis://10.58.188.212:6379")
         limiter._use_in_memory = True
-        limiter._degraded_at = time.monotonic() - RATE_LIMITER_REDIS_RECOVERY_INTERVAL - 1
+        limiter._degraded_at = (
+            time.monotonic() - RATE_LIMITER_REDIS_RECOVERY_INTERVAL - 1
+        )
         limiter._redis_failure_count = RATE_LIMITER_REDIS_MAX_FAILURES
 
         mock_storage = AsyncMock(spec=RedisStorage)

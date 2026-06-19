@@ -448,8 +448,8 @@ class GlobalRateLimiter:
     async def _maybe_recover_redis(self) -> bool:
         """Attempt to re-promote to Redis-backed limiting after the cooldown elapses.
 
-        Returns True if Redis was recovered (or recovery is not applicable), False if
-        the probe failed and we remain in-memory.
+        Returns True if Redis was recovered; otherwise returns False (including when recovery
+        is not applicable or the cooldown has not yet elapsed).
         """
         if (
             not self._degraded_at
