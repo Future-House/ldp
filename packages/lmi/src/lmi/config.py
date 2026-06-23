@@ -52,9 +52,8 @@ _RESERVED_LEGACY_PARAMS = frozenset({
 # they ended up in our `ModelSpec.extra_params`.
 _LITELLM_RETRY_KWARGS = frozenset({"num_retries", "max_retries"})
 
-# `tool_parser` is an LMI-level callable handled on `LiteLLMModel`; if it ever
-# ends up in `extra_params` (e.g. via a name-shape dict that wasn't unpacked
-# by the `LLMConfig` before-validator), filter it before dispatching to litellm.
+# `tool_parser` is an LMI-level callable, not a litellm kwarg, so it must be
+# dropped from `extra_params` before dispatching alongside the retry kwargs above.
 _NON_LITELLM_EXTRA_PARAMS = _LITELLM_RETRY_KWARGS | frozenset({"tool_parser"})
 
 
@@ -64,11 +63,8 @@ class ModelSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(
-        description=(
-            "LiteLLM model string in 'provider/model' format, "
-            "e.g. 'openai/gpt-4o-mini' or 'anthropic/claude-3-5-sonnet-20241022'."
-        ),
-        examples=["openai/gpt-4o-mini"],
+        description="LiteLLM model string in 'provider/model' format.",
+        examples=["openai/gpt-4o-mini", "anthropic/claude-3-5-sonnet-20241022"],
     )
     api_base: str | None = None
     api_key: SecretStr | None = None
@@ -155,9 +151,9 @@ class ModelSpec(BaseModel):
         """Build a spec from a legacy `litellm_params` entry plus router defaults.
 
         `params` is one `model_list[*].litellm_params` dict; `router_kwargs` is
-        the config's `router_kwargs`. Only forwards `timeout`/`max_retries` when
-        present so this class's own field defaults remain the single source of
-        truth (no re-injected literals).
+        the config's `router_kwargs`. `timeout`/`max_retries` are only forwarded
+        when present, so this class's field defaults stay the single source of
+        truth for them.
         """
         api_key = params.get("api_key")
         spec_kwargs: dict[str, Any] = {

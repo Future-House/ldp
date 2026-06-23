@@ -873,16 +873,21 @@ class PassThroughRouter(litellm.Router):  # TODO: add rate_limited
         return await litellm.aresponses(*args, **(self._default_kwargs | kwargs))
 
 
-def _strip_tool_only_kwargs(call_kwargs: dict[str, Any]) -> None:
-    """Drop kwargs that are only valid alongside `tools` when no tools are set.
+def _without_tool_only_kwargs(call_kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Return `call_kwargs` minus kwargs only valid alongside `tools`.
 
     OpenAI Chat Completions returns 400 if `parallel_tool_calls` or
-    `tool_choice` are sent without `tools`. `ModelSpec.extra_params` may carry
-    these from a tool-bearing default config, so strip them on tool-less calls.
+    `tool_choice` are sent without `tools`. A reused `ModelSpec.extra_params`
+    may carry these from a tool-bearing config, so they're dropped on tool-less
+    calls. Returns a new dict rather than mutating the input.
     """
-    if not call_kwargs.get("tools"):
-        call_kwargs.pop("parallel_tool_calls", None)
-        call_kwargs.pop("tool_choice", None)
+    if call_kwargs.get("tools"):
+        return call_kwargs
+    return {
+        k: v
+        for k, v in call_kwargs.items()
+        if k not in {"parallel_tool_calls", "tool_choice"}
+    }
 
 
 def default_tool_parser(
@@ -1130,23 +1135,17 @@ class LiteLLMModel(LLMModel):
         *args: Any,
         **kwargs: Any,
     ) -> Any:
-        """Drive a single-attempt coroutine across the `LLMConfig.models` chain.
+        """Run `attempt(spec, ...)` over the `LLMConfig.models` chain.
 
-        `attempt(spec, *args, **kwargs)` must run one try at the model described
-        by `spec` and raise on failure. Retries within a single model are driven
-        by tenacity (`retry.model_retrying`, full-jitter exponential backoff).
-        Exceptions classified by `should_fallback` (or retry exhaustion on a
-        retryable exception) advance to the next spec; anything else propagates.
+        Each spec is retried per `model_retrying`; a `should_fallback` error or
+        exhausted retries advances to the next spec, anything else propagates.
         """
         llm_config = cast("LLMConfig", self.llm_config)  # populated by after-validator
         last_exc: BaseException | None = None
         for spec_idx, spec in enumerate(llm_config.models):
             try:
                 async for retry_attempt in model_retrying(spec.max_retries):
-                    # `return` lives inside `with` so it runs only on success;
-                    # on failure tenacity's context manager swallows the error
-                    # (to retry) and execution would otherwise fall through with
-                    # `result` unbound.
+                    # tenacity swallows failed attempts; only success reaches `return`
                     with retry_attempt:
                         result = await attempt(spec, *args, **kwargs)
                         attempt_number = retry_attempt.retry_state.attempt_number
@@ -1213,7 +1212,7 @@ class LiteLLMModel(LLMModel):
             )
 
         call_kwargs = {**spec.to_litellm_kwargs(), **kwargs, "messages": prompts}
-        _strip_tool_only_kwargs(call_kwargs)
+        call_kwargs = _without_tool_only_kwargs(call_kwargs)
         try:
             completions = await track_costs(litellm.acompletion)(**call_kwargs)
         except Exception:
@@ -1235,7 +1234,7 @@ class LiteLLMModel(LLMModel):
             logger.error("Model %s refused.", spec.name, exc_info=refusal)
             raise refusal
 
-        used_model = completions.model
+        used_model = completions.model or spec.name
         results: list[LLMResult] = []
 
         # Use getattr because ModelResponse.usage not in LiteLLM's type hints
@@ -1353,7 +1352,7 @@ class LiteLLMModel(LLMModel):
             "stream": True,
             "stream_options": stream_options,
         }
-        _strip_tool_only_kwargs(call_kwargs)
+        call_kwargs = _without_tool_only_kwargs(call_kwargs)
         try:
             stream_completions = await track_costs_iter(litellm.acompletion)(
                 **call_kwargs
@@ -1370,7 +1369,7 @@ class LiteLLMModel(LLMModel):
         used_model = None
         async for completion in stream_completions:
             if not used_model:
-                used_model = completion.model
+                used_model = completion.model or spec.name
             choice = completion.choices[0]
             delta = choice.delta
             # logprobs can be None, or missing a content attribute,
@@ -1464,7 +1463,7 @@ class LiteLLMModel(LLMModel):
             logger.exception("aresponses attempt failed on %s.", spec.name)
             raise
 
-        used_model = response.model
+        used_model = response.model or spec.name
         usage = getattr(response, "usage", None)
         prompt_count = usage.input_tokens if usage else None
         completion_count = usage.output_tokens if usage else None

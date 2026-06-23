@@ -43,6 +43,7 @@ _RETRYABLE: tuple[type[BaseException], ...] = (
 # 400s that are genuinely provider-specific (a sibling model may accept the same
 # input) rather than a malformed request. litellm surfaces these as a plain
 # `BadRequestError`, so we match on the message; see `should_fallback`.
+# "too much media" is Anthropic's 100-image-per-request limit.
 _PROVIDER_LIMIT_PATTERNS = ("too much media",)
 
 # Content-safety refusals that litellm surfaces as a bare `BadRequestError`
