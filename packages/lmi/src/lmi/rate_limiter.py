@@ -216,7 +216,11 @@ class GlobalRateLimiter:
                     stream_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
                     connect_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
                 )
-                logger.info(f"Connected to redis instance for rate limiting: {conn}")
+                parsed = urlparse(conn)
+                safe_url = f"{parsed.scheme}://{parsed.hostname}:{parsed.port}"
+                logger.info(
+                    f"Connected to redis instance for rate limiting: {safe_url}"
+                )
 
         return self._storage
 
