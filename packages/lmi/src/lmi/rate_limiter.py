@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import time
 from collections.abc import Collection
 from typing import ClassVar, Literal, TypeAlias
 from urllib.parse import urlparse
@@ -41,11 +42,16 @@ GLOBAL_RATE_LIMITER_TIMEOUT = float(os.environ.get("RATE_LIMITER_TIMEOUT", "60")
 RATE_LIMITER_REDIS_OP_TIMEOUT = float(
     os.environ.get("RATE_LIMITER_REDIS_OP_TIMEOUT", "5")
 )
-# Consecutive Redis op failures (retries already exhausted) after which a limiter
-# permanently degrades to in-memory (per-process) limiting rather than repeatedly
-# stalling on a genuinely unreachable Redis.
+# Consecutive Redis op failures (retries already exhausted) after which the limiter
+# degrades to in-memory (per-process) limiting rather than repeatedly stalling on a
+# genuinely unreachable Redis.
 RATE_LIMITER_REDIS_MAX_FAILURES = int(
     os.environ.get("RATE_LIMITER_REDIS_MAX_FAILURES", "3")
+)
+# Seconds to wait after degradation before probing Redis again. Set to 0 to disable
+# recovery (permanent degradation, the pre-existing behaviour).
+RATE_LIMITER_REDIS_RECOVERY_INTERVAL = float(
+    os.environ.get("RATE_LIMITER_REDIS_RECOVERY_INTERVAL", "60")
 )
 
 # Errors signalling Redis is unreachable or an op timed out with retries exhausted.
@@ -157,6 +163,8 @@ class GlobalRateLimiter:
         self._current_ip: str | None = None
         # Count of consecutive Redis op failures; reset on any successful op.
         self._redis_failure_count = 0
+        self._explicitly_in_memory = use_in_memory or not self._redis_url
+        self._degraded_at: float = 0.0
 
     @staticmethod
     async def get_outbound_ip(session: aiohttp.ClientSession, url: str) -> str | None:
@@ -394,24 +402,33 @@ class GlobalRateLimiter:
         return limit_status
 
     def _degrade_to_in_memory(self) -> None:
-        """Permanently switch this limiter to in-memory (per-process) limiting.
+        """Switch this limiter to in-memory (per-process) limiting.
 
         This is a deliberate fail-open. The rate limiter is a guardrail, not a
         correctness requirement, and freezing a (potentially multi-hour) trajectory on
         an unreachable Redis is worse than briefly un-coordinated limiting. The switch
         is logged loudly so it is visible in logs/metrics.
+
+        If ``RATE_LIMITER_REDIS_RECOVERY_INTERVAL`` > 0 and the limiter was originally
+        Redis-backed, :meth:`_maybe_recover_redis` will attempt to re-promote after the
+        cooldown elapses.
         """
         if self._use_in_memory:
             return
+        recovery_msg = (
+            f" Will probe Redis again in {RATE_LIMITER_REDIS_RECOVERY_INTERVAL}s."
+            if RATE_LIMITER_REDIS_RECOVERY_INTERVAL > 0
+            and not self._explicitly_in_memory
+            else " Recovery disabled; staying in-memory until restart."
+        )
         logger.warning(
             "Rate limiting degraded to in-memory (per-process) after %d consecutive"
-            " Redis failures: cross-process coordination is disabled for this process"
-            " until restart.",
+            " Redis failures: cross-process coordination is disabled.%s",
             self._redis_failure_count,
+            recovery_msg,
         )
         self._use_in_memory = True
-        # Drop the Redis-backed objects so the next access rebuilds them on
-        # MemoryStorage (see the `storage`/`rate_limiter` properties).
+        self._degraded_at = time.monotonic()
         self._storage = None
         self._rate_limiter = None
 
@@ -428,6 +445,54 @@ class GlobalRateLimiter:
         if self._redis_failure_count >= RATE_LIMITER_REDIS_MAX_FAILURES:
             self._degrade_to_in_memory()
 
+    async def _maybe_recover_redis(self) -> bool:
+        """Attempt to re-promote to Redis-backed limiting after the cooldown elapses.
+
+        Returns True if Redis was recovered; otherwise returns False (including when recovery
+        is not applicable or the cooldown has not yet elapsed).
+        """
+        if (
+            not self._degraded_at
+            or self._explicitly_in_memory
+            or RATE_LIMITER_REDIS_RECOVERY_INTERVAL <= 0
+        ):
+            return False
+
+        elapsed = time.monotonic() - self._degraded_at
+        if elapsed < RATE_LIMITER_REDIS_RECOVERY_INTERVAL:
+            return False
+
+        conn = f"{self._redis_scheme}://{self._redis_bare_url}"
+        try:
+            storage = RedisStorage(
+                conn,
+                stream_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
+                connect_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
+            )
+            await storage.check()
+        except REDIS_OP_ERRORS as exc:
+            logger.warning(
+                "Redis recovery probe failed after %.0fs; staying in-memory."
+                " Next probe in %.0fs: %r",
+                elapsed,
+                RATE_LIMITER_REDIS_RECOVERY_INTERVAL,
+                exc,
+            )
+            self._degraded_at = time.monotonic()
+            return False
+
+        logger.info(
+            "Redis recovery probe succeeded after %.0fs; re-promoting to"
+            " Redis-backed rate limiting.",
+            elapsed,
+        )
+        self._use_in_memory = False
+        self._degraded_at = 0.0
+        self._redis_failure_count = 0
+        self._storage = storage
+        self._rate_limiter = None
+        return True
+
     async def _test(
         self, rate_limit: RateLimitItem, namespace: str, primary_key: str, cost: int
     ) -> bool:
@@ -435,7 +500,11 @@ class GlobalRateLimiter:
 
         A returned False means the limit is full (Redis is healthy) and the caller
         should keep waiting; only exceptions/timeouts trigger the fail-open path.
+
+        When the limiter is degraded and the recovery cooldown has elapsed, a Redis
+        probe is attempted before the actual op.
         """
+        await self._maybe_recover_redis()
         try:
             satisfied = await self.rate_limiter.test(
                 rate_limit, namespace, primary_key, cost=cost
@@ -454,7 +523,11 @@ class GlobalRateLimiter:
         A returned False means the hit was rejected (Redis is healthy, race with
         another acquirer) and the caller should keep waiting; only exceptions/timeouts
         trigger the fail-open path.
+
+        When the limiter is degraded and the recovery cooldown has elapsed, a Redis
+        probe is attempted before the actual op.
         """
+        await self._maybe_recover_redis()
         try:
             acquired = await self.rate_limiter.hit(
                 rate_limit, namespace, primary_key, cost=cost
@@ -505,8 +578,10 @@ class GlobalRateLimiter:
             If the backing Redis is unreachable (ops time out / error with retries
             exhausted), this fails open: the request is allowed through and, after
             RATE_LIMITER_REDIS_MAX_FAILURES consecutive failures, the limiter
-            permanently degrades to in-memory (per-process) limiting with a loud
-            warning. Redis errors never propagate out of this method.
+            degrades to in-memory (per-process) limiting with a loud warning.
+            After RATE_LIMITER_REDIS_RECOVERY_INTERVAL seconds the limiter will
+            probe Redis and re-promote if it is healthy again. Redis errors never
+            propagate out of this method.
         """
         namespace, primary_key = await self.parse_namespace_and_primary_key(
             namespace_and_key, machine_id=machine_id
