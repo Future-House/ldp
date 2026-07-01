@@ -30,6 +30,8 @@ CROSSREF_BASE_URL = f"https://{CROSSREF_HOST}"
 
 GLOBAL_RATE_LIMITER_TIMEOUT = float(os.environ.get("RATE_LIMITER_TIMEOUT", "60"))
 
+RATE_LIMITER_REDIS_OP_TIMEOUT = 5.0
+
 MATCH_ALL = None
 MatchAllInputs: TypeAlias = Literal[None]  # noqa: PYI061
 MATCH_MACHINE_ID = "<machine_id>"
@@ -170,7 +172,11 @@ class GlobalRateLimiter:
                 logger.info("Using in-memory rate limiter.")
             else:
                 conn = f"{self._redis_scheme}://{self._redis_bare_url}"
-                self._storage = RedisStorage(conn)
+                self._storage = RedisStorage(
+                    conn,
+                    stream_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
+                    connect_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
+                )
                 logger.info(f"Connected to redis instance for rate limiting: {conn}")
 
         return self._storage
@@ -391,6 +397,10 @@ class GlobalRateLimiter:
             TimeoutError: if the acquire_timeout is exceeded.
             ValueError: if the weight exceeds the rate limit.
                 Only raised if raise_impossible_limits was specified.
+
+        Note:
+            If Redis is unreachable, the op raises a coredis RedisError (bounded by
+            RATE_LIMITER_REDIS_OP_TIMEOUT) that propagates instead of hanging.
         """
         namespace, primary_key = await self.parse_namespace_and_primary_key(
             namespace_and_key, machine_id=machine_id
