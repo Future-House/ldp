@@ -14,7 +14,12 @@ from limits import RateLimitItemPerSecond
 from lmi.constants import CHARACTERS_PER_TOKEN_ASSUMPTION
 from lmi.embeddings import LiteLLMEmbeddingModel
 from lmi.llms import CommonLLMNames, LiteLLMModel
-from lmi.rate_limiter import CROSSREF_BASE_URL, FALLBACK_RATE_LIMIT, GlobalRateLimiter
+from lmi.rate_limiter import (
+    CROSSREF_BASE_URL,
+    FALLBACK_RATE_LIMIT,
+    RATE_LIMITER_REDIS_OP_TIMEOUT,
+    GlobalRateLimiter,
+)
 from lmi.types import LLMResult
 
 LLM_CONFIG_W_RATE_LIMITS = [
@@ -467,7 +472,12 @@ class TestGlobalRateLimiter:
         with patch("lmi.rate_limiter.RedisStorage") as mock_redis_storage:
             limiter = GlobalRateLimiter(redis_url=redis_url)
             _ = limiter.storage
-            mock_redis_storage.assert_called_once_with(expected_storage_url)
+            # timeouts must reach RedisStorage so a stalled connection can't hang
+            mock_redis_storage.assert_called_once_with(
+                expected_storage_url,
+                stream_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
+                connect_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
+            )
 
     @pytest.mark.asyncio
     async def test_parsing_namespace(self) -> None:
