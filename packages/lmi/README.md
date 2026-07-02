@@ -246,7 +246,7 @@ The rate limiter supports two storage backends:
    # Set REDIS_URL environment variable
    import os
 
-   os.environ["REDIS_URL"] = "localhost:6379"
+   os.environ["REDIS_URL"] = "redis://localhost:6379"
 
    from lmi.rate_limiter import GlobalRateLimiter
 
