@@ -134,7 +134,7 @@ class TestSimpleAgent:
     async def test_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
 
-        agent = SimpleAgent(llm_model={"name": model_name, "temperature": 0.1})
+        agent = SimpleAgent(llm_config={"name": model_name, "temperature": 0.1})
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         obs, reward, done, truncated = await dummy_env.step(action.value)  # noqa: RUF059
@@ -145,13 +145,16 @@ class TestSimpleAgent:
 
         # Check serialization after get_asv runs to ensure private
         # Ops aren't included
-        assert agent.model_dump() == {
-            "hide_old_env_states": False,
-            "hide_old_action_content": False,
-            "llm_model": {"name": model_name, "temperature": 0.1},
-            "sys_prompt": None,
-            "sliding_window": None,
+        dumped = agent.model_dump()
+        assert dumped.keys() == {
+            "hide_old_env_states",
+            "hide_old_action_content",
+            "llm_config",
+            "sys_prompt",
+            "sliding_window",
         }
+        assert dumped["llm_config"]["models"][0]["name"] == model_name
+        assert dumped["llm_config"]["models"][0]["extra_params"]["temperature"] == 0.1
 
         # Check we can get the LLM results to sum cost and count tokens
         assert action.call_id is not None, "Compute graph not attached to action."
@@ -172,7 +175,7 @@ class TestSimpleAgent:
     async def test_agent_grad(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
 
-        agent = SimpleAgent(llm_model={"name": model_name, "temperature": 0.1})
+        agent = SimpleAgent(llm_config={"name": model_name, "temperature": 0.1})
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
         assert action.call_id is not None
@@ -194,10 +197,9 @@ class TestSimpleAgent:
         )
 
         _, g = action.ctx.get_input_grads(action.call_id)
-        assert isinstance(g["config"], dict), (
-            "compute_grads() didn't descend into config dict"
-        )
-        assert all(g["config"].values()), "Gradient should be non-zero"
+        # `config` is an LLMConfig (Pydantic object); the tree estimator treats
+        # it as a scalar leaf, not a nested dict.
+        assert g["config"] != 0, "Gradient should be non-zero"
 
         graph = to_network(action)
         with (
@@ -281,7 +283,8 @@ class TestNoToolsSimpleAgent:
             )
 
         agent = NoToolsSimpleAgent(
-            print_story_factory, llm_model={"name": model_name, "temperature": 0.1}
+            print_story_factory,
+            llm_config={"name": model_name, "temperature": 0.1},
         )
         agent_state = await agent.init_state(tools=tools)
         action, agent_state, _ = await agent.get_asv(agent_state, obs)
@@ -304,7 +307,7 @@ class TestMemoryAgent:
     async def test_dummyenv(self, dummy_env: DummyEnv, model_name: str) -> None:
         obs, tools = await dummy_env.reset()
 
-        agent = MemoryAgent(llm_model={"name": model_name, "temperature": 0.1})
+        agent = MemoryAgent(llm_config={"name": model_name, "temperature": 0.1})
         agent_state = await agent.init_state(tools=tools)
 
         # access memory and add one to it
@@ -375,10 +378,9 @@ class TestMemoryAgent:
             },
         )
         _, g = action.ctx.get_input_grads(action.call_id)
-        assert isinstance(g["config"], dict), (
-            "compute_grads() didn't descend into config dict"
-        )
-        assert all(g["config"].values()), "Action gradient should be non-zero"
+        # `config` is an LLMConfig (Pydantic object); the tree estimator treats
+        # it as a scalar leaf, not a nested dict.
+        assert g["config"] != 0, "Action gradient should be non-zero"
 
         memory_op = agent._memory_op
         mem_call_ids = list(memory_op.get_call_ids({action.call_id.run_id}))
@@ -404,7 +406,7 @@ class TestReActAgent:
     ) -> None:
         obs, tools = await dummy_env.reset()
         agent = ReActAgent(
-            llm_model={"name": model_name, "temperature": 0.1},
+            llm_config={"name": model_name, "temperature": 0.1},
             single_prompt=single_prompt,
         )
         agent_state = await agent.init_state(tools=tools)
@@ -441,7 +443,7 @@ class TestReActAgent:
         ]
         agent = ReActAgent(
             single_prompt=single_prompt,
-            llm_model={
+            llm_config={
                 "name": CommonLLMNames.OPENAI_TEST.value,
                 # If tools are provided, don't allow it to make parallel tool calls, since
                 # we want to force longer trajectories. In single_prompt mode, parallel tool
@@ -501,7 +503,7 @@ class TestReActAgent:
         obs, tools = await dummy_env.reset()
 
         agent = ReActAgent(
-            llm_model={"name": model_name, "temperature": 0.1},
+            llm_config={"name": model_name, "temperature": 0.1},
             single_prompt=single_prompt,
         )
         agent_state = await agent.init_state(tools=tools)
