@@ -30,6 +30,8 @@ CROSSREF_BASE_URL = f"https://{CROSSREF_HOST}"
 
 GLOBAL_RATE_LIMITER_TIMEOUT = float(os.environ.get("RATE_LIMITER_TIMEOUT", "60"))
 
+REDIS_URL = os.environ.get("REDIS_URL")
+
 RATE_LIMITER_REDIS_OP_TIMEOUT = 5.0
 
 MATCH_ALL = None
@@ -102,7 +104,7 @@ class GlobalRateLimiter:
             dict[tuple[str, str | MatchAllInputs], RateLimitItem] | None
         ) = None,
         use_in_memory: bool = False,
-        redis_url: str | None = None,
+        redis_url: str | None = REDIS_URL,
     ):
         """Initialize a GlobalRateLimiter instance.
 
@@ -113,23 +115,15 @@ class GlobalRateLimiter:
                 is available. When False (the default), in-memory storage is still
                 used as a fallback if no Redis URL is provided via `redis_url` or
                 the `REDIS_URL` environment variable.
-            redis_url: Optional Redis URL to use for storage. If not provided, the
-                `REDIS_URL` environment variable will be used. Supports
-                `redis://host:port` (plaintext), `rediss://host:port` (TLS, e.g.
-                AWS ElastiCache with in-transit encryption), and bare `host:port`
-                (treated as plaintext).
+            redis_url: Redis URL for storage, defaulting to the `REDIS_URL` env var
+                (unset uses in-memory). Must include a scheme: `rediss://` (TLS) or
+                `redis://` (plaintext); a scheme-less URL raises.
         """
         self._rate_config = RATE_CONFIG if rate_config is None else rate_config
-        self._redis_url = redis_url or os.environ.get("REDIS_URL")
+        self._redis_url = redis_url
         self._use_in_memory = use_in_memory or not self._redis_url
-        self._redis_tls = (
-            self._redis_url.startswith("rediss://") if self._redis_url else False
-        )
-        # Redis over SSL when possible.
-        self._redis_scheme = "async+rediss" if self._redis_tls else "async+redis"
-        self._redis_bare_url = (
-            self._strip_scheme(self._redis_url) if self._redis_url else ""
-        )
+        if not self._use_in_memory:
+            self._validate_redis_scheme(self._redis_url)
         self._storage: RedisStorage | MemoryStorage | None = None
         self._rate_limiter: MovingWindowRateLimiter | None = None
         self._current_ip: str | None = None
@@ -147,8 +141,15 @@ class GlobalRateLimiter:
         return None
 
     @staticmethod
-    def _strip_scheme(redis_url: str) -> str:
-        return redis_url.removeprefix("rediss://").removeprefix("redis://")
+    def _validate_redis_scheme(redis_url: str | None) -> None:
+        """Require an explicit `redis://` or `rediss://` scheme.
+
+        A scheme-less URL would silently default to plaintext and hang against a
+        TLS-required endpoint (e.g. AWS ElastiCache), so reject it at construction.
+        """
+        if not redis_url or not redis_url.startswith(("redis://", "rediss://")):
+            # Don't echo the URL: a scheme-less value may embed a password.
+            raise ValueError("Redis URL must start with 'redis://' or 'rediss://'.")
 
     async def outbount_ip(self) -> str:
         if self._current_ip is None:
@@ -169,15 +170,14 @@ class GlobalRateLimiter:
         if self._storage is None:
             if self._use_in_memory:
                 self._storage = MemoryStorage()
-                logger.info("Using in-memory rate limiter.")
+                logger.warning("Using in-memory rate limiter.")
             else:
-                conn = f"{self._redis_scheme}://{self._redis_bare_url}"
+                # `async+` tells `limits` to use its asyncio Redis backend.
                 self._storage = RedisStorage(
-                    conn,
+                    f"async+{self._redis_url}",
                     stream_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
                     connect_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
                 )
-                logger.info(f"Connected to redis instance for rate limiting: {conn}")
 
         return self._storage
 
@@ -290,27 +290,13 @@ class GlobalRateLimiter:
         self, cursor_scan_count: int = 100
     ) -> list[tuple[RateLimitItem, tuple[str, str | MatchAllInputs]]]:
         """Returns a list of current RateLimitItems with tuples of namespace and primary key."""
-        # urlparse requires a scheme prefix to extract host/port/password from
-        # bare "host:port" or ":password@host:port" URLs.
-        try:
-            url = f"{self._redis_scheme}://{self._redis_bare_url}"
-            parsed = urlparse(url)
-        except ValueError as exc:
-            raise ValueError(
-                f"Failed to parse host and port from Redis URL {url!r}."
-            ) from exc
-
         if not isinstance(self.storage, RedisStorage):
             raise NotImplementedError(
                 "get_rate_limit_keys only works with RedisStorage."
             )
 
-        client = Redis(
-            host=parsed.hostname,
-            port=parsed.port,
-            password=parsed.password,
-            ssl=self._redis_tls,
-        )
+        assert self._redis_url is not None  # RedisStorage implies a Redis URL
+        client = Redis.from_url(self._redis_url)
 
         try:
             cursor: int | bytes = b"0"
