@@ -1,12 +1,14 @@
 import asyncio
 import logging
 import os
+import time
 from collections.abc import Collection
 from typing import ClassVar, Literal, TypeAlias
 from urllib.parse import urlparse
 
 import aiohttp
 from coredis import Redis
+from coredis.exceptions import RedisError
 from limits import (
     RateLimitItem,
     RateLimitItemPerMinute,
@@ -17,6 +19,7 @@ from limits import (
 )
 from limits.aio.storage import MemoryStorage, RedisStorage
 from limits.aio.strategies import MovingWindowRateLimiter
+from limits.errors import StorageError
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +34,15 @@ CROSSREF_BASE_URL = f"https://{CROSSREF_HOST}"
 GLOBAL_RATE_LIMITER_TIMEOUT = float(os.environ.get("RATE_LIMITER_TIMEOUT", "60"))
 
 REDIS_URL = os.environ.get("REDIS_URL")
-
 RATE_LIMITER_REDIS_OP_TIMEOUT = 5.0
+
+RATE_LIMITER_REDIS_MAX_FAILURES = int(
+    os.environ.get("RATE_LIMITER_REDIS_MAX_FAILURES", "3")
+)
+RATE_LIMITER_REDIS_RECOVERY_INTERVAL = float(
+    os.environ.get("RATE_LIMITER_REDIS_RECOVERY_INTERVAL", "60")
+)
+REDIS_OP_ERRORS: tuple[type[Exception], ...] = (RedisError, StorageError, OSError)
 
 MATCH_ALL = None
 MatchAllInputs: TypeAlias = Literal[None]  # noqa: PYI061
@@ -127,6 +137,10 @@ class GlobalRateLimiter:
         self._storage: RedisStorage | MemoryStorage | None = None
         self._rate_limiter: MovingWindowRateLimiter | None = None
         self._current_ip: str | None = None
+        # Count of consecutive Redis op failures; reset on any successful op.
+        self._redis_failure_count = 0
+        self._explicitly_in_memory = use_in_memory or not self._redis_url
+        self._degraded_at: float = 0.0
 
     @staticmethod
     async def get_outbound_ip(session: aiohttp.ClientSession, url: str) -> str | None:
@@ -153,7 +167,10 @@ class GlobalRateLimiter:
 
     async def outbount_ip(self) -> str:
         if self._current_ip is None:
-            async with aiohttp.ClientSession() as session:
+            # trust_env=True so HTTP(S)_PROXY is honored in proxy-only egress
+            # environments; otherwise the request ignores the proxy and burns the
+            # full per-service timeout before failing.
+            async with aiohttp.ClientSession(trust_env=True) as session:
                 for service in self.IP_CHECK_SERVICES:
                     ip = await self.get_outbound_ip(session, service)
                     if ip:
@@ -348,6 +365,142 @@ class GlobalRateLimiter:
             }
         return limit_status
 
+    def _degrade_to_in_memory(self) -> None:
+        """Switch this limiter to in-memory (per-process) limiting.
+
+        This is a deliberate fail-open. The rate limiter is a guardrail, not a
+        correctness requirement, and freezing a (potentially multi-hour) trajectory on
+        an unreachable Redis is worse than briefly un-coordinated limiting. The switch
+        is logged loudly so it is visible in logs/metrics.
+
+        If ``RATE_LIMITER_REDIS_RECOVERY_INTERVAL`` > 0 and the limiter was originally
+        Redis-backed, :meth:`_maybe_recover_redis` will attempt to re-promote after the
+        cooldown elapses.
+        """
+        if self._use_in_memory:
+            return
+        recovery_msg = (
+            f" Will probe Redis again in {RATE_LIMITER_REDIS_RECOVERY_INTERVAL}s."
+            if RATE_LIMITER_REDIS_RECOVERY_INTERVAL > 0
+            and not self._explicitly_in_memory
+            else " Recovery disabled; staying in-memory until restart."
+        )
+        logger.warning(
+            "Rate limiting degraded to in-memory (per-process) after %d consecutive"
+            " Redis failures: cross-process coordination is disabled.%s",
+            self._redis_failure_count,
+            recovery_msg,
+        )
+        self._use_in_memory = True
+        self._degraded_at = time.monotonic()
+        self._storage = None
+        self._rate_limiter = None
+
+    def _record_redis_failure(self, exc: Exception) -> None:
+        """Record a failed Redis op, degrading to in-memory once retries are exhausted."""
+        self._redis_failure_count += 1
+        logger.warning(
+            "Redis rate limiter op failed (%d/%d consecutive); failing open for this"
+            " request: %r",
+            self._redis_failure_count,
+            RATE_LIMITER_REDIS_MAX_FAILURES,
+            exc,
+        )
+        if self._redis_failure_count >= RATE_LIMITER_REDIS_MAX_FAILURES:
+            self._degrade_to_in_memory()
+
+    async def _maybe_recover_redis(self) -> bool:
+        """Attempt to re-promote to Redis-backed limiting after the cooldown elapses.
+
+        Returns True if Redis was recovered; otherwise returns False (including when recovery
+        is not applicable or the cooldown has not yet elapsed).
+        """
+        if (
+            not self._degraded_at
+            or self._explicitly_in_memory
+            or RATE_LIMITER_REDIS_RECOVERY_INTERVAL <= 0
+        ):
+            return False
+
+        elapsed = time.monotonic() - self._degraded_at
+        if elapsed < RATE_LIMITER_REDIS_RECOVERY_INTERVAL:
+            return False
+
+        try:
+            storage = RedisStorage(
+                f"async+{self._redis_url}",
+                stream_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
+                connect_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
+            )
+            await storage.check()
+        except REDIS_OP_ERRORS as exc:
+            logger.warning(
+                "Redis recovery probe failed after %.0fs; staying in-memory."
+                " Next probe in %.0fs: %r",
+                elapsed,
+                RATE_LIMITER_REDIS_RECOVERY_INTERVAL,
+                exc,
+            )
+            self._degraded_at = time.monotonic()
+            return False
+
+        logger.info(
+            "Redis recovery probe succeeded after %.0fs; re-promoting to"
+            " Redis-backed rate limiting.",
+            elapsed,
+        )
+        self._use_in_memory = False
+        self._degraded_at = 0.0
+        self._redis_failure_count = 0
+        self._storage = storage
+        self._rate_limiter = None
+        return True
+
+    async def _test(
+        self, rate_limit: RateLimitItem, namespace: str, primary_key: str, cost: int
+    ) -> bool:
+        """``rate_limiter.test`` that fails open (returns True) on Redis errors.
+
+        A returned False means the limit is full (Redis is healthy) and the caller
+        should keep waiting; only exceptions/timeouts trigger the fail-open path.
+
+        When the limiter is degraded and the recovery cooldown has elapsed, a Redis
+        probe is attempted before the actual op.
+        """
+        await self._maybe_recover_redis()
+        try:
+            satisfied = await self.rate_limiter.test(
+                rate_limit, namespace, primary_key, cost=cost
+            )
+        except REDIS_OP_ERRORS as exc:
+            self._record_redis_failure(exc)
+            return True
+        self._redis_failure_count = 0
+        return satisfied
+
+    async def _hit(
+        self, rate_limit: RateLimitItem, namespace: str, primary_key: str, cost: int
+    ) -> bool:
+        """``rate_limiter.hit`` that fails open (returns True) on Redis errors.
+
+        A returned False means the hit was rejected (Redis is healthy, race with
+        another acquirer) and the caller should keep waiting; only exceptions/timeouts
+        trigger the fail-open path.
+
+        When the limiter is degraded and the recovery cooldown has elapsed, a Redis
+        probe is attempted before the actual op.
+        """
+        await self._maybe_recover_redis()
+        try:
+            acquired = await self.rate_limiter.hit(
+                rate_limit, namespace, primary_key, cost=cost
+            )
+        except REDIS_OP_ERRORS as exc:
+            self._record_redis_failure(exc)
+            return True
+        self._redis_failure_count = 0
+        return acquired
+
     async def try_acquire(
         self,
         namespace_and_key: tuple[str, str],
@@ -410,7 +563,7 @@ class GlobalRateLimiter:
             elapsed = 0.0
             while (
                 not (
-                    await self.rate_limiter.test(
+                    await self._test(
                         rate_limit,
                         new_namespace,
                         primary_key,
@@ -430,7 +583,7 @@ class GlobalRateLimiter:
 
             # If the rate limit hit is False, then we're violating the limit, so we
             # need to wait again. This can happen in race conditions.
-            if await self.rate_limiter.hit(
+            if await self._hit(
                 rate_limit,
                 new_namespace,
                 primary_key,

@@ -8,7 +8,10 @@ from unittest.mock import AsyncMock, patch
 import httpx_aiohttp
 import pytest
 from aviary.core import Message
+from coredis.exceptions import ConnectionError as CoredisConnectionError
+from coredis.exceptions import TimeoutError as CoredisTimeoutError
 from limits import RateLimitItemPerSecond
+from limits.aio.storage import MemoryStorage, RedisStorage
 
 from lmi.constants import CHARACTERS_PER_TOKEN_ASSUMPTION
 from lmi.embeddings import LiteLLMEmbeddingModel
@@ -16,7 +19,9 @@ from lmi.llms import CommonLLMNames, LiteLLMModel
 from lmi.rate_limiter import (
     CROSSREF_BASE_URL,
     FALLBACK_RATE_LIMIT,
+    RATE_LIMITER_REDIS_MAX_FAILURES,
     RATE_LIMITER_REDIS_OP_TIMEOUT,
+    RATE_LIMITER_REDIS_RECOVERY_INTERVAL,
     GlobalRateLimiter,
 )
 from lmi.types import LLMResult
@@ -486,3 +491,158 @@ class TestGlobalRateLimiter:
         # but the second call will
         assert mock_hit.await_args_list[0][0][0] == FALLBACK_RATE_LIMIT
         assert mock_hit.await_args_list[1][0][0] > FALLBACK_RATE_LIMIT
+
+    @pytest.mark.parametrize(
+        "redis_error",
+        [
+            pytest.param(
+                CoredisConnectionError("connection dropped"), id="coredis-conn"
+            ),
+            pytest.param(CoredisTimeoutError("op timed out"), id="coredis-timeout"),
+            pytest.param(TimeoutError("socket timeout"), id="builtin-timeout"),
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_try_acquire_fails_open_on_redis_error(
+        self, redis_error: Exception
+    ) -> None:
+        """A stalled/erroring Redis op must not hang or raise: fail open and proceed."""
+        limiter = GlobalRateLimiter(use_in_memory=True)
+        rate_limiter = limiter.rate_limiter  # instantiate before patching
+        with (
+            patch.object(
+                rate_limiter, "test", new=AsyncMock(side_effect=redis_error)
+            ) as mock_test,
+            patch.object(
+                rate_limiter, "hit", new=AsyncMock(side_effect=redis_error)
+            ) as mock_hit,
+        ):
+            start = time.perf_counter()
+            # asyncio.wait_for guards the test itself from hanging if fail-open regresses.
+            await asyncio.wait_for(
+                limiter.try_acquire(
+                    ("client", CommonLLMNames.OPENAI_TEST.value), acquire_timeout=5
+                ),
+                timeout=2,
+            )
+            elapsed = time.perf_counter() - start
+
+        # Returned (didn't raise) and didn't spin the polling/wait loop.
+        assert elapsed < 1
+        assert mock_test.await_count >= 1
+        assert mock_hit.await_count >= 1
+
+    @pytest.mark.asyncio
+    async def test_degrades_to_in_memory_after_max_failures(self) -> None:
+        """Consecutive Redis failures degrade the limiter to in-memory."""
+        limiter = GlobalRateLimiter(redis_url="redis://10.58.188.212:6379")
+        fake_rate_limiter = AsyncMock()
+        fake_rate_limiter.test = AsyncMock(
+            side_effect=CoredisConnectionError("unreachable")
+        )
+        limiter._rate_limiter = fake_rate_limiter
+
+        for i in range(RATE_LIMITER_REDIS_MAX_FAILURES):
+            in_memory_before = limiter._use_in_memory
+            assert not in_memory_before
+            satisfied = await limiter._test(FALLBACK_RATE_LIMIT, "client", "x", cost=1)
+            assert satisfied  # fails open on every failing op
+            assert limiter._redis_failure_count == i + 1
+
+        assert limiter._use_in_memory
+        assert limiter._degraded_at > 0
+        assert isinstance(limiter.storage, MemoryStorage)
+
+    @pytest.mark.asyncio
+    async def test_successful_op_resets_failure_counter(self) -> None:
+        """A successful Redis op clears prior consecutive failures (no false degrade)."""
+        limiter = GlobalRateLimiter(use_in_memory=True)
+        rate_limiter = limiter.rate_limiter
+        limiter._redis_failure_count = RATE_LIMITER_REDIS_MAX_FAILURES - 1
+        with patch.object(rate_limiter, "test", new=AsyncMock(return_value=True)):
+            assert await limiter._test(FALLBACK_RATE_LIMIT, "client", "x", cost=1)
+        assert limiter._redis_failure_count == 0
+
+    @pytest.mark.asyncio
+    async def test_hit_false_keeps_waiting(self) -> None:
+        """hit()==False means 'limit full, keep waiting' and is not treated as a failure."""
+        limiter = GlobalRateLimiter(use_in_memory=True)
+        rate_limiter = limiter.rate_limiter
+        test_mock = AsyncMock(return_value=True)
+        # First hit is rejected (race/limit full), second succeeds.
+        hit_mock = AsyncMock(side_effect=[False, True])
+        with (
+            patch.object(rate_limiter, "test", new=test_mock),
+            patch.object(rate_limiter, "hit", new=hit_mock),
+        ):
+            await limiter.try_acquire(("client", CommonLLMNames.OPENAI_TEST.value))
+
+        # The wait loop retried the hit; False did not count as a Redis failure.
+        assert hit_mock.await_count == 2
+        assert limiter._redis_failure_count == 0
+        assert limiter._use_in_memory  # never degraded
+
+    @pytest.mark.asyncio
+    async def test_recovery_skipped_when_explicitly_in_memory(self) -> None:
+        """A limiter created with use_in_memory=True never attempts recovery."""
+        limiter = GlobalRateLimiter(use_in_memory=True)
+        limiter._degraded_at = 1.0  # force a non-zero value
+        assert not await limiter._maybe_recover_redis()
+
+    @pytest.mark.asyncio
+    async def test_recovery_skipped_when_interval_is_zero(self) -> None:
+        """Recovery is disabled when RATE_LIMITER_REDIS_RECOVERY_INTERVAL is 0."""
+        limiter = GlobalRateLimiter(redis_url="redis://10.58.188.212:6379")
+        limiter._degraded_at = 1.0
+        with patch("lmi.rate_limiter.RATE_LIMITER_REDIS_RECOVERY_INTERVAL", 0):
+            assert not await limiter._maybe_recover_redis()
+
+    @pytest.mark.asyncio
+    async def test_recovery_succeeds_after_cooldown(self) -> None:
+        """After the cooldown, a successful Redis probe re-promotes to Redis."""
+        limiter = GlobalRateLimiter(redis_url="redis://10.58.188.212:6379")
+        limiter._use_in_memory = True
+        limiter._degraded_at = (
+            time.monotonic() - RATE_LIMITER_REDIS_RECOVERY_INTERVAL - 1
+        )
+        limiter._redis_failure_count = RATE_LIMITER_REDIS_MAX_FAILURES
+
+        mock_storage = AsyncMock(spec=RedisStorage)
+        mock_storage.check = AsyncMock(return_value=True)
+        with patch("lmi.rate_limiter.RedisStorage", return_value=mock_storage):
+            recovered = await limiter._maybe_recover_redis()
+
+        assert recovered
+        assert not limiter._use_in_memory
+        assert limiter._degraded_at == 0.0
+        assert limiter._redis_failure_count == 0
+        assert limiter._storage is mock_storage
+
+    @pytest.mark.asyncio
+    async def test_recovery_fails_stays_in_memory(self) -> None:
+        """A failed Redis probe resets the cooldown timer and stays in-memory."""
+        limiter = GlobalRateLimiter(redis_url="redis://10.58.188.212:6379")
+        limiter._use_in_memory = True
+        old_degraded_at = time.monotonic() - RATE_LIMITER_REDIS_RECOVERY_INTERVAL - 1
+        limiter._degraded_at = old_degraded_at
+
+        mock_storage = AsyncMock(spec=RedisStorage)
+        mock_storage.check = AsyncMock(
+            side_effect=CoredisConnectionError("still unreachable")
+        )
+        with patch("lmi.rate_limiter.RedisStorage", return_value=mock_storage):
+            recovered = await limiter._maybe_recover_redis()
+
+        assert not recovered
+        assert limiter._use_in_memory
+        assert limiter._degraded_at > old_degraded_at
+
+    @pytest.mark.asyncio
+    async def test_recovery_not_attempted_before_cooldown(self) -> None:
+        """Recovery probe is not attempted before the cooldown interval elapses."""
+        limiter = GlobalRateLimiter(redis_url="redis://10.58.188.212:6379")
+        limiter._use_in_memory = True
+        limiter._degraded_at = time.monotonic()  # just degraded
+
+        assert not await limiter._maybe_recover_redis()
+        assert limiter._use_in_memory
