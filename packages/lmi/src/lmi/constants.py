@@ -1,7 +1,4 @@
-import os
 from sys import version_info
-
-USE_RESPONSES_API = os.environ.get("USE_RESPONSES_API", "").lower() in {"1", "true"}
 
 # Estimate from OpenAI's FAQ
 # https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them

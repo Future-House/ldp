@@ -5,11 +5,8 @@ been fixed upstream or were closed as stale without resolution.
 
 Patches applied:
 1. OpenAI BaseModel.model_dump pydantic v2 fix (by_alias=None issue)
-2. Provider-specific 400 error retry (Anthropic 100-image limit)
-3. Vertex AI context caching fix (tools + cachedContent conflict)
+2. Vertex AI context caching fix (tools + cachedContent conflict)
 """
-
-import litellm
 
 
 # Patch 1: OpenAI BaseModel.model_dump pydantic v2 fix
@@ -39,41 +36,7 @@ def _apply_model_dump_patch():
 _apply_model_dump_patch()
 
 
-# Patch 2: Provider-specific 400 error retry
-#
-# Issue: Anthropic has a 100-image limit that returns 400 Bad Request. litellm's
-# default behavior doesn't retry 400 errors, so requests with >100 images fail
-# without trying Gemini/OpenAI which could handle them.
-#
-# This patch checks for specific provider-limit error messages and allows retry
-# only for those, not for genuine client errors (malformed requests, etc.).
-def _apply_should_retry_patch():
-    # Error messages that indicate provider-specific limits (not client bugs)
-    # Matches: "Too much media: 0 document pages + 108 images > 100" (specific to Anthropic)
-    PROVIDER_LIMIT_PATTERNS = ("too much media",)
-
-    original_should_retry_this_error = litellm.Router.should_retry_this_error
-
-    def _patched_should_retry_this_error(
-        self, error: litellm.ContextWindowExceededError, **kwargs
-    ):
-        # Check if this is a 400 error with a provider-specific limit message
-        # Note: Not all error types have status_code (e.g., RouterRateLimitError)
-        status_code = getattr(error, "status_code", None)
-        if status_code == 400:  # noqa: PLR2004
-            error_message = str(error).lower()
-            if any(pattern in error_message for pattern in PROVIDER_LIMIT_PATTERNS):
-                # Don't raise - allow fallback cascade to continue
-                return None
-        return original_should_retry_this_error(self, error, **kwargs)
-
-    litellm.Router.should_retry_this_error = _patched_should_retry_this_error  # type: ignore[method-assign,assignment]
-
-
-_apply_should_retry_patch()
-
-
-# Patch 3: Vertex AI context caching fix
+# Patch 2: Vertex AI context caching fix
 #
 # Bug: LiteLLM sends both cachedContent AND tools/system_instruction in Gemini
 # generateContent requests. Gemini's API requires that when using cached content,

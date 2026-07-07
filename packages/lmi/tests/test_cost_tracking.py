@@ -129,35 +129,20 @@ class TestLiteLLMModel:
                 await llm.call(messages, [ac])
 
     @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
-    @pytest.mark.parametrize(
-        "config",
-        [
-            pytest.param(
-                {
-                    "model_list": [
-                        {
-                            "model_name": CommonLLMNames.OPENAI_TEST.value,
-                            "litellm_params": {
-                                "model": CommonLLMNames.OPENAI_TEST.value,
-                                "temperature": 0,
-                                "max_tokens": 56,
-                            },
-                        }
-                    ]
-                },
-                id="with-router",
-            ),
-            pytest.param(
-                {
-                    "pass_through_router": True,
-                    "router_kwargs": {"temperature": 0, "max_tokens": 56},
-                },
-                id="without-router",
-            ),
-        ],
-    )
     @pytest.mark.asyncio
-    async def test_cost_call_single(self, config: dict[str, Any]) -> None:
+    async def test_cost_call_single(self) -> None:
+        config = {
+            "model_list": [
+                {
+                    "model_name": CommonLLMNames.OPENAI_TEST.value,
+                    "litellm_params": {
+                        "model": CommonLLMNames.OPENAI_TEST.value,
+                        "temperature": 0,
+                        "max_tokens": 56,
+                    },
+                }
+            ]
+        }
         with cost_tracking_ctx(), assert_costs_increased():
             llm = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value, config=config)
 

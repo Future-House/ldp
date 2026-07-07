@@ -1,7 +1,8 @@
 from collections.abc import Callable, Iterable
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 
 from aviary.core import Message
+from lmi.config import LLMConfig
 
 from ldp.graph import ConfigOp, FxnOp, LLMCallOp, OpResult, compute_graph
 
@@ -11,10 +12,8 @@ TParsedMessage = TypeVar("TParsedMessage", bound=Message)
 class ParsedLLMCallModule(Generic[TParsedMessage]):
     """Module for a processing-based tool selection, with a learnable configuration."""
 
-    def __init__(
-        self, llm_model: dict[str, Any], parser: Callable[..., TParsedMessage]
-    ):
-        self.config_op = ConfigOp[dict](config=llm_model)
+    def __init__(self, llm_config: LLMConfig, parser: Callable[..., TParsedMessage]):
+        self.config_op = ConfigOp[LLMConfig](config=llm_config)
         self.llm_call_op = LLMCallOp()
         self.parse_msg_op = FxnOp(parser)
 
