@@ -178,6 +178,8 @@ class GlobalRateLimiter:
                     stream_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
                     connect_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
                 )
+                # Don't log the URL: it may embed a password.
+                logger.info("Connected to redis instance for rate limiting.")
 
         return self._storage
 
