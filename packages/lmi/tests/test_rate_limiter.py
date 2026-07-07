@@ -452,7 +452,7 @@ class TestGlobalRateLimiter:
                 stream_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
                 connect_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
             )
-            
+
     @pytest.mark.parametrize(
         "redis_url",
         [

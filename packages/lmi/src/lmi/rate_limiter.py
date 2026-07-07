@@ -426,10 +426,9 @@ class GlobalRateLimiter:
         if elapsed < RATE_LIMITER_REDIS_RECOVERY_INTERVAL:
             return False
 
-        conn = f"{self._redis_scheme}://{self._redis_bare_url}"
         try:
             storage = RedisStorage(
-                conn,
+                f"async+{self._redis_url}",
                 stream_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
                 connect_timeout=RATE_LIMITER_REDIS_OP_TIMEOUT,
             )
