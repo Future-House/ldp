@@ -4,7 +4,7 @@ from sys import version_info
 
 def normalize_redis_url(url: str | None) -> str | None:
     """Ensure a Redis URL carries an explicit scheme."""
-    if url and "://" not in url:
+    if url and not url.startswith(("redis://", "rediss://")):
         return f"redis://{url}"
     return url
 

@@ -462,6 +462,11 @@ class TestGlobalRateLimiter:
                 id="scheme-less-with-auth",
             ),
             pytest.param(
+                ":pa://ss@10.58.188.212:6379",
+                "redis://:pa://ss@10.58.188.212:6379",
+                id="scheme-less-with-uri-chars-in-password",
+            ),
+            pytest.param(
                 "redis://10.58.188.212:6379",
                 "redis://10.58.188.212:6379",
                 id="redis-scheme-unchanged",
