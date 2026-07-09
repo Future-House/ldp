@@ -473,9 +473,7 @@ class TestGlobalRateLimiter:
             ),
         ],
     )
-    def test_scheme_less_redis_url_is_normalized(
-        self, redis_url, expected_url
-    ) -> None:
+    def test_scheme_less_redis_url_is_normalized(self, redis_url, expected_url) -> None:
         # A scheme-less URL defaults to plaintext `redis://`; an explicit scheme
         # (incl. `rediss://` for TLS) is preserved.
         limiter = GlobalRateLimiter(redis_url=redis_url)
