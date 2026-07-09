@@ -1,5 +1,6 @@
+from typing import Any
+
 from aviary.core import Message
-from lmi.config import LLMConfig, ModelSpec
 from pydantic import BaseModel, Field
 
 from ldp.graph import ConfigOp, FxnOp, LLMCallOp, PromptOp, compute_graph
@@ -10,10 +11,8 @@ from ldp.llms import append_to_sys, indent_xml
 class ReflectModuleConfig(BaseModel):
     """Configuration for the ReflectModuleConfig."""
 
-    llm_config: LLMConfig = Field(
-        default_factory=lambda: LLMConfig(
-            models=[ModelSpec.from_name("gpt-3.5-turbo")]
-        ),
+    llm_model: dict[str, Any] = Field(
+        default={"name": "gpt-3.5-turbo"},
         description="Starting configuration for the LLM model.",
     )
 
@@ -29,7 +28,7 @@ class ReflectModule:
             " within <final-response> tags."
         )
         self.config_op = ConfigOp[ReflectModuleConfig](config=start_config)
-        self.llm_config_op = FxnOp[LLMConfig](lambda c: c.llm_config)
+        self.llm_config_op = FxnOp[dict](lambda c: c.llm_model)
         self.package_fxn = FxnOp(append_to_sys)
 
         def extract_msg(msg: Message, backup_response: str) -> str:

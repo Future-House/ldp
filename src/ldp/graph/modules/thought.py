@@ -2,7 +2,6 @@ from collections.abc import Iterable, Mapping
 from typing import Any
 
 from aviary.core import Message, ToolRequestMessage
-from lmi.config import LLMConfig
 
 from ldp.graph import FxnOp, OpResult, PromptOp, compute_graph
 from ldp.llms import prepend_sys_and_append_sys
@@ -19,13 +18,13 @@ class ThoughtModule:
         return message
 
     def __init__(
-        self, llm_config: LLMConfig, first_sys_prompt: str, second_sys_prompt: str
+        self, llm_model: dict[str, Any], first_sys_prompt: str, second_sys_prompt: str
     ):
         self.first_sys_prompt_op = PromptOp(first_sys_prompt)
         self.second_sys_prompt_op = PromptOp(second_sys_prompt)
         self.package_msg_op = FxnOp(prepend_sys_and_append_sys)
         self.llm_call = ParsedLLMCallModule[Message](
-            llm_config, parser=self._downcast_to_message
+            llm_model, parser=self._downcast_to_message
         )
 
     @compute_graph()

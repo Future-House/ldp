@@ -9,6 +9,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, ClassVar, Generic, TypeVar, cast, overload
 
 import numpy as np
+import tenacity
 from aviary.core import Message, Tool, ToolRequestMessage, is_coroutine_callable
 from lmi import (
     EmbeddingModel,
@@ -18,7 +19,6 @@ from lmi import (
     SparseEmbeddingModel,
 )
 from lmi import LiteLLMModel as LLMModel
-from lmi.config import LLMConfig
 from pydantic import BaseModel
 
 from .memory import Memory, MemoryModel, UIndexMemoryModel
@@ -211,6 +211,10 @@ class PromptOp(FxnOp[str]):
         return super(FxnOp, self).__repr__()
 
 
+class ResponseValidationError(Exception):
+    """Raised when a response from the LLM does not pass user-specified validator."""
+
+
 class LLMCallOp(Op[Message]):
     """An operation for LLM calls interaction."""
 
@@ -232,8 +236,8 @@ class LLMCallOp(Op[Message]):
             num_samples_logprob_estimate: The number of samples used to estimate the partition
                 function at T!=1. Defaults to 0 (calculation is skipped).
             response_validator: An optional callable (can be async) that validates the response.
-                It should raise an exception if the response is invalid. If set, forwarded to
-                LMI's retry/fallback loop.
+                It should raise an exception if the response is invalid. The Op will retry up
+                to `config.get('num_retries', 0)` times if validation fails.
             default_tool_choice: Default tool_choice when tools are provided and caller
                 doesn't specify one. Defaults to "required".
         """
@@ -245,7 +249,7 @@ class LLMCallOp(Op[Message]):
     @overload
     async def forward(
         self,
-        config: LLMConfig,
+        config: dict,
         msgs: list[Message],
         tools: list[Tool] = ...,
         tool_choice: Tool | str | None = ...,
@@ -254,7 +258,7 @@ class LLMCallOp(Op[Message]):
     @overload
     async def forward(
         self,
-        config: LLMConfig,
+        config: dict,
         msgs: list[Message],
         tools: None = None,
         tool_choice: str | None = ...,
@@ -262,7 +266,7 @@ class LLMCallOp(Op[Message]):
 
     async def forward(
         self,
-        config: LLMConfig,
+        config: dict,
         msgs: list[Message],
         tools: list[Tool] | None = None,
         tool_choice: Tool | str | None = None,
@@ -270,9 +274,7 @@ class LLMCallOp(Op[Message]):
         """Calls the LLM.
 
         Args:
-            config: Typed model chain used to build the `LLMModel` and to
-                source per-model request defaults (temperature, max_tokens,
-                etc. from `models[0].extra_params`).
+            config: Configuration passed to LLMModel.
             msgs: Input messages to prompt model with.
             tools: A list of Tools that the model may call, if supported.
             tool_choice: Configures how the model should choose a tool.
@@ -285,12 +287,7 @@ class LLMCallOp(Op[Message]):
         Returns:
             Output message from the model.
         """
-        if self.response_validator is not None:
-            config = config.model_copy(
-                update={"response_validator": self.response_validator}
-            )
-        model = LLMModel(llm_config=config)
-        primary_spec = config.models[0]
+        model = LLMModel(config=config)
 
         if not tools:
             # if no tools are provided, tool_choice must be 'none'
@@ -298,13 +295,18 @@ class LLMCallOp(Op[Message]):
         elif tool_choice is None:
             tool_choice = self.default_tool_choice
 
-        result = await model.call_single(
-            messages=msgs, tools=tools, tool_choice=tool_choice
+        result = await self._call_single_and_maybe_validate(
+            model=model,
+            messages=msgs,
+            tools=tools,
+            tool_choice=tool_choice,
+            **{k: v for k, v in config.items() if k not in self.CONFIG_ONLY_KEYS},
         )
         if result.messages is None:
             raise ValueError("No messages returned")
 
-        temperature: float = primary_spec.extra_params.get("temperature", 1.0)
+        # if not set, assume temp = 1. TODO: when would it not be set?
+        temperature: float = config.get("temperature", 1.0)
 
         # Compute a Monte Carlo estimate of the logprob of this sequence at the given temperature.
         logprob = await self.compute_logprob(
@@ -326,6 +328,39 @@ class LLMCallOp(Op[Message]):
         self.ctx.update(call_id, "logprob", logprob)
 
         return result.messages[0]
+
+    async def _call_single_and_maybe_validate(
+        self, model: LLMModel, num_retries: int = 0, **kwargs
+    ) -> LLMResult:
+        if not self.response_validator:
+            # If a response validator is not supplied, then we should not do any retries here - leave
+            # that for LiteLLM to handle.
+            return await model.call_single(**kwargs)
+
+        # NOTE: `num_retries` also gets passed to LiteLLM, so there could a maximum of
+        # `num_retries**2` retries. TODO: consider if we should have separate parameters
+        # for LiteLLM and validation retries.
+        @tenacity.retry(
+            retry=tenacity.retry_if_exception_type(ResponseValidationError),
+            # num_retries+1 because the first call is not a retry
+            stop=tenacity.stop_after_attempt(num_retries + 1),
+            wait=tenacity.wait_fixed(1),
+        )
+        async def call_and_validate() -> LLMResult:
+            result = await model.call_single(**kwargs)
+
+            try:
+                validated = cast("Callable", self.response_validator)(result)
+                if inspect.isawaitable(validated):
+                    validated = await validated
+            except Exception as e:
+                raise ResponseValidationError(
+                    f"Response validator failed: {self.response_validator!r}"
+                ) from e
+
+            return result
+
+        return await call_and_validate()
 
     async def compute_logprob(
         self,
