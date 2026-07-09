@@ -1,4 +1,15 @@
+import os
 from sys import version_info
+
+
+def normalize_redis_url(url: str | None) -> str | None:
+    """Ensure a Redis URL carries an explicit scheme."""
+    if url and "://" not in url:
+        return f"redis://{url}"
+    return url
+
+
+REDIS_URL: str | None = normalize_redis_url(os.environ.get("REDIS_URL"))
 
 # Estimate from OpenAI's FAQ
 # https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them
