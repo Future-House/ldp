@@ -6,17 +6,8 @@ _URL_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.IGNORECASE)
 
 
 def normalize_redis_url(url: str | None) -> str | None:
-    """Prefix a plaintext `redis://` scheme when the URL has no scheme.
-
-    Surrounding whitespace (e.g. a trailing newline from a secret file) is
-    stripped first; an empty or whitespace-only value normalizes to `None`.
-    """
-    if url is None:
-        return None
-    url = url.strip()
-    if not url:
-        return None
-    if not _URL_SCHEME_RE.match(url):
+    """Prefix a plaintext `redis://` scheme when the URL has no scheme."""
+    if url and not _URL_SCHEME_RE.match(url):
         return f"redis://{url}"
     return url
 

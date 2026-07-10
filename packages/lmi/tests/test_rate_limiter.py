@@ -481,23 +481,11 @@ class TestGlobalRateLimiter:
                 "unix:///var/run/redis.sock",
                 id="other-scheme-unchanged",
             ),
-            pytest.param(
-                "redis://10.58.188.212:6379\n",
-                "redis://10.58.188.212:6379",
-                id="trailing-newline-stripped",
-            ),
-            pytest.param(
-                "  10.58.188.212:6379  ",
-                "redis://10.58.188.212:6379",
-                id="surrounding-whitespace-stripped",
-            ),
-            pytest.param("   ", None, id="whitespace-only-is-none"),
         ],
     )
     def test_scheme_less_redis_url_is_normalized(self, redis_url, expected_url) -> None:
         # A scheme-less URL defaults to plaintext `redis://`; an explicit scheme
-        # (incl. `rediss://` for TLS) is preserved. Surrounding whitespace is
-        # stripped, and a whitespace-only value falls back to in-memory (None).
+        # (incl. `rediss://` for TLS) is preserved.
         limiter = GlobalRateLimiter(redis_url=redis_url)
         assert limiter._redis_url == expected_url
 
