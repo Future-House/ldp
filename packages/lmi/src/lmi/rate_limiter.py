@@ -18,6 +18,8 @@ from limits import (
 from limits.aio.storage import MemoryStorage, RedisStorage
 from limits.aio.strategies import MovingWindowRateLimiter
 
+from lmi.constants import REDIS_URL, normalize_redis_url
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,8 +31,6 @@ CROSSREF_HOST = "api.crossref.org"
 CROSSREF_BASE_URL = f"https://{CROSSREF_HOST}"
 
 GLOBAL_RATE_LIMITER_TIMEOUT = float(os.environ.get("RATE_LIMITER_TIMEOUT", "60"))
-
-REDIS_URL = os.environ.get("REDIS_URL")
 
 RATE_LIMITER_REDIS_OP_TIMEOUT = 5.0
 
@@ -116,14 +116,12 @@ class GlobalRateLimiter:
                 used as a fallback if no Redis URL is provided via `redis_url` or
                 the `REDIS_URL` environment variable.
             redis_url: Redis URL for storage, defaulting to the `REDIS_URL` env var
-                (unset uses in-memory). Must include a scheme: `rediss://` (TLS) or
-                `redis://` (plaintext); a scheme-less URL raises.
+                (unset uses in-memory). A scheme-less URL is normalized to a
+                plaintext `redis://` URL; pass `rediss://` explicitly for TLS.
         """
         self._rate_config = RATE_CONFIG if rate_config is None else rate_config
-        self._redis_url = redis_url
+        self._redis_url = normalize_redis_url(redis_url)
         self._use_in_memory = use_in_memory or not self._redis_url
-        if not self._use_in_memory:
-            self._validate_redis_scheme(self._redis_url)
         self._storage: RedisStorage | MemoryStorage | None = None
         self._rate_limiter: MovingWindowRateLimiter | None = None
         self._current_ip: str | None = None
@@ -139,17 +137,6 @@ class GlobalRateLimiter:
         except aiohttp.ClientError:
             logger.warning(f"Error occurred while connecting to {url}.", exc_info=True)
         return None
-
-    @staticmethod
-    def _validate_redis_scheme(redis_url: str | None) -> None:
-        """Require an explicit `redis://` or `rediss://` scheme.
-
-        A scheme-less URL would silently default to plaintext and hang against a
-        TLS-required endpoint (e.g. AWS ElastiCache), so reject it at construction.
-        """
-        if not redis_url or not redis_url.startswith(("redis://", "rediss://")):
-            # Don't echo the URL: a scheme-less value may embed a password.
-            raise ValueError("Redis URL must start with 'redis://' or 'rediss://'.")
 
     async def outbount_ip(self) -> str:
         if self._current_ip is None:

@@ -449,19 +449,48 @@ class TestGlobalRateLimiter:
             )
 
     @pytest.mark.parametrize(
-        "redis_url",
+        ("redis_url", "expected_url"),
         [
-            pytest.param("10.58.188.212:6379", id="plain-host-port"),
-            pytest.param(":secret@10.58.188.212:6379", id="scheme-less-with-auth"),
-            pytest.param("http://10.58.188.212:6379", id="wrong-scheme"),
+            pytest.param(
+                "10.58.188.212:6379",
+                "redis://10.58.188.212:6379",
+                id="plain-host-port",
+            ),
+            pytest.param(
+                ":secret@10.58.188.212:6379",
+                "redis://:secret@10.58.188.212:6379",
+                id="scheme-less-with-auth",
+            ),
+            pytest.param(
+                ":pa://ss@10.58.188.212:6379",
+                "redis://:pa://ss@10.58.188.212:6379",
+                id="scheme-less-with-uri-chars-in-password",
+            ),
+            pytest.param(
+                "redis://10.58.188.212:6379",
+                "redis://10.58.188.212:6379",
+                id="redis-scheme-unchanged",
+            ),
+            pytest.param(
+                "rediss://10.58.188.212:6379",
+                "rediss://10.58.188.212:6379",
+                id="rediss-scheme-unchanged",
+            ),
+            pytest.param(
+                "unix:///var/run/redis.sock",
+                "unix:///var/run/redis.sock",
+                id="other-scheme-unchanged",
+            ),
         ],
     )
-    def test_scheme_less_redis_url_is_rejected(self, redis_url) -> None:
-        with pytest.raises(ValueError, match="must start with"):
-            GlobalRateLimiter(redis_url=redis_url)
+    def test_scheme_less_redis_url_is_normalized(self, redis_url, expected_url) -> None:
+        # A scheme-less URL defaults to plaintext `redis://`; an explicit scheme
+        # (incl. `rediss://` for TLS) is preserved.
+        limiter = GlobalRateLimiter(redis_url=redis_url)
+        assert limiter._redis_url == expected_url
 
     def test_scheme_less_url_allowed_when_in_memory(self) -> None:
-        # Forcing in-memory storage ignores the Redis URL, so no scheme is required.
+        # Forcing in-memory storage ignores the Redis URL entirely.
         limiter = GlobalRateLimiter(redis_url="10.58.188.212:6379", use_in_memory=True)
         assert limiter._use_in_memory
 

@@ -1,4 +1,18 @@
+import os
+import re
 from sys import version_info
+
+_URL_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.IGNORECASE)
+
+
+def normalize_redis_url(url: str | None) -> str | None:
+    """Prefix a plaintext `redis://` scheme when the URL has no scheme."""
+    if url and not _URL_SCHEME_RE.match(url):
+        return f"redis://{url}"
+    return url
+
+
+REDIS_URL: str | None = normalize_redis_url(os.environ.get("REDIS_URL"))
 
 # Estimate from OpenAI's FAQ
 # https://help.openai.com/en/articles/4936856-what-are-tokens-and-how-to-count-them
