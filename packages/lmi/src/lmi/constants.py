@@ -1,10 +1,13 @@
 import os
+import re
 from sys import version_info
+
+_URL_SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.-]*://", re.IGNORECASE)
 
 
 def normalize_redis_url(url: str | None) -> str | None:
-    """Ensure a Redis URL carries an explicit scheme."""
-    if url and not url.startswith(("redis://", "rediss://")):
+    """Prefix a plaintext `redis://` scheme when the URL has no scheme."""
+    if url and not _URL_SCHEME_RE.match(url):
         return f"redis://{url}"
     return url
 

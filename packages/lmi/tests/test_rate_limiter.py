@@ -476,6 +476,11 @@ class TestGlobalRateLimiter:
                 "rediss://10.58.188.212:6379",
                 id="rediss-scheme-unchanged",
             ),
+            pytest.param(
+                "unix:///var/run/redis.sock",
+                "unix:///var/run/redis.sock",
+                id="other-scheme-unchanged",
+            ),
         ],
     )
     def test_scheme_less_redis_url_is_normalized(self, redis_url, expected_url) -> None:
