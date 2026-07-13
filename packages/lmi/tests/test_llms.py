@@ -1588,3 +1588,21 @@ class TestModifyCallKwargs:
             "extra_body": {"provider": {"only": ["wandb"]}},
         }
         assert _modify_call_kwargs(call_kwargs) == call_kwargs
+
+    def test_stateless_does_not_mutate_input_or_shared_extra_body(self):
+        # A fallback chain reuses call_kwargs and a ModelSpec's extra_body for the
+        # next provider, so neither may be mutated in place.
+        shared_extra_body = {"provider": {"only": ["fireworks"]}}
+        call_kwargs = {
+            "model": self.GLM,
+            "reasoning_effort": "high",
+            "extra_body": shared_extra_body,
+        }
+        out = _modify_call_kwargs(call_kwargs)
+        # input untouched
+        assert call_kwargs["reasoning_effort"] == "high"
+        assert call_kwargs["extra_body"] is shared_extra_body
+        assert shared_extra_body == {"provider": {"only": ["fireworks"]}}
+        # transformation is only on the returned copy
+        assert "reasoning_effort" not in out
+        assert out["extra_body"]["reasoning"] == {"effort": "high"}
