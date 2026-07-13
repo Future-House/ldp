@@ -6,7 +6,7 @@ import traceback
 import uuid
 from collections import Counter
 from collections.abc import Callable, Iterator, Sequence
-from contextlib import contextmanager, nullcontext
+from contextlib import AsyncExitStack, contextmanager, nullcontext
 from typing import Any, TypeVar, overload
 
 from aviary.core import Environment, Message
@@ -432,11 +432,16 @@ class RolloutManager:
                 timer("agent_get_asv"),
                 reraise_exc_as(AgentError, enabled=self.catch_agent_failures),
             ):
-                (
-                    action,
-                    next_agent_state,
-                    value,
-                ) = await self.agent.get_asv(agent_state, obs)
+                async with AsyncExitStack() as stack:
+                    for callback in self.callbacks:
+                        await stack.enter_async_context(
+                            callback.during_get_asv(traj_id, self.agent, agent_state)
+                        )
+                    (
+                        action,
+                        next_agent_state,
+                        value,
+                    ) = await self.agent.get_asv(agent_state, obs)
 
             with timer("after_agent_get_asv"):
                 await asyncio.gather(*[
@@ -450,7 +455,12 @@ class RolloutManager:
                 timer("env_step"),
                 reraise_exc_as(EnvError, enabled=self.catch_env_failures),
             ):
-                next_obs, reward, done, trunc = await env.step(action.value)
+                async with AsyncExitStack() as stack:
+                    for callback in self.callbacks:
+                        await stack.enter_async_context(
+                            callback.during_env_step(traj_id, env)
+                        )
+                    next_obs, reward, done, trunc = await env.step(action.value)
             with timer("after_env_step"):
                 await asyncio.gather(*[
                     callback.after_env_step(traj_id, next_obs, reward, done, trunc)
