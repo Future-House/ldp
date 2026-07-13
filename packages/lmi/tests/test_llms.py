@@ -1561,12 +1561,12 @@ class TestModifyCallKwargs:
 
     GLM: ClassVar[str] = "openrouter/z-ai/glm-5.2"
 
-    def test_reasoning_effort_moved_into_extra_body(self):
+    def test_reasoning_effort_moved_into_extra_body(self) -> None:
         out = _modify_call_kwargs({"model": self.GLM, "reasoning_effort": "high"})
         assert "reasoning_effort" not in out
         assert out["extra_body"] == {"reasoning": {"effort": "high"}}
 
-    def test_merges_into_existing_extra_body(self):
+    def test_merges_into_existing_extra_body(self) -> None:
         # A caller-set provider.only (e.g. from ModelSpec.extra_params) is preserved.
         out = _modify_call_kwargs({
             "model": self.GLM,
@@ -1578,18 +1578,18 @@ class TestModifyCallKwargs:
             "reasoning": {"effort": "medium"},
         }
 
-    def test_non_openrouter_model_untouched(self):
+    def test_non_openrouter_model_untouched(self) -> None:
         call_kwargs = {"model": "anthropic/claude-opus-4-6", "reasoning_effort": "high"}
         assert _modify_call_kwargs(call_kwargs) == call_kwargs
 
-    def test_openrouter_without_reasoning_effort_is_noop(self):
+    def test_openrouter_without_reasoning_effort_is_noop(self) -> None:
         call_kwargs = {
             "model": self.GLM,
             "extra_body": {"provider": {"only": ["wandb"]}},
         }
         assert _modify_call_kwargs(call_kwargs) == call_kwargs
 
-    def test_stateless_does_not_mutate_input_or_shared_extra_body(self):
+    def test_stateless_does_not_mutate_input_or_shared_extra_body(self) -> None:
         # A fallback chain reuses call_kwargs and a ModelSpec's extra_body for the
         # next provider, so neither may be mutated in place.
         shared_extra_body = {"provider": {"only": ["fireworks"]}}

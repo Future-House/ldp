@@ -899,9 +899,9 @@ def _modify_call_kwargs(call_kwargs: dict[str, Any]) -> dict[str, Any]:
     rejects `reasoning_effort` for any model it has not mapped as
     reasoning-capable, so for OpenRouter models we move a top-level
     `reasoning_effort` into `extra_body.reasoning.effort`, deep-merged into any
-    existing `extra_body` (e.g. a caller-set `provider.only`). Other providers and
-    calls without `reasoning_effort` are returned unchanged. Returns a new dict
-    rather than mutating the input.
+    existing `extra_body` (e.g. a caller-set `provider.only`). Never mutates the
+    input: other providers and calls without `reasoning_effort` get the same dict
+    back unchanged, and the OpenRouter path returns a new dict.
     """
     if (
         not str(call_kwargs.get("model", "")).startswith("openrouter/")
@@ -1484,6 +1484,7 @@ class LiteLLMModel(LLMModel):
         }
         if previous_response_id is not None:
             call_kwargs["previous_response_id"] = previous_response_id
+        call_kwargs = _modify_call_kwargs(call_kwargs)
 
         try:
             response = await track_costs(litellm.aresponses)(**call_kwargs)
@@ -1570,6 +1571,7 @@ class LiteLLMModel(LLMModel):
         }
         if previous_response_id is not None:
             call_kwargs["previous_response_id"] = previous_response_id
+        call_kwargs = _modify_call_kwargs(call_kwargs)
 
         try:
             stream = await track_costs_iter(litellm.aresponses)(**call_kwargs)
