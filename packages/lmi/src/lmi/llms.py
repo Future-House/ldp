@@ -890,6 +890,31 @@ def _without_tool_only_kwargs(call_kwargs: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _modify_call_kwargs(call_kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Reshape params into a provider's request body before dispatch.
+
+    OpenRouter takes reasoning controls as a `reasoning: {"effort": ...}` object
+    in the request body (`extra_body`), not the top-level `reasoning_effort` that
+    OpenAI and Anthropic accept. LiteLLM does not convert this for OpenRouter and
+    rejects `reasoning_effort` for any model it has not mapped as
+    reasoning-capable, so for OpenRouter models we move a top-level
+    `reasoning_effort` into `extra_body.reasoning.effort`, deep-merged into any
+    existing `extra_body` (e.g. a caller-set `provider.only`). Other providers and
+    calls without `reasoning_effort` are returned unchanged. Returns a new dict
+    rather than mutating the input.
+    """
+    if not str(call_kwargs.get("model", "")).startswith("openrouter/"):
+        return call_kwargs
+    if "reasoning_effort" not in call_kwargs:
+        return call_kwargs
+    call_kwargs = dict(call_kwargs)
+    effort = call_kwargs.pop("reasoning_effort")
+    extra_body = dict(call_kwargs.get("extra_body") or {})
+    extra_body["reasoning"] = {**extra_body.get("reasoning", {}), "effort": effort}
+    call_kwargs["extra_body"] = extra_body
+    return call_kwargs
+
+
 def default_tool_parser(
     choice: litellm.utils.Choices, tools: list[dict] | None
 ) -> Message | ToolRequestMessage:
@@ -1213,6 +1238,7 @@ class LiteLLMModel(LLMModel):
 
         call_kwargs = {**spec.to_litellm_kwargs(), **kwargs, "messages": prompts}
         call_kwargs = _without_tool_only_kwargs(call_kwargs)
+        call_kwargs = _modify_call_kwargs(call_kwargs)
         try:
             completions = await track_costs(litellm.acompletion)(**call_kwargs)
         except Exception:
@@ -1328,7 +1354,7 @@ class LiteLLMModel(LLMModel):
     # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
-    async def acompletion_iter(  # noqa: C901
+    async def acompletion_iter(  # noqa: C901, PLR0915
         self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
     ) -> AsyncIterable[LLMResult]:
         if spec is None:
@@ -1353,6 +1379,7 @@ class LiteLLMModel(LLMModel):
             "stream_options": stream_options,
         }
         call_kwargs = _without_tool_only_kwargs(call_kwargs)
+        call_kwargs = _modify_call_kwargs(call_kwargs)
         try:
             stream_completions = await track_costs_iter(litellm.acompletion)(
                 **call_kwargs

@@ -28,6 +28,7 @@ from lmi.llms import (
     _convert_tool_response_for_responses,
     _convert_tools_for_responses,
     _extract_previous_response_id,
+    _modify_call_kwargs,
     _parse_responses_output,
     estimate_message_tokens,
     validate_json_completion,
@@ -1553,3 +1554,37 @@ class TestResponsesAPIIntegration:
 
         assert len(results) == 1
         assert results[0].response_id is None
+
+
+class TestModifyCallKwargs:
+    """`_modify_call_kwargs` reshapes reasoning into OpenRouter's request body."""
+
+    GLM: ClassVar[str] = "openrouter/z-ai/glm-5.2"
+
+    def test_reasoning_effort_moved_into_extra_body(self):
+        out = _modify_call_kwargs({"model": self.GLM, "reasoning_effort": "high"})
+        assert "reasoning_effort" not in out
+        assert out["extra_body"] == {"reasoning": {"effort": "high"}}
+
+    def test_merges_into_existing_extra_body(self):
+        # A caller-set provider.only (e.g. from ModelSpec.extra_params) is preserved.
+        out = _modify_call_kwargs({
+            "model": self.GLM,
+            "reasoning_effort": "medium",
+            "extra_body": {"provider": {"only": ["fireworks"]}},
+        })
+        assert out["extra_body"] == {
+            "provider": {"only": ["fireworks"]},
+            "reasoning": {"effort": "medium"},
+        }
+
+    def test_non_openrouter_model_untouched(self):
+        call_kwargs = {"model": "anthropic/claude-opus-4-6", "reasoning_effort": "high"}
+        assert _modify_call_kwargs(call_kwargs) == call_kwargs
+
+    def test_openrouter_without_reasoning_effort_is_noop(self):
+        call_kwargs = {
+            "model": self.GLM,
+            "extra_body": {"provider": {"only": ["wandb"]}},
+        }
+        assert _modify_call_kwargs(call_kwargs) == call_kwargs
