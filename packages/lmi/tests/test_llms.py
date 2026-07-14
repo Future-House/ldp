@@ -28,6 +28,7 @@ from lmi.llms import (
     _convert_tool_response_for_responses,
     _convert_tools_for_responses,
     _extract_previous_response_id,
+    _modify_call_kwargs,
     _parse_responses_output,
     estimate_message_tokens,
     validate_json_completion,
@@ -1553,3 +1554,55 @@ class TestResponsesAPIIntegration:
 
         assert len(results) == 1
         assert results[0].response_id is None
+
+
+class TestModifyCallKwargs:
+    """`_modify_call_kwargs` reshapes reasoning into OpenRouter's request body."""
+
+    GLM: ClassVar[str] = "openrouter/z-ai/glm-5.2"
+
+    def test_reasoning_effort_moved_into_extra_body(self) -> None:
+        out = _modify_call_kwargs({"model": self.GLM, "reasoning_effort": "high"})
+        assert "reasoning_effort" not in out
+        assert out["extra_body"] == {"reasoning": {"effort": "high"}}
+
+    def test_merges_into_existing_extra_body(self) -> None:
+        # A caller-set provider.only (e.g. from ModelSpec.extra_params) is preserved.
+        out = _modify_call_kwargs({
+            "model": self.GLM,
+            "reasoning_effort": "medium",
+            "extra_body": {"provider": {"only": ["fireworks"]}},
+        })
+        assert out["extra_body"] == {
+            "provider": {"only": ["fireworks"]},
+            "reasoning": {"effort": "medium"},
+        }
+
+    def test_non_openrouter_model_untouched(self) -> None:
+        call_kwargs = {"model": "anthropic/claude-opus-4-6", "reasoning_effort": "high"}
+        assert _modify_call_kwargs(call_kwargs) == call_kwargs
+
+    def test_openrouter_without_reasoning_effort_is_noop(self) -> None:
+        call_kwargs = {
+            "model": self.GLM,
+            "extra_body": {"provider": {"only": ["wandb"]}},
+        }
+        assert _modify_call_kwargs(call_kwargs) == call_kwargs
+
+    def test_stateless_does_not_mutate_input_or_shared_extra_body(self) -> None:
+        # A fallback chain reuses call_kwargs and a ModelSpec's extra_body for the
+        # next provider, so neither may be mutated in place.
+        shared_extra_body = {"provider": {"only": ["fireworks"]}}
+        call_kwargs = {
+            "model": self.GLM,
+            "reasoning_effort": "high",
+            "extra_body": shared_extra_body,
+        }
+        out = _modify_call_kwargs(call_kwargs)
+        # input untouched
+        assert call_kwargs["reasoning_effort"] == "high"
+        assert call_kwargs["extra_body"] is shared_extra_body
+        assert shared_extra_body == {"provider": {"only": ["fireworks"]}}
+        # transformation is only on the returned copy
+        assert "reasoning_effort" not in out
+        assert out["extra_body"]["reasoning"] == {"effort": "high"}
