@@ -100,6 +100,16 @@ class TestShouldFallback:
         )
         assert should_fallback(exc)
 
+    def test_image_dimensions_bad_request_falls_back(self) -> None:
+        # Anthropic rejects oversized images with a generic 400; a sibling model
+        # with a larger dimension limit may still accept the same input.
+        exc = _litellm_exc(
+            litellm.BadRequestError,
+            message="messages.0.content.1.image: image dimensions exceed max "
+            "allowed size: 8000 pixels",
+        )
+        assert should_fallback(exc)
+
     @pytest.mark.parametrize(
         "cls",
         [

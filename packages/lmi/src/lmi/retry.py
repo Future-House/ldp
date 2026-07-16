@@ -44,7 +44,10 @@ _RETRYABLE: tuple[type[BaseException], ...] = (
 # input) rather than a malformed request. litellm surfaces these as a plain
 # `BadRequestError`, so we match on the message; see `should_fallback`.
 # "too much media" is Anthropic's 100-image-per-request limit.
-_PROVIDER_LIMIT_PATTERNS = ("too much media",)
+_PROVIDER_LIMIT_PATTERNS = (
+    "too much media",
+    "image dimensions exceed max allowed size",
+)
 
 # Content-safety refusals that litellm surfaces as a bare `BadRequestError`
 # instead of `ContentPolicyViolationError` (e.g. OpenAI's prompt-level safety
