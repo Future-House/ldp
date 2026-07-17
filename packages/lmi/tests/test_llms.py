@@ -3,7 +3,6 @@ import pathlib
 import pickle
 import re
 from collections.abc import AsyncGenerator, AsyncIterator
-from types import SimpleNamespace
 from typing import Any, ClassVar, cast
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -11,7 +10,6 @@ import litellm
 import numpy as np
 import pytest
 from aviary.core import Message, Tool, ToolCall, ToolRequestMessage, ToolResponseMessage
-from aviary.message import MalformedMessageError
 from aviary.utils import encode_image_to_base64
 from openai.types.responses import (
     ResponseFunctionToolCall,
@@ -68,6 +66,52 @@ def test_estimate_message_tokens(png_image: bytes, subtests: pytest.Subtests) ->
                 assert token_count > estimate_message_tokens(
                     fewer_tokens_messages, model=model
                 )
+
+
+def _stream_chunk(
+    *,
+    content: str | None = None,
+    role: str | None = None,
+    finish_reason: str | None = None,
+    tool_calls: list[dict[str, Any]] | None = None,
+    usage: litellm.types.utils.Usage | None = None,
+    model: str = "test-model",
+) -> litellm.types.utils.ModelResponse:
+    """Build one realistic LiteLLM Chat Completions stream chunk."""
+    choices = (
+        [
+            litellm.types.utils.StreamingChoices(
+                finish_reason=finish_reason,
+                delta=litellm.types.utils.Delta(
+                    content=content,
+                    role=role,
+                    tool_calls=tool_calls,
+                ),
+            )
+        ]
+        if content is not None or role is not None or tool_calls or finish_reason
+        else []
+    )
+    return litellm.types.utils.ModelResponse(
+        model=model,
+        choices=choices,
+        usage=usage,
+        stream=True,
+    )
+
+
+def _text_stream_chunks(text: str) -> list[litellm.types.utils.ModelResponse]:
+    """Build a text chunk followed by a terminal usage chunk."""
+    return [
+        _stream_chunk(content=text, role="assistant", finish_reason="stop"),
+        _stream_chunk(
+            usage=litellm.types.utils.Usage(
+                prompt_tokens=5,
+                completion_tokens=2,
+                total_tokens=7,
+            )
+        ),
+    ]
 
 
 class TestLiteLLMModel:
@@ -527,40 +571,35 @@ class TestLiteLLMModel:
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
         messages = [Message(content="Say hello")]
 
-        def _build_mock_completion(
-            model: str = "test-model",
-            logprobs: Any = None,
-            delta_content: str = "",
-            delta_reasoning_content: str = "hmmm",
-            delta_role: str = "assistant",
-            finish_reason: str = "unknown",
-            usage: Any = None,
-        ) -> Mock:
-            return Mock(
-                model=model,
+        chunks = [
+            _stream_chunk(content="Hello", role="assistant"),
+            _stream_chunk(content=" world"),
+            litellm.types.utils.ModelResponse(
+                model="test-model",
                 choices=[
-                    Mock(
-                        logprobs=logprobs,
-                        finish_reason=finish_reason,
-                        delta=Mock(
-                            content=delta_content,
-                            reasoning_content=delta_reasoning_content,
-                            role=delta_role,
+                    litellm.types.utils.StreamingChoices(
+                        delta=litellm.types.utils.Delta(content="!"),
+                        logprobs=litellm.types.utils.ChoiceLogprobs(
+                            content=[
+                                litellm.types.utils.ChatCompletionTokenLogprob(
+                                    token="!",  # noqa: S106
+                                    bytes=[33],
+                                    logprob=-0.5,
+                                    top_logprobs=[],
+                                )
+                            ]
                         ),
                     )
                 ],
-                usage=usage,
-            )
-
-        chunks = [
-            _build_mock_completion(delta_content="Hello"),
-            _build_mock_completion(logprobs=Mock(content=None), delta_content=" world"),
-            _build_mock_completion(logprobs=Mock(content=[]), delta_content="!"),
-            _build_mock_completion(logprobs=Mock(content=[Mock(logprob=-0.5)])),
-            # Final chunk: includes usage and the terminal finish_reason.
-            _build_mock_completion(
-                usage=Mock(prompt_tokens=10, completion_tokens=5),
-                finish_reason="stop",
+                stream=True,
+            ),
+            _stream_chunk(finish_reason="stop"),
+            _stream_chunk(
+                usage=litellm.types.utils.Usage(
+                    prompt_tokens=10,
+                    completion_tokens=5,
+                    total_tokens=15,
+                )
             ),
         ]
 
@@ -587,58 +626,15 @@ class TestLiteLLMModel:
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
         messages = [Message(content="Say hello")]
         chunks = [
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason=None,
-                        delta=Mock(
-                            content="He",
-                            reasoning_content=None,
-                            role="assistant",
-                            tool_calls=None,
-                        ),
-                    )
-                ],
-                usage=None,
-            ),
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason=None,
-                        delta=Mock(
-                            content="llo",
-                            reasoning_content=None,
-                            role=None,
-                            tool_calls=None,
-                        ),
-                    )
-                ],
-                usage=None,
-            ),
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason="stop",
-                        delta=Mock(
-                            content=None,
-                            reasoning_content=None,
-                            role=None,
-                            tool_calls=None,
-                        ),
-                    )
-                ],
-                usage=None,
-            ),
-            Mock(
-                model="test-model",
-                choices=[],
-                usage=Mock(prompt_tokens=10, completion_tokens=2),
+            _stream_chunk(content="He", role="assistant"),
+            _stream_chunk(content="llo"),
+            _stream_chunk(finish_reason="stop"),
+            _stream_chunk(
+                usage=litellm.types.utils.Usage(
+                    prompt_tokens=10,
+                    completion_tokens=2,
+                    total_tokens=12,
+                )
             ),
         ]
 
@@ -684,73 +680,40 @@ class TestLiteLLMModel:
             Tool.from_function(get_project),
         ]
         chunks = [
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason=None,
-                        delta=Mock(
-                            content=None,
-                            reasoning_content=None,
-                            role="assistant",
-                            tool_calls=[
-                                Mock(
-                                    index=0,
-                                    id="call-search",
-                                    type="function",
-                                    function=SimpleNamespace(
-                                        name="search_",
-                                        arguments='{"query":"protein ',
-                                    ),
-                                ),
-                                Mock(
-                                    index=1,
-                                    id="call-project",
-                                    type="function",
-                                    function=SimpleNamespace(
-                                        name="get_",
-                                        arguments='{"project_id":"research-',
-                                    ),
-                                ),
-                            ],
-                        ),
-                    )
+            _stream_chunk(
+                role="assistant",
+                tool_calls=[
+                    {
+                        "index": 0,
+                        "id": "call-search",
+                        "type": "function",
+                        "function": {
+                            "name": "search_documents",
+                            "arguments": '{"query":"protein ',
+                        },
+                    },
+                    {
+                        "index": 1,
+                        "id": "call-project",
+                        "type": "function",
+                        "function": {
+                            "name": "get_project",
+                            "arguments": '{"project_id":"research-',
+                        },
+                    },
                 ],
-                usage=None,
             ),
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason="tool_calls",
-                        delta=Mock(
-                            content=None,
-                            reasoning_content=None,
-                            role=None,
-                            tool_calls=[
-                                Mock(
-                                    index=1,
-                                    id=None,
-                                    type=None,
-                                    function=SimpleNamespace(
-                                        name="project", arguments='project"}'
-                                    ),
-                                ),
-                                Mock(
-                                    index=0,
-                                    id=None,
-                                    type=None,
-                                    function=SimpleNamespace(
-                                        name="documents", arguments='folding"}'
-                                    ),
-                                ),
-                            ],
-                        ),
-                    )
+            _stream_chunk(
+                finish_reason="tool_calls",
+                tool_calls=[
+                    {"index": 1, "function": {"arguments": 'project"}'}},
+                    {"index": 0, "function": {"arguments": 'folding"}'}},
                 ],
-                usage=Mock(prompt_tokens=12, completion_tokens=8),
+                usage=litellm.types.utils.Usage(
+                    prompt_tokens=12,
+                    completion_tokens=8,
+                    total_tokens=20,
+                ),
             ),
         ]
 
@@ -780,34 +743,28 @@ class TestLiteLLMModel:
         assert terminal.finish_reason == "tool_calls"
 
     @pytest.mark.asyncio
-    async def test_call_stream_rejects_malformed_tool_arguments(self) -> None:
+    async def test_call_stream_matches_existing_malformed_tool_behavior(self) -> None:
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
         chunks = [
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason="tool_calls",
-                        delta=Mock(
-                            content=None,
-                            reasoning_content=None,
-                            role="assistant",
-                            tool_calls=[
-                                Mock(
-                                    index=0,
-                                    id="call-broken",
-                                    type="function",
-                                    function=SimpleNamespace(
-                                        name="broken_tool",
-                                        arguments='{"missing":',
-                                    ),
-                                )
-                            ],
-                        ),
-                    )
+            _stream_chunk(
+                role="assistant",
+                finish_reason="tool_calls",
+                tool_calls=[
+                    {
+                        "index": 0,
+                        "id": "call-broken",
+                        "type": "function",
+                        "function": {
+                            "name": "broken_tool",
+                            "arguments": '{"missing":',
+                        },
+                    }
                 ],
-                usage=Mock(prompt_tokens=4, completion_tokens=2),
+                usage=litellm.types.utils.Usage(
+                    prompt_tokens=4,
+                    completion_tokens=2,
+                    total_tokens=6,
+                ),
             )
         ]
 
@@ -815,11 +772,14 @@ class TestLiteLLMModel:
             for chunk in chunks:
                 yield chunk
 
-        with (
-            patch("litellm.acompletion", AsyncMock(return_value=mock_stream())),
-            pytest.raises(MalformedMessageError, match="Malformed streamed tool"),
-        ):
-            await model.call_stream([Message(content="Use a tool")])
+        with patch("litellm.acompletion", AsyncMock(return_value=mock_stream())):
+            stream = await model.call_stream([Message(content="Use a tool")])
+            results = [result async for result in stream]
+
+        assert results[-1].messages is not None
+        message = results[-1].messages[0]
+        assert isinstance(message, ToolRequestMessage)
+        assert message.tool_calls[0].function.arguments == {}
 
     @pytest.mark.asyncio
     async def test_call_stream_rejects_multiple_completions_before_dispatch(
@@ -876,40 +836,7 @@ class TestLiteLLMModel:
     @pytest.mark.asyncio
     async def test_call_stream_counts_one_request_and_each_delta_once(self) -> None:
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
-        chunks = [
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason=None,
-                        delta=Mock(
-                            content="Hello",
-                            reasoning_content=None,
-                            role="assistant",
-                            tool_calls=None,
-                        ),
-                    )
-                ],
-                usage=None,
-            ),
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason="stop",
-                        delta=Mock(
-                            content="world",
-                            reasoning_content=None,
-                            role=None,
-                            tool_calls=None,
-                        ),
-                    )
-                ],
-                usage=Mock(prompt_tokens=5, completion_tokens=2),
-            ),
-        ]
+        chunks = _text_stream_chunks("Hello")
 
         async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
             for chunk in chunks:
@@ -926,7 +853,7 @@ class TestLiteLLMModel:
             _ = [result async for result in stream]
 
         assert request_limit.await_count == 1
-        assert rate_limit.await_count == 3
+        assert rate_limit.await_count == 2
 
     @pytest.mark.asyncio
     async def test_call_stream_notifies_result_callback_only_for_terminal_result(
@@ -937,40 +864,7 @@ class TestLiteLLMModel:
             name=CommonLLMNames.OPENAI_TEST.value,
             llm_result_callback=callback,
         )
-        chunks = [
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason=None,
-                        delta=Mock(
-                            content="Hello",
-                            reasoning_content=None,
-                            role="assistant",
-                            tool_calls=None,
-                        ),
-                    )
-                ],
-                usage=None,
-            ),
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason="stop",
-                        delta=Mock(
-                            content=None,
-                            reasoning_content=None,
-                            role=None,
-                            tool_calls=None,
-                        ),
-                    )
-                ],
-                usage=Mock(prompt_tokens=5, completion_tokens=1),
-            ),
-        ]
+        chunks = _text_stream_chunks("Hello")
 
         async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
             for chunk in chunks:
@@ -993,40 +887,7 @@ class TestLiteLLMModel:
                 "response_validator": validator,
             },
         )
-        chunks = [
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason=None,
-                        delta=Mock(
-                            content="Hello",
-                            reasoning_content=None,
-                            role="assistant",
-                            tool_calls=None,
-                        ),
-                    )
-                ],
-                usage=None,
-            ),
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason="stop",
-                        delta=Mock(
-                            content=None,
-                            reasoning_content=None,
-                            role=None,
-                            tool_calls=None,
-                        ),
-                    )
-                ],
-                usage=Mock(prompt_tokens=5, completion_tokens=1),
-            ),
-        ]
+        chunks = _text_stream_chunks("Hello")
 
         async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
             for chunk in chunks:
@@ -1072,22 +933,7 @@ class TestLiteLLMModel:
     async def test_closing_call_stream_closes_provider_stream(self) -> None:
         provider_closed = False
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
-        first_chunk = Mock(
-            model="test-model",
-            choices=[
-                Mock(
-                    logprobs=None,
-                    finish_reason=None,
-                    delta=Mock(
-                        content="Hello",
-                        reasoning_content=None,
-                        role="assistant",
-                        tool_calls=None,
-                    ),
-                )
-            ],
-            usage=None,
-        )
+        first_chunk = _stream_chunk(content="Hello", role="assistant")
 
         async def provider_stream() -> AsyncIterator[Any]:  # noqa: RUF029
             nonlocal provider_closed
@@ -1131,40 +977,9 @@ class TestLiteLLMModel:
             name=CommonLLMNames.OPENAI_TEST.value,
             tool_parser=tool_parser,
         )
-        chunks = [
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason=None,
-                        delta=Mock(
-                            content='<tool_call>{"query":"protein folding"}</tool_call>',
-                            reasoning_content=None,
-                            role="assistant",
-                            tool_calls=None,
-                        ),
-                    )
-                ],
-                usage=None,
-            ),
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason="stop",
-                        delta=Mock(
-                            content=None,
-                            reasoning_content=None,
-                            role=None,
-                            tool_calls=None,
-                        ),
-                    )
-                ],
-                usage=Mock(prompt_tokens=5, completion_tokens=4),
-            ),
-        ]
+        chunks = _text_stream_chunks(
+            '<tool_call>{"query":"protein folding"}</tool_call>'
+        )
 
         async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
             for chunk in chunks:
@@ -1195,24 +1010,7 @@ class TestLiteLLMModel:
             name=CommonLLMNames.OPENAI_TEST.value,
             tool_parser=Parser(),
         )
-        chunks = [
-            Mock(
-                model="test-model",
-                choices=[
-                    Mock(
-                        logprobs=None,
-                        finish_reason="stop",
-                        delta=Mock(
-                            content="tool text",
-                            reasoning_content=None,
-                            role="assistant",
-                            tool_calls=None,
-                        ),
-                    )
-                ],
-                usage=Mock(prompt_tokens=3, completion_tokens=2),
-            )
-        ]
+        chunks = _text_stream_chunks("tool text")
 
         async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
             for chunk in chunks:
