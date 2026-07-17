@@ -779,7 +779,7 @@ class TestLiteLLMModel:
         assert results[-1].messages is not None
         message = results[-1].messages[0]
         assert isinstance(message, ToolRequestMessage)
-        assert message.tool_calls[0].function.arguments == {}
+        assert not message.tool_calls[0].function.arguments
 
     @pytest.mark.asyncio
     async def test_call_stream_rejects_multiple_completions_before_dispatch(
