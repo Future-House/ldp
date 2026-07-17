@@ -482,41 +482,6 @@ def validate_json_completion(
         ) from err
 
 
-def _add_tools_to_call_kwargs(
-    chat_kwargs: dict[str, Any],
-    tools: list[Tool] | None,
-    tool_choice: Tool | str | None,
-) -> None:
-    """Add serialized Aviary tools and tool choice to Chat Completions kwargs."""
-    if tools:
-        chat_kwargs["tools"] = ToolsAdapter.dump_python(
-            tools, exclude_none=True, by_alias=True
-        )
-        if tool_choice is not None:
-            chat_kwargs["tool_choice"] = (
-                {
-                    "type": "function",
-                    "function": {"name": tool_choice.info.name},
-                }
-                if isinstance(tool_choice, Tool)
-                else tool_choice
-            )
-    else:
-        chat_kwargs["tools"] = tools
-
-
-def _downcast_empty_tool_requests(messages: list[Message]) -> list[Message]:
-    """Convert empty tool request messages to provider-compatible messages."""
-    return [
-        (
-            message
-            if not isinstance(message, ToolRequestMessage) or message.tool_calls
-            else Message(role=message.role, content=message.content)
-        )
-        for message in messages
-    ]
-
-
 def _tool_parser_accepts_text(parser: Callable[..., Any]) -> bool:
     """Return whether a custom tool parser accepts completed text."""
     first_param = next(iter(signature(parser).parameters.values()))
@@ -684,7 +649,22 @@ class LLMModel(ABC, BaseModel):
         if n < 1:
             raise ValueError("Number of completions (n) must be >= 1.")
 
-        _add_tools_to_call_kwargs(chat_kwargs, tools, tool_choice)
+        # deal with tools
+        if tools:
+            chat_kwargs["tools"] = ToolsAdapter.dump_python(
+                tools, exclude_none=True, by_alias=True
+            )
+            if tool_choice is not None:
+                chat_kwargs["tool_choice"] = (
+                    {
+                        "type": "function",
+                        "function": {"name": tool_choice.info.name},
+                    }
+                    if isinstance(tool_choice, Tool)
+                    else tool_choice
+                )
+        else:
+            chat_kwargs["tools"] = tools  # Allows for empty tools list
 
         # deal with specifying output type
         if isinstance(output_type, Mapping):  # Use structured outputs
@@ -723,8 +703,16 @@ class LLMModel(ABC, BaseModel):
             ]
             chat_kwargs["response_format"] = {"type": "json_object"}
 
-        # OpenAI doesn't allow empty tool_calls lists.
-        messages = _downcast_empty_tool_requests(messages)
+        messages = [
+            (
+                m
+                if not isinstance(m, ToolRequestMessage) or m.tool_calls
+                # OpenAI doesn't allow for empty tool_calls lists, so downcast empty
+                # ToolRequestMessage to Message here
+                else Message(role=m.role, content=m.content)
+            )
+            for m in messages
+        ]
 
         start_clock = asyncio.get_running_loop().time()
         streaming = callbacks is not None
@@ -794,8 +782,29 @@ class LLMModel(ABC, BaseModel):
             messages = [Message(content=messages)]
         messages = self._maybe_patch_gemini3_tool_response_messages(messages)
 
-        _add_tools_to_call_kwargs(chat_kwargs, tools, tool_choice)
-        messages = _downcast_empty_tool_requests(messages)
+        if tools:
+            chat_kwargs["tools"] = ToolsAdapter.dump_python(
+                tools, exclude_none=True, by_alias=True
+            )
+            if tool_choice is not None:
+                chat_kwargs["tool_choice"] = (
+                    {
+                        "type": "function",
+                        "function": {"name": tool_choice.info.name},
+                    }
+                    if isinstance(tool_choice, Tool)
+                    else tool_choice
+                )
+        else:
+            chat_kwargs["tools"] = tools
+        messages = [
+            (
+                message
+                if not isinstance(message, ToolRequestMessage) or message.tool_calls
+                else Message(role=message.role, content=message.content)
+            )
+            for message in messages
+        ]
         start_clock = asyncio.get_running_loop().time()
         dispatch_result = await self._run_with_fallbacks(  # type: ignore[attr-defined]
             self._dispatch,  # type: ignore[attr-defined]
