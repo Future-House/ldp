@@ -28,6 +28,7 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
+from dataclasses import dataclass
 from enum import StrEnum
 from inspect import isasyncgenfunction, isawaitable, signature
 from typing import (
@@ -38,6 +39,7 @@ from typing import (
     TypeAlias,
     TypeVar,
     cast,
+    get_type_hints,
     overload,
 )
 
@@ -350,6 +352,14 @@ if not IS_PYTHON_BELOW_312:
 JSONSchema: TypeAlias = Mapping[str, Any]
 
 
+@dataclass
+class _ToolCallStreamState:
+    id: str = ""
+    type: str = ""
+    name: str = ""
+    arguments: str = ""
+
+
 class CommonLLMNames(StrEnum):
     """When you don't want to think about models, just use one from here."""
 
@@ -479,6 +489,63 @@ def validate_json_completion(
         raise JSONSchemaValidationError(
             "The completion does not match the specified schema."
         ) from err
+
+
+def _add_tools_to_call_kwargs(
+    chat_kwargs: dict[str, Any],
+    tools: list[Tool] | None,
+    tool_choice: Tool | str | None,
+) -> None:
+    if tools:
+        chat_kwargs["tools"] = ToolsAdapter.dump_python(
+            tools, exclude_none=True, by_alias=True
+        )
+        if tool_choice is not None:
+            chat_kwargs["tool_choice"] = (
+                {
+                    "type": "function",
+                    "function": {"name": tool_choice.info.name},
+                }
+                if isinstance(tool_choice, Tool)
+                else tool_choice
+            )
+    else:
+        chat_kwargs["tools"] = tools
+
+
+def _downcast_empty_tool_requests(messages: list[Message]) -> list[Message]:
+    return [
+        (
+            message
+            if not isinstance(message, ToolRequestMessage) or message.tool_calls
+            else Message(role=message.role, content=message.content)
+        )
+        for message in messages
+    ]
+
+
+def _tool_parser_accepts_text(parser: Callable[..., Any]) -> bool:
+    first_param = next(iter(signature(parser).parameters.values()))
+    if isinstance(parser, functools.partial):
+        hints = get_type_hints(parser.func)
+    else:
+        try:
+            hints = get_type_hints(parser)
+        except TypeError:
+            hints = get_type_hints(type(parser).__call__)
+    return hints.get(first_param.name, first_param.annotation) is str
+
+
+def _validate_stream_config(llm_config: LLMConfig | None, n: int) -> None:
+    if n != 1 or (
+        llm_config is not None
+        and any(spec.extra_params.get("n", 1) != 1 for spec in llm_config.models)
+    ):
+        raise ValueError("Streaming requires exactly one completion (n=1).")
+    if llm_config is not None and any(spec.responses_api for spec in llm_config.models):
+        raise NotImplementedError(
+            "call_stream currently supports Chat Completions models only."
+        )
 
 
 def prepare_args(
@@ -622,22 +689,7 @@ class LLMModel(ABC, BaseModel):
         if n < 1:
             raise ValueError("Number of completions (n) must be >= 1.")
 
-        # deal with tools
-        if tools:
-            chat_kwargs["tools"] = ToolsAdapter.dump_python(
-                tools, exclude_none=True, by_alias=True
-            )
-            if tool_choice is not None:
-                chat_kwargs["tool_choice"] = (
-                    {
-                        "type": "function",
-                        "function": {"name": tool_choice.info.name},
-                    }
-                    if isinstance(tool_choice, Tool)
-                    else tool_choice
-                )
-        else:
-            chat_kwargs["tools"] = tools  # Allows for empty tools list
+        _add_tools_to_call_kwargs(chat_kwargs, tools, tool_choice)
 
         # deal with specifying output type
         if isinstance(output_type, Mapping):  # Use structured outputs
@@ -676,16 +728,8 @@ class LLMModel(ABC, BaseModel):
             ]
             chat_kwargs["response_format"] = {"type": "json_object"}
 
-        messages = [
-            (
-                m
-                if not isinstance(m, ToolRequestMessage) or m.tool_calls
-                # OpenAI doesn't allow for empty tool_calls lists, so downcast empty
-                # ToolRequestMessage to Message here
-                else Message(role=m.role, content=m.content)
-            )
-            for m in messages
-        ]
+        # OpenAI doesn't allow empty tool_calls lists.
+        messages = _downcast_empty_tool_requests(messages)
 
         start_clock = asyncio.get_running_loop().time()
         streaming = callbacks is not None
@@ -734,6 +778,56 @@ class LLMModel(ABC, BaseModel):
                 if isawaitable(possibly_awaitable_result):
                     await possibly_awaitable_result
         return results
+
+    async def call_stream(
+        self,
+        messages: list[Message] | str,
+        *,
+        name: str | None = None,
+        tools: list[Tool] | None = None,
+        tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
+        **kwargs: Any,
+    ) -> ClosableAsyncIterator[LLMResult]:
+        """Stream text deltas followed by one canonical completed result."""
+        llm_config = cast("LLMConfig | None", getattr(self, "llm_config", None))
+        chat_kwargs = kwargs.copy()
+        chat_kwargs.pop("config", None)
+        _validate_stream_config(
+            llm_config, chat_kwargs.pop("n", self.config.get("n", 1))
+        )
+        if isinstance(messages, str):
+            messages = [Message(content=messages)]
+        messages = self._maybe_patch_gemini3_tool_response_messages(messages)
+
+        _add_tools_to_call_kwargs(chat_kwargs, tools, tool_choice)
+        messages = _downcast_empty_tool_requests(messages)
+        start_clock = asyncio.get_running_loop().time()
+        dispatch_result = await self._run_with_fallbacks(  # type: ignore[attr-defined]
+            self._dispatch,  # type: ignore[attr-defined]
+            messages=messages,
+            streaming=True,
+            _yield_deltas=True,
+            **chat_kwargs,
+        )
+
+        async def stream_results() -> ClosableAsyncIterator[LLMResult]:
+            async with contextlib.aclosing(aiter(dispatch_result)) as iterator:
+                async for result in iterator:
+                    if result.seconds_to_first_token == 0 and result.messages is None:
+                        result.seconds_to_first_token = (
+                            asyncio.get_running_loop().time() - start_clock
+                        )
+                    result.seconds_to_last_token = (
+                        asyncio.get_running_loop().time() - start_clock
+                    )
+                    result.name = name
+                    if self.llm_result_callback and result.messages is not None:
+                        callback_result = self.llm_result_callback(result)
+                        if isawaitable(callback_result):
+                            await callback_result
+                    yield result
+
+        return stream_results()
 
     async def call_single(
         self,
@@ -821,6 +915,9 @@ def rate_limited(func):
                 source = func(self, *args, **kwargs)
                 try:
                     async for item in source:
+                        if item.messages is not None and kwargs.get("_yield_deltas"):
+                            yield item
+                            continue
                         token_count = 0
                         if isinstance(item, LLMResult):
                             token_count = int(
@@ -1170,6 +1267,7 @@ class LiteLLMModel(LLMModel):
             "responses" if spec.responses_api else "chat",
             " (stream)" if streaming else "",
         )
+        yield_deltas = chat_kwargs.pop("_yield_deltas", False)
         if spec.responses_api:
             previous_response_id, messages = _extract_previous_response_id(messages)
             tools = chat_kwargs.pop("tools", None)
@@ -1184,7 +1282,9 @@ class LiteLLMModel(LLMModel):
 
         # Chat Completions path: `tools` stays in chat_kwargs.
         if streaming:
-            gen = await self.acompletion_iter(messages, spec=spec, **chat_kwargs)
+            gen = await self.acompletion_iter(
+                messages, spec=spec, _yield_deltas=yield_deltas, **chat_kwargs
+            )
             return await _commit_stream(gen)
         return await self.acompletion(messages, spec=spec, **chat_kwargs)
 
@@ -1322,11 +1422,9 @@ class LiteLLMModel(LLMModel):
                         | list[ToolRequestMessage]
                     ) = default_tool_parser(choice, tools)
                 else:
-                    sig = signature(self.tool_parser)
-                    first_param = next(iter(sig.parameters.values()))
                     arg: str | litellm.utils.Choices = (
                         choice.message.content or ""
-                        if first_param.annotation is str
+                        if _tool_parser_accepts_text(self.tool_parser)
                         else choice
                     )
                     output_messages = self.tool_parser(arg, tools)  # type: ignore[arg-type]
@@ -1394,6 +1492,7 @@ class LiteLLMModel(LLMModel):
     ) -> ClosableAsyncIterator[LLMResult]:
         if spec is None:
             spec = cast("LLMConfig", self.llm_config).models[0]
+        yield_deltas = kwargs.pop("_yield_deltas", False)
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
         prompts = cast(
             "list[litellm.types.llms.openai.AllMessageValues]",
@@ -1428,42 +1527,126 @@ class LiteLLMModel(LLMModel):
         role = None
         finish_reason: str | None = None
         reasoning_content = []
+        streamed_tool_calls: dict[int, _ToolCallStreamState] = {}
         used_model = None
-        async for completion in stream_completions:
-            if not used_model:
-                used_model = completion.model or spec.name
-            choice = completion.choices[0]
-            delta = choice.delta
-            # logprobs can be None, or missing a content attribute,
-            # or a ChoiceLogprobs object with a NoneType/empty content attribute
-            if logprob_content := getattr(choice.logprobs, "content", None):
-                logprobs.append(logprob_content[0].logprob or 0)
-            outputs.append(delta.content or "")
-            role = delta.role or role
-            # The usage-only chunk (when include_usage=True) has finish_reason=None,
-            # so retain the last non-None finish_reason value
-            finish_reason = choice.finish_reason or finish_reason
-            if hasattr(delta, "reasoning_content"):
-                reasoning_content.append(delta.reasoning_content or "")
+        usage = None
+        async with contextlib.aclosing(stream_completions):
+            async for completion in stream_completions:
+                if not used_model:
+                    used_model = completion.model or spec.name
+                if (chunk_usage := getattr(completion, "usage", None)) is not None:
+                    usage = chunk_usage
+                if not completion.choices:
+                    continue
+                choice = completion.choices[0]
+                delta = choice.delta
+                # logprobs can be None, or missing a content attribute,
+                # or a ChoiceLogprobs object with a NoneType/empty content attribute
+                if logprob_content := getattr(choice.logprobs, "content", None):
+                    logprobs.append(logprob_content[0].logprob or 0)
+                content = delta.content or ""
+                outputs.append(content)
+                if content and yield_deltas:
+                    yield LLMResult(
+                        model=used_model,
+                        text=content,
+                        prompt=messages,
+                    )
+                tool_call_deltas = getattr(delta, "tool_calls", None)
+                if not isinstance(tool_call_deltas, list):
+                    tool_call_deltas = []
+                for tool_call_delta in tool_call_deltas:
+                    index = tool_call_delta.index
+                    state = streamed_tool_calls.setdefault(
+                        index, _ToolCallStreamState()
+                    )
+                    if tool_call_delta.id:
+                        if state.id and state.id != tool_call_delta.id:
+                            raise MalformedMessageError(
+                                f"Conflicting tool call ids at index {index}: "
+                                f"{state.id!r} and {tool_call_delta.id!r}."
+                            )
+                        state.id = tool_call_delta.id
+                    if tool_call_delta.type:
+                        if state.type and state.type != tool_call_delta.type:
+                            raise MalformedMessageError(
+                                f"Conflicting tool call types at index {index}: "
+                                f"{state.type!r} and {tool_call_delta.type!r}."
+                            )
+                        state.type = tool_call_delta.type
+                    function = tool_call_delta.function
+                    state.name += function.name or ""
+                    state.arguments += function.arguments or ""
+                role = delta.role or role
+                # The usage-only chunk (when include_usage=True) has finish_reason=None,
+                # so retain the last non-None finish_reason value
+                finish_reason = choice.finish_reason or finish_reason
+                if hasattr(delta, "reasoning_content"):
+                    reasoning_content.append(delta.reasoning_content or "")
         text = "".join(outputs)
 
         # Calculate usage info first so we can pass it during construction
         cache_read, cache_creation, cost = None, None, 0.0
         prompt_count, completion_count = None, None
-        if hasattr(completion, "usage"):
-            prompt_count = completion.usage.prompt_tokens
-            completion_count = completion.usage.completion_tokens
-            cache_read, cache_creation = parse_cached_usage(completion.usage)
+        if usage is not None:
+            prompt_count = usage.prompt_tokens
+            completion_count = usage.completion_tokens
+            cache_read, cache_creation = parse_cached_usage(usage)
             try:
                 cost = completion_cost(completion_response=completion, model=used_model)
             except Exception as e:
                 logger.warning(f"Failed to calculate cost for {used_model}: {e}")
 
+        output_message: Message | ToolRequestMessage
+        if streamed_tool_calls:
+            tool_calls = []
+            for index, state in sorted(streamed_tool_calls.items()):
+                if not state.id or not state.name:
+                    raise MalformedMessageError(
+                        f"Incomplete streamed tool call at index {index}."
+                    )
+                if state.type not in {"", "function"}:
+                    raise MalformedMessageError(
+                        f"Unsupported streamed tool call type {state.type!r} at "
+                        f"index {index}."
+                    )
+                try:
+                    arguments = json.loads(state.arguments)
+                except json.JSONDecodeError as exc:
+                    raise MalformedMessageError(
+                        f"Malformed streamed tool arguments at index {index}: "
+                        f"{state.arguments!r}."
+                    ) from exc
+                tool_calls.append(
+                    ToolCall(
+                        id=state.id,
+                        function=ToolCallFunction(
+                            name=state.name,
+                            arguments=arguments,
+                        ),
+                    )
+                )
+            output_message = ToolRequestMessage(
+                role=role or "assistant",
+                content=text or None,
+                tool_calls=tool_calls,
+            )
+        elif self.tool_parser is not None:
+            if not _tool_parser_accepts_text(self.tool_parser):
+                raise TypeError(
+                    "Streaming supports custom tool parsers whose first parameter "
+                    "is annotated as str."
+                )
+            parsed_message = self.tool_parser(text, kwargs.get("tools"))  # type: ignore[arg-type]
+            output_message = parsed_message
+        else:
+            output_message = Message(role=role or "assistant", content=text)
+
         result = LLMResult(
             model=used_model,
             text=text,
             prompt=messages,
-            messages=[Message(role=role, content=text)],
+            messages=[output_message],
             logprob=sum_logprobs(logprobs),
             top_logprobs=extract_top_logprobs(completion),
             reasoning_content="".join(reasoning_content),
@@ -1490,6 +1673,7 @@ class LiteLLMModel(LLMModel):
             logger.error("Model %s refused.", spec.name, exc_info=refusal)
             raise refusal
 
+        await self._maybe_validate([result])
         yield result
 
     @request_limited

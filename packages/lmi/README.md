@@ -99,7 +99,27 @@ An `LLMModel` implements `call`, which receives a list of `aviary` `Message`s an
 Because we support interacting with the LLMs using `Message` objects, we can use the modalities available in `aviary`,
 which currently include text and images.
 `lmi` supports these modalities but does not support other modalities yet.
-Adittionally, `LLMModel.call_single` can be used to return a single `LLMResult` completion.
+Additionally, `LLMModel.call_single` can be used to return a single `LLMResult` completion.
+
+For an incremental text display with a canonical completed result, use `call_stream`:
+
+```python
+from contextlib import aclosing
+
+from aviary.core import Message
+from lmi import LiteLLMModel
+
+llm = LiteLLMModel()
+stream = await llm.call_stream([Message(content="What is the meaning of life?")])
+async with aclosing(stream):
+    async for result in stream:
+        if result.messages is None:
+            print(result.text, end="", flush=True)
+        else:
+            completed_result = result
+```
+
+The stream yields zero or more text-delta results whose `messages` field is `None`, followed by exactly one terminal result containing the completed Aviary message or tool request. Tools are parsed only after the provider stream completes. Errors before the first yielded result may retry or fall back; errors after output has been yielded propagate without replaying the partial response.
 
 #### LiteLLMModel
 
