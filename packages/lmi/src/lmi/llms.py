@@ -485,13 +485,17 @@ def validate_json_completion(
 def _tool_parser_accepts_text(parser: Callable[..., Any]) -> bool:
     """Return whether a custom tool parser accepts completed text."""
     first_param = next(iter(signature(parser).parameters.values()))
-    if isinstance(parser, functools.partial):
-        hints = get_type_hints(parser.func)
-    else:
+    target = parser.func if isinstance(parser, functools.partial) else parser
+    try:
+        hints = get_type_hints(target)
+    except TypeError:
+        target = type(parser).__call__
         try:
-            hints = get_type_hints(parser)
-        except TypeError:
-            hints = get_type_hints(type(parser).__call__)
+            hints = get_type_hints(target)
+        except (AttributeError, NameError, TypeError):
+            hints = {}
+    except (AttributeError, NameError):
+        hints = {}
     return hints.get(first_param.name, first_param.annotation) is str
 
 
@@ -815,12 +819,15 @@ class LLMModel(ABC, BaseModel):
         )
 
         async def stream_results() -> ClosableAsyncIterator[LLMResult]:
-            async with contextlib.aclosing(aiter(dispatch_result)) as iterator:
+            seconds_to_first_token: float | None = None
+            async with contextlib.aclosing(dispatch_result) as iterator:
                 async for result in iterator:
-                    if result.seconds_to_first_token == 0 and result.messages is None:
-                        result.seconds_to_first_token = (
+                    if seconds_to_first_token is None and result.messages is None:
+                        seconds_to_first_token = (
                             asyncio.get_running_loop().time() - start_clock
                         )
+                    if seconds_to_first_token is not None:
+                        result.seconds_to_first_token = seconds_to_first_token
                     result.seconds_to_last_token = (
                         asyncio.get_running_loop().time() - start_clock
                     )

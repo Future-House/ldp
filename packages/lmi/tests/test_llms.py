@@ -655,6 +655,25 @@ class TestLiteLLMModel:
         assert results[-1].finish_reason == "stop"
 
     @pytest.mark.asyncio
+    async def test_call_stream_uses_first_delta_time_for_terminal_result(self) -> None:
+        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+        chunks = _text_stream_chunks("Hello")
+
+        async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
+            for chunk in chunks:
+                yield chunk
+
+        with patch("litellm.acompletion", AsyncMock(return_value=mock_stream())):
+            stream = await model.call_stream([Message(content="Say hello")])
+            results = [result async for result in stream]
+
+        assert results[0].seconds_to_first_token > 0
+        assert all(
+            result.seconds_to_first_token == results[0].seconds_to_first_token
+            for result in results
+        )
+
+    @pytest.mark.asyncio
     async def test_call_stream_assembles_interleaved_tool_calls(self) -> None:
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
         messages = [Message(content="Use both tools")]
@@ -991,6 +1010,38 @@ class TestLiteLLMModel:
 
         assert results[-1].messages == [parsed_message]
         assert parser_inputs == [results[-1].text]
+
+    @pytest.mark.asyncio
+    async def test_call_stream_falls_back_for_unresolved_parser_annotation(
+        self,
+    ) -> None:
+        parsed_message = ToolRequestMessage(
+            tool_calls=[ToolCall.from_name(function_name="search_documents", query="x")]
+        )
+
+        def tool_parser(
+            completion: str,  # noqa: ARG001
+            tools: list[dict] | None,  # noqa: ARG001
+        ) -> ToolRequestMessage:
+            return parsed_message
+
+        tool_parser.__annotations__["tools"] = "MissingToolType"
+        tool_parser.__annotations__["completion"] = "str"
+        model = LiteLLMModel(
+            name=CommonLLMNames.OPENAI_TEST.value,
+            tool_parser=tool_parser,
+        )
+        chunks = _text_stream_chunks("tool text")
+
+        async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
+            for chunk in chunks:
+                yield chunk
+
+        with patch("litellm.acompletion", AsyncMock(return_value=mock_stream())):
+            stream = await model.call_stream([Message(content="Search")])
+            results = [result async for result in stream]
+
+        assert results[-1].messages == [parsed_message]
 
     @pytest.mark.asyncio
     async def test_call_stream_supports_callable_object_tool_parser(self) -> None:
