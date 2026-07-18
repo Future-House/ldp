@@ -822,7 +822,7 @@ class LLMModel(ABC, BaseModel):
             seconds_to_first_token: float | None = None
             async with contextlib.aclosing(dispatch_result) as iterator:
                 async for result in iterator:
-                    if seconds_to_first_token is None and result.messages is None:
+                    if seconds_to_first_token is result.messages is None:
                         seconds_to_first_token = (
                             asyncio.get_running_loop().time() - start_clock
                         )
