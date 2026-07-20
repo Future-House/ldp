@@ -482,8 +482,14 @@ def validate_json_completion(
         ) from err
 
 
-def _tool_parser_accepts_text(parser: Callable[..., Any]) -> bool:
-    """Return whether a custom tool parser accepts completed text."""
+def _tool_parser_expects_text(parser: Callable[..., Any]) -> bool:
+    """Return whether to pass completed message text to a custom tool parser.
+
+    Parsers whose first parameter is annotated as exactly `str` receive
+    `choice.message.content`; all others receive the structured LiteLLM
+    `Choices` object. Union annotations containing `str` receive `Choices`
+    because they do not express a single preferred representation.
+    """
     first_param = next(iter(signature(parser).parameters.values()))
     target = parser.func if isinstance(parser, functools.partial) else parser
     try:
@@ -1392,7 +1398,7 @@ class LiteLLMModel(LLMModel):
                 else:
                     parser_arg: str | litellm.utils.Choices = (
                         choice.message.content or ""
-                        if _tool_parser_accepts_text(self.tool_parser)
+                        if _tool_parser_expects_text(self.tool_parser)
                         else choice
                     )
                     output_messages = self.tool_parser(parser_arg, tools)  # type: ignore[arg-type]
