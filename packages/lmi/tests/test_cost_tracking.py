@@ -41,6 +41,17 @@ def assert_costs_increased():
     assert GLOBAL_COST_TRACKER.lifetime_cost_usd > initial_cost
 
 
+@pytest.mark.asyncio
+async def test_tracked_stream_close_closes_wrapped_stream() -> None:
+    wrapped_stream = MagicMock()
+    wrapped_stream.aclose = AsyncMock()
+    stream = TrackedStreamWrapper(wrapped_stream)
+
+    await stream.aclose()
+
+    wrapped_stream.aclose.assert_awaited_once_with()
+
+
 class TestLiteLLMEmbeddingCosts:
     @pytest.mark.asyncio
     async def test_embed_documents(self):
