@@ -8,7 +8,7 @@ network access. Unit-level tests exercise `_run_with_fallbacks` and
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator, AsyncIterator
+from collections.abc import AsyncIterator
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -20,7 +20,7 @@ from litellm.types.utils import Message as LiteLLMMessage
 
 from lmi.config import LLMConfig, ModelSpec
 from lmi.exceptions import AllModelsExhaustedError, ModelRefusalError
-from lmi.llms import LiteLLMModel, _commit_stream
+from lmi.llms import ClosableAsyncIterator, LiteLLMModel, _commit_stream
 from lmi.types import LLMResult
 
 
@@ -188,7 +188,7 @@ class TestRunWithFallbacks:
 class TestCommitStream:
     @pytest.mark.asyncio
     async def test_replays_all_chunks(self) -> None:
-        async def gen() -> AsyncGenerator[LLMResult]:  # noqa: RUF029
+        async def gen() -> ClosableAsyncIterator[LLMResult]:  # noqa: RUF029
             for chunk in ("a", "b", "c"):
                 yield _chunk(chunk)
 
@@ -198,7 +198,7 @@ class TestCommitStream:
 
     @pytest.mark.asyncio
     async def test_pre_first_chunk_error_propagates(self) -> None:
-        async def gen() -> AsyncGenerator[LLMResult]:  # noqa: RUF029
+        async def gen() -> ClosableAsyncIterator[LLMResult]:  # noqa: RUF029
             raise litellm.RateLimitError(
                 message="pre-first-chunk", model=PRIMARY, llm_provider="openai"
             )
@@ -209,7 +209,7 @@ class TestCommitStream:
 
     @pytest.mark.asyncio
     async def test_empty_stream_raises_runtime_error(self) -> None:
-        async def gen() -> AsyncGenerator[LLMResult]:  # noqa: RUF029
+        async def gen() -> ClosableAsyncIterator[LLMResult]:  # noqa: RUF029
             return
             yield _chunk("unreachable")  # type: ignore[unreachable]  # pragma: no cover
 
@@ -218,7 +218,7 @@ class TestCommitStream:
 
     @pytest.mark.asyncio
     async def test_mid_stream_error_surfaces_unmodified(self) -> None:
-        async def gen() -> AsyncGenerator[LLMResult]:  # noqa: RUF029
+        async def gen() -> ClosableAsyncIterator[LLMResult]:  # noqa: RUF029
             yield _chunk("a")
             raise litellm.APIConnectionError(
                 message="mid-stream", model=PRIMARY, llm_provider="openai"
@@ -236,7 +236,7 @@ class TestCommitStream:
     async def test_closing_committed_stream_closes_source(self) -> None:
         source_closed = False
 
-        async def gen() -> AsyncGenerator[LLMResult]:  # noqa: RUF029
+        async def gen() -> ClosableAsyncIterator[LLMResult]:  # noqa: RUF029
             nonlocal source_closed
             try:
                 yield _chunk("a")

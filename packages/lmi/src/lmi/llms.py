@@ -20,7 +20,6 @@ import json
 import logging
 from abc import ABC
 from collections.abc import (
-    AsyncGenerator,
     AsyncIterator,
     Awaitable,
     Callable,
@@ -379,7 +378,7 @@ class CommonLLMNames(StrEnum):
 
 async def _commit_stream(
     gen: ClosableAsyncIterator[LLMResult],
-) -> AsyncGenerator[LLMResult]:
+) -> ClosableAsyncIterator[LLMResult]:
     """Prime `gen` and return a generator that replays its first result.
 
     Errors raised while fetching the first result propagate before this function
@@ -392,7 +391,7 @@ async def _commit_stream(
     except StopAsyncIteration as exc:
         raise RuntimeError("Stream closed before producing any output.") from exc
 
-    async def replay() -> AsyncGenerator[LLMResult]:
+    async def replay() -> ClosableAsyncIterator[LLMResult]:
         try:
             yield first
             async for item in gen:
@@ -791,8 +790,8 @@ def rate_limited(
 
 @overload
 def rate_limited(
-    func: Callable[P, AsyncGenerator[LLMResult]],
-) -> Callable[P, Coroutine[Any, Any, AsyncGenerator[LLMResult]]]: ...
+    func: Callable[P, ClosableAsyncIterator[LLMResult]],
+) -> Callable[P, Coroutine[Any, Any, ClosableAsyncIterator[LLMResult]]]: ...
 
 
 def rate_limited(func):
@@ -818,7 +817,7 @@ def rate_limited(func):
         # portion before yielding
         if isasyncgenfunction(func):
 
-            async def rate_limited_generator() -> AsyncGenerator[LLMResult]:
+            async def rate_limited_generator() -> ClosableAsyncIterator[LLMResult]:
                 source = func(self, *args, **kwargs)
                 try:
                     async for item in source:
@@ -851,8 +850,8 @@ def request_limited(
 
 @overload
 def request_limited(
-    func: Callable[P, Coroutine[Any, Any, AsyncGenerator[LLMResult]]],
-) -> Callable[P, Coroutine[Any, Any, AsyncGenerator[LLMResult]]]: ...
+    func: Callable[P, Coroutine[Any, Any, ClosableAsyncIterator[LLMResult]]],
+) -> Callable[P, Coroutine[Any, Any, ClosableAsyncIterator[LLMResult]]]: ...
 
 
 def request_limited(func):
@@ -869,7 +868,7 @@ def request_limited(func):
 
         if isasyncgenfunction(func):
 
-            async def request_limited_generator() -> AsyncGenerator[LLMResult]:
+            async def request_limited_generator() -> ClosableAsyncIterator[LLMResult]:
                 first_item = True
                 source = func(self, *args, **kwargs)
                 try:
@@ -1156,7 +1155,7 @@ class LiteLLMModel(LLMModel):
         messages: list[Message],
         streaming: bool = False,
         **chat_kwargs,
-    ) -> list[LLMResult] | AsyncGenerator[LLMResult]:
+    ) -> list[LLMResult] | ClosableAsyncIterator[LLMResult]:
         """Dispatch one request to `spec`, choosing Chat vs Responses per `spec.responses_api`.
 
         Non-streaming paths return a list of `LLMResult`s. Streaming paths
@@ -1392,7 +1391,7 @@ class LiteLLMModel(LLMModel):
     @rate_limited
     async def acompletion_iter(  # noqa: C901, PLR0915
         self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
-    ) -> AsyncGenerator[LLMResult]:
+    ) -> ClosableAsyncIterator[LLMResult]:
         if spec is None:
             spec = cast("LLMConfig", self.llm_config).models[0]
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
@@ -1589,7 +1588,7 @@ class LiteLLMModel(LLMModel):
         *,
         spec: ModelSpec | None = None,
         **kwargs,
-    ) -> AsyncGenerator[LLMResult]:
+    ) -> ClosableAsyncIterator[LLMResult]:
         """Stream results from the Responses API."""
         if spec is None:
             spec = cast("LLMConfig", self.llm_config).models[0]
