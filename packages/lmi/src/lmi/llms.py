@@ -377,27 +377,27 @@ class CommonLLMNames(StrEnum):
 
 
 async def _commit_stream(
-    gen: ClosableAsyncIterator[LLMResult],
+    stream: ClosableAsyncIterator[LLMResult],
 ) -> ClosableAsyncIterator[LLMResult]:
-    """Prime `gen` and return a generator that replays its first result.
+    """Advance `stream` to its first result and return an iterator that replays it.
 
     Errors raised while fetching the first result propagate before this function
     returns. Later results and errors pass through unchanged. If the consumer
-    cancels or closes the returned generator early, `gen` is also closed so the
+    cancels or closes the returned iterator early, `stream` is also closed so the
     provider stream can release its resources.
     """
     try:
-        first = await anext(gen)
+        first = await anext(stream)
     except StopAsyncIteration as exc:
         raise RuntimeError("Stream closed before producing any output.") from exc
 
     async def replay() -> ClosableAsyncIterator[LLMResult]:
         try:
             yield first
-            async for item in gen:
+            async for item in stream:
                 yield item
         finally:
-            await gen.aclose()
+            await stream.aclose()
 
     return replay()
 
