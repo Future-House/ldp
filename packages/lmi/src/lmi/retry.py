@@ -47,6 +47,7 @@ _RETRYABLE: tuple[type[BaseException], ...] = (
 _PROVIDER_LIMIT_PATTERNS = (
     "too much media",
     "image dimensions exceed max allowed size",
+    "text content blocks must contain non-whitespace text",
 )
 
 # Content-safety refusals that litellm surfaces as a bare `BadRequestError`
