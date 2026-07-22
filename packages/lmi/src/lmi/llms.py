@@ -20,6 +20,7 @@ import json
 import logging
 from abc import ABC
 from collections.abc import (
+    AsyncGenerator,
     AsyncIterator,
     Awaitable,
     Callable,
@@ -110,8 +111,17 @@ logger = logging.getLogger(__name__)
 T_co = TypeVar("T_co", covariant=True)
 
 
-class ClosableAsyncIterator(AsyncIterator[T_co], Protocol):
+# Define the iterator methods directly because Python 3.11 protocols cannot inherit
+# from collections.abc.AsyncIterator. Keeping this structural allows native async
+# generators and provider stream wrappers to satisfy the type without subclassing it.
+class ClosableAsyncIterator(Protocol[T_co]):
     """An async iterator that supports explicit resource cleanup."""
+
+    def __aiter__(self) -> AsyncIterator[T_co]:
+        """Return the iterator."""
+
+    async def __anext__(self) -> T_co:
+        """Return the next item."""
 
     async def aclose(self) -> None:
         """Close the iterator and release its resources."""
@@ -392,7 +402,7 @@ async def _commit_stream(
     except StopAsyncIteration as exc:
         raise RuntimeError("Stream closed before producing any output.") from exc
 
-    async def replay() -> ClosableAsyncIterator[LLMResult]:
+    async def replay() -> AsyncGenerator[LLMResult, None]:
         try:
             yield first
             async for item in stream:
@@ -824,7 +834,7 @@ class LLMModel(ABC, BaseModel):
             **chat_kwargs,
         )
 
-        async def stream_results() -> ClosableAsyncIterator[LLMResult]:
+        async def stream_results() -> AsyncGenerator[LLMResult, None]:
             seconds_to_first_token: float | None = None
             async with contextlib.aclosing(dispatch_result) as iterator:
                 async for result in iterator:
@@ -928,7 +938,7 @@ def rate_limited(func):
         # portion before yielding
         if isasyncgenfunction(func):
 
-            async def rate_limited_generator() -> ClosableAsyncIterator[LLMResult]:
+            async def rate_limited_generator() -> AsyncGenerator[LLMResult, None]:
                 source = func(self, *args, **kwargs)
                 try:
                     async for item in source:
@@ -982,7 +992,7 @@ def request_limited(func):
 
         if isasyncgenfunction(func):
 
-            async def request_limited_generator() -> ClosableAsyncIterator[LLMResult]:
+            async def request_limited_generator() -> AsyncGenerator[LLMResult, None]:
                 first_item = True
                 source = func(self, *args, **kwargs)
                 try:
@@ -1510,7 +1520,7 @@ class LiteLLMModel(LLMModel):
     @rate_limited
     async def acompletion_iter(  # noqa: C901
         self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
-    ) -> ClosableAsyncIterator[LLMResult]:
+    ) -> AsyncGenerator[LLMResult, None]:
         if spec is None:
             spec = cast("LLMConfig", self.llm_config).models[0]
         yield_deltas = kwargs.pop("_yield_deltas", False)
@@ -1681,7 +1691,7 @@ class LiteLLMModel(LLMModel):
         *,
         spec: ModelSpec | None = None,
         **kwargs,
-    ) -> ClosableAsyncIterator[LLMResult]:
+    ) -> AsyncGenerator[LLMResult, None]:
         """Stream results from the Responses API."""
         if spec is None:
             spec = cast("LLMConfig", self.llm_config).models[0]
