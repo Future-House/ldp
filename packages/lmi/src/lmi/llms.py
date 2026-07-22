@@ -1,5 +1,4 @@
 __all__ = [
-    "ClosableAsyncIterator",
     "CommonLLMNames",
     "LLMModel",
     "LiteLLMModel",
@@ -20,7 +19,7 @@ import json
 import logging
 from abc import ABC
 from collections.abc import (
-    AsyncIterator,
+    AsyncIterable,
     Awaitable,
     Callable,
     Coroutine,
@@ -30,16 +29,7 @@ from collections.abc import (
 )
 from enum import StrEnum
 from inspect import isasyncgenfunction, isawaitable, signature
-from typing import (
-    Any,
-    ClassVar,
-    ParamSpec,
-    Protocol,
-    TypeAlias,
-    TypeVar,
-    cast,
-    overload,
-)
+from typing import Any, ClassVar, ParamSpec, TypeAlias, cast, overload
 
 import litellm
 from aviary.core import (
@@ -104,16 +94,6 @@ from . import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-T_co = TypeVar("T_co", covariant=True)
-
-
-class ClosableAsyncIterator(AsyncIterator[T_co], Protocol):
-    """An async iterator that supports explicit resource cleanup."""
-
-    async def aclose(self) -> None:
-        """Close the iterator and release its resources."""
 
 
 def _convert_content_block_for_responses(block: dict[str, Any]) -> dict[str, Any]:
@@ -376,28 +356,24 @@ class CommonLLMNames(StrEnum):
     )
 
 
-async def _commit_stream(
-    stream: ClosableAsyncIterator[LLMResult],
-) -> ClosableAsyncIterator[LLMResult]:
-    """Advance `stream` to its first result and return an iterator that replays it.
+async def _commit_stream(gen: AsyncIterable[LLMResult]) -> AsyncIterable[LLMResult]:
+    """Advance `gen` to its first yield and return an iterator that replays it.
 
-    Errors raised while fetching the first result propagate before this function
-    returns. Later results and errors pass through unchanged. If the consumer
-    cancels or closes the returned iterator early, `stream` is also closed so the
-    provider stream can release its resources.
+    Exceptions raised before the first yield propagate to the caller. Once the
+    first chunk has been produced the returned iterator yields it and then
+    forwards the rest of `gen` verbatim; any mid-stream error surfaces
+    unmodified to the consumer.
     """
+    iterator = aiter(gen)
     try:
-        first = await anext(stream)
+        first = await anext(iterator)
     except StopAsyncIteration as exc:
         raise RuntimeError("Stream closed before producing any output.") from exc
 
-    async def replay() -> ClosableAsyncIterator[LLMResult]:
-        try:
-            yield first
-            async for item in stream:
-                yield item
-        finally:
-            await stream.aclose()
+    async def replay() -> AsyncIterable[LLMResult]:
+        yield first
+        async for item in iterator:
+            yield item
 
     return replay()
 
@@ -538,12 +514,10 @@ class LLMModel(ABC, BaseModel):
 
     async def acompletion_iter(
         self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
-    ) -> ClosableAsyncIterator[LLMResult]:
+    ) -> AsyncIterable[LLMResult]:
         """Stream one completion from the model given by `spec`.
 
-        The returned iterator must support `aclose()` so callers can release
-        provider resources when they stop before exhausting the stream. See
-        `acompletion` for the `spec` contract.
+        See `acompletion` for the `spec` contract.
         """
         raise NotImplementedError
 
@@ -790,8 +764,8 @@ def rate_limited(
 
 @overload
 def rate_limited(
-    func: Callable[P, ClosableAsyncIterator[LLMResult]],
-) -> Callable[P, Coroutine[Any, Any, ClosableAsyncIterator[LLMResult]]]: ...
+    func: Callable[P, AsyncIterable[LLMResult]],
+) -> Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]]: ...
 
 
 def rate_limited(func):
@@ -817,19 +791,15 @@ def rate_limited(func):
         # portion before yielding
         if isasyncgenfunction(func):
 
-            async def rate_limited_generator() -> ClosableAsyncIterator[LLMResult]:
-                source = func(self, *args, **kwargs)
-                try:
-                    async for item in source:
-                        token_count = 0
-                        if isinstance(item, LLMResult):
-                            token_count = int(
-                                len(item.text or "") / CHARACTERS_PER_TOKEN_ASSUMPTION
-                            )
-                        await self.check_rate_limit(token_count)
-                        yield item
-                finally:
-                    await source.aclose()
+            async def rate_limited_generator() -> AsyncIterable[LLMResult]:
+                async for item in func(self, *args, **kwargs):
+                    token_count = 0
+                    if isinstance(item, LLMResult):
+                        token_count = int(
+                            len(item.text or "") / CHARACTERS_PER_TOKEN_ASSUMPTION
+                        )
+                    await self.check_rate_limit(token_count)
+                    yield item
 
             return rate_limited_generator()
 
@@ -850,8 +820,8 @@ def request_limited(
 
 @overload
 def request_limited(
-    func: Callable[P, Coroutine[Any, Any, ClosableAsyncIterator[LLMResult]]],
-) -> Callable[P, Coroutine[Any, Any, ClosableAsyncIterator[LLMResult]]]: ...
+    func: Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]],
+) -> Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]]: ...
 
 
 def request_limited(func):
@@ -868,19 +838,15 @@ def request_limited(func):
 
         if isasyncgenfunction(func):
 
-            async def request_limited_generator() -> ClosableAsyncIterator[LLMResult]:
+            async def request_limited_generator() -> AsyncIterable[LLMResult]:
                 first_item = True
-                source = func(self, *args, **kwargs)
-                try:
-                    async for item in source:
-                        # Skip rate limit check for first item since we already checked at generator start
-                        if not first_item:
-                            await self.check_request_limit()
-                        else:
-                            first_item = False
-                        yield item
-                finally:
-                    await source.aclose()
+                async for item in func(self, *args, **kwargs):
+                    # Skip rate limit check for first item since we already checked at generator start
+                    if not first_item:
+                        await self.check_request_limit()
+                    else:
+                        first_item = False
+                    yield item
 
             return request_limited_generator()
         return await func(self, *args, **kwargs)
@@ -1155,11 +1121,11 @@ class LiteLLMModel(LLMModel):
         messages: list[Message],
         streaming: bool = False,
         **chat_kwargs,
-    ) -> list[LLMResult] | ClosableAsyncIterator[LLMResult]:
+    ) -> list[LLMResult] | AsyncIterable[LLMResult]:
         """Dispatch one request to `spec`, choosing Chat vs Responses per `spec.responses_api`.
 
         Non-streaming paths return a list of `LLMResult`s. Streaming paths
-        return an async generator that has already produced its first chunk;
+        return an async iterator that has already produced its first chunk;
         errors before the first chunk (stream-open failure, an immediate
         refusal) surface as exceptions from this coroutine, while mid-stream
         errors propagate unmodified when the caller iterates the result.
@@ -1391,7 +1357,7 @@ class LiteLLMModel(LLMModel):
     @rate_limited
     async def acompletion_iter(  # noqa: C901, PLR0915
         self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
-    ) -> ClosableAsyncIterator[LLMResult]:
+    ) -> AsyncIterable[LLMResult]:
         if spec is None:
             spec = cast("LLMConfig", self.llm_config).models[0]
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
@@ -1588,7 +1554,7 @@ class LiteLLMModel(LLMModel):
         *,
         spec: ModelSpec | None = None,
         **kwargs,
-    ) -> ClosableAsyncIterator[LLMResult]:
+    ) -> AsyncIterable[LLMResult]:
         """Stream results from the Responses API."""
         if spec is None:
             spec = cast("LLMConfig", self.llm_config).models[0]

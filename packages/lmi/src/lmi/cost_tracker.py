@@ -186,10 +186,6 @@ class TrackedStreamWrapper:
                 _requested_model_ctx.reset(token)
         return response
 
-    async def aclose(self) -> None:
-        """Close the wrapped provider stream."""
-        await self.stream.aclose()
-
 
 def track_costs_iter(
     func: Callable[TParams, Awaitable[litellm.CustomStreamWrapper]],
