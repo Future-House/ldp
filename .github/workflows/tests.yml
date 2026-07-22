@@ -78,9 +78,10 @@ jobs:
           enable-cache: true
       - name: Confirm dependency compilation
         run: uv sync
-  test-ldp:
+  test-ldp-matrix:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: [3.11, 3.12, 3.13, 3.14]
     steps:
@@ -100,9 +101,16 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-  test-lmi:
+  test-ldp:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: test-ldp-matrix
+    steps:
+      - run: test "${{ needs.test-ldp-matrix.result }}" = success
+  test-lmi-matrix:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: [3.11, 3.12, 3.13, 3.14]
     steps:
@@ -120,3 +128,9 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  test-lmi:
+    runs-on: ubuntu-latest
+    if: always()
+    needs: test-lmi-matrix
+    steps:
+      - run: test "${{ needs.test-lmi-matrix.result }}" = success
