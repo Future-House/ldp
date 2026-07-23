@@ -2,8 +2,8 @@ import json
 import pathlib
 import pickle
 import re
-from collections.abc import AsyncGenerator, AsyncIterator
-from typing import Any, ClassVar, cast
+from collections.abc import AsyncIterator
+from typing import Any, ClassVar
 from unittest.mock import AsyncMock, Mock, patch
 
 import litellm
@@ -942,9 +942,8 @@ class TestLiteLLMModel:
             AsyncMock(return_value=dispatched_stream()),
         ):
             stream = await model.call_stream([Message(content="Say hello")])
-            iterator = cast("AsyncGenerator[LLMResult]", aiter(stream))
-            assert (await anext(iterator)).text == "Hello"
-            await iterator.aclose()
+            assert (await anext(stream)).text == "Hello"
+            await stream.aclose()
 
         assert source_closed
 
@@ -964,9 +963,8 @@ class TestLiteLLMModel:
 
         with patch("litellm.acompletion", AsyncMock(return_value=provider_stream())):
             stream = await model.call_stream([Message(content="Say hello")])
-            iterator = cast("AsyncGenerator[LLMResult]", aiter(stream))
-            assert (await anext(iterator)).text == "Hello"
-            await iterator.aclose()
+            assert (await anext(stream)).text == "Hello"
+            await stream.aclose()
 
         assert provider_closed
 

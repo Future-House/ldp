@@ -99,7 +99,7 @@ An `LLMModel` implements `call`, which receives a list of `aviary` `Message`s an
 Because we support interacting with the LLMs using `Message` objects, we can use the modalities available in `aviary`,
 which currently include text and images.
 `lmi` supports these modalities but does not support other modalities yet.
-Additionally, `LLMModel.call_single` can be used to return a single `LLMResult` completion.
+Adittionally, `LLMModel.call_single` can be used to return a single `LLMResult` completion.
 
 For an incremental text display with a canonical completed result, use `call_stream`:
 
