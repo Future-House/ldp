@@ -571,35 +571,40 @@ class TestLiteLLMModel:
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
         messages = [Message(content="Say hello")]
 
-        chunks = [
-            _stream_chunk(content="Hello", role="assistant"),
-            _stream_chunk(content=" world"),
-            litellm.types.utils.ModelResponse(
-                model="test-model",
+        def _build_mock_completion(
+            model: str = "test-model",
+            logprobs: Any = None,
+            delta_content: str = "",
+            delta_reasoning_content: str = "hmmm",
+            delta_role: str = "assistant",
+            finish_reason: str = "unknown",
+            usage: Any = None,
+        ) -> Mock:
+            return Mock(
+                model=model,
                 choices=[
-                    litellm.types.utils.StreamingChoices(
-                        delta=litellm.types.utils.Delta(content="!"),
-                        logprobs=litellm.types.utils.ChoiceLogprobs(
-                            content=[
-                                litellm.types.utils.ChatCompletionTokenLogprob(
-                                    token="!",  # noqa: S106
-                                    bytes=[33],
-                                    logprob=-0.5,
-                                    top_logprobs=[],
-                                )
-                            ]
+                    Mock(
+                        logprobs=logprobs,
+                        finish_reason=finish_reason,
+                        delta=Mock(
+                            content=delta_content,
+                            reasoning_content=delta_reasoning_content,
+                            role=delta_role,
                         ),
                     )
                 ],
-                stream=True,
-            ),
-            _stream_chunk(finish_reason="stop"),
-            _stream_chunk(
-                usage=litellm.types.utils.Usage(
-                    prompt_tokens=10,
-                    completion_tokens=5,
-                    total_tokens=15,
-                )
+                usage=usage,
+            )
+
+        chunks = [
+            _build_mock_completion(delta_content="Hello"),
+            _build_mock_completion(logprobs=Mock(content=None), delta_content=" world"),
+            _build_mock_completion(logprobs=Mock(content=[]), delta_content="!"),
+            _build_mock_completion(logprobs=Mock(content=[Mock(logprob=-0.5)])),
+            # Final chunk: includes usage and the terminal finish_reason.
+            _build_mock_completion(
+                usage=Mock(prompt_tokens=10, completion_tokens=5),
+                finish_reason="stop",
             ),
         ]
 

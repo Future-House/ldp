@@ -453,6 +453,32 @@ class TestDispatchPrimitiveSelection:
         assert seen["primitive"] == "acompletion_iter"
 
     @pytest.mark.asyncio
+    async def test_canonical_chat_streaming(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        model = _model()
+        seen: dict[str, Any] = {}
+
+        async def one_chunk() -> AsyncIterator[LLMResult]:  # noqa: RUF029
+            yield _chunk("ok")
+
+        async def fake_acompletion_stream(  # noqa: RUF029
+            _self: LiteLLMModel,
+            messages: Any,  # noqa: ARG001
+            *,
+            spec: ModelSpec,  # noqa: ARG001
+            **_kwargs: Any,
+        ) -> AsyncIterator[LLMResult]:
+            seen["primitive"] = "_acompletion_stream"
+            return one_chunk()
+
+        monkeypatch.setattr(
+            LiteLLMModel, "_acompletion_stream", fake_acompletion_stream
+        )
+        await model.call_stream([Message(content="hi")])
+        assert seen["primitive"] == "_acompletion_stream"
+
+    @pytest.mark.asyncio
     async def test_responses_non_streaming(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
