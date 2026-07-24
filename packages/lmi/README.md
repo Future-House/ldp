@@ -82,7 +82,13 @@ result = await llm.call_single("What is the meaning of life?")
 An LLM is a class that inherits from `LLMModel` and implements the following methods:
 
 - `async acompletion(messages: list[Message], **kwargs) -> list[LLMResult]`
-- `async acompletion_iter(messages: list[Message], **kwargs) -> AsyncIterator[LLMResult]`
+- `async acompletion_iter(messages: list[Message], *, yield_text_deltas: bool = False, **kwargs)`
+  `-> ClosableAsyncIterator[LLMResult]`
+
+`acompletion_iter` streams one completion. It always yields a completed `LLMResult` last;
+`yield_text_deltas` additionally yields each visible text delta as it arrives, with
+`messages=None`. The returned iterator must support `aclose()` so callers that stop early
+can release the provider connection.
 
 These methods are used by the base class `LLMModel` to implement the LLM interface.
 Because `LLMModel` is an abstract class, it doesn't depend on any specific LLM provider.
@@ -100,6 +106,30 @@ Because we support interacting with the LLMs using `Message` objects, we can use
 which currently include text and images.
 `lmi` supports these modalities but does not support other modalities yet.
 Adittionally, `LLMModel.call_single` can be used to return a single `LLMResult` completion.
+
+For an incremental text display with a canonical completed result, use `call_stream`:
+
+```python
+from contextlib import aclosing
+
+from aviary.core import Message
+from lmi import LiteLLMModel
+
+llm = LiteLLMModel()
+stream = await llm.call_stream([Message(content="What is the meaning of life?")])
+async with aclosing(stream):
+    async for result in stream:
+        if result.messages is None:
+            print(result.text, end="", flush=True)
+        else:
+            completed_result = result
+```
+
+The stream yields zero or more text-delta results whose `messages` field is `None`, followed by exactly one terminal result containing the completed Aviary message or tool request. Tool calls arrive from providers as argument fragments, so they are withheld until the stream completes and are parsed into the terminal result; only the terminal result is passed to `llm_result_callback`. Errors before the first yielded result may retry or fall back; errors after output has been yielded propagate without replaying the partial response.
+
+Consumers that stop iterating early must call `aclose()` or use `contextlib.aclosing` as shown above, otherwise the provider stream stays open until the iterator is garbage collected.
+
+`call_stream` requires `n=1` and currently supports Chat Completions models only; a model chain configured for the Responses API is rejected before dispatch. The terminal result is assembled and parsed exactly as a non-streaming completion, so it carries the same tool parsing, usage, cost, and response validation.
 
 #### LiteLLMModel
 

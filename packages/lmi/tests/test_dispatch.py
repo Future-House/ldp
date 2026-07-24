@@ -20,7 +20,7 @@ from litellm.types.utils import Message as LiteLLMMessage
 
 from lmi.config import LLMConfig, ModelSpec
 from lmi.exceptions import AllModelsExhaustedError, ModelRefusalError
-from lmi.llms import LiteLLMModel, _commit_stream
+from lmi.llms import ClosableAsyncIterator, LiteLLMModel, _commit_stream
 from lmi.types import LLMResult
 
 
@@ -188,7 +188,7 @@ class TestRunWithFallbacks:
 class TestCommitStream:
     @pytest.mark.asyncio
     async def test_replays_all_chunks(self) -> None:
-        async def gen() -> AsyncIterator[LLMResult]:  # noqa: RUF029
+        async def gen() -> ClosableAsyncIterator[LLMResult]:  # noqa: RUF029
             for chunk in ("a", "b", "c"):
                 yield _chunk(chunk)
 
@@ -198,7 +198,7 @@ class TestCommitStream:
 
     @pytest.mark.asyncio
     async def test_pre_first_chunk_error_propagates(self) -> None:
-        async def gen() -> AsyncIterator[LLMResult]:  # noqa: RUF029
+        async def gen() -> ClosableAsyncIterator[LLMResult]:  # noqa: RUF029
             raise litellm.RateLimitError(
                 message="pre-first-chunk", model=PRIMARY, llm_provider="openai"
             )
@@ -209,7 +209,7 @@ class TestCommitStream:
 
     @pytest.mark.asyncio
     async def test_empty_stream_raises_runtime_error(self) -> None:
-        async def gen() -> AsyncIterator[LLMResult]:  # noqa: RUF029
+        async def gen() -> ClosableAsyncIterator[LLMResult]:  # noqa: RUF029
             return
             yield _chunk("unreachable")  # type: ignore[unreachable]  # pragma: no cover
 
@@ -218,7 +218,7 @@ class TestCommitStream:
 
     @pytest.mark.asyncio
     async def test_mid_stream_error_surfaces_unmodified(self) -> None:
-        async def gen() -> AsyncIterator[LLMResult]:  # noqa: RUF029
+        async def gen() -> ClosableAsyncIterator[LLMResult]:  # noqa: RUF029
             yield _chunk("a")
             raise litellm.APIConnectionError(
                 message="mid-stream", model=PRIMARY, llm_provider="openai"
@@ -231,6 +231,50 @@ class TestCommitStream:
         with pytest.raises(litellm.APIConnectionError):
             async for _ in committed:
                 pass
+
+    @pytest.mark.asyncio
+    async def test_closing_committed_stream_closes_source(self) -> None:
+        source_closed = False
+
+        async def gen() -> ClosableAsyncIterator[LLMResult]:  # noqa: RUF029
+            nonlocal source_closed
+            try:
+                yield _chunk("a")
+                yield _chunk("b")
+            finally:
+                source_closed = True
+
+        committed = await _commit_stream(gen())
+        assert (await anext(committed)).text == "a"
+        await committed.aclose()
+
+        assert source_closed
+
+    @pytest.mark.asyncio
+    async def test_accepts_custom_closable_iterator(self) -> None:
+        class CustomStream:
+            def __init__(self) -> None:
+                self.items = iter((_chunk("a"), _chunk("b")))
+                self.closed = False
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self) -> LLMResult:
+                try:
+                    return next(self.items)
+                except StopIteration as exc:
+                    raise StopAsyncIteration from exc
+
+            async def aclose(self) -> None:
+                self.closed = True
+
+        source = CustomStream()
+        committed = await _commit_stream(source)
+        assert (await anext(committed)).text == "a"
+        await committed.aclose()
+
+        assert source.closed
 
 
 def _fake_chat_response(
@@ -399,14 +443,40 @@ class TestDispatchPrimitiveSelection:
             messages: Any,  # noqa: ARG001
             *,
             spec: ModelSpec,  # noqa: ARG001
+            yield_text_deltas: bool = False,
             **_kwargs: Any,
         ) -> AsyncIterator[LLMResult]:
-            seen["primitive"] = "acompletion_iter"
+            seen["yield_text_deltas"] = yield_text_deltas
             return one_chunk()
 
         monkeypatch.setattr(LiteLLMModel, "acompletion_iter", fake_acompletion_iter)
         await model.call([Message(content="hi")], callbacks=[lambda *_a, **_k: None])
-        assert seen["primitive"] == "acompletion_iter"
+        assert seen["yield_text_deltas"] is False
+
+    @pytest.mark.asyncio
+    async def test_chat_streaming_with_deltas(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        model = _model()
+        seen: dict[str, Any] = {}
+
+        async def one_chunk() -> AsyncIterator[LLMResult]:  # noqa: RUF029
+            yield _chunk("ok")
+
+        async def fake_acompletion_iter(  # noqa: RUF029
+            _self: LiteLLMModel,
+            messages: Any,  # noqa: ARG001
+            *,
+            spec: ModelSpec,  # noqa: ARG001
+            yield_text_deltas: bool = False,
+            **_kwargs: Any,
+        ) -> AsyncIterator[LLMResult]:
+            seen["yield_text_deltas"] = yield_text_deltas
+            return one_chunk()
+
+        monkeypatch.setattr(LiteLLMModel, "acompletion_iter", fake_acompletion_iter)
+        await model.call_stream([Message(content="hi")])
+        assert seen["yield_text_deltas"] is True
 
     @pytest.mark.asyncio
     async def test_responses_non_streaming(

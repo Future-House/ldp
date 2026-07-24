@@ -1,4 +1,5 @@
 __all__ = [
+    "ClosableAsyncIterator",
     "CommonLLMNames",
     "LLMModel",
     "LiteLLMModel",
@@ -19,7 +20,8 @@ import json
 import logging
 from abc import ABC
 from collections.abc import (
-    AsyncIterable,
+    AsyncGenerator,
+    AsyncIterator,
     Awaitable,
     Callable,
     Coroutine,
@@ -29,7 +31,17 @@ from collections.abc import (
 )
 from enum import StrEnum
 from inspect import isasyncgenfunction, isawaitable, signature
-from typing import Any, ClassVar, ParamSpec, TypeAlias, cast, overload
+from typing import (
+    Any,
+    ClassVar,
+    ParamSpec,
+    Protocol,
+    TypeAlias,
+    TypeVar,
+    cast,
+    get_type_hints,
+    overload,
+)
 
 import litellm
 from aviary.core import (
@@ -94,6 +106,25 @@ from . import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+T_co = TypeVar("T_co", covariant=True)
+
+
+# Define the iterator methods directly because Python 3.11 protocols cannot inherit
+# from collections.abc.AsyncIterator. Keeping this structural allows native async
+# generators and provider stream wrappers to satisfy the type without subclassing it.
+class ClosableAsyncIterator(Protocol[T_co]):
+    """An async iterator that supports explicit resource cleanup."""
+
+    def __aiter__(self) -> AsyncIterator[T_co]:
+        """Return the iterator."""
+
+    async def __anext__(self) -> T_co:
+        """Return the next item."""
+
+    async def aclose(self) -> None:
+        """Close the iterator and release its resources."""
 
 
 def _convert_content_block_for_responses(block: dict[str, Any]) -> dict[str, Any]:
@@ -356,24 +387,28 @@ class CommonLLMNames(StrEnum):
     )
 
 
-async def _commit_stream(gen: AsyncIterable[LLMResult]) -> AsyncIterable[LLMResult]:
-    """Advance `gen` to its first yield and return an iterator that replays it.
+async def _commit_stream(
+    stream: ClosableAsyncIterator[LLMResult],
+) -> ClosableAsyncIterator[LLMResult]:
+    """Advance `stream` to its first yield and return an iterator that replays it.
 
     Exceptions raised before the first yield propagate to the caller. Once the
     first chunk has been produced the returned iterator yields it and then
-    forwards the rest of `gen` verbatim; any mid-stream error surfaces
-    unmodified to the consumer.
+    forwards the rest of `stream` verbatim; any mid-stream error surfaces
+    unmodified to the consumer. Closing the returned iterator also closes `stream`.
     """
-    iterator = aiter(gen)
     try:
-        first = await anext(iterator)
+        first = await anext(stream)
     except StopAsyncIteration as exc:
         raise RuntimeError("Stream closed before producing any output.") from exc
 
-    async def replay() -> AsyncIterable[LLMResult]:
-        yield first
-        async for item in iterator:
-            yield item
+    async def replay() -> AsyncGenerator[LLMResult, None]:
+        try:
+            yield first
+            async for item in stream:
+                yield item
+        finally:
+            await stream.aclose()
 
     return replay()
 
@@ -457,6 +492,42 @@ def validate_json_completion(
         ) from err
 
 
+def _tool_parser_expects_text(parser: Callable[..., Any]) -> bool:
+    """Return whether to pass completed message text to a custom tool parser.
+
+    Parsers whose first parameter is annotated as exactly `str` receive
+    `choice.message.content`; all others receive the structured LiteLLM
+    `Choices` object. Union annotations containing `str` receive `Choices`
+    because they do not express a single preferred representation.
+    """
+    first_param = next(iter(signature(parser).parameters.values()))
+    target = parser.func if isinstance(parser, functools.partial) else parser
+    try:
+        hints = get_type_hints(target)
+    except TypeError:
+        target = type(parser).__call__
+        try:
+            hints = get_type_hints(target)
+        except (AttributeError, NameError, TypeError):
+            hints = {}
+    except (AttributeError, NameError):
+        hints = {}
+    return hints.get(first_param.name, first_param.annotation) is str
+
+
+def _validate_stream_config(llm_config: LLMConfig | None, n: int) -> None:
+    """Reject model configurations unsupported by Chat Completions streaming."""
+    if n != 1 or (
+        llm_config is not None
+        and any(spec.extra_params.get("n", 1) != 1 for spec in llm_config.models)
+    ):
+        raise ValueError("Streaming requires exactly one completion (n=1).")
+    if llm_config is not None and any(spec.responses_api for spec in llm_config.models):
+        raise NotImplementedError(
+            "call_stream currently supports Chat Completions models only."
+        )
+
+
 def prepare_args(
     func: Callable[..., Any] | Callable[..., Awaitable],
     completion: str,
@@ -513,11 +584,18 @@ class LLMModel(ABC, BaseModel):
         raise NotImplementedError
 
     async def acompletion_iter(
-        self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
-    ) -> AsyncIterable[LLMResult]:
+        self,
+        messages: list[Message],
+        *,
+        spec: ModelSpec | None = None,
+        yield_text_deltas: bool = False,
+        **kwargs,
+    ) -> ClosableAsyncIterator[LLMResult]:
         """Stream one completion from the model given by `spec`.
 
-        See `acompletion` for the `spec` contract.
+        When `yield_text_deltas` is true, visible text deltas precede the completed
+        result. Terminal result assembly is identical in both modes. The returned
+        iterator supports `aclose()` for early resource cleanup.
         """
         raise NotImplementedError
 
@@ -709,6 +787,24 @@ class LLMModel(ABC, BaseModel):
                     await possibly_awaitable_result
         return results
 
+    async def call_stream(
+        self,
+        messages: list[Message],
+        *,
+        name: str | None = None,
+        tools: list[Tool] | None = None,
+        tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
+        **kwargs: Any,
+    ) -> ClosableAsyncIterator[LLMResult]:
+        """Stream incremental text followed by one canonical completed result.
+
+        Implementations yield text-delta results with `messages=None`, followed by
+        a terminal result containing the completed message or tool request. Consumers
+        that stop early must call `aclose()` or use `contextlib.aclosing`, otherwise
+        the provider stream stays open until the iterator is garbage collected.
+        """
+        raise NotImplementedError
+
     async def call_single(
         self,
         messages: list[Message] | str,
@@ -764,8 +860,8 @@ def rate_limited(
 
 @overload
 def rate_limited(
-    func: Callable[P, AsyncIterable[LLMResult]],
-) -> Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]]: ...
+    func: Callable[P, ClosableAsyncIterator[LLMResult]],
+) -> Callable[P, Coroutine[Any, Any, ClosableAsyncIterator[LLMResult]]]: ...
 
 
 def rate_limited(func):
@@ -791,15 +887,24 @@ def rate_limited(func):
         # portion before yielding
         if isasyncgenfunction(func):
 
-            async def rate_limited_generator() -> AsyncIterable[LLMResult]:
-                async for item in func(self, *args, **kwargs):
-                    token_count = 0
-                    if isinstance(item, LLMResult):
-                        token_count = int(
-                            len(item.text or "") / CHARACTERS_PER_TOKEN_ASSUMPTION
-                        )
-                    await self.check_rate_limit(token_count)
-                    yield item
+            async def rate_limited_generator() -> AsyncGenerator[LLMResult, None]:
+                source = func(self, *args, **kwargs)
+                try:
+                    async for item in source:
+                        if item.messages is not None and kwargs.get(
+                            "yield_text_deltas"
+                        ):
+                            yield item
+                            continue
+                        token_count = 0
+                        if isinstance(item, LLMResult):
+                            token_count = int(
+                                len(item.text or "") / CHARACTERS_PER_TOKEN_ASSUMPTION
+                            )
+                        await self.check_rate_limit(token_count)
+                        yield item
+                finally:
+                    await source.aclose()
 
             return rate_limited_generator()
 
@@ -820,8 +925,8 @@ def request_limited(
 
 @overload
 def request_limited(
-    func: Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]],
-) -> Callable[P, Coroutine[Any, Any, AsyncIterable[LLMResult]]]: ...
+    func: Callable[P, Coroutine[Any, Any, ClosableAsyncIterator[LLMResult]]],
+) -> Callable[P, Coroutine[Any, Any, ClosableAsyncIterator[LLMResult]]]: ...
 
 
 def request_limited(func):
@@ -838,15 +943,19 @@ def request_limited(func):
 
         if isasyncgenfunction(func):
 
-            async def request_limited_generator() -> AsyncIterable[LLMResult]:
+            async def request_limited_generator() -> AsyncGenerator[LLMResult, None]:
                 first_item = True
-                async for item in func(self, *args, **kwargs):
-                    # Skip rate limit check for first item since we already checked at generator start
-                    if not first_item:
-                        await self.check_request_limit()
-                    else:
-                        first_item = False
-                    yield item
+                source = func(self, *args, **kwargs)
+                try:
+                    async for item in source:
+                        # Skip rate limit check for first item since we already checked at generator start
+                        if not first_item:
+                            await self.check_request_limit()
+                        else:
+                            first_item = False
+                        yield item
+                finally:
+                    await source.aclose()
 
             return request_limited_generator()
         return await func(self, *args, **kwargs)
@@ -1085,6 +1194,73 @@ class LiteLLMModel(LLMModel):
             self.tool_parser = self.llm_config.tool_parser
         return self
 
+    async def call_stream(
+        self,
+        messages: list[Message],
+        *,
+        name: str | None = None,
+        tools: list[Tool] | None = None,
+        tool_choice: Tool | str | None = LLMModel.TOOL_CHOICE_REQUIRED,
+        **kwargs: Any,
+    ) -> ClosableAsyncIterator[LLMResult]:
+        """Stream incremental text followed by one canonical completed result.
+
+        The iterator yields zero or more text-delta results with `messages=None`,
+        followed by a terminal result containing the completed message or tool
+        request. Only the terminal result is passed to `llm_result_callback`.
+
+        This supports exactly one Chat Completions result. Consumers that stop
+        early must call `aclose()` or use `contextlib.aclosing`, otherwise the
+        provider stream stays open until the iterator is garbage collected.
+        """
+        _validate_stream_config(
+            self.llm_config, kwargs.pop("n", self.config.get("n", 1))
+        )
+        messages = self._maybe_patch_gemini3_tool_response_messages(messages)
+
+        if tools:
+            kwargs["tools"] = ToolsAdapter.dump_python(
+                tools, exclude_none=True, by_alias=True
+            )
+            if tool_choice is not None:
+                kwargs["tool_choice"] = (
+                    {
+                        "type": "function",
+                        "function": {"name": tool_choice.info.name},
+                    }
+                    if isinstance(tool_choice, Tool)
+                    else tool_choice
+                )
+        else:
+            kwargs["tools"] = tools
+        messages = [
+            (
+                message
+                if not isinstance(message, ToolRequestMessage) or message.tool_calls
+                else Message(role=message.role, content=message.content)
+            )
+            for message in messages
+        ]
+        dispatch_result = await self._run_with_fallbacks(
+            self._dispatch,
+            messages=messages,
+            streaming=True,
+            yield_text_deltas=True,
+            **kwargs,
+        )
+
+        async def stream_results() -> AsyncGenerator[LLMResult, None]:
+            async with contextlib.aclosing(dispatch_result) as iterator:
+                async for result in iterator:
+                    result.name = name
+                    if self.llm_result_callback and result.messages is not None:
+                        callback_result = self.llm_result_callback(result)
+                        if isawaitable(callback_result):
+                            await callback_result
+                    yield result
+
+        return stream_results()
+
     # SEE: https://platform.openai.com/docs/api-reference/chat/create#chat-create-tool_choice
     # > `none` means the model will not call any tool and instead generates a message.
     # > `auto` means the model can pick between generating a message or calling one or more tools.
@@ -1120,8 +1296,9 @@ class LiteLLMModel(LLMModel):
         *,
         messages: list[Message],
         streaming: bool = False,
+        yield_text_deltas: bool = False,
         **chat_kwargs,
-    ) -> list[LLMResult] | AsyncIterable[LLMResult]:
+    ) -> list[LLMResult] | ClosableAsyncIterator[LLMResult]:
         """Dispatch one request to `spec`, choosing Chat vs Responses per `spec.responses_api`.
 
         Non-streaming paths return a list of `LLMResult`s. Streaming paths
@@ -1129,6 +1306,16 @@ class LiteLLMModel(LLMModel):
         errors before the first chunk (stream-open failure, an immediate
         refusal) surface as exceptions from this coroutine, while mid-stream
         errors propagate unmodified when the caller iterates the result.
+
+        Args:
+            spec: Model and per-request kwargs for this attempt.
+            messages: Conversation to send to the provider.
+            streaming: Request a provider stream instead of a single response.
+                `call` sets this when given callbacks; `call_stream` always sets it.
+            yield_text_deltas: Expose visible text deltas from the provider stream.
+                Only `call_stream` sets this. It affects what the iterator yields,
+                not how the terminal result is assembled.
+            chat_kwargs: Forwarded to the provider primitive.
         """
         logger.info(
             "Dispatching %s via %s%s",
@@ -1150,7 +1337,12 @@ class LiteLLMModel(LLMModel):
 
         # Chat Completions path: `tools` stays in chat_kwargs.
         if streaming:
-            gen = await self.acompletion_iter(messages, spec=spec, **chat_kwargs)
+            gen = await self.acompletion_iter(
+                messages,
+                spec=spec,
+                yield_text_deltas=yield_text_deltas,
+                **chat_kwargs,
+            )
             return await _commit_stream(gen)
         return await self.acompletion(messages, spec=spec, **chat_kwargs)
 
@@ -1202,7 +1394,7 @@ class LiteLLMModel(LLMModel):
     # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
-    async def acompletion(  # noqa: C901
+    async def acompletion(
         self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
     ) -> list[LLMResult]:
         if spec is None:
@@ -1246,6 +1438,24 @@ class LiteLLMModel(LLMModel):
             logger.exception("acompletion attempt failed on %s.", spec.name)
             raise
 
+        return await self._parse_chat_completion(
+            completions, messages, tools, tool_choice, spec
+        )
+
+    async def _parse_chat_completion(
+        self,
+        completions: litellm.ModelResponse,
+        messages: list[Message],
+        tools: list[dict] | None,
+        tool_choice: Tool | str | None,
+        spec: ModelSpec,
+        streamed_logprobs: list[float] | None = None,
+    ) -> list[LLMResult]:
+        """Convert one completed Chat Completions response to canonical results.
+
+        `streamed_logprobs` supplies logprobs gathered while consuming a stream,
+        because LiteLLM's chunk builder drops them from the response it assembles.
+        """
         finish_reason = (
             getattr(completions.choices[0], "finish_reason", None)
             if completions.choices
@@ -1265,7 +1475,7 @@ class LiteLLMModel(LLMModel):
         results: list[LLMResult] = []
 
         # Use getattr because ModelResponse.usage not in LiteLLM's type hints
-        # In practice, usage always exists in non-streaming responses
+        # In practice, usage always exists on a completed response
         usage = getattr(completions, "usage", None)
         prompt_count = usage.prompt_tokens if usage else None
         completion_count = usage.completion_tokens if usage else None
@@ -1277,7 +1487,7 @@ class LiteLLMModel(LLMModel):
             cost = 0.0
             logger.warning(f"Failed to calculate cost for {used_model}: {e}")
 
-        # We are not streaming here, so we can cast to list[litellm.utils.Choices]
+        # A completed response holds Choices, so it is safe to read choice.message
         for choice in completions.choices:
             try:
                 if self.tool_parser is None:
@@ -1288,11 +1498,9 @@ class LiteLLMModel(LLMModel):
                         | list[ToolRequestMessage]
                     ) = default_tool_parser(choice, tools)
                 else:
-                    sig = signature(self.tool_parser)
-                    first_param = next(iter(sig.parameters.values()))
                     arg: str | litellm.utils.Choices = (
                         choice.message.content or ""
-                        if first_param.annotation is str
+                        if _tool_parser_expects_text(self.tool_parser)
                         else choice
                     )
                     output_messages = self.tool_parser(arg, tools)  # type: ignore[arg-type]
@@ -1301,7 +1509,7 @@ class LiteLLMModel(LLMModel):
                     f"Failed to convert model response's message {choice.message}"
                     f" Got finish reason {choice.finish_reason!r},"
                     f" full response was {completions},"
-                    f" and tool choice was {kwargs.get('tool_choice')!r}."
+                    f" and tool choice was {tool_choice!r}."
                 ) from exc
 
             if not isinstance(output_messages, list):
@@ -1317,7 +1525,9 @@ class LiteLLMModel(LLMModel):
                     text=choice.message.content,
                     prompt=messages,
                     messages=output_messages,
-                    logprob=sum_logprobs(choice),
+                    logprob=sum_logprobs(
+                        choice if streamed_logprobs is None else streamed_logprobs
+                    ),
                     top_logprobs=extract_top_logprobs(choice),
                     prompt_count=prompt_count,
                     completion_count=completion_count,
@@ -1355,9 +1565,21 @@ class LiteLLMModel(LLMModel):
     # the order should be first request and then rate(token)
     @request_limited
     @rate_limited
-    async def acompletion_iter(  # noqa: C901, PLR0915
-        self, messages: list[Message], *, spec: ModelSpec | None = None, **kwargs
-    ) -> AsyncIterable[LLMResult]:
+    async def acompletion_iter(  # noqa: C901
+        self,
+        messages: list[Message],
+        *,
+        spec: ModelSpec | None = None,
+        yield_text_deltas: bool = False,
+        **kwargs: Any,
+    ) -> AsyncGenerator[LLMResult, None]:
+        """Consume one Chat Completions stream and yield its completed results.
+
+        Every invocation uses the same chunk assembly and terminal parser. When
+        `yield_text_deltas` is true, nonempty visible text deltas are yielded first
+        with `messages=None`; tool-call fragments remain hidden until the terminal
+        result.
+        """
         if spec is None:
             spec = cast("LLMConfig", self.llm_config).models[0]
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
@@ -1389,74 +1611,46 @@ class LiteLLMModel(LLMModel):
             logger.exception("acompletion_iter failed to open stream on %s.", spec.name)
             raise
         start_clock = asyncio.get_running_loop().time()
-        outputs = []
+        chunks = []
         logprobs = []
-        role = None
-        finish_reason: str | None = None
-        reasoning_content = []
-        used_model = None
-        async for completion in stream_completions:
-            if not used_model:
-                used_model = completion.model or spec.name
-            choice = completion.choices[0]
-            delta = choice.delta
-            # logprobs can be None, or missing a content attribute,
-            # or a ChoiceLogprobs object with a NoneType/empty content attribute
-            if logprob_content := getattr(choice.logprobs, "content", None):
-                logprobs.append(logprob_content[0].logprob or 0)
-            outputs.append(delta.content or "")
-            role = delta.role or role
-            # The usage-only chunk (when include_usage=True) has finish_reason=None,
-            # so retain the last non-None finish_reason value
-            finish_reason = choice.finish_reason or finish_reason
-            if hasattr(delta, "reasoning_content"):
-                reasoning_content.append(delta.reasoning_content or "")
-        text = "".join(outputs)
+        async with contextlib.aclosing(stream_completions):
+            async for completion in stream_completions:
+                chunks.append(completion)
+                if not completion.choices:
+                    continue
+                choice = completion.choices[0]
+                if logprob_content := getattr(
+                    getattr(choice, "logprobs", None), "content", None
+                ):
+                    logprobs.append(logprob_content[0].logprob or 0)
+                delta = choice.delta
+                content = (
+                    delta.get("content") if isinstance(delta, dict) else delta.content
+                ) or ""
+                if yield_text_deltas and content:
+                    yield LLMResult(
+                        model=completion.model or spec.name,
+                        text=content,
+                        prompt=messages,
+                    )
 
-        # Calculate usage info first so we can pass it during construction
-        cache_read, cache_creation, cost = None, None, 0.0
-        prompt_count, completion_count = None, None
-        if hasattr(completion, "usage"):
-            prompt_count = completion.usage.prompt_tokens
-            completion_count = completion.usage.completion_tokens
-            cache_read, cache_creation = parse_cached_usage(completion.usage)
-            try:
-                cost = completion_cost(completion_response=completion, model=used_model)
-            except Exception as e:
-                logger.warning(f"Failed to calculate cost for {used_model}: {e}")
-
-        result = LLMResult(
-            model=used_model,
-            text=text,
-            prompt=messages,
-            messages=[Message(role=role, content=text)],
-            logprob=sum_logprobs(logprobs),
-            top_logprobs=extract_top_logprobs(completion),
-            reasoning_content="".join(reasoning_content),
-            prompt_count=prompt_count,
-            completion_count=completion_count,
-            cache_read_tokens=cache_read,
-            cache_creation_tokens=cache_creation,
-            cost=cost,
-            finish_reason=finish_reason,
+        completions = litellm.stream_chunk_builder(chunks, messages=prompts)
+        if not isinstance(completions, litellm.ModelResponse):
+            raise TypeError("Failed to build a completed response from stream chunks.")
+        results = await self._parse_chat_completion(
+            completions,
+            messages,
+            kwargs.get("tools"),
+            kwargs.get("tool_choice"),
+            spec,
+            streamed_logprobs=logprobs,
         )
-
-        if text:
-            result.seconds_to_first_token = (
-                asyncio.get_running_loop().time() - start_clock
-            )
-
-        if finish_reason in REFUSAL_REASON:
-            refusal = ModelRefusalError(
-                f"Model {spec.name} refused with finish_reason={finish_reason!r}.",
-                model=spec.name,
-                finish_reason=finish_reason,
-                response=result,
-            )
-            logger.error("Model %s refused.", spec.name, exc_info=refusal)
-            raise refusal
-
-        yield result
+        for result in results:
+            if result.text:
+                result.seconds_to_first_token = (
+                    asyncio.get_running_loop().time() - start_clock
+                )
+            yield result
 
     @request_limited
     @rate_limited
@@ -1554,7 +1748,7 @@ class LiteLLMModel(LLMModel):
         *,
         spec: ModelSpec | None = None,
         **kwargs,
-    ) -> AsyncIterable[LLMResult]:
+    ) -> AsyncGenerator[LLMResult, None]:
         """Stream results from the Responses API."""
         if spec is None:
             spec = cast("LLMConfig", self.llm_config).models[0]
