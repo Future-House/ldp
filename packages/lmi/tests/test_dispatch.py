@@ -443,17 +443,18 @@ class TestDispatchPrimitiveSelection:
             messages: Any,  # noqa: ARG001
             *,
             spec: ModelSpec,  # noqa: ARG001
+            yield_text_deltas: bool = False,
             **_kwargs: Any,
         ) -> AsyncIterator[LLMResult]:
-            seen["primitive"] = "acompletion_iter"
+            seen["yield_text_deltas"] = yield_text_deltas
             return one_chunk()
 
         monkeypatch.setattr(LiteLLMModel, "acompletion_iter", fake_acompletion_iter)
         await model.call([Message(content="hi")], callbacks=[lambda *_a, **_k: None])
-        assert seen["primitive"] == "acompletion_iter"
+        assert seen["yield_text_deltas"] is False
 
     @pytest.mark.asyncio
-    async def test_canonical_chat_streaming(
+    async def test_chat_streaming_with_deltas(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         model = _model()
@@ -462,21 +463,20 @@ class TestDispatchPrimitiveSelection:
         async def one_chunk() -> AsyncIterator[LLMResult]:  # noqa: RUF029
             yield _chunk("ok")
 
-        async def fake_acompletion_stream(  # noqa: RUF029
+        async def fake_acompletion_iter(  # noqa: RUF029
             _self: LiteLLMModel,
             messages: Any,  # noqa: ARG001
             *,
             spec: ModelSpec,  # noqa: ARG001
+            yield_text_deltas: bool = False,
             **_kwargs: Any,
         ) -> AsyncIterator[LLMResult]:
-            seen["primitive"] = "_acompletion_stream"
+            seen["yield_text_deltas"] = yield_text_deltas
             return one_chunk()
 
-        monkeypatch.setattr(
-            LiteLLMModel, "_acompletion_stream", fake_acompletion_stream
-        )
+        monkeypatch.setattr(LiteLLMModel, "acompletion_iter", fake_acompletion_iter)
         await model.call_stream([Message(content="hi")])
-        assert seen["primitive"] == "_acompletion_stream"
+        assert seen["yield_text_deltas"] is True
 
     @pytest.mark.asyncio
     async def test_responses_non_streaming(

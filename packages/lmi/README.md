@@ -82,7 +82,13 @@ result = await llm.call_single("What is the meaning of life?")
 An LLM is a class that inherits from `LLMModel` and implements the following methods:
 
 - `async acompletion(messages: list[Message], **kwargs) -> list[LLMResult]`
-- `async acompletion_iter(messages: list[Message], **kwargs) -> AsyncIterator[LLMResult]`
+- `async acompletion_iter(messages: list[Message], *, yield_text_deltas: bool = False, **kwargs)`
+  `-> ClosableAsyncIterator[LLMResult]`
+
+`acompletion_iter` streams one completion. It always yields a completed `LLMResult` last;
+`yield_text_deltas` additionally yields each visible text delta as it arrives, with
+`messages=None`. The returned iterator must support `aclose()` so callers that stop early
+can release the provider connection.
 
 These methods are used by the base class `LLMModel` to implement the LLM interface.
 Because `LLMModel` is an abstract class, it doesn't depend on any specific LLM provider.
@@ -119,7 +125,9 @@ async with aclosing(stream):
             completed_result = result
 ```
 
-The stream yields zero or more text-delta results whose `messages` field is `None`, followed by exactly one terminal result containing the completed Aviary message or tool request. Tools are parsed only after the provider stream completes. Errors before the first yielded result may retry or fall back; errors after output has been yielded propagate without replaying the partial response.
+The stream yields zero or more text-delta results whose `messages` field is `None`, followed by exactly one terminal result containing the completed Aviary message or tool request. Tool calls arrive from providers as argument fragments, so they are withheld until the stream completes and are parsed into the terminal result; only the terminal result is passed to `llm_result_callback`. Errors before the first yielded result may retry or fall back; errors after output has been yielded propagate without replaying the partial response.
+
+`call_stream` requires `n=1` and currently supports Chat Completions models only; a model chain configured for the Responses API is rejected before dispatch. The terminal result is assembled and parsed exactly as a non-streaming completion, so it carries the same tool parsing, usage, cost, and response validation.
 
 #### LiteLLMModel
 

@@ -68,6 +68,26 @@ def test_estimate_message_tokens(png_image: bytes, subtests: pytest.Subtests) ->
                 )
 
 
+def _choice_logprobs(token: str, logprob: float) -> litellm.types.utils.ChoiceLogprobs:
+    """Build streamed logprobs for one token, with itself as the only top logprob."""
+    return litellm.types.utils.ChoiceLogprobs(
+        content=[
+            litellm.types.utils.ChatCompletionTokenLogprob(
+                token=token,
+                bytes=list(token.encode()),
+                logprob=logprob,
+                top_logprobs=[
+                    {
+                        "token": token,
+                        "logprob": logprob,
+                        "bytes": list(token.encode()),
+                    }
+                ],
+            )
+        ]
+    )
+
+
 def _stream_chunk(
     *,
     content: str | None = None,
@@ -75,6 +95,8 @@ def _stream_chunk(
     finish_reason: str | None = None,
     tool_calls: list[dict[str, Any]] | None = None,
     usage: litellm.types.utils.Usage | None = None,
+    reasoning_content: str | None = None,
+    logprobs: litellm.types.utils.ChoiceLogprobs | None = None,
     model: str = "test-model",
 ) -> litellm.types.utils.ModelResponse:
     """Build one realistic LiteLLM Chat Completions stream chunk."""
@@ -82,10 +104,12 @@ def _stream_chunk(
         [
             litellm.types.utils.StreamingChoices(
                 finish_reason=finish_reason,
+                logprobs=logprobs,
                 delta=litellm.types.utils.Delta(
                     content=content,
                     role=role,
                     tool_calls=tool_calls,
+                    reasoning_content=reasoning_content,
                 ),
             )
         ]
@@ -570,41 +594,35 @@ class TestLiteLLMModel:
         """Test that acompletion_iter handles various logprobs edge cases gracefully."""
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
         messages = [Message(content="Say hello")]
-
-        def _build_mock_completion(
-            model: str = "test-model",
-            logprobs: Any = None,
-            delta_content: str = "",
-            delta_reasoning_content: str = "hmmm",
-            delta_role: str = "assistant",
-            finish_reason: str = "unknown",
-            usage: Any = None,
-        ) -> Mock:
-            return Mock(
-                model=model,
+        chunks = [
+            _stream_chunk(content="Hello", role="assistant"),
+            _stream_chunk(content=" world"),
+            litellm.types.utils.ModelResponse(
+                model="test-model",
                 choices=[
-                    Mock(
-                        logprobs=logprobs,
-                        finish_reason=finish_reason,
-                        delta=Mock(
-                            content=delta_content,
-                            reasoning_content=delta_reasoning_content,
-                            role=delta_role,
+                    litellm.types.utils.StreamingChoices(
+                        delta=litellm.types.utils.Delta(content="!"),
+                        logprobs=litellm.types.utils.ChoiceLogprobs(
+                            content=[
+                                litellm.types.utils.ChatCompletionTokenLogprob(
+                                    token="!",  # noqa: S106
+                                    bytes=[33],
+                                    logprob=-0.5,
+                                    top_logprobs=[],
+                                )
+                            ]
                         ),
                     )
                 ],
-                usage=usage,
-            )
-
-        chunks = [
-            _build_mock_completion(delta_content="Hello"),
-            _build_mock_completion(logprobs=Mock(content=None), delta_content=" world"),
-            _build_mock_completion(logprobs=Mock(content=[]), delta_content="!"),
-            _build_mock_completion(logprobs=Mock(content=[Mock(logprob=-0.5)])),
-            # Final chunk: includes usage and the terminal finish_reason.
-            _build_mock_completion(
-                usage=Mock(prompt_tokens=10, completion_tokens=5),
-                finish_reason="stop",
+                stream=True,
+            ),
+            _stream_chunk(finish_reason="stop"),
+            _stream_chunk(
+                usage=litellm.types.utils.Usage(
+                    prompt_tokens=10,
+                    completion_tokens=5,
+                    total_tokens=15,
+                )
             ),
         ]
 
@@ -625,6 +643,170 @@ class TestLiteLLMModel:
         assert result.prompt_count == 10
         assert result.completion_count == 5
         assert result.finish_reason == "stop"
+
+    @pytest.mark.parametrize(
+        ("chunks", "expected_deltas", "expected_message_type"),
+        [
+            (
+                [
+                    _stream_chunk(content="He", role="assistant"),
+                    _stream_chunk(content="llo", finish_reason="stop"),
+                    _stream_chunk(
+                        usage=litellm.types.utils.Usage(
+                            prompt_tokens=10,
+                            completion_tokens=2,
+                            total_tokens=12,
+                            prompt_tokens_details={"cached_tokens": 4},
+                            cache_creation_input_tokens=3,
+                        )
+                    ),
+                ],
+                ["He", "llo"],
+                Message,
+            ),
+            (
+                [
+                    _stream_chunk(
+                        role="assistant",
+                        tool_calls=[
+                            {
+                                "index": 0,
+                                "id": "call-search",
+                                "type": "function",
+                                "function": {
+                                    "name": "search_documents",
+                                    "arguments": '{"query":',
+                                },
+                            }
+                        ],
+                    ),
+                    _stream_chunk(
+                        tool_calls=[
+                            {
+                                "index": 0,
+                                "function": {"arguments": '"protein folding"}'},
+                            }
+                        ],
+                        finish_reason="tool_calls",
+                    ),
+                    _stream_chunk(
+                        usage=litellm.types.utils.Usage(
+                            prompt_tokens=8,
+                            completion_tokens=4,
+                            total_tokens=12,
+                        )
+                    ),
+                ],
+                [],
+                ToolRequestMessage,
+            ),
+            (
+                [
+                    _stream_chunk(
+                        content="Rep",
+                        role="assistant",
+                        reasoning_content="think one ",
+                        logprobs=_choice_logprobs("Rep", -0.1),
+                    ),
+                    _stream_chunk(
+                        content="ly",
+                        reasoning_content="think two",
+                        finish_reason="stop",
+                        logprobs=_choice_logprobs("ly", -0.4),
+                    ),
+                    _stream_chunk(
+                        usage=litellm.types.utils.Usage(
+                            prompt_tokens=6,
+                            completion_tokens=2,
+                            total_tokens=8,
+                        )
+                    ),
+                ],
+                ["Rep", "ly"],
+                Message,
+            ),
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_acompletion_iter_terminal_parity(
+        self,
+        chunks: list[litellm.types.utils.ModelResponse],
+        expected_deltas: list[str],
+        expected_message_type: type[Message],
+    ) -> None:
+        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+        messages = [Message(content="Respond")]
+
+        async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
+            for chunk in chunks:
+                yield chunk
+
+        with patch(
+            "litellm.acompletion",
+            AsyncMock(side_effect=[mock_stream(), mock_stream()]),
+        ):
+            terminal_only = [
+                result async for result in await model.acompletion_iter(messages)
+            ]
+            with_deltas = [
+                result
+                async for result in await model.acompletion_iter(
+                    messages, yield_text_deltas=True
+                )
+            ]
+
+        assert [result.text for result in with_deltas[:-1]] == expected_deltas
+        ignored_fields = {"id", "date", "seconds_to_first_token"}
+        assert terminal_only[0].model_dump(exclude=ignored_fields) == with_deltas[
+            -1
+        ].model_dump(exclude=ignored_fields)
+        assert terminal_only[0].messages is not None
+        assert isinstance(terminal_only[0].messages[0], expected_message_type)
+
+    @pytest.mark.asyncio
+    async def test_acompletion_iter_concatenates_streamed_reasoning(self) -> None:
+        """Reasoning arriving across chunks is joined, and logprobs are summed."""
+        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+        chunks = [
+            _stream_chunk(
+                content="Rep",
+                role="assistant",
+                reasoning_content="think one ",
+                logprobs=_choice_logprobs("Rep", -0.1),
+            ),
+            _stream_chunk(
+                content="ly",
+                reasoning_content="think two",
+                finish_reason="stop",
+                logprobs=_choice_logprobs("ly", -0.4),
+            ),
+            _stream_chunk(
+                usage=litellm.types.utils.Usage(
+                    prompt_tokens=6,
+                    completion_tokens=2,
+                    total_tokens=8,
+                )
+            ),
+        ]
+
+        async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
+            for chunk in chunks:
+                yield chunk
+
+        with patch("litellm.acompletion", AsyncMock(return_value=mock_stream())):
+            results = [
+                result
+                async for result in await model.acompletion_iter([
+                    Message(content="Think")
+                ])
+            ]
+
+        assert len(results) == 1
+        assert results[0].text == "Reply"
+        assert results[0].reasoning_content == "think one think two"
+        # Streamed logprobs are summed here because LiteLLM's chunk builder drops
+        # them from the assembled response.
+        assert results[0].logprob == pytest.approx(-0.5)
 
     @pytest.mark.asyncio
     async def test_call_stream_yields_text_deltas_then_completed_message(self) -> None:
