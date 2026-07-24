@@ -842,25 +842,6 @@ class TestLiteLLMModel:
         assert results[-1].finish_reason == "stop"
 
     @pytest.mark.asyncio
-    async def test_call_stream_uses_first_delta_time_for_terminal_result(self) -> None:
-        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
-        chunks = _text_stream_chunks("Hello")
-
-        async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
-            for chunk in chunks:
-                yield chunk
-
-        with patch("litellm.acompletion", AsyncMock(return_value=mock_stream())):
-            stream = await model.call_stream([Message(content="Say hello")])
-            results = [result async for result in stream]
-
-        assert results[0].seconds_to_first_token > 0
-        assert all(
-            result.seconds_to_first_token == results[0].seconds_to_first_token
-            for result in results
-        )
-
-    @pytest.mark.asyncio
     async def test_call_stream_assembles_interleaved_tool_calls(self) -> None:
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
         messages = [Message(content="Use both tools")]

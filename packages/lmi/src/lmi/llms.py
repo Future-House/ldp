@@ -789,7 +789,7 @@ class LLMModel(ABC, BaseModel):
 
     async def call_stream(
         self,
-        messages: list[Message] | str,
+        messages: list[Message],
         *,
         name: str | None = None,
         tools: list[Tool] | None = None,
@@ -800,7 +800,8 @@ class LLMModel(ABC, BaseModel):
 
         Implementations yield text-delta results with `messages=None`, followed by
         a terminal result containing the completed message or tool request. Consumers
-        that stop early must call `aclose()` or use `contextlib.aclosing`.
+        that stop early must call `aclose()` or use `contextlib.aclosing`, otherwise
+        the provider stream stays open until the iterator is garbage collected.
         """
         raise NotImplementedError
 
@@ -1195,7 +1196,7 @@ class LiteLLMModel(LLMModel):
 
     async def call_stream(
         self,
-        messages: list[Message] | str,
+        messages: list[Message],
         *,
         name: str | None = None,
         tools: list[Tool] | None = None,
@@ -1209,13 +1210,12 @@ class LiteLLMModel(LLMModel):
         request. Only the terminal result is passed to `llm_result_callback`.
 
         This supports exactly one Chat Completions result. Consumers that stop
-        early must call `aclose()` or use `contextlib.aclosing`.
+        early must call `aclose()` or use `contextlib.aclosing`, otherwise the
+        provider stream stays open until the iterator is garbage collected.
         """
         _validate_stream_config(
             self.llm_config, kwargs.pop("n", self.config.get("n", 1))
         )
-        if isinstance(messages, str):
-            messages = [Message(content=messages)]
         messages = self._maybe_patch_gemini3_tool_response_messages(messages)
 
         if tools:
@@ -1241,7 +1241,6 @@ class LiteLLMModel(LLMModel):
             )
             for message in messages
         ]
-        start_clock = asyncio.get_running_loop().time()
         dispatch_result = await self._run_with_fallbacks(
             self._dispatch,
             messages=messages,
@@ -1251,18 +1250,8 @@ class LiteLLMModel(LLMModel):
         )
 
         async def stream_results() -> AsyncGenerator[LLMResult, None]:
-            seconds_to_first_token: float | None = None
             async with contextlib.aclosing(dispatch_result) as iterator:
                 async for result in iterator:
-                    if seconds_to_first_token is result.messages is None:
-                        seconds_to_first_token = (
-                            asyncio.get_running_loop().time() - start_clock
-                        )
-                    if seconds_to_first_token is not None:
-                        result.seconds_to_first_token = seconds_to_first_token
-                    result.seconds_to_last_token = (
-                        asyncio.get_running_loop().time() - start_clock
-                    )
                     result.name = name
                     if self.llm_result_callback and result.messages is not None:
                         callback_result = self.llm_result_callback(result)
@@ -1486,6 +1475,7 @@ class LiteLLMModel(LLMModel):
         results: list[LLMResult] = []
 
         # Use getattr because ModelResponse.usage not in LiteLLM's type hints
+        # In practice, usage always exists on a completed response
         usage = getattr(completions, "usage", None)
         prompt_count = usage.prompt_tokens if usage else None
         completion_count = usage.completion_tokens if usage else None
@@ -1497,6 +1487,7 @@ class LiteLLMModel(LLMModel):
             cost = 0.0
             logger.warning(f"Failed to calculate cost for {used_model}: {e}")
 
+        # A completed response holds Choices, so it is safe to read choice.message
         for choice in completions.choices:
             try:
                 if self.tool_parser is None:
@@ -1591,11 +1582,15 @@ class LiteLLMModel(LLMModel):
         """
         if spec is None:
             spec = cast("LLMConfig", self.llm_config).models[0]
+        # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
         prompts = cast(
             "list[litellm.types.llms.openai.AllMessageValues]",
             [m.model_dump(by_alias=True) for m in messages if m.content],
         )
-        stream_options = {"include_usage": True}
+        stream_options = {
+            "include_usage": True,
+        }
+        # NOTE: Specifically requesting reasoning for deepseek-r1 models
         if kwargs.get("include_reasoning"):
             stream_options["include_reasoning"] = True
 

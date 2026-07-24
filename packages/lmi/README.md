@@ -127,6 +127,8 @@ async with aclosing(stream):
 
 The stream yields zero or more text-delta results whose `messages` field is `None`, followed by exactly one terminal result containing the completed Aviary message or tool request. Tool calls arrive from providers as argument fragments, so they are withheld until the stream completes and are parsed into the terminal result; only the terminal result is passed to `llm_result_callback`. Errors before the first yielded result may retry or fall back; errors after output has been yielded propagate without replaying the partial response.
 
+Consumers that stop iterating early must call `aclose()` or use `contextlib.aclosing` as shown above, otherwise the provider stream stays open until the iterator is garbage collected.
+
 `call_stream` requires `n=1` and currently supports Chat Completions models only; a model chain configured for the Responses API is rejected before dispatch. The terminal result is assembled and parsed exactly as a non-streaming completion, so it carries the same tool parsing, usage, cost, and response validation.
 
 #### LiteLLMModel
