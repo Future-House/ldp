@@ -1583,9 +1583,12 @@ class LiteLLMModel(LLMModel):
         if spec is None:
             spec = cast("LLMConfig", self.llm_config).models[0]
         # cast is necessary for LiteLLM typing bug: https://github.com/BerriAI/litellm/issues/7641
+        # Send every message, the same as acompletion does. A message holding
+        # only tool calls has no content, and leaving it out strands the tool
+        # responses that answer it, which providers reject.
         prompts = cast(
             "list[litellm.types.llms.openai.AllMessageValues]",
-            [m.model_dump(by_alias=True) for m in messages if m.content],
+            [m.model_dump(by_alias=True) for m in messages],
         )
         stream_options = {
             "include_usage": True,
