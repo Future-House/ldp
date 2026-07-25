@@ -842,6 +842,38 @@ class TestLiteLLMModel:
         assert results[-1].finish_reason == "stop"
 
     @pytest.mark.asyncio
+    async def test_call_stream_sends_messages_holding_only_tool_calls(self) -> None:
+        """Every message reaches the provider, including contentless ones.
+
+        A message holding only tool calls has no content. Leaving it out
+        strands the tool response that answers it, and providers reject a
+        tool response whose request is missing.
+        """
+        model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
+        tool_call = ToolCall.from_name("get_weather", city="Paris")
+        messages = [
+            Message(content="What is the weather?"),
+            ToolRequestMessage(tool_calls=[tool_call]),
+            ToolResponseMessage.from_call(tool_call, content="Sunny"),
+        ]
+        chunks = _text_stream_chunks("Sunny in Paris")
+
+        async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
+            for chunk in chunks:
+                yield chunk
+
+        with patch(
+            "litellm.acompletion", AsyncMock(return_value=mock_stream())
+        ) as mock_acompletion:
+            stream = await model.call_stream(messages)
+            [result async for result in stream]
+
+        sent = mock_acompletion.call_args.kwargs["messages"]
+        assert len(sent) == len(messages)
+        assert sent[1]["tool_calls"], "The tool request must reach the provider"
+        assert sent[2]["tool_call_id"] == tool_call.id
+
+    @pytest.mark.asyncio
     async def test_call_stream_assembles_interleaved_tool_calls(self) -> None:
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
         messages = [Message(content="Use both tools")]
