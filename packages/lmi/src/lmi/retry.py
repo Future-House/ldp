@@ -54,7 +54,10 @@ _PROVIDER_LIMIT_PATTERNS = (
 # instead of `ContentPolicyViolationError` (e.g. OpenAI's prompt-level safety
 # block, error code "invalid_prompt"). A refusal can be a false positive, so a
 # sibling model may legitimately answer — fall over rather than dead-end.
-_CONTENT_REFUSAL_PATTERNS = ("limited access to this content for safety reasons",)
+_CONTENT_REFUSAL_PATTERNS = (
+    "limited access to this content for safety reasons",
+    "this content was flagged for possible biological risk",
+)
 
 _FALLBACKABLE: tuple[type[BaseException], ...] = (
     litellm.NotFoundError,
