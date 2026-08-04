@@ -110,6 +110,14 @@ class TestShouldFallback:
         )
         assert should_fallback(exc)
 
+    def test_biological_risk_bad_request_falls_back(self) -> None:
+        exc = _litellm_exc(
+            litellm.BadRequestError,
+            message="This content was flagged for possible biological risk. "
+            "If this seems wrong, try rephrasing your request.",
+        )
+        assert should_fallback(exc)
+
     @pytest.mark.parametrize(
         "cls",
         [
