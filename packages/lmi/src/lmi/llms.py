@@ -50,6 +50,7 @@ from litellm import completion_cost
 from litellm.types.llms.openai import (
     ErrorEvent,
     OutputTextDeltaEvent,
+    ResponseAPIUsage,
     ResponseCompletedEvent,
     ResponseFailedEvent,
     ResponseIncompleteEvent,
@@ -293,7 +294,9 @@ REFUSAL_REASON = (
 )
 
 
-def parse_cached_usage(usage: Usage | None) -> tuple[int | None, int | None]:
+def parse_cached_usage(
+    usage: Usage | ResponseAPIUsage | None,
+) -> tuple[int | None, int | None]:
     """Parse cached token counts from LiteLLM usage object.
 
     Args:
@@ -306,7 +309,8 @@ def parse_cached_usage(usage: Usage | None) -> tuple[int | None, int | None]:
         - (int, int) where values can be 0 if caching is supported but had no cache hits/creation
 
     Provider support:
-        - OpenAI: cache_read via prompt_tokens_details.cached_tokens (no creation tracking)
+        - OpenAI Chat: cache_read via prompt_tokens_details.cached_tokens
+        - OpenAI Responses: cache_read and cache_creation via input_tokens_details
         - Anthropic: cache_read and cache_creation via dedicated fields
     """
     if not usage:
@@ -315,19 +319,29 @@ def parse_cached_usage(usage: Usage | None) -> tuple[int | None, int | None]:
     cache_read: int | None = None
     cache_creation: int | None = None
 
-    # Cache reads: Both OpenAI and Anthropic use prompt_tokens_details.cached_tokens
-    if hasattr(usage, "prompt_tokens_details"):
-        prompt_details = getattr(usage, "prompt_tokens_details", None)
-        if prompt_details:
-            cached_val = (
-                prompt_details.get("cached_tokens")
-                if isinstance(prompt_details, dict)
-                else getattr(prompt_details, "cached_tokens", None)
-            )
-            if isinstance(cached_val, int):
-                cache_read = cached_val
+    # Chat uses prompt_tokens_details; Responses uses input_tokens_details.
+    input_details = getattr(usage, "prompt_tokens_details", None) or getattr(
+        usage, "input_tokens_details", None
+    )
+    if input_details:
+        cached_val = (
+            input_details.get("cached_tokens")
+            if isinstance(input_details, dict)
+            else getattr(input_details, "cached_tokens", None)
+        )
+        if isinstance(cached_val, int):
+            cache_read = cached_val
 
-    # Cache creation: Anthropic-only field (OpenAI doesn't report cache writes)
+        # Responses API reports cache writes alongside its input token details.
+        cache_write_val = (
+            input_details.get("cache_write_tokens")
+            if isinstance(input_details, dict)
+            else getattr(input_details, "cache_write_tokens", None)
+        )
+        if isinstance(cache_write_val, int):
+            cache_creation = cache_write_val
+
+    # Anthropic reports cache creation as a top-level usage field.
     if hasattr(usage, "cache_creation_input_tokens"):
         cached_val = getattr(usage, "cache_creation_input_tokens", None)
         if isinstance(cached_val, int):
@@ -1529,6 +1543,7 @@ class LiteLLMModel(LLMModel):
         usage = getattr(response, "usage", None)
         prompt_count = usage.input_tokens if usage else None
         completion_count = usage.output_tokens if usage else None
+        cache_read, cache_creation = parse_cached_usage(usage)
 
         try:
             cost = completion_cost(completion_response=response, model=used_model)
@@ -1550,6 +1565,8 @@ class LiteLLMModel(LLMModel):
                 or [Message(role="assistant", content=text_content)],
                 prompt_count=prompt_count,
                 completion_count=completion_count,
+                cache_read_tokens=cache_read,
+                cache_creation_tokens=cache_creation,
                 cost=cost,
                 response_id=response.id,
             )
@@ -1563,6 +1580,7 @@ class LiteLLMModel(LLMModel):
         """Build an LLMResult from a completed Responses API response."""
         text, output_messages = _parse_responses_output(response.output)  # type: ignore[arg-type]
         usage = response.usage
+        cache_read, cache_creation = parse_cached_usage(usage)
 
         for msg in output_messages:
             msg.info = {**(msg.info or {}), "response_id": response.id}
@@ -1574,6 +1592,8 @@ class LiteLLMModel(LLMModel):
             prompt=messages,
             prompt_count=usage.input_tokens if usage else None,
             completion_count=usage.output_tokens if usage else None,
+            cache_read_tokens=cache_read,
+            cache_creation_tokens=cache_creation,
             response_id=response.id,
         )
 

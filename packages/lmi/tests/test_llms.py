@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 from aviary.core import Message, Tool, ToolCall, ToolRequestMessage, ToolResponseMessage
 from aviary.utils import encode_image_to_base64
+from litellm.types.llms.openai import ResponseAPIUsage, ResponsesAPIResponse
 from openai.types.responses import (
     ResponseFunctionToolCall,
     ResponseOutputMessage,
@@ -1529,6 +1530,37 @@ class TestResponsesAPI:
         assert isinstance(messages[0], ToolRequestMessage)
         assert messages[0].tool_calls[0].function.name == "get_weather"
         assert messages[0].tool_calls[0].id == "call_1"
+
+    @pytest.mark.asyncio
+    async def test_cache_usage_propagated(self) -> None:
+        usage = ResponseAPIUsage(
+            input_tokens=21,
+            input_tokens_details={"cached_tokens": 3, "cache_write_tokens": 4},
+            output_tokens=8,
+            output_tokens_details={"reasoning_tokens": 0},
+            total_tokens=29,
+        )
+        response = ResponsesAPIResponse(
+            id="resp_1",
+            created_at=0,
+            model="gpt-4o-mini-2024-07-18",
+            output=[],
+            usage=usage,
+        )
+        model = LiteLLMModel(name="gpt-4o-mini-2024-07-18")
+
+        with (
+            patch("lmi.llms.litellm.aresponses", new=AsyncMock(return_value=response)),
+            patch("lmi.llms.completion_cost", return_value=0.001),
+        ):
+            non_streaming = (await model._aresponses([], None))[0]
+        streaming = model._build_result_from_response(response, [])
+
+        for result in (non_streaming, streaming):
+            assert result.prompt_count == 21
+            assert result.completion_count == 8
+            assert result.cache_read_tokens == 3
+            assert result.cache_creation_tokens == 4
 
 
 class TestResponsesAPIIntegration:

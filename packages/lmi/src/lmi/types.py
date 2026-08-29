@@ -77,8 +77,8 @@ class LLMResult(BaseModel):
     date: str = Field(default_factory=datetime.now().isoformat)
 
     # Cached token counts - extracted from provider-specific usage fields:
-    # - Both providers report cache reads via prompt_tokens_details.cached_tokens
-    # - Only Anthropic reports cache creation via cache_creation_input_tokens
+    # - Anthropic and OpenAI report cache reads through normalized token details
+    # - Anthropic and OpenAI Responses report cache creation/write tokens
     cache_read_tokens: int | None = Field(
         default=None,
         frozen=True,
@@ -93,7 +93,7 @@ class LLMResult(BaseModel):
         frozen=True,
         ge=0,
         description=(
-            "Tokens written to cache (Anthropic only). "
+            "Tokens written to cache (Anthropic/OpenAI Responses). "
             "None means caching wasn't used, 0 means caching was used but no cache creation."
         ),
     )
