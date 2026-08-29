@@ -15,6 +15,7 @@ __all__ = [
 import asyncio
 import contextlib
 import functools
+import hashlib
 import json
 import logging
 from abc import ABC
@@ -95,6 +96,8 @@ from . import (
 
 logger = logging.getLogger(__name__)
 
+_RESPONSES_CALL_ID_MAX_LENGTH = 64
+
 
 def _convert_content_block_for_responses(block: dict[str, Any]) -> dict[str, Any]:
     """Convert a single Chat Completions content block to Responses API format.
@@ -139,7 +142,7 @@ def _convert_multimodal_content_for_responses(msg: Message) -> list[dict[str, An
 
 def _convert_to_responses_input(messages: list[Message]) -> list[dict[str, Any]]:
     """Convert aviary Messages to Responses API input format."""
-    result = []
+    result: list[dict[str, Any]] = []
     for msg in messages:
         if isinstance(msg, ToolResponseMessage):
             result.append({
@@ -175,6 +178,36 @@ def _convert_to_responses_input(messages: list[Message]) -> list[dict[str, Any]]
                 "role": msg.role,
                 "content": msg.content or "",
             })
+
+    function_call_ids: set[str] = {
+        cast(str, item["call_id"]) for item in result if item["type"] == "function_call"
+    }
+    function_call_output_ids: set[str] = {
+        cast(str, item["call_id"])
+        for item in result
+        if item["type"] == "function_call_output"
+    }
+    long_ids = {
+        call_id
+        for call_id in function_call_ids | function_call_output_ids
+        if len(call_id) > _RESPONSES_CALL_ID_MAX_LENGTH
+    }
+    unpaired_ids = long_ids - (function_call_ids & function_call_output_ids)
+    if unpaired_ids:
+        unpaired_id = min(unpaired_ids)
+        raise ValueError(
+            "Cannot normalize an overlong Responses API call_id unless both its "
+            f"function call and output are in the request: {unpaired_id!r}"
+        )
+
+    normalized_ids = {
+        call_id: hashlib.sha256(call_id.encode()).hexdigest() for call_id in long_ids
+    }
+    for item in result:
+        item_call_id = item.get("call_id")
+        if isinstance(item_call_id, str) and item_call_id in normalized_ids:
+            item["call_id"] = normalized_ids[item_call_id]
+
     return result
 
 
