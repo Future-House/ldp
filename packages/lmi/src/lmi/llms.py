@@ -42,7 +42,6 @@ from aviary.core import (
     ToolRequestMessage,
     ToolResponseMessage,
     ToolsAdapter,
-    ToolSelector,
     is_coroutine_callable,
 )
 from aviary.message import MalformedMessageError
@@ -1186,6 +1185,12 @@ class LiteLLMModel(LLMModel):
         if spec.responses_api:
             previous_response_id, messages = _extract_previous_response_id(messages)
             tools = chat_kwargs.pop("tools", None)
+            tool_choice = chat_kwargs.get("tool_choice")
+            if isinstance(tool_choice, dict) and tool_choice.get("type") == "function":
+                chat_kwargs["tool_choice"] = {
+                    "type": "function",
+                    "name": tool_choice["function"]["name"],
+                }
             if streaming:
                 gen = await self._aresponses_iter(
                     messages, tools, previous_response_id, spec=spec, **chat_kwargs
@@ -1266,10 +1271,11 @@ class LiteLLMModel(LLMModel):
             [m.model_dump(by_alias=True) for m in messages],
         )
         tool_choice = kwargs.get("tool_choice")
-        if self.tool_parser is not None and tool_choice not in {
-            None,
-            self.NO_TOOL_CHOICE,
-        }:
+        if (
+            self.tool_parser is not None
+            and tool_choice is not None
+            and tool_choice != self.NO_TOOL_CHOICE
+        ):
             logger.warning(
                 f"A custom tool_parser is set together with {tool_choice=}."
                 " There are two use cases:"
@@ -1677,15 +1683,73 @@ class LiteLLMModel(LLMModel):
         )[1]
 
     async def select_tool(
-        self, *selection_args, **selection_kwargs
+        self,
+        messages: list[Message],
+        tools: list[Tool],
+        tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
     ) -> ToolRequestMessage:
-        """Shim to aviary.core.ToolSelector that supports tool schemae."""
-        primary = cast("LLMConfig", self.llm_config).models[0]
+        """Select tools through the configured model chain.
 
-        async def _acompletion(**kw: Any) -> Any:
-            return await litellm.acompletion(**primary.to_litellm_kwargs(), **kw)
+        Require exactly one result containing exactly one parsed message. With
+        nonempty tools, required or forced selection must contain tool calls.
+        Optional selection and empty tools may return an empty tool-call list.
+        Chat finish reasons follow ToolSelector's contract: ``tool_calls``, or
+        ``stop`` for required/forced selection. Responses have no finish reason.
 
-        tool_selector = ToolSelector(
-            model_name=self.name, acompletion=track_costs(_acompletion)
+        Selection validation runs after provider retries/fallbacks and raises
+        MalformedMessageError without advancing the model chain.
+        """
+        results = await self.call(messages, tools=tools, tool_choice=tool_choice, n=1)
+        if len(results) != 1:
+            raise MalformedMessageError(
+                f"Expected one tool selection result, got {len(results)}."
+            )
+        result = results[0]
+        if not result.messages or len(result.messages) != 1:
+            raise MalformedMessageError(
+                "Expected exactly one parsed message for tool selection."
+            )
+
+        requires_tool = (
+            isinstance(tool_choice, Tool) or tool_choice == self.TOOL_CHOICE_REQUIRED
         )
-        return await tool_selector(*selection_args, **selection_kwargs)
+        expected_finish_reasons = (
+            {"tool_calls", "stop"} if requires_tool else {"tool_calls"}
+        )
+        # Responses supplies response_id instead of a Chat finish_reason.
+        if (
+            result.response_id is None
+            and result.finish_reason not in expected_finish_reasons
+        ):
+            raise MalformedMessageError(
+                f"Expected a finish reason in {expected_finish_reasons},"
+                f" got {result.finish_reason!r}."
+            )
+
+        selection = result.messages[0]
+        if (
+            tools
+            and requires_tool
+            and (
+                not isinstance(selection, ToolRequestMessage)
+                or not selection.tool_calls
+            )
+        ):
+            raise MalformedMessageError(
+                "Required tool selection returned no tool calls."
+            )
+        if not isinstance(selection, ToolRequestMessage):
+            try:
+                selection = ToolRequestMessage(
+                    **selection.model_dump(), info=selection.info
+                )
+            except ValidationError as exc:
+                raise MalformedMessageError(
+                    "Failed to convert tool selection to a tool request message."
+                ) from exc
+        selection.info = {
+            **(selection.info or {}),
+            "usage": (result.prompt_count or 0, result.completion_count or 0),
+            "model": result.model,
+        }
+        return selection
