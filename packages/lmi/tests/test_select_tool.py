@@ -67,7 +67,7 @@ async def test_selection_fallback_and_accounting(
             model="gpt-4o",
             status="completed",
             output=[
-                {"type": "function_call", "call_id": "call_1", "id": "fc_1", **FUNCTION}
+                {"type": "function_call", "call_id": "call_1", "id": "fc_1"} | FUNCTION
             ],
             usage={"input_tokens": 5, "output_tokens": 3, "total_tokens": 8},
         )
