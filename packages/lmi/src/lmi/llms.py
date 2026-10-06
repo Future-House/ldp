@@ -1702,9 +1702,7 @@ class LiteLLMModel(LLMModel):
         requires_tool = (
             isinstance(tool_choice, Tool) or tool_choice == self.TOOL_CHOICE_REQUIRED
         )
-        expected_finish_reasons = (
-            {"tool_calls", "stop"} if requires_tool else {"tool_calls"}
-        )
+        expected_finish_reasons = {"tool_calls", "stop"}
         if (
             result.response_id is None
             and result.finish_reason not in expected_finish_reasons
