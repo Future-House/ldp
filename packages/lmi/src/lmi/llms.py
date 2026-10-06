@@ -1688,17 +1688,6 @@ class LiteLLMModel(LLMModel):
         tools: list[Tool],
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
     ) -> ToolRequestMessage:
-        """Select tools through the configured model chain.
-
-        Require exactly one result containing exactly one parsed message. With
-        nonempty tools, required or forced selection must contain tool calls.
-        Optional selection and empty tools may return an empty tool-call list.
-        Chat finish reasons follow ToolSelector's contract: ``tool_calls``, or
-        ``stop`` for required/forced selection. Responses have no finish reason.
-
-        Selection validation runs after provider retries/fallbacks and raises
-        MalformedMessageError without advancing the model chain.
-        """
         results = await self.call(messages, tools=tools, tool_choice=tool_choice, n=1)
         if len(results) != 1:
             raise MalformedMessageError(
@@ -1716,7 +1705,6 @@ class LiteLLMModel(LLMModel):
         expected_finish_reasons = (
             {"tool_calls", "stop"} if requires_tool else {"tool_calls"}
         )
-        # Responses supplies response_id instead of a Chat finish_reason.
         if (
             result.response_id is None
             and result.finish_reason not in expected_finish_reasons

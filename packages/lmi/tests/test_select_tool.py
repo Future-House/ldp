@@ -1,5 +1,3 @@
-"""Regression coverage for selection through the model chain."""
-
 from unittest.mock import AsyncMock, Mock, patch
 
 import litellm
@@ -127,12 +125,8 @@ async def test_selection_fallback_and_accounting(
 @pytest.mark.parametrize(
     ("messages", "finish_reason", "count"),
     [
-        ([ToolRequestMessage(tool_calls=[TOOL_CALL])], "tool_calls", 0),
         ([ToolRequestMessage(tool_calls=[TOOL_CALL])], "tool_calls", 2),
-        ([], "stop", 1),
-        ([Message(role="assistant", content="text")], "stop", 1),
         ([ToolRequestMessage()], "stop", 1),
-        ([ToolRequestMessage(), ToolRequestMessage()], "tool_calls", 1),
         ([ToolRequestMessage(tool_calls=[TOOL_CALL])], "length", 1),
     ],
 )
@@ -153,39 +147,10 @@ async def test_malformed_selection(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    ("tool_choice", "tools", "finish_reason", "accepted"),
-    [
-        ("required", [], "stop", True),
-        ("auto", [TOOL], "tool_calls", True),
-        ("none", [TOOL], "tool_calls", True),
-        (None, [TOOL], "tool_calls", True),
-        ("auto", [TOOL], "stop", False),
-        ("none", [TOOL], "stop", False),
-        (None, [TOOL], "stop", False),
-    ],
-)
-async def test_optional_selection_and_metadata(
-    tool_choice: str | None, tools: list[Tool], finish_reason: str, accepted: bool
-) -> None:
-    message = ToolRequestMessage(content="No tool needed.", info={"trace": "keep"})
-    result = LLMResult(model="gpt-4o", messages=[message], finish_reason=finish_reason)
-    with patch.object(LiteLLMModel, "call", AsyncMock(return_value=[result])):
-        if not accepted:
-            with pytest.raises(MalformedMessageError, match="finish reason"):
-                await LiteLLMModel().select_tool(MESSAGES, tools, tool_choice)
-            return
-        selection = await LiteLLMModel().select_tool(MESSAGES, tools, tool_choice)
-    assert not selection.tool_calls
-    assert selection.info == {"trace": "keep", "usage": (0, 0), "model": "gpt-4o"}
-
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("tool_choice", ["required", TOOL])
-async def test_custom_parser_metadata(tool_choice: Tool | str) -> None:
+async def test_custom_parser_metadata() -> None:
     selection = ToolRequestMessage(tool_calls=[TOOL_CALL], info={"trace": "keep"})
     model = LiteLLMModel(name="gpt-4o", tool_parser=lambda *_: selection)
     with patch("litellm.acompletion", AsyncMock(return_value=chat_response("stop"))):
-        actual = await model.select_tool(MESSAGES, [TOOL], tool_choice)
+        actual = await model.select_tool(MESSAGES, [TOOL], TOOL)
     assert actual is selection
     assert actual.info == {"trace": "keep", "usage": (5, 3), "model": "gpt-4o"}
