@@ -1186,6 +1186,12 @@ class LiteLLMModel(LLMModel):
         if spec.responses_api:
             previous_response_id, messages = _extract_previous_response_id(messages)
             tools = chat_kwargs.pop("tools", None)
+            tool_choice = chat_kwargs.get("tool_choice")
+            if isinstance(tool_choice, dict) and tool_choice.get("type") == "function":
+                chat_kwargs["tool_choice"] = {
+                    "type": "function",
+                    "name": tool_choice["function"]["name"],
+                }
             if streaming:
                 gen = await self._aresponses_iter(
                     messages, tools, previous_response_id, spec=spec, **chat_kwargs
@@ -1266,10 +1272,11 @@ class LiteLLMModel(LLMModel):
             [m.model_dump(by_alias=True) for m in messages],
         )
         tool_choice = kwargs.get("tool_choice")
-        if self.tool_parser is not None and tool_choice not in {
-            None,
-            self.NO_TOOL_CHOICE,
-        }:
+        if (
+            self.tool_parser is not None
+            and tool_choice is not None
+            and tool_choice != self.NO_TOOL_CHOICE
+        ):
             logger.warning(
                 f"A custom tool_parser is set together with {tool_choice=}."
                 " There are two use cases:"
@@ -1677,15 +1684,24 @@ class LiteLLMModel(LLMModel):
         )[1]
 
     async def select_tool(
-        self, *selection_args, **selection_kwargs
+        self,
+        messages: list[Message],
+        tools: list[Tool],
+        tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
     ) -> ToolRequestMessage:
-        """Shim to aviary.core.ToolSelector that supports tool schemae."""
-        primary = cast("LLMConfig", self.llm_config).models[0]
-
-        async def _acompletion(**kw: Any) -> Any:
-            return await litellm.acompletion(**primary.to_litellm_kwargs(), **kw)
-
-        tool_selector = ToolSelector(
-            model_name=self.name, acompletion=track_costs(_acompletion)
+        results = await self.call(messages, tools=tools, tool_choice=tool_choice, n=1)
+        selection = ToolSelector.validate_selection(
+            [(result.messages or [], result.finish_reason) for result in results],
+            expected_finish_reasons=(
+                None
+                if any(result.response_id is not None for result in results)
+                else ("tool_calls", "stop")
+            ),
         )
-        return await tool_selector(*selection_args, **selection_kwargs)
+        (result,) = results
+        selection.info = {
+            **(selection.info or {}),
+            "usage": (result.prompt_count or 0, result.completion_count or 0),
+            "model": result.model,
+        }
+        return selection
