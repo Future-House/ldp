@@ -1700,9 +1700,6 @@ class LiteLLMModel(LLMModel):
                 "Expected exactly one parsed message for tool selection."
             )
 
-        requires_tool = (
-            isinstance(tool_choice, Tool) or tool_choice == self.TOOL_CHOICE_REQUIRED
-        )
         expected_finish_reasons = {"tool_calls", "stop"}
         if (
             result.response_id is None
@@ -1713,19 +1710,7 @@ class LiteLLMModel(LLMModel):
                 f" got {result.finish_reason!r}."
             )
 
-        selection = result.messages[0]
-        if (
-            tools
-            and requires_tool
-            and (
-                not isinstance(selection, ToolRequestMessage)
-                or not selection.tool_calls
-            )
-        ):
-            raise MalformedMessageError(
-                "Required tool selection returned no tool calls."
-            )
-        selection = ToolSelector.validate_selection(selection)
+        selection = ToolSelector.validate_selection(result.messages[0])
         selection.info = {
             **(selection.info or {}),
             "usage": (result.prompt_count or 0, result.completion_count or 0),

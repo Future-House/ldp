@@ -126,7 +126,6 @@ async def test_selection_fallback_and_accounting(
     ("messages", "finish_reason", "count"),
     [
         ([ToolRequestMessage(tool_calls=[TOOL_CALL])], "tool_calls", 2),
-        ([ToolRequestMessage()], "stop", 1),
         ([ToolRequestMessage(tool_calls=[TOOL_CALL])], "length", 1),
     ],
 )
@@ -147,10 +146,14 @@ async def test_malformed_selection(
 
 
 @pytest.mark.asyncio
-async def test_custom_parser_metadata() -> None:
-    selection = ToolRequestMessage(tool_calls=[TOOL_CALL], info={"trace": "keep"})
+@pytest.mark.parametrize("tool_calls", [[], [TOOL_CALL]])
+@pytest.mark.parametrize("tool_choice", ["required", TOOL])
+async def test_custom_parser_metadata(
+    tool_calls: list[dict], tool_choice: Tool | str
+) -> None:
+    selection = ToolRequestMessage(tool_calls=tool_calls, info={"trace": "keep"})
     model = LiteLLMModel(name="gpt-4o", tool_parser=lambda *_: selection)
     with patch("litellm.acompletion", AsyncMock(return_value=chat_response("stop"))):
-        actual = await model.select_tool(MESSAGES, [TOOL], TOOL)
+        actual = await model.select_tool(MESSAGES, [TOOL], tool_choice)
     assert actual is selection
     assert actual.info == {"trace": "keep", "usage": (5, 3), "model": "gpt-4o"}
