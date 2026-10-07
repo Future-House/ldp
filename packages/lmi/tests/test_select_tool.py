@@ -125,12 +125,17 @@ async def test_selection_fallback_and_accounting(
 @pytest.mark.parametrize(
     ("messages", "finish_reason", "count"),
     [
+        ([ToolRequestMessage(tool_calls=[TOOL_CALL])], "tool_calls", 0),
         ([ToolRequestMessage(tool_calls=[TOOL_CALL])], "tool_calls", 2),
         ([ToolRequestMessage(tool_calls=[TOOL_CALL])], "length", 1),
+        ([ToolRequestMessage(tool_calls=[TOOL_CALL])], None, 1),
+        (None, "stop", 1),
+        ([], "stop", 1),
+        ([ToolRequestMessage(), ToolRequestMessage()], "stop", 1),
     ],
 )
 async def test_malformed_selection(
-    messages: list[Message], finish_reason: str, count: int
+    messages: list[Message] | None, finish_reason: str | None, count: int
 ) -> None:
     result = LLMResult(model="gpt-4o", messages=messages, finish_reason=finish_reason)
     with (

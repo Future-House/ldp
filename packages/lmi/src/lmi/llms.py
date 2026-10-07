@@ -1690,27 +1690,15 @@ class LiteLLMModel(LLMModel):
         tool_choice: Tool | str | None = TOOL_CHOICE_REQUIRED,
     ) -> ToolRequestMessage:
         results = await self.call(messages, tools=tools, tool_choice=tool_choice, n=1)
-        if len(results) != 1:
-            raise MalformedMessageError(
-                f"Expected one tool selection result, got {len(results)}."
-            )
-        result = results[0]
-        if not result.messages or len(result.messages) != 1:
-            raise MalformedMessageError(
-                "Expected exactly one parsed message for tool selection."
-            )
-
-        expected_finish_reasons = {"tool_calls", "stop"}
-        if (
-            result.response_id is None
-            and result.finish_reason not in expected_finish_reasons
-        ):
-            raise MalformedMessageError(
-                f"Expected a finish reason in {expected_finish_reasons},"
-                f" got {result.finish_reason!r}."
-            )
-
-        selection = ToolSelector.validate_selection(result.messages[0])
+        selection = ToolSelector.validate_selection(
+            [(result.messages or [], result.finish_reason) for result in results],
+            expected_finish_reasons=(
+                None
+                if any(result.response_id is not None for result in results)
+                else ("tool_calls", "stop")
+            ),
+        )
+        (result,) = results
         selection.info = {
             **(selection.info or {}),
             "usage": (result.prompt_count or 0, result.completion_count or 0),
