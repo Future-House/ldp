@@ -42,6 +42,7 @@ from aviary.core import (
     ToolRequestMessage,
     ToolResponseMessage,
     ToolsAdapter,
+    ToolSelector,
     is_coroutine_callable,
 )
 from aviary.message import MalformedMessageError
@@ -1724,15 +1725,7 @@ class LiteLLMModel(LLMModel):
             raise MalformedMessageError(
                 "Required tool selection returned no tool calls."
             )
-        if not isinstance(selection, ToolRequestMessage):
-            try:
-                selection = ToolRequestMessage(
-                    **selection.model_dump(), info=selection.info
-                )
-            except ValidationError as exc:
-                raise MalformedMessageError(
-                    "Failed to convert tool selection to a tool request message."
-                ) from exc
+        selection = ToolSelector.validate_selection(selection)
         selection.info = {
             **(selection.info or {}),
             "usage": (result.prompt_count or 0, result.completion_count or 0),
