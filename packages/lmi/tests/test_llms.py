@@ -77,6 +77,9 @@ class TestLiteLLMModel:
         assert model1.provider == "openai"
         assert isinstance(model1.config, dict)
         assert "model_list" in model1.config
+        assert "temperature" not in model1.config["model_list"][0]["litellm_params"]
+        assert model1.llm_config is not None
+        assert "temperature" not in model1.llm_config.models[0].extra_params
 
         # Test name-only instantiation
         name = CommonLLMNames.ANTHROPIC_TEST.value
@@ -84,6 +87,7 @@ class TestLiteLLMModel:
         assert model2.name == name
         assert model2.provider == "anthropic"
         assert model2.config["model_list"][0]["model_name"] == name
+        assert "temperature" not in model2.config["model_list"][0]["litellm_params"]
 
         # Test config-only instantiation
         config = {

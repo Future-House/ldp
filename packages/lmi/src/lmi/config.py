@@ -33,7 +33,6 @@ ToolParser = (
     | Callable[[str, list[dict] | None], Message | ToolRequestMessage]
 )
 
-_DEFAULT_TEMPERATURE = 1.0
 _PROVIDER_GATED_PARAMS = frozenset({"logprobs", "top_logprobs"})
 
 # Legacy `litellm_params` keys that map onto dedicated `ModelSpec` fields rather
@@ -115,7 +114,7 @@ class ModelSpec(BaseModel):
     def from_name(cls, name: str, **overrides: Any) -> ModelSpec:
         """Build a `ModelSpec` with provider-aware defaults for `extra_params`.
 
-        Applies: Gemini default safety settings and a `temperature` default.
+        Applies Gemini default safety settings.
         `logprobs` / `top_logprobs` are gated per-model against litellm's
         capability table, so passing them to a provider that doesn't support
         them (e.g. Anthropic) raises `ValueError`. Explicit values in
@@ -128,8 +127,6 @@ class ModelSpec(BaseModel):
         extra: dict[str, Any] = {}
         if "gemini" in name:
             extra["safety_settings"] = DEFAULT_VERTEX_SAFETY_SETTINGS
-        extra["temperature"] = _DEFAULT_TEMPERATURE
-
         spec_field_overrides: dict[str, Any] = {}
         extra_overrides: dict[str, Any] = {}
         for key, value in overrides.items():
