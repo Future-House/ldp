@@ -176,17 +176,22 @@ async def test_ape_optimizer() -> None:
 class NumberGuesserModule:
     """Made up module used to enable simple training scripts."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        model_name: str = "gpt-4-turbo",
+        prompt: str = "Guess a number based on the input word.",
+    ):
         self.mem_op = MemoryOp()
         self.package_msg_op = FxnOp(self._package)
         self.llm_call_op = LLMCallOp()
         self.strip_op = FxnOp(lambda x: x.content)
+        self.model_name = model_name
+        self.prompt = prompt
 
-    @staticmethod
-    def _package(mems: Iterable[Memory], query: str) -> list[Message]:
+    def _package(self, mems: Iterable[Memory], query: str) -> list[Message]:
         itemized_mems = "\n\n".join(str(m) for m in mems)
         return [
-            Message(content="Guess a number based on the input word."),
+            Message(content=self.prompt),
             Message(content=f"Previous attempts:\n{itemized_mems}\n-----\n\n{query}"),
         ]
 
@@ -195,7 +200,7 @@ class NumberGuesserModule:
         msgs = await self.package_msg_op(mems, query)
         c = await self.llm_call_op(
             config=LLMConfig.model_validate({
-                "name": CommonLLMNames.GPT_4O.value,
+                "name": self.model_name,
                 "temperature": 0,
                 "max_retries": 3,
             }),
@@ -225,7 +230,10 @@ class TestMemoryOpt:
         retry=tenacity.retry_if_exception(_mem_opt_failed),
     )
     async def test_standard_memory_optimizer(self) -> None:
-        model = NumberGuesserModule()
+        model = NumberGuesserModule(
+            model_name=CommonLLMNames.GPT_4O.value,
+            prompt="Guess a number based on the input word. Reply with one integer only.",
+        )
         # seed with one memory to show example
         await model.mem_op.memory_model.add_memory(
             Memory(
