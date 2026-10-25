@@ -61,7 +61,7 @@ class TestModelSpec:
 
     def test_from_name_omits_unrequested_temperature(self) -> None:
         spec = ModelSpec.from_name("gpt-4o-mini")
-        assert spec.extra_params == {}
+        assert not spec.extra_params
         assert "temperature" not in spec.to_litellm_kwargs()
 
     def test_from_name_gemini_adds_safety_settings(self) -> None:
