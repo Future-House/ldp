@@ -266,9 +266,21 @@ class TestLiteLLMEmbeddingModel:
         # Confirm use of the sentinel timeout in the Router's model_list or pass through
         assert mock_aembedding.call_args.kwargs["timeout"] == self.SENTINEL_TIMEOUT
 
+    @pytest.mark.vcr(match_on=[*VCR_DEFAULT_MATCH_ON, "body"])
     @pytest.mark.asyncio
-    async def test_multimodal_embedding(
-        self, subtests: pytest.Subtests, png_image_gcs: str
+    async def test_multimodal_embedding(self, subtests: pytest.Subtests) -> None:
+        # Replay Vertex responses without creating a GCS bucket or refreshing ADC.
+        png_image_gcs = "gs://tmp-lmi-test/sf_districts.png"
+        with patch(
+            "litellm.llms.vertex_ai.multimodal_embeddings.embedding_handler."
+            "VertexMultimodalEmbedding._ensure_access_token",
+            return_value=("cassette-token", "cassette-project"),
+        ):
+            await self._check_multimodal_embedding(subtests, png_image_gcs)
+
+    @staticmethod
+    async def _check_multimodal_embedding(
+        subtests: pytest.Subtests, png_image_gcs: str
     ) -> None:
         multimodal_model = LiteLLMEmbeddingModel(
             name=f"{litellm.LlmProviders.VERTEX_AI.value}/multimodalembedding@001"
