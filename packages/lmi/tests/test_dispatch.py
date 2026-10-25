@@ -367,6 +367,7 @@ class TestCallEndToEnd:
         ) as mock_call:
             await model.call([Message(content="hi")])
 
+        assert mock_call.await_args is not None
         assert "temperature" not in mock_call.await_args.kwargs
 
 
