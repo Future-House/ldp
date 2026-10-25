@@ -358,6 +358,17 @@ class TestCallEndToEnd:
         assert call_kwargs["temperature"] == 0.2
         assert call_kwargs["max_tokens"] == 42
 
+    @pytest.mark.asyncio
+    async def test_default_call_omits_temperature(self) -> None:
+        model = LiteLLMModel(name=PRIMARY)
+        with patch(
+            "litellm.acompletion",
+            AsyncMock(return_value=_fake_chat_response()),
+        ) as mock_call:
+            await model.call([Message(content="hi")])
+
+        assert "temperature" not in mock_call.await_args.kwargs
+
 
 class TestDispatchPrimitiveSelection:
     """Verify `_dispatch` routes to the right primitive.

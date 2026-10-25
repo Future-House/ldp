@@ -59,13 +59,15 @@ class TestModelSpec:
         with pytest.raises(ValidationError):
             ModelSpec(name="gpt-4o-mini", max_retries=-1)
 
-    def test_from_name_openai_defaults(self) -> None:
+    def test_from_name_omits_unrequested_temperature(self) -> None:
         spec = ModelSpec.from_name("gpt-4o-mini")
-        assert spec.extra_params == {"temperature": 1.0}
+        assert spec.extra_params == {}
+        assert "temperature" not in spec.to_litellm_kwargs()
 
     def test_from_name_gemini_adds_safety_settings(self) -> None:
         spec = ModelSpec.from_name("gemini-1.5-pro")
         assert spec.extra_params["safety_settings"] == DEFAULT_VERTEX_SAFETY_SETTINGS
+        assert "temperature" not in spec.extra_params
 
     def test_from_name_rejects_logprobs_for_unsupported_provider(self) -> None:
         # Anthropic doesn't support logprobs/top_logprobs per litellm.
@@ -92,7 +94,7 @@ class TestModelSpec:
                 name="claude-3-5-sonnet-20241022", extra_params={"logprobs": True}
             )
 
-    def test_from_name_override_wins_over_default(self) -> None:
+    def test_from_name_keeps_explicit_temperature(self) -> None:
         spec = ModelSpec.from_name("gpt-4o-mini", temperature=0.0)
         assert spec.extra_params["temperature"] == 0.0
 
