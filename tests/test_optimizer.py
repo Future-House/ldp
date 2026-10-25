@@ -195,7 +195,7 @@ class NumberGuesserModule:
         msgs = await self.package_msg_op(mems, query)
         c = await self.llm_call_op(
             config=LLMConfig.model_validate({
-                "name": "gpt-4-turbo",  # this is flaky, so use a smarter model
+                "name": CommonLLMNames.GPT_4O.value,
                 "temperature": 0,
                 "max_retries": 3,
             }),

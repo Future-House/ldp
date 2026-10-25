@@ -105,7 +105,7 @@ class TestParallelism:
         )
 
     @pytest.mark.parametrize(
-        "model_name", [CommonLLMNames.ANTHROPIC_TEST.value, "gpt-4-turbo"]
+        "model_name", [CommonLLMNames.ANTHROPIC_TEST.value, CommonLLMNames.OPENAI_TEST.value]
     )
     @pytest.mark.asyncio
     async def test_exec_tool_calls_handling(self, model_name: str) -> None:
