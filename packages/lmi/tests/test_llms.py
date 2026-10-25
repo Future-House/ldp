@@ -606,7 +606,7 @@ class TestMultipleCompletion:
 
     @pytest.mark.parametrize(
         "model_name",
-        [CommonLLMNames.OPENAI_TEST.value, CommonLLMNames.ANTHROPIC_TEST.value],
+        [CommonLLMNames.GPT_6_LUNA.value, CommonLLMNames.ANTHROPIC_TEST.value],
     )
     @pytest.mark.asyncio
     async def test_acompletion(self, model_name: str) -> None:

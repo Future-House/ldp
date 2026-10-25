@@ -1,5 +1,5 @@
 from importlib.metadata import version
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import litellm
 import pytest
@@ -106,14 +106,21 @@ class TestParallelism:
 
     @pytest.mark.parametrize(
         "model_name",
-        [CommonLLMNames.ANTHROPIC_TEST.value, CommonLLMNames.OPENAI_TEST.value],
+        [CommonLLMNames.ANTHROPIC_TEST.value, CommonLLMNames.GPT_6_LUNA.value],
     )
     @pytest.mark.asyncio
     async def test_exec_tool_calls_handling(self, model_name: str) -> None:
         env = ParallelizedDummyEnv(right_hand_broken=True)
         obs, tools = await env.reset()
         right_hand_tool = tools[1]
-        agent = SimpleAgent(llm_config={"name": model_name})
+        llm_config: dict[str, Any] = {"name": model_name}
+        if model_name == CommonLLMNames.GPT_6_LUNA.value:
+            # Luna's Chat Completions tool calls require reasoning effort none.
+            llm_config.update({
+                "reasoning_effort": "none",
+                "allowed_openai_params": ["reasoning_effort"],
+            })
+        agent = SimpleAgent(llm_config=llm_config)
         agent_state = await agent.init_state(tools=tools)
 
         # 1. Let's DIY create a ToolRequestMessage for test determinism

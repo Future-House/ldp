@@ -1,5 +1,5 @@
 from collections.abc import Iterable, Sequence
-from typing import cast
+from typing import Any, cast
 from uuid import UUID
 
 import litellm
@@ -180,6 +180,7 @@ class NumberGuesserModule:
         self,
         model_name: str = "gpt-4-turbo",
         prompt: str = "Guess a number based on the input word.",
+        model_kwargs: dict[str, Any] | None = None,
     ):
         self.mem_op = MemoryOp()
         self.package_msg_op = FxnOp(self._package)
@@ -187,6 +188,7 @@ class NumberGuesserModule:
         self.strip_op = FxnOp(lambda x: x.content)
         self.model_name = model_name
         self.prompt = prompt
+        self.model_kwargs = model_kwargs or {}
 
     def _package(self, mems: Iterable[Memory], query: str) -> list[Message]:
         itemized_mems = "\n\n".join(str(m) for m in mems)
@@ -199,11 +201,14 @@ class NumberGuesserModule:
         mems = await self.mem_op(query)
         msgs = await self.package_msg_op(mems, query)
         c = await self.llm_call_op(
-            config=LLMConfig.model_validate({
-                "name": self.model_name,
-                "temperature": 0,
-                "max_retries": 3,
-            }),
+            config=LLMConfig.model_validate(
+                {
+                    "name": self.model_name,
+                    "temperature": 0,
+                    "max_retries": 3,
+                }
+                | self.model_kwargs
+            ),
             msgs=msgs,
         )
         return await self.strip_op(c), msgs.value
@@ -231,8 +236,12 @@ class TestMemoryOpt:
     )
     async def test_standard_memory_optimizer(self) -> None:
         model = NumberGuesserModule(
-            model_name=CommonLLMNames.GPT_4O.value,
+            model_name=CommonLLMNames.GPT_6_LUNA.value,
             prompt="Guess a number based on the input word. Reply with one integer only.",
+            model_kwargs={
+                "reasoning_effort": "none",
+                "allowed_openai_params": ["reasoning_effort"],
+            },
         )
         # seed with one memory to show example
         await model.mem_op.memory_model.add_memory(
