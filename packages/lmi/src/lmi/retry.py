@@ -57,6 +57,7 @@ _PROVIDER_LIMIT_PATTERNS = (
 _CONTENT_REFUSAL_PATTERNS = (
     "limited access to this content for safety reasons",
     "this content was flagged for possible biological risk",
+    "this content was flagged for possible cybersecurity risk",
 )
 
 _FALLBACKABLE: tuple[type[BaseException], ...] = (
