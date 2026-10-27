@@ -588,9 +588,9 @@ class LLMModel(ABC, BaseModel):
     def _maybe_patch_gemini_tool_response_messages(
         self, messages: list[Message]
     ) -> list[Message]:
-        """Gemini 3 rejects role="tool"; Gemini 4 rejects image results with that role.
+        """As of 2025-11-18, Gemini 3/4 doesn't accept role="tool" in ToolResponseMessage.
 
-        Patch ToolResponseMessage to role="user" so these models accept the results.
+        This function patches it to role="user".
         """
         if not any(version in self.name for version in ("gemini-3", "gemini-4")):
             return messages
