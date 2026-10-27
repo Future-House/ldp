@@ -588,11 +588,7 @@ class LLMModel(ABC, BaseModel):
     def _maybe_patch_gemini_tool_response_messages(
         self, messages: list[Message]
     ) -> list[Message]:
-        """Send Gemini 3/4 tool results as user messages.
-
-        Gemini 4 rejects image tool results with "Requests ending with a model
-        turn are not supported", so it needs the same conversion as Gemini 3.
-        """
+        """Send Gemini 3/4 tool results as user messages."""
         if not any(version in self.name for version in ("gemini-3", "gemini-4")):
             return messages
 

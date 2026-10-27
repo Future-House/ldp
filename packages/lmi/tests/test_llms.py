@@ -1257,7 +1257,7 @@ async def test_gemini_tool_responses(
 
     sent = completion.call_args.kwargs["messages"]
     assert sent[:-1] == original[:-1]
-    assert sent[-1] == {**original[-1], "role": expected_role}
+    assert sent[-1] == original[-1] | {"role": expected_role}
     assert [message.model_dump() for message in messages] == original
 
 
