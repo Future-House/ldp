@@ -585,14 +585,15 @@ class LLMModel(ABC, BaseModel):
     # None means we won't provide a tool_choice to the LLM API
     UNSPECIFIED_TOOL_CHOICE: ClassVar[None] = None
 
-    def _maybe_patch_gemini3_tool_response_messages(
+    def _maybe_patch_gemini_tool_response_messages(
         self, messages: list[Message]
     ) -> list[Message]:
-        """As of 2025-11-18, Gemini 3 doesn't accept role="tool" in ToolResponseMessage.
+        """Send Gemini 3/4 tool results as user messages.
 
-        This function patches it to role="user".
+        Gemini 4 rejects image tool results with "Requests ending with a model
+        turn are not supported", so it needs the same conversion as Gemini 3.
         """
-        if "gemini-3" not in self.name:
+        if not any(version in self.name for version in ("gemini-3", "gemini-4")):
             return messages
 
         return [
@@ -631,7 +632,7 @@ class LLMModel(ABC, BaseModel):
         Raises:
             ValueError: If the LLM type is unknown.
         """
-        messages = self._maybe_patch_gemini3_tool_response_messages(messages)
+        messages = self._maybe_patch_gemini_tool_response_messages(messages)
         # Shallow copy because downstream code only mutates top-level keys.
         # Trying to avoid a deepcopy if not needed. If a future edit adds
         # a nested in-place mutation here, this needs revisiting.

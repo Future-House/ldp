@@ -1208,43 +1208,57 @@ async def test_refusal_falls_back_to_next_model(caplog) -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("model_name", "expected_tool_role_count"),
+    ("model_name", "expected_role"),
     [
-        ("vertex_ai/gemini-3-pro-preview", 0),
-        (CommonLLMNames.GPT_4O.value, 1),
+        ("vertex_ai/gemini-3-pro-preview", "user"),
+        ("gemini/gemini-3-pro-preview", "user"),
+        ("vertex_ai/gemini-4-argon", "user"),
+        ("gemini/gemini-4-argon", "user"),
+        ("vertex_ai/gemini-2.5-pro", "tool"),
+        (CommonLLMNames.GPT_4O.value, "tool"),
     ],
 )
-async def test_gemini3_tool_patch(
-    model_name: str, expected_tool_role_count: int
+@pytest.mark.parametrize("with_image", [False, True])
+async def test_gemini_tool_responses(
+    model_name: str, expected_role: str, with_image: bool, png_image: bytes
 ) -> None:
-    # Setup
     model = LiteLLMModel(name=model_name)
-
+    content = (
+        [{"type": "image_url", "image_url": {"url": encode_image_to_base64(png_image)}}]
+        if with_image
+        else "Result"
+    )
+    request = ToolRequestMessage(
+        tool_calls=[ToolCall.from_name("read", file_path="test.png")]
+    )
     messages = [
-        Message(role="user", content="Hello"),
+        Message(role="user", content="Read the image."),
+        request,
         ToolResponseMessage(
-            role="tool", content="Result", tool_call_id="123", name="test_tool"
+            content=content, tool_call_id=request.tool_calls[0].id, name="read"
         ),
     ]
-
-    # Execute
-    with patch.object(
-        LiteLLMModel, "acompletion", new_callable=AsyncMock
-    ) as mock_acompletion:
-        mock_acompletion.return_value = []
+    original = [message.model_dump() for message in messages]
+    response = litellm.types.utils.ModelResponse(
+        model=model_name,
+        choices=[
+            litellm.types.utils.Choices(
+                finish_reason="stop",
+                index=0,
+                message=litellm.types.utils.Message(role="assistant", content="Done"),
+            )
+        ],
+        usage=litellm.types.utils.Usage(
+            prompt_tokens=10, completion_tokens=1, total_tokens=11
+        ),
+    )
+    with patch("litellm.acompletion", AsyncMock(return_value=response)) as completion:
         await model.call(messages)
 
-        # Verify
-        call_args = mock_acompletion.call_args
-        assert call_args is not None
-        # call_args[0] are positional args: (messages,)
-        called_messages = call_args[0][0]
-
-        assert len(called_messages) == 2
-        assert called_messages[0].role == "user"
-
-        tool_messages = [m for m in called_messages if m.role == "tool"]
-        assert len(tool_messages) == expected_tool_role_count
+    sent = completion.call_args.kwargs["messages"]
+    assert sent[:-1] == original[:-1]
+    assert sent[-1] == {**original[-1], "role": expected_role}
+    assert [message.model_dump() for message in messages] == original
 
 
 class TestResponsesAPI:
