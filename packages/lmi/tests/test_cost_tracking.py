@@ -1,6 +1,8 @@
+import dataclasses
 import subprocess
 import sys
 from contextlib import contextmanager
+from datetime import datetime
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -8,6 +10,7 @@ import litellm
 import numpy as np
 import pytest
 from aviary.core import Message
+from litellm.types.llms.openai import ResponseAPIUsage, ResponsesAPIResponse
 
 import lmi
 from lmi import cost_tracking_ctx
@@ -18,7 +21,13 @@ from lmi.cost_tracker import (
     track_costs,
 )
 from lmi.embeddings import LiteLLMEmbeddingModel
-from lmi.llms import CommonLLMNames, LiteLLMModel, parse_cached_usage
+from lmi.llms import (
+    CommonLLMNames,
+    LiteLLMModel,
+    ResponseUsage,
+    parse_cached_usage,
+    parse_response_usage,
+)
 from lmi.utils import VCR_DEFAULT_MATCH_ON
 
 
@@ -953,6 +962,114 @@ class TestCachedTokenEdgeCases:
                 )
 
 
+_CREATED = 1_700_000_000
+
+
+@pytest.mark.parametrize(
+    ("response", "expected"),
+    [
+        pytest.param(
+            litellm.ModelResponse(
+                id="chatcmpl-1",
+                model="gpt-4o-mini",
+                created=_CREATED,
+                usage=litellm.Usage(
+                    prompt_tokens=10,
+                    completion_tokens=5,
+                    total_tokens=15,
+                    cache_read_input_tokens=8,
+                    cache_creation_input_tokens=6,
+                ),
+            ),
+            ResponseUsage(
+                response_type="ModelResponse",
+                model="gpt-4o-mini",
+                response_id="chatcmpl-1",
+                ended_at=datetime.fromtimestamp(_CREATED),
+                prompt_tokens=10,
+                completion_tokens=5,
+                cache_read_tokens=8,
+                cache_creation_tokens=6,
+                cost_usd=0.0,
+            ),
+            id="chat",
+        ),
+        pytest.param(
+            litellm.ModelResponseStream(
+                id="chatcmpl-2",
+                model="gpt-4o-mini",
+                created=_CREATED,
+                usage=litellm.Usage(
+                    prompt_tokens=10, completion_tokens=5, total_tokens=15
+                ),
+            ),
+            ResponseUsage(
+                response_type="ModelResponseStream",
+                model="gpt-4o-mini",
+                response_id="chatcmpl-2",
+                ended_at=datetime.fromtimestamp(_CREATED),
+                prompt_tokens=10,
+                completion_tokens=5,
+                cache_read_tokens=None,
+                cache_creation_tokens=None,
+                cost_usd=0.0,
+            ),
+            id="stream-final-chunk",
+        ),
+        pytest.param(
+            litellm.EmbeddingResponse(
+                model="text-embedding-3-large",
+                usage=litellm.Usage(prompt_tokens=500, total_tokens=500),
+            ),
+            ResponseUsage(
+                response_type="EmbeddingResponse",
+                model="text-embedding-3-large",
+                response_id=None,
+                ended_at=None,
+                prompt_tokens=500,
+                completion_tokens=0,
+                cache_read_tokens=None,
+                cache_creation_tokens=None,
+                cost_usd=0.0,
+            ),
+            id="embedding",
+        ),
+        pytest.param(
+            ResponsesAPIResponse(
+                id="resp-1",
+                model="gpt-5",
+                created_at=_CREATED,
+                output=[],
+                usage=ResponseAPIUsage(
+                    input_tokens=10,
+                    output_tokens=5,
+                    total_tokens=15,
+                    input_tokens_details={"cached_tokens": 4},
+                ),
+            ),
+            ResponseUsage(
+                response_type="ResponsesAPIResponse",
+                model="gpt-5",
+                response_id="resp-1",
+                ended_at=datetime.fromtimestamp(_CREATED),
+                prompt_tokens=10,
+                completion_tokens=5,
+                cache_read_tokens=4,
+                cache_creation_tokens=None,
+                cost_usd=0.0,
+            ),
+            id="responses-api",
+        ),
+    ],
+)
+def test_parse_response_usage(
+    response: lmi.LLMResponse | ResponsesAPIResponse, expected: ResponseUsage
+) -> None:
+    usage = parse_response_usage(response)
+    assert usage.cost_usd > 0, "Expected LiteLLM's pricing table to price the model"
+    assert dataclasses.replace(usage, cost_usd=0.0) == expected
+
+
 class TestVertexAICostTrackingFix:
     """Tests for Vertex AI cost tracking fix.
 
@@ -1022,6 +1139,18 @@ class TestVertexAICostTrackingFix:
         )
 
         assert cost > 0
+
+    def test_parse_response_usage_prices_with_requested_model(self):
+        """Cost tracker callbacks price Vertex AI responses like `record()` does."""
+        token = _requested_model_ctx.set(
+            f"{litellm.LlmProviders.VERTEX_AI.value}/claude-3-5-sonnet-20241022"
+        )
+        try:
+            usage = parse_response_usage(self._create_vertex_ai_response())
+        finally:
+            _requested_model_ctx.reset(token)
+
+        assert usage.cost_usd > 0
 
     @pytest.mark.asyncio
     async def test_track_costs_sets_context_variable(self):

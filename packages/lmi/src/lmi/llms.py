@@ -3,9 +3,11 @@ __all__ = [
     "LLMModel",
     "LiteLLMModel",
     "PassThroughRouter",
+    "ResponseUsage",
     "estimate_message_tokens",
     "extract_top_logprobs",
     "parse_cached_usage",
+    "parse_response_usage",
     "rate_limited",
     "request_limited",
     "sum_logprobs",
@@ -28,6 +30,8 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
+from dataclasses import dataclass
+from datetime import datetime
 from enum import StrEnum
 from inspect import isasyncgenfunction, isawaitable, signature
 from typing import Any, ClassVar, ParamSpec, TypeAlias, cast, overload
@@ -76,7 +80,7 @@ from lmi.constants import (
     DEFAULT_VERTEX_SAFETY_SETTINGS,
     IS_PYTHON_BELOW_312,
 )
-from lmi.cost_tracker import track_costs, track_costs_iter
+from lmi.cost_tracker import _requested_model_ctx, track_costs, track_costs_iter
 from lmi.exceptions import (
     AllModelsExhaustedError,
     JSONSchemaValidationError,
@@ -89,7 +93,7 @@ from lmi.retry import (
     should_fallback,
     should_retry,
 )
-from lmi.types import LLMResult
+from lmi.types import LLMResponse, LLMResult
 
 from . import (
     litellm_patches as _litellm_patches,  # noqa: F401 - In-place apply patches at import
@@ -348,6 +352,63 @@ def parse_cached_usage(
             cache_creation = cached_val
 
     return cache_read, cache_creation
+
+
+@dataclass(frozen=True)
+class ResponseUsage:
+    """Token counts, cost, and identity of one LLM response."""
+
+    response_type: str
+    model: str | None
+    # Embedding responses carry no ID
+    response_id: str | None
+    # Embedding responses carry no timestamp
+    ended_at: datetime | None
+    prompt_tokens: int | None
+    completion_tokens: int | None
+    cache_read_tokens: int | None
+    cache_creation_tokens: int | None
+    cost_usd: float
+
+
+def parse_response_usage(
+    response: LLMResponse | ResponsesAPIResponse,
+) -> ResponseUsage:
+    """Parse usage and cost from a response, such as one passed to a cost tracker callback.
+
+    LiteLLM's cost calculation raises for a model missing from its pricing table.
+    """
+    usage = getattr(response, "usage", None)
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    if isinstance(usage, ResponseAPIUsage):
+        prompt_tokens, completion_tokens = usage.input_tokens, usage.output_tokens
+    elif isinstance(usage, Usage):
+        prompt_tokens, completion_tokens = usage.prompt_tokens, usage.completion_tokens
+    if isinstance(response, ResponsesAPIResponse):
+        ended_at: datetime | None = datetime.fromtimestamp(response.created_at)
+    elif isinstance(response, litellm.EmbeddingResponse):
+        ended_at = None
+    else:
+        ended_at = datetime.fromtimestamp(response.created)
+    cache_read_tokens, cache_creation_tokens = parse_cached_usage(usage)
+    return ResponseUsage(
+        response_type=type(response).__name__,
+        model=response.model or None,
+        response_id=(
+            None if isinstance(response, litellm.EmbeddingResponse) else response.id
+        ),
+        ended_at=ended_at,
+        prompt_tokens=prompt_tokens,
+        completion_tokens=completion_tokens,
+        cache_read_tokens=cache_read_tokens,
+        cache_creation_tokens=cache_creation_tokens,
+        cost_usd=litellm.cost_calculator.completion_cost(
+            completion_response=response,
+            # Vertex AI responses drop their provider, see https://github.com/BerriAI/litellm/issues/10181
+            model=_requested_model_ctx.get() or None,
+        ),
+    )
 
 
 def estimate_message_tokens(
