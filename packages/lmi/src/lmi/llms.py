@@ -80,7 +80,7 @@ from lmi.constants import (
     DEFAULT_VERTEX_SAFETY_SETTINGS,
     IS_PYTHON_BELOW_312,
 )
-from lmi.cost_tracker import track_costs, track_costs_iter
+from lmi.cost_tracker import _requested_model_ctx, track_costs, track_costs_iter
 from lmi.exceptions import (
     AllModelsExhaustedError,
     JSONSchemaValidationError,
@@ -403,7 +403,11 @@ def parse_response_usage(
         completion_tokens=completion_tokens,
         cache_read_tokens=cache_read_tokens,
         cache_creation_tokens=cache_creation_tokens,
-        cost_usd=litellm.cost_calculator.completion_cost(completion_response=response),
+        cost_usd=litellm.cost_calculator.completion_cost(
+            completion_response=response,
+            # Vertex AI responses drop their provider, see https://github.com/BerriAI/litellm/issues/10181
+            model=_requested_model_ctx.get() or None,
+        ),
     )
 
 

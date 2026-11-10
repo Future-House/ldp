@@ -1140,6 +1140,18 @@ class TestVertexAICostTrackingFix:
 
         assert cost > 0
 
+    def test_parse_response_usage_prices_with_requested_model(self):
+        """Cost tracker callbacks price Vertex AI responses like `record()` does."""
+        token = _requested_model_ctx.set(
+            f"{litellm.LlmProviders.VERTEX_AI.value}/claude-3-5-sonnet-20241022"
+        )
+        try:
+            usage = parse_response_usage(self._create_vertex_ai_response())
+        finally:
+            _requested_model_ctx.reset(token)
+
+        assert usage.cost_usd > 0
+
     @pytest.mark.asyncio
     async def test_track_costs_sets_context_variable(self):
         """Verify track_costs decorator sets the model name in context variable."""
