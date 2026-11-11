@@ -1206,6 +1206,28 @@ async def test_refusal_falls_back_to_next_model(caplog) -> None:
     assert "refused" in caplog.text.lower()
 
 
+@pytest.mark.parametrize("reasoning_effort", ["medium", "high"])
+def test_gemini_4_vertex_reasoning_without_unqualified_metadata(
+    reasoning_effort: str,
+) -> None:
+    # Vertex validates the unqualified name even when only the provider-prefixed
+    # model has metadata. This used to reject reasoning_effort before any API call.
+    metadata = {
+        name: info
+        for name, info in litellm.model_cost.items()
+        if name != "gemini-4-argon"
+    }
+    with patch.dict(litellm.model_cost, metadata, clear=True):
+        params = litellm.utils.get_optional_params(
+            model="gemini-4-argon",
+            custom_llm_provider="vertex_ai",
+            reasoning_effort=reasoning_effort,
+        )
+
+    assert params["thinkingConfig"]["thinkingLevel"] == reasoning_effort
+    assert "thinkingBudget" not in params["thinkingConfig"]
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("model_name", "expected_role"),
