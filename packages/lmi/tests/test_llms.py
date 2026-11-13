@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 from aviary.core import Message, Tool, ToolCall, ToolRequestMessage, ToolResponseMessage
 from aviary.utils import encode_image_to_base64
-from litellm.types.llms.openai import ResponseAPIUsage, ResponsesAPIResponse
+from litellm.types.llms.openai import ErrorEvent, ResponseAPIUsage, ResponsesAPIResponse
 from openai.types.responses import (
     ResponseFunctionToolCall,
     ResponseOutputMessage,
@@ -524,8 +524,9 @@ class TestLiteLLMModel:
         assert llm.config == rehydrated_llm.config
         assert llm.llm_config == rehydrated_llm.llm_config
 
+    @pytest.mark.parametrize("usage_only", [False, True])
     @pytest.mark.asyncio
-    async def test_acompletion_iter_logprobs_edge_cases(self) -> None:
+    async def test_acompletion_iter_logprobs_edge_cases(self, usage_only: bool) -> None:
         """Test that acompletion_iter handles various logprobs edge cases gracefully."""
         model = LiteLLMModel(name=CommonLLMNames.OPENAI_TEST.value)
         messages = [Message(content="Say hello")]
@@ -566,6 +567,9 @@ class TestLiteLLMModel:
                 finish_reason="stop",
             ),
         ]
+
+        if usage_only:
+            chunks.append(Mock(model="test-model", choices=[], usage=chunks[-1].usage))
 
         async def mock_stream() -> AsyncIterator[Any]:  # noqa: RUF029
             for chunk in chunks:
@@ -1601,6 +1605,32 @@ class TestResponsesAPI:
             assert result.completion_count == 8
             assert result.cache_read_tokens == 3
             assert result.cache_creation_tokens == 4
+
+    @pytest.mark.parametrize("nested", [False, True])
+    @pytest.mark.asyncio
+    async def test_stream_error_message(self, nested: bool) -> None:
+        error = {
+            "message": "Request failed",
+            "code": "bad_request",
+            "type": "invalid_request_error",
+        }
+        event = ErrorEvent(
+            type="error",
+            sequence_number=0,
+            **({"error": error} if nested else {"message": error["message"]}),
+        )
+
+        async def stream() -> AsyncIterator[ErrorEvent]:  # noqa: RUF029
+            yield event
+
+        model = LiteLLMModel(name="gpt-4o-mini-2024-07-18")
+        with (
+            patch("litellm.aresponses", AsyncMock(return_value=stream())),
+            pytest.raises(
+                RuntimeError, match="Responses API streaming error: Request failed"
+            ),
+        ):
+            _ = [event async for event in await model._aresponses_iter([], None)]
 
 
 class TestResponsesAPIIntegration:

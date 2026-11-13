@@ -1,4 +1,3 @@
-from importlib.metadata import version
 from typing import Any, ClassVar
 
 import litellm
@@ -145,10 +144,7 @@ class TestParallelism:
         #    (using a bare Message) because they expect a tool call ID and tool name.
         #    That's a generic (malformed-request) BadRequestError, which is a
         #    terminal client error and propagates directly rather than falling over.
-        expected_match = (
-            "invalid" if version(litellm.__name__) < "1.45.0" else "tool_call_id"
-        )
-        with pytest.raises(litellm.BadRequestError, match=expected_match):
+        with pytest.raises(litellm.BadRequestError, match="tool_call_id"):
             await agent.get_asv(agent_state, obs)
 
         # 3. Alright, let's check the agent doesn't blow up if we use a

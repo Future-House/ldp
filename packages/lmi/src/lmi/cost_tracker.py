@@ -1,11 +1,12 @@
 import contextvars
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import contextmanager
 from functools import wraps
-from typing import ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar
 
 import litellm
+from litellm.types.llms.openai import ResponsesAPIResponse
 
 from lmi.types import LLMResponse
 
@@ -96,7 +97,8 @@ def cost_tracking_ctx(enabled: bool = True):
 TReturn = TypeVar(
     "TReturn",
     bound=Awaitable[litellm.ModelResponse]
-    | Awaitable[litellm.types.utils.EmbeddingResponse],
+    | Awaitable[litellm.types.utils.EmbeddingResponse]
+    | Awaitable[ResponsesAPIResponse],
 )
 TParams = ParamSpec("TParams")
 
@@ -165,7 +167,11 @@ class TrackedStreamWrapper:
     we introduce this class to wrap the stream.
     """
 
-    def __init__(self, stream: litellm.CustomStreamWrapper, requested_model: str = ""):
+    def __init__(
+        self,
+        stream: AsyncIterator[Any],
+        requested_model: str = "",
+    ):
         self.stream = stream
         self._requested_model = requested_model
 
@@ -188,7 +194,10 @@ class TrackedStreamWrapper:
 
 
 def track_costs_iter(
-    func: Callable[TParams, Awaitable[litellm.CustomStreamWrapper]],
+    func: Callable[
+        TParams,
+        Awaitable[AsyncIterator[Any]],
+    ],
 ) -> Callable[TParams, Awaitable[TrackedStreamWrapper]]:
     """Automatically track API costs of a streaming coroutine.
 
