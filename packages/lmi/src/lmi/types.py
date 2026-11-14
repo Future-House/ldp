@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 
 import litellm
 from aviary.core import Message
+from litellm.types.llms.openai import ResponsesAPIResponse
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -20,7 +21,10 @@ cvar_session_id = contextvars.ContextVar[UUID | None]("session_id", default=None
 
 # Type alias for LLM response types that can be tracked for cost
 LLMResponse: TypeAlias = (
-    litellm.ModelResponse | litellm.EmbeddingResponse | litellm.ModelResponseStream
+    litellm.ModelResponse
+    | litellm.EmbeddingResponse
+    | litellm.ModelResponseStream
+    | ResponsesAPIResponse
 )
 
 

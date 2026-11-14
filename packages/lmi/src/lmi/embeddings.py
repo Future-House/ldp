@@ -118,10 +118,10 @@ class LiteLLMEmbeddingModel(EmbeddingModel):
             " Router is not used here."
         ),
     )
-    _router: litellm.Router | None = None
+    _router: litellm.Router | PassThroughRouter | None = None
 
     @property
-    def router(self) -> litellm.Router:
+    def router(self) -> litellm.Router | PassThroughRouter:
         if self._router is None:
             router_kwargs: dict = self.config.get("router_kwargs", {})
             if (
@@ -141,9 +141,7 @@ class LiteLLMEmbeddingModel(EmbeddingModel):
         if data.get("ndim") is not None:
             return data
         # Let's infer the dimensions
-        config: dict[str, dict[str, Any]] = litellm.get_model_cost_map(
-            url="https://raw.githubusercontent.com/BerriAI/litellm/main/litellm/model_prices_and_context_window_backup.json"
-        )
+        config = litellm.model_cost
         output_vector_size: int | None = config.get(  # noqa: FURB184
             data.get("name", ""), {}
         ).get("output_vector_size")

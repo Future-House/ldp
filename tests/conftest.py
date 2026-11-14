@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import torch
 import vcr.request
-import vcr.stubs.httpcore_stubs
+import vcr.stubs.httpx_stubs
 from aviary.core import DummyEnv
 from lmi import configure_llm_logs
 from lmi.utils import (
@@ -161,6 +161,7 @@ async def _vcr_handle_async_request(
     real_handle_async_request,
     self,
     real_request,
+    httpx,  # noqa: ARG001
 ):
     """VCR handler that only sends, not possibly recording or playing back responses."""
     return await real_handle_async_request(self, real_request)
@@ -175,4 +176,4 @@ httpx_aiohttp.transport.AiohttpResponseStream = (  # type: ignore[misc]
 
 # Permanently patch vcrpy's async VCR recording functionality,
 # to work around https://github.com/kevin1024/vcrpy/issues/944
-vcr.stubs.httpcore_stubs._vcr_handle_async_request = _vcr_handle_async_request
+vcr.stubs.httpx_stubs._vcr_handle_async_request = _vcr_handle_async_request

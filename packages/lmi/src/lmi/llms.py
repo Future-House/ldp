@@ -23,6 +23,7 @@ import logging
 from abc import ABC
 from collections.abc import (
     AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
     Coroutine,
@@ -963,7 +964,7 @@ def request_limited(func):
     return wrapper
 
 
-class PassThroughRouter(litellm.Router):  # TODO: add rate_limited
+class PassThroughRouter:  # TODO: add rate_limited
     """Router that is just a wrapper on LiteLLM's normal free functions."""
 
     def __init__(self, **kwargs):
@@ -1511,6 +1512,9 @@ class LiteLLMModel(LLMModel):
         async for completion in stream_completions:
             if not used_model:
                 used_model = completion.model or spec.name
+            # With include_usage=True, the final chunk can contain only usage.
+            if not completion.choices:
+                continue
             choice = completion.choices[0]
             delta = choice.delta
             # logprobs can be None, or missing a content attribute,
@@ -1600,7 +1604,11 @@ class LiteLLMModel(LLMModel):
         call_kwargs = _modify_call_kwargs(call_kwargs)
 
         try:
-            response = await track_costs(litellm.aresponses)(**call_kwargs)
+            response = await track_costs(
+                cast(
+                    "Callable[..., Awaitable[ResponsesAPIResponse]]", litellm.aresponses
+                )
+            )(**call_kwargs)
         except Exception:
             logger.exception("aresponses attempt failed on %s.", spec.name)
             raise
@@ -1617,7 +1625,7 @@ class LiteLLMModel(LLMModel):
             cost = 0.0
             logger.warning(f"Failed to calculate cost for {used_model}: {e}")
 
-        text_content, output_messages = _parse_responses_output(response.output)
+        text_content, output_messages = _parse_responses_output(response.output)  # type: ignore[arg-type]
 
         for msg in output_messages:
             msg.info = {**(msg.info or {}), "response_id": response.id}
@@ -1693,7 +1701,12 @@ class LiteLLMModel(LLMModel):
         call_kwargs = _modify_call_kwargs(call_kwargs)
 
         try:
-            stream = await track_costs_iter(litellm.aresponses)(**call_kwargs)
+            stream = await track_costs_iter(
+                cast(
+                    "Callable[..., Awaitable[AsyncIterator[Any]]]",
+                    litellm.aresponses,
+                )
+            )(**call_kwargs)
         except Exception:
             logger.exception("aresponses_iter failed to open stream on %s.", spec.name)
             raise
@@ -1716,8 +1729,9 @@ class LiteLLMModel(LLMModel):
                 )
                 raise RuntimeError(f"Responses API request failed: {error_msg}")  # noqa: TRY004
             elif isinstance(event, ErrorEvent):
+                error_msg = event.error.message if event.error else event.message
                 raise RuntimeError(  # noqa: TRY004
-                    f"Responses API streaming error: {event.error.message}"
+                    f"Responses API streaming error: {error_msg}"
                 )
 
         if completed_response:

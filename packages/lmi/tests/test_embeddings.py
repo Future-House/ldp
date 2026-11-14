@@ -75,6 +75,8 @@ class TestLiteLLMEmbeddingModel:
     async def test_embedding_batches(
         self, embedding_model: LiteLLMEmbeddingModel
     ) -> None:
+        # Keep the recorded wire format explicit; LiteLLM no longer sets it.
+        embedding_model.config["kwargs"] = {"encoding_format": "float"}
         stub_input = ["my", "name", "is", "neo"]
         with patch.object(
             litellm, "aembedding", autospec=True, side_effect=litellm.aembedding
@@ -83,7 +85,10 @@ class TestLiteLLMEmbeddingModel:
         assert isinstance(embeddings, list)
         assert len(embeddings) == len(stub_input)
         mock_aembedding.assert_awaited_once_with(
-            model="text-embedding-3-small", input=stub_input, dimensions=None
+            model="text-embedding-3-small",
+            input=stub_input,
+            dimensions=None,
+            encoding_format="float",
         )
 
         embedding_model.config["batch_size"] = 2
@@ -94,8 +99,18 @@ class TestLiteLLMEmbeddingModel:
         assert isinstance(embeddings, list)
         assert len(embeddings) == len(stub_input)
         mock_aembedding.assert_has_awaits([
-            call(model="text-embedding-3-small", input=["my", "name"], dimensions=None),
-            call(model="text-embedding-3-small", input=["is", "neo"], dimensions=None),
+            call(
+                model="text-embedding-3-small",
+                input=["my", "name"],
+                dimensions=None,
+                encoding_format="float",
+            ),
+            call(
+                model="text-embedding-3-small",
+                input=["is", "neo"],
+                dimensions=None,
+                encoding_format="float",
+            ),
         ])
 
     @pytest.mark.parametrize(
@@ -237,9 +252,9 @@ class TestLiteLLMEmbeddingModel:
 
         with (
             patch.object(
-                litellm.Router,
+                model.router,
                 "aembedding",
-                side_effect=litellm.Router.aembedding,
+                side_effect=model.router.aembedding,
                 autospec=True,
             ) as mock_Router_aembedding,
             patch.object(
@@ -252,16 +267,11 @@ class TestLiteLLMEmbeddingModel:
         (embedding,) = embeddings
         assert len(embedding) == model.ndim
 
-        # Check we acquired the embeddings as expected
-        if used_router:
-            mock_Router_aembedding.assert_awaited_once_with(
-                model.router,
-                model="text-embedding-3-small",
-                input=["test"],
-                dimensions=8,
-            )
-        else:
-            mock_Router_aembedding.assert_not_awaited()
+        # Spy on the public instance method, independent of LiteLLM's router internals.
+        assert isinstance(model.router, litellm.Router) is used_router
+        mock_Router_aembedding.assert_awaited_once_with(
+            model="text-embedding-3-small", input=["test"], dimensions=8
+        )
         mock_aembedding.assert_awaited_once()
         # Confirm use of the sentinel timeout in the Router's model_list or pass through
         assert mock_aembedding.call_args.kwargs["timeout"] == self.SENTINEL_TIMEOUT
