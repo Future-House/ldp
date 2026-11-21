@@ -15,6 +15,7 @@ from litellm.types.llms.openai import ErrorEvent, ResponseAPIUsage, ResponsesAPI
 from openai.types.responses import (
     ResponseFunctionToolCall,
     ResponseOutputMessage,
+    ResponseOutputRefusal,
     ResponseOutputText,
 )
 from pydantic import BaseModel, Field, TypeAdapter, computed_field
@@ -1574,6 +1575,84 @@ class TestResponsesAPI:
         assert isinstance(messages[0], ToolRequestMessage)
         assert messages[0].tool_calls[0].function.name == "get_weather"
         assert messages[0].tool_calls[0].id == "call_1"
+
+    def test_parse_responses_output_refusal_only(self) -> None:
+        output: list[ResponseOutputMessage | ResponseFunctionToolCall] = [
+            ResponseOutputMessage(
+                id="msg_1",
+                type="message",
+                role="assistant",
+                status="completed",
+                content=[
+                    ResponseOutputRefusal(type="refusal", refusal="I can't help.")
+                ],
+            )
+        ]
+        text, messages = _parse_responses_output(output)
+        assert text is None
+        assert len(messages) == 1
+        assert messages[0].content is None
+        assert messages[0].info == {"refusal": "I can't help."}
+
+    def test_parse_responses_output_partial_refusal(self) -> None:
+        output: list[ResponseOutputMessage | ResponseFunctionToolCall] = [
+            ResponseOutputMessage(
+                id="msg_1",
+                type="message",
+                role="assistant",
+                status="completed",
+                content=[
+                    ResponseOutputText(
+                        type="output_text", text="Here is part.", annotations=[]
+                    ),
+                    ResponseOutputRefusal(type="refusal", refusal="Not the rest."),
+                ],
+            )
+        ]
+        text, messages = _parse_responses_output(output)
+        assert text == "Here is part."
+        assert len(messages) == 1
+        assert messages[0].content == "Here is part."
+        assert messages[0].info == {"refusal": "Not the rest."}
+
+    @pytest.mark.asyncio
+    async def test_refusal_and_status_reach_message_info(self) -> None:
+        response = ResponsesAPIResponse(
+            id="resp_1",
+            created_at=0,
+            model="gpt-4o-mini-2024-07-18",
+            status="incomplete",
+            incomplete_details={"reason": "content_filter"},
+            output=[
+                ResponseOutputMessage(
+                    id="msg_1",
+                    type="message",
+                    role="assistant",
+                    status="incomplete",
+                    content=[
+                        ResponseOutputRefusal(type="refusal", refusal="I can't help.")
+                    ],
+                )
+            ],
+        )
+        model = LiteLLMModel(name="gpt-4o-mini-2024-07-18")
+
+        with (
+            patch("lmi.llms.litellm.aresponses", new=AsyncMock(return_value=response)),
+            patch("lmi.llms.completion_cost", return_value=0.0),
+        ):
+            non_streaming = (await model._aresponses([], None))[0]
+        streaming = model._build_result_from_response(response, [])
+
+        for result in (non_streaming, streaming):
+            assert result.text is None
+            assert len(result.messages) == 1
+            assert result.messages[0].info == {
+                "refusal": "I can't help.",
+                "response_id": "resp_1",
+                "status": "incomplete",
+                "incomplete_details": {"reason": "content_filter"},
+            }
 
     @pytest.mark.asyncio
     async def test_cache_usage_propagated(self) -> None:

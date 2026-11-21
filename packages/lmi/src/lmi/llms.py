@@ -240,13 +240,22 @@ def _convert_tools_for_responses(tools: list[dict] | None) -> list[dict] | None:
 def _parse_responses_output(
     output: list[ResponseOutputMessage | ResponseFunctionToolCall],
 ) -> tuple[str | None, list[Message | ToolRequestMessage]]:
-    """Convert Responses API output to aviary Messages."""
+    """Convert Responses API output to aviary Messages.
+
+    Refusal content parts are kept in the message's ``info["refusal"]``, so a
+    reply that is only a refusal still produces an assistant message.
+    """
     text_parts: list[str] = []
+    refusal_parts: list[str] = []
     tool_calls = []
 
     for item in output:
         if item.type == "message":
-            text_parts.extend(c.text for c in item.content if c.type == "output_text")
+            for c in item.content:
+                if c.type == "output_text":
+                    text_parts.append(c.text)
+                elif c.type == "refusal":
+                    refusal_parts.append(c.refusal)
         elif item.type == "function_call":
             arguments = json.loads(item.arguments)
             tool_calls.append(
@@ -263,18 +272,30 @@ def _parse_responses_output(
             " concatenating with newlines."
         )
     text_content = "\n".join(text_parts) if text_parts else None
+    info = {"refusal": "\n".join(refusal_parts)} if refusal_parts else None
 
     messages: list[Message | ToolRequestMessage] = []
     if tool_calls:
         messages.append(
             ToolRequestMessage(
-                role="assistant", content=text_content, tool_calls=tool_calls
+                role="assistant",
+                content=text_content,
+                tool_calls=tool_calls,
+                info=info,
             )
         )
-    elif text_content is not None:
-        messages.append(Message(role="assistant", content=text_content))
+    elif text_content is not None or info is not None:
+        messages.append(Message(role="assistant", content=text_content, info=info))
 
     return text_content, messages
+
+
+def _response_info(response: ResponsesAPIResponse) -> dict[str, Any]:
+    """Response metadata to keep on each output message's ``info``."""
+    info: dict[str, Any] = {"response_id": response.id, "status": response.status}
+    if response.incomplete_details is not None:
+        info["incomplete_details"] = response.incomplete_details.model_dump()
+    return info
 
 
 def _extract_previous_response_id(
@@ -1628,7 +1649,7 @@ class LiteLLMModel(LLMModel):
         text_content, output_messages = _parse_responses_output(response.output)  # type: ignore[arg-type]
 
         for msg in output_messages:
-            msg.info = {**(msg.info or {}), "response_id": response.id}
+            msg.info = {**(msg.info or {}), **_response_info(response)}
 
         return [
             LLMResult(
@@ -1657,7 +1678,7 @@ class LiteLLMModel(LLMModel):
         cache_read, cache_creation = parse_cached_usage(usage)
 
         for msg in output_messages:
-            msg.info = {**(msg.info or {}), "response_id": response.id}
+            msg.info = {**(msg.info or {}), **_response_info(response)}
 
         return LLMResult(
             model=response.model,
