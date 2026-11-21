@@ -1647,6 +1647,9 @@ class LiteLLMModel(LLMModel):
             logger.warning(f"Failed to calculate cost for {used_model}: {e}")
 
         text_content, output_messages = _parse_responses_output(response.output)  # type: ignore[arg-type]
+        output_messages = output_messages or [
+            Message(role="assistant", content=text_content)
+        ]
 
         for msg in output_messages:
             msg.info = {**(msg.info or {}), **_response_info(response)}
@@ -1656,8 +1659,7 @@ class LiteLLMModel(LLMModel):
                 model=used_model,
                 text=text_content,
                 prompt=messages,
-                messages=output_messages
-                or [Message(role="assistant", content=text_content)],
+                messages=output_messages,
                 prompt_count=prompt_count,
                 completion_count=completion_count,
                 cache_read_tokens=cache_read,
@@ -1674,6 +1676,7 @@ class LiteLLMModel(LLMModel):
     ) -> LLMResult:
         """Build an LLMResult from a completed Responses API response."""
         text, output_messages = _parse_responses_output(response.output)  # type: ignore[arg-type]
+        output_messages = output_messages or [Message(role="assistant", content=text)]
         usage = response.usage
         cache_read, cache_creation = parse_cached_usage(usage)
 
@@ -1683,7 +1686,7 @@ class LiteLLMModel(LLMModel):
         return LLMResult(
             model=response.model,
             text=text,
-            messages=output_messages or [Message(role="assistant", content=text)],
+            messages=output_messages,
             prompt=messages,
             prompt_count=usage.input_tokens if usage else None,
             completion_count=usage.output_tokens if usage else None,

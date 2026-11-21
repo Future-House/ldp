@@ -1655,6 +1655,34 @@ class TestResponsesAPI:
             }
 
     @pytest.mark.asyncio
+    async def test_empty_incomplete_response_keeps_status(self) -> None:
+        response = ResponsesAPIResponse(
+            id="resp_1",
+            created_at=0,
+            model="gpt-4o-mini-2024-07-18",
+            status="incomplete",
+            incomplete_details={"reason": "content_filter"},
+            output=[],
+        )
+        model = LiteLLMModel(name="gpt-4o-mini-2024-07-18")
+
+        with (
+            patch("lmi.llms.litellm.aresponses", new=AsyncMock(return_value=response)),
+            patch("lmi.llms.completion_cost", return_value=0.0),
+        ):
+            non_streaming = (await model._aresponses([], None))[0]
+        streaming = model._build_result_from_response(response, [])
+
+        for result in (non_streaming, streaming):
+            assert len(result.messages) == 1
+            assert result.messages[0].content is None
+            assert result.messages[0].info == {
+                "response_id": "resp_1",
+                "status": "incomplete",
+                "incomplete_details": {"reason": "content_filter"},
+            }
+
+    @pytest.mark.asyncio
     async def test_cache_usage_propagated(self) -> None:
         usage = ResponseAPIUsage(
             input_tokens=21,
